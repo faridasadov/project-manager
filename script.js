@@ -117,6 +117,9 @@ const translations = {
     noOwner: "Məsul şəxs yoxdur",
     edit: "Redaktə",
     next: "İrəli",
+    reopen: "Davam etdir",
+    saveTeam: "Komandanı saxla",
+    linkedUser: "Bağlı user",
     delete: "Sil",
     day: "gün",
     invalidDate: "Bitmə tarixi başlama tarixindən əvvəl ola bilməz.",
@@ -291,6 +294,9 @@ const translations = {
     noOwner: "Ответственный не указан",
     edit: "Редактировать",
     next: "Далее",
+    reopen: "Вернуть в работу",
+    saveTeam: "Сохранить команду",
+    linkedUser: "Связанный user",
     delete: "Удалить",
     day: "дн.",
     invalidDate: "Дата окончания не может быть раньше даты начала.",
@@ -465,6 +471,9 @@ const translations = {
     noOwner: "No owner",
     edit: "Edit",
     next: "Next",
+    reopen: "Reopen",
+    saveTeam: "Save team",
+    linkedUser: "Linked user",
     delete: "Delete",
     day: "days",
     invalidDate: "End date cannot be earlier than start date.",
@@ -1231,6 +1240,10 @@ function resourceValue(type, id) {
 function resourceLabel(value) {
   if (!value) return text("noOwner");
   const [type, id] = value.split(":");
+  if (type === "user") {
+    const user = users.find((item) => item.id === id);
+    return user ? user.profile?.fullName || user.username : value;
+  }
   if (type === "member") {
     const member = members.find((item) => item.id === id);
     return member ? member.name : value;
@@ -1243,6 +1256,7 @@ function resourceLabel(value) {
 }
 
 function resourceTypeLabel(value) {
+  if (value.startsWith("user:")) return text("userRole");
   return value.startsWith("team:") ? text("team") : text("member");
 }
 
@@ -1270,9 +1284,17 @@ function managerMultiOptions(selectedIds = []) {
 
 function allResourceOptions() {
   return [
+    ...users.filter((user) => user.role !== "admin").map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: text("userRole") })),
     ...members.map((member) => ({ value: resourceValue("member", member.id), label: member.name, type: text("member") })),
     ...teams.map((team) => ({ value: resourceValue("team", team.id), label: team.name, type: text("team") }))
   ];
+}
+
+function teamMemberOptions(selectedIds = []) {
+  return [
+    ...users.filter((user) => user.role !== "admin").map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: text("userRole") })),
+    ...members.map((member) => ({ value: resourceValue("member", member.id), label: member.name, type: text("member") }))
+  ].map((option) => `<option value="${option.value}" ${selectedIds.includes(option.value) ? "selected" : ""}>${option.type}: ${escapeHtml(option.label)}</option>`).join("");
 }
 
 function linkedResourcesForProject(project) {
@@ -1370,9 +1392,7 @@ function renderResourceControls() {
   ].join("");
   projectResourceInput.value = projectOptions.some((option) => option.value === currentProjectResource) ? currentProjectResource : "";
 
-  teamMembersInput.innerHTML = members.map((member) => (
-    `<option value="${member.id}">${escapeHtml(member.name)}</option>`
-  )).join("");
+  teamMembersInput.innerHTML = teamMemberOptions();
 
   linkResourceInput.innerHTML = options.map((option) => (
     `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`
@@ -1404,12 +1424,26 @@ function renderResourceControls() {
   `).join("") : `<div class="empty">${text("empty")}</div>`;
 
   teamList.innerHTML = teams.length ? teams.map((team) => {
-    const names = team.memberIds.map((id) => members.find((member) => member.id === id)?.name).filter(Boolean);
+    const values = (team.memberIds || []).map((id) => id.includes(":") ? id : resourceValue("member", id));
+    const names = values.map(resourceLabel).filter(Boolean);
     return `
-      <div class="resource-item">
-        <span><strong>${escapeHtml(team.name)}</strong>${escapeHtml(names.join(", ") || text("empty"))}</span>
-        <button type="button" data-resource-action="delete-team" data-id="${team.id}">${text("remove")}</button>
-      </div>
+      <details class="user-profile-card">
+        <summary><span><strong>${escapeHtml(team.name)}</strong>${escapeHtml(names.join(", ") || text("empty"))}</span></summary>
+        <div class="resource-body">
+          <label>
+            <span>${text("newTeam")}</span>
+            <input class="team-edit-name" data-team-id="${team.id}" value="${escapeHtml(team.name)}">
+          </label>
+          <label>
+            <span>${text("teamMembers")}</span>
+            <select class="team-edit-members" data-team-id="${team.id}" multiple size="5">${teamMemberOptions(values)}</select>
+          </label>
+          <div class="mini-actions">
+            <button type="button" data-resource-action="save-team" data-id="${team.id}">${text("saveTeam")}</button>
+            <button type="button" data-resource-action="delete-team" data-id="${team.id}">${text("remove")}</button>
+          </div>
+        </div>
+      </details>
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
 
@@ -1630,7 +1664,10 @@ function renderCommentAttachments(comment) {
 
 function renderTaskActions(task) {
   const actions = task.status === "Bitib"
-    ? `<button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>`
+    ? `
+        <button class="action-button next-action" type="button" data-action="reopen" data-id="${task.id}">${text("reopen")}</button>
+        <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
+      `
     : `
         <button class="action-button edit-action" type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
         <button class="action-button next-action" type="button" data-action="next" data-id="${task.id}">${text("next")}</button>
@@ -1702,7 +1739,10 @@ function renderKanban() {
 
 function renderKanbanActions(task) {
   const actions = task.status === "Bitib"
-    ? `<button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>`
+    ? `
+        <button type="button" data-action="reopen" data-id="${task.id}">${text("reopen")}</button>
+        <button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
+      `
     : `
         <button type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
         <button type="button" data-action="next" data-id="${task.id}">${text("next")}</button>
@@ -1819,6 +1859,13 @@ function handleTaskAction(action, id) {
 
   if (action === "next") {
     moveForward(task);
+    saveTasks();
+    render();
+  }
+
+  if (action === "reopen") {
+    task.status = "Davam edir";
+    task.progress = Math.min(Number(task.progress) || 65, 95);
     saveTasks();
     render();
   }
@@ -2115,7 +2162,11 @@ addUserButton.addEventListener("click", () => {
   const role = newUserRoleInput.value;
   if (!username || !password || users.some((user) => user.username === username)) return;
   const managerId = role === "user" ? users.find((user) => user.role === "manager")?.id || "" : "";
-  users.push(normalizeUser({ id: createId(), username, passwordHash: md5(password), role, managerId }));
+  const user = normalizeUser({ id: createId(), username, passwordHash: md5(password), role, managerId, profile: { fullName: username } });
+  users.push(user);
+  if (role !== "admin") {
+    members.push({ id: `user-member-${user.id}`, name: user.profile.fullName || user.username, userId: user.id });
+  }
   newUsernameInput.value = "";
   newUserPasswordInput.value = "";
   saveUsers();
@@ -2176,6 +2227,11 @@ userList.addEventListener("submit", (event) => {
     address: profileForm.elements.address.value.trim(),
     company: profileForm.elements.company.value.trim()
   };
+  members = members.map((member) => member.userId === user.id ? { ...member, name: user.profile.fullName || user.username } : member);
+  if (user.role !== "admin" && !members.some((member) => member.userId === user.id)) {
+    members.push({ id: `user-member-${user.id}`, name: user.profile.fullName || user.username, userId: user.id });
+  }
+  saveResources();
   saveUsers();
   render();
 });
@@ -2284,6 +2340,16 @@ addProjectLinkButton.addEventListener("click", () => {
       tasks = tasks.map((task) => task.owner === resourceValue("team", id) ? { ...task, owner: "" } : task);
       projectLinks = projectLinks.filter((link) => link.resource !== resourceValue("team", id));
       saveTasks();
+    }
+
+    if (action === "save-team") {
+      const team = teams.find((item) => item.id === id);
+      const nameInput = container.querySelector(`.team-edit-name[data-team-id="${id}"]`);
+      const membersInput = container.querySelector(`.team-edit-members[data-team-id="${id}"]`);
+      if (team && nameInput && membersInput) {
+        team.name = nameInput.value.trim() || team.name;
+        team.memberIds = [...membersInput.selectedOptions].map((option) => option.value);
+      }
     }
 
     if (action === "delete-link") {
