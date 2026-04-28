@@ -112,8 +112,10 @@ body.logged-in #loginScreen {
 }
 
 body.user-role .admin-only,
-body.user-role .task-actions,
-body.user-role .composer {
+body.user-role .task-actions .edit-action,
+body.user-role .task-actions .next-action,
+body.user-role .task-actions .danger-action,
+body.user-role .project-create {
   display: none;
 }
 
@@ -122,7 +124,7 @@ body.manager-role .admin-only {
 }
 
 body.user-role .layout {
-  grid-template-columns: 1fr;
+  grid-template-columns: 380px 1fr;
 }
 
 .login-screen {
@@ -795,6 +797,44 @@ textarea:focus {
   justify-content: flex-end;
 }
 
+.report-list {
+  display: grid;
+  gap: 14px;
+}
+
+.report-project {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+  padding: 14px;
+}
+
+.report-project h3 {
+  margin-bottom: 10px;
+}
+
+.report-rows {
+  display: grid;
+  gap: 8px;
+}
+
+.report-row {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(5, minmax(120px, 1fr));
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  padding: 10px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.report-row strong {
+  color: var(--ink);
+}
+
 .compact-item {
   padding: 12px;
 }
@@ -847,6 +887,19 @@ textarea:focus {
 
 .action-button:hover {
   filter: brightness(0.96);
+}
+
+.pending-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border-radius: 7px;
+  background: #fff7ed;
+  color: #c2410c;
+  padding: 0 10px;
+  font-size: 0.82rem;
+  font-weight: 900;
 }
 
 .edit-action {
@@ -1219,6 +1272,7 @@ textarea:focus {
   .tools,
   .settings-grid,
   .user-profile-form,
+  .report-row,
   .password-form,
   .resource-item {
     grid-template-columns: 1fr;

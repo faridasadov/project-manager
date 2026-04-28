@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-    <link rel="stylesheet" href="styles.css?v=20260428-user-login-edit">
+    <link rel="stylesheet" href="styles.css?v=20260428-done-approval-reports">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
@@ -353,6 +353,7 @@
             <button class="view-tab" data-view="list" type="button" data-i18n="list">Siyahı</button>
             <button class="view-tab" data-view="kanban" type="button">Kanban</button>
             <button class="view-tab" data-view="gantt" type="button">Gantt</button>
+            <button class="view-tab" data-view="reports" type="button" data-i18n="reports">Hesabat</button>
           </div>
           <div class="tools">
             <input id="searchInput" type="search" placeholder="Task, layihə, məsul şəxs axtar" data-i18n-placeholder="searchPlaceholder">
@@ -458,10 +459,22 @@
             <div id="gantt" class="gantt" aria-live="polite"></div>
           </div>
         </section>
+
+        <section id="reportsView" class="view">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <p class="kicker" data-i18n="reports">Hesabat</p>
+                <h2 data-i18n="projectReports">Layihə hesabatları</h2>
+              </div>
+            </div>
+            <div id="reports" class="report-list"></div>
+          </div>
+        </section>
       </section>
     </main>
     </div>
 
-    <script src="script.js?v=20260428-user-login-edit"></script>
+    <script src="script.js?v=20260428-done-approval-reports"></script>
   </body>
 </html>

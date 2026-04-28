@@ -52,7 +52,7 @@ function element(selector, value = "") {
 
 const ids = [
   "taskForm", "formTitle", "taskId", "taskName", "project", "startDate", "endDate",
-  "projectResource", "status", "priority", "owner", "progress", "notes", "cancelEdit", "gantt",
+  "projectResource", "status", "priority", "owner", "progress", "notes", "cancelEdit", "gantt", "reports",
   "kanban", "taskList", "searchInput", "projectFilter", "statusBars", "upcomingList",
   "deadlineAlerts", "projectCards", "notifyButton", "openAdminPanel", "closeAdminPanel", "adminModal", "exportData", "importData",
   "totalCount", "activeCount", "doneCount", "dateRange", "resetDemo", "clearDone",
@@ -95,13 +95,13 @@ const filters = ["Hamısı", "Plan", "Davam edir", "Bitib"].map((filter) => {
   return button;
 });
 
-const viewTabs = ["dashboard", "projects", "list", "kanban", "gantt"].map((view) => {
+const viewTabs = ["dashboard", "projects", "list", "kanban", "gantt", "reports"].map((view) => {
   const button = new Element(`view-${view}`);
   button.dataset.view = view;
   return button;
 });
 
-const views = ["dashboardView", "projectsView", "listView", "kanbanView", "ganttView"].map((id) => {
+const views = ["dashboardView", "projectsView", "listView", "kanbanView", "ganttView", "reportsView"].map((id) => {
   const view = new Element(`#${id}`);
   view.id = id;
   return view;
@@ -121,6 +121,7 @@ const context = {
   alert: (message) => {
     lastAlert = message;
   },
+  confirm: () => true,
   localStorage: {
     getItem: (key) => store.get(key) ?? null,
     setItem: (key, value) => store.set(key, value),
@@ -256,12 +257,17 @@ elements["#loginUsername"].value = "admin";
 elements["#loginPassword"].value = "admin123";
 elements["#loginForm"].dispatch("submit", { preventDefault: () => {} });
 elements["#taskList"].dispatch("click", {
-  target: { closest: () => ({ dataset: { action: "next", id: editedId } }) }
+  target: { closest: () => ({ dataset: { action: "request-done", id: editedId } }) }
+});
+assert.match(elements["#taskList"].innerHTML, /Təsdiq et/, "done request waits for approval");
+elements["#taskList"].dispatch("click", {
+  target: { closest: () => ({ dataset: { action: "approve-done", id: editedId } }) }
 });
 const doneTaskCard = elements["#taskList"].innerHTML.match(/<article class="task-card">[\s\S]*?Redaktə olunmuş task[\s\S]*?<\/article>/)?.[0] || "";
 assert.doesNotMatch(doneTaskCard, /<textarea name="comment"/, "done tasks do not show comment form");
 assert.doesNotMatch(doneTaskCard, />İrəli</, "done tasks do not show next button");
 assert.match(doneTaskCard, />Sil</, "done tasks keep delete button");
+assert.match(elements["#reports"].innerHTML, /Redaktə olunmuş task/, "reports include completed task");
 
 elements["#taskList"].dispatch("click", {
   target: { closest: () => ({ dataset: { action: "delete", id: editedId } }) }

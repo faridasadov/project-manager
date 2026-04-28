@@ -118,6 +118,15 @@ const translations = {
     edit: "Redaktə",
     next: "İrəli",
     reopen: "Davam etdir",
+    doneRequest: "Bitdi",
+    approveDone: "Təsdiq et",
+    pendingDone: "Təsdiq gözləyir",
+    confirmDone: "Taskın bitdiyinə əminsiniz?",
+    reports: "Hesabat",
+    projectReports: "Layihə hesabatları",
+    requestedAt: "Bitmə sorğusu",
+    approvedAt: "Təsdiq tarixi",
+    executedBy: "İcraçı",
     saveTeam: "Komandanı saxla",
     linkedUser: "Bağlı user",
     delete: "Sil",
@@ -296,6 +305,15 @@ const translations = {
     edit: "Редактировать",
     next: "Далее",
     reopen: "Вернуть в работу",
+    doneRequest: "Готово",
+    approveDone: "Подтвердить",
+    pendingDone: "Ждет подтверждения",
+    confirmDone: "Вы уверены, что задача завершена?",
+    reports: "Отчет",
+    projectReports: "Отчеты по проектам",
+    requestedAt: "Запрос завершения",
+    approvedAt: "Дата подтверждения",
+    executedBy: "Исполнитель",
     saveTeam: "Сохранить команду",
     linkedUser: "Связанный user",
     delete: "Удалить",
@@ -474,6 +492,15 @@ const translations = {
     edit: "Edit",
     next: "Next",
     reopen: "Reopen",
+    doneRequest: "Done",
+    approveDone: "Approve",
+    pendingDone: "Pending approval",
+    confirmDone: "Are you sure this task is done?",
+    reports: "Reports",
+    projectReports: "Project reports",
+    requestedAt: "Done requested",
+    approvedAt: "Approved at",
+    executedBy: "Executor",
     saveTeam: "Save team",
     linkedUser: "Linked user",
     delete: "Delete",
@@ -772,6 +799,7 @@ const progressInput = document.querySelector("#progress");
 const notesInput = document.querySelector("#notes");
 const cancelEdit = document.querySelector("#cancelEdit");
 const gantt = document.querySelector("#gantt");
+const reports = document.querySelector("#reports");
 const kanban = document.querySelector("#kanban");
 const taskList = document.querySelector("#taskList");
 const filters = document.querySelectorAll(".filter");
@@ -941,6 +969,7 @@ function updateViewLabels() {
     if (button.dataset.view === "list") button.textContent = text("list");
     if (button.dataset.view === "kanban") button.textContent = text("kanban");
     if (button.dataset.view === "gantt") button.textContent = text("gantt");
+    if (button.dataset.view === "reports") button.textContent = text("reports");
   });
 }
 
@@ -1066,6 +1095,13 @@ function normalizeTask(task) {
     projectResource: "",
     comments: [],
     attachments: [],
+    completionRequestedAt: "",
+    completionRequestedBy: "",
+    completedAt: "",
+    completedBy: "",
+    approvedAt: "",
+    approvedBy: "",
+    startedAt: task.status === "Davam edir" ? new Date().toISOString() : "",
     progress: task.status === "Bitib" ? 100 : 0,
     ...task
   };
@@ -1309,6 +1345,13 @@ function isAdmin() {
 
 function canManageTasks() {
   return ["admin", "manager"].includes(currentUser?.role);
+}
+
+function canApproveTask(task) {
+  if (isAdmin()) return true;
+  if (currentUser?.role !== "manager") return false;
+  const project = projects.find((item) => item.name === task.project);
+  return Boolean(project?.managerIds?.includes(currentUser.id));
 }
 
 function openAdminPanel() {
@@ -1657,16 +1700,23 @@ function renderCommentAttachments(comment) {
 }
 
 function renderTaskActions(task) {
-  const actions = task.status === "Bitib"
-    ? `
+  let actions = "";
+  if (task.status === "Bitib") {
+    actions = `
         <button class="action-button next-action" type="button" data-action="reopen" data-id="${task.id}">${text("reopen")}</button>
         <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
-      `
-    : `
+      `;
+  } else {
+    const completionAction = task.completionRequestedAt
+      ? `${canApproveTask(task) ? `<button class="action-button next-action" type="button" data-action="approve-done" data-id="${task.id}">${text("approveDone")}</button>` : `<span class="pending-label">${text("pendingDone")}</span>`}`
+      : `<button class="action-button next-action" type="button" data-action="request-done" data-id="${task.id}">${text("doneRequest")}</button>`;
+    actions = `
         <button class="action-button edit-action" type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
         <button class="action-button next-action" type="button" data-action="next" data-id="${task.id}">${text("next")}</button>
+        ${completionAction}
         <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
       `;
+  }
   return `<div class="task-actions">${actions}</div>`;
 }
 
@@ -1788,6 +1838,30 @@ function renderGantt() {
   `;
 }
 
+function renderReports() {
+  const shownProjects = visibleProjects();
+  reports.innerHTML = shownProjects.length ? shownProjects.map((project) => {
+    const projectTasks = tasks.filter((task) => task.project === project.name)
+      .sort((a, b) => parseDate(a.start) - parseDate(b.start));
+    const rows = projectTasks.length ? projectTasks.map((task) => `
+      <div class="report-row">
+        <strong>${escapeHtml(task.name)}</strong>
+        <span>${statusLabel(task.status)}</span>
+        <span>${text("start")}: ${escapeHtml(shortDate(task.start))}</span>
+        <span>${text("executedBy")}: ${escapeHtml(resourceLabel(task.owner))}</span>
+        <span>${text("requestedAt")}: ${escapeHtml(formatDateTime(task.completionRequestedAt) || "-")}</span>
+        <span>${text("approvedAt")}: ${escapeHtml(formatDateTime(task.approvedAt) || "-")}</span>
+      </div>
+    `).join("") : `<div class="empty">${text("empty")}</div>`;
+    return `
+      <article class="report-project">
+        <h3>${escapeHtml(project.name)}</h3>
+        <div class="report-rows">${rows}</div>
+      </article>
+    `;
+  }).join("") : `<div class="empty">${text("empty")}</div>`;
+}
+
 function renderViews() {
   views.forEach((view) => view.classList.toggle("active-view", view.id === `${currentView}View`));
 }
@@ -1804,6 +1878,7 @@ function render() {
   renderTaskList();
   renderKanban();
   renderGantt();
+  renderReports();
   renderViews();
 }
 
@@ -1822,18 +1897,19 @@ function moveForward(task) {
   if (task.status === "Plan") {
     task.status = "Davam edir";
     task.progress = Math.max(Number(task.progress) || 0, 35);
+    task.startedAt = task.startedAt || new Date().toISOString();
   } else if (task.status === "Davam edir") {
-    task.status = "Bitib";
-    task.progress = 100;
+    task.progress = Math.max(Number(task.progress) || 0, 65);
   }
 }
 
 function handleTaskAction(action, id) {
-  if (!canManageTasks()) return;
+  if (!currentUser) return;
   const task = tasks.find((item) => item.id === id);
   if (!task) return;
 
   if (action === "edit") {
+    if (!canManageTasks()) return;
     taskId.value = task.id;
     taskName.value = task.name;
     projectInput.value = task.project || "";
@@ -1852,19 +1928,53 @@ function handleTaskAction(action, id) {
   }
 
   if (action === "next") {
+    if (!canManageTasks()) return;
     moveForward(task);
     saveTasks();
     render();
   }
 
   if (action === "reopen") {
+    if (!canManageTasks()) return;
     task.status = "Davam edir";
     task.progress = Math.min(Number(task.progress) || 65, 95);
+    task.completedAt = "";
+    task.completedBy = "";
+    task.approvedAt = "";
+    task.approvedBy = "";
+    task.completionRequestedAt = "";
+    task.completionRequestedBy = "";
+    saveTasks();
+    render();
+  }
+
+  if (action === "request-done") {
+    if (!confirm(text("confirmDone"))) return;
+    const now = new Date().toISOString();
+    task.status = task.status === "Plan" ? "Davam edir" : task.status;
+    task.startedAt = task.startedAt || now;
+    task.completionRequestedAt = now;
+    task.completionRequestedBy = currentUser.username;
+    task.progress = Math.max(Number(task.progress) || 0, 95);
+    saveTasks();
+    render();
+  }
+
+  if (action === "approve-done") {
+    if (!canApproveTask(task)) return;
+    const now = new Date().toISOString();
+    task.status = "Bitib";
+    task.progress = 100;
+    task.completedAt = task.completionRequestedAt || now;
+    task.completedBy = task.completionRequestedBy || currentUser.username;
+    task.approvedAt = now;
+    task.approvedBy = currentUser.username;
     saveTasks();
     render();
   }
 
   if (action === "delete") {
+    if (!canManageTasks()) return;
     trash.push({ id: createId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
     tasks = tasks.filter((item) => item.id !== task.id);
     saveTrash();
