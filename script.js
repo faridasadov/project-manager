@@ -6,6 +6,7 @@ const projectLinksKey = "project-manager-project-links-v1";
 const usersKey = "project-manager-users-v1";
 const sessionKey = "project-manager-session-v1";
 const trashKey = "project-manager-trash-v1";
+const settingsKey = "project-manager-settings-v1";
 const backupVersion = 1;
 
 const translations = {
@@ -17,6 +18,31 @@ const translations = {
     resetDemo: "Demo yüklə",
     adminPanel: "Admin panel",
     close: "Bağla",
+    settings: "Settings",
+    new: "Yeni",
+    themeMode: "Görünüş modu",
+    lightMode: "Light",
+    darkMode: "Dark",
+    systemMode: "System",
+    backgroundStyle: "Fon",
+    backgroundCalm: "Sakit",
+    backgroundGrid: "Grid",
+    backgroundPlain: "Sadə",
+    accentColor: "Əsas rəng",
+    accentTeal: "Teal",
+    accentBlue: "Blue",
+    accentGreen: "Green",
+    emailNotifications: "Mail bildirişləri",
+    emailRecipients: "Mail alanlar",
+    emailRecipientsPlaceholder: "admin@example.com",
+    emailProvider: "Mail provider/API",
+    emailProviderPlaceholder: "Backend API URL",
+    ldapEnabled: "LDAP aktivdir",
+    ldapUrl: "LDAP URL",
+    ldapBaseDn: "Base DN",
+    ldapUserFilter: "User filter",
+    saveSettings: "Settings saxla",
+    settingsSaved: "Settings saxlandı.",
     newTask: "Yeni task",
     editTask: "Taskı redaktə et",
     taskFormAria: "Task forması",
@@ -137,6 +163,31 @@ const translations = {
     resetDemo: "Загрузить демо",
     adminPanel: "Админ панель",
     close: "Закрыть",
+    settings: "Настройки",
+    new: "Новое",
+    themeMode: "Режим интерфейса",
+    lightMode: "Светлый",
+    darkMode: "Темный",
+    systemMode: "Системный",
+    backgroundStyle: "Фон",
+    backgroundCalm: "Спокойный",
+    backgroundGrid: "Сетка",
+    backgroundPlain: "Простой",
+    accentColor: "Основной цвет",
+    accentTeal: "Teal",
+    accentBlue: "Синий",
+    accentGreen: "Зеленый",
+    emailNotifications: "Email уведомления",
+    emailRecipients: "Получатели",
+    emailRecipientsPlaceholder: "admin@example.com",
+    emailProvider: "Email provider/API",
+    emailProviderPlaceholder: "Backend API URL",
+    ldapEnabled: "LDAP включен",
+    ldapUrl: "LDAP URL",
+    ldapBaseDn: "Base DN",
+    ldapUserFilter: "User filter",
+    saveSettings: "Сохранить настройки",
+    settingsSaved: "Настройки сохранены.",
     newTask: "Новая задача",
     editTask: "Редактировать задачу",
     taskFormAria: "Форма задачи",
@@ -257,6 +308,31 @@ const translations = {
     resetDemo: "Load demo",
     adminPanel: "Admin panel",
     close: "Close",
+    settings: "Settings",
+    new: "New",
+    themeMode: "Theme mode",
+    lightMode: "Light",
+    darkMode: "Dark",
+    systemMode: "System",
+    backgroundStyle: "Background",
+    backgroundCalm: "Calm",
+    backgroundGrid: "Grid",
+    backgroundPlain: "Plain",
+    accentColor: "Accent color",
+    accentTeal: "Teal",
+    accentBlue: "Blue",
+    accentGreen: "Green",
+    emailNotifications: "Email notifications",
+    emailRecipients: "Recipients",
+    emailRecipientsPlaceholder: "admin@example.com",
+    emailProvider: "Email provider/API",
+    emailProviderPlaceholder: "Backend API URL",
+    ldapEnabled: "LDAP enabled",
+    ldapUrl: "LDAP URL",
+    ldapBaseDn: "Base DN",
+    ldapUserFilter: "User filter",
+    saveSettings: "Save settings",
+    settingsSaved: "Settings saved.",
     newTask: "New task",
     editTask: "Edit task",
     taskFormAria: "Task form",
@@ -644,6 +720,18 @@ const newUserRoleInput = document.querySelector("#newUserRole");
 const addUserButton = document.querySelector("#addUser");
 const userList = document.querySelector("#userList");
 const userCount = document.querySelector("#userCount");
+const themeModeInput = document.querySelector("#themeMode");
+const backgroundStyleInput = document.querySelector("#backgroundStyle");
+const accentColorInput = document.querySelector("#accentColor");
+const emailEnabledInput = document.querySelector("#emailEnabled");
+const emailRecipientsInput = document.querySelector("#emailRecipients");
+const emailProviderInput = document.querySelector("#emailProvider");
+const ldapEnabledInput = document.querySelector("#ldapEnabled");
+const ldapUrlInput = document.querySelector("#ldapUrl");
+const ldapBaseDnInput = document.querySelector("#ldapBaseDn");
+const ldapUserFilterInput = document.querySelector("#ldapUserFilter");
+const saveSettingsButton = document.querySelector("#saveSettings");
+const settingsStatus = document.querySelector("#settingsStatus");
 
 let tasks = loadTasks();
 let members = loadMembers();
@@ -651,6 +739,7 @@ let teams = loadTeams();
 let projectLinks = loadProjectLinks();
 let users = loadUsers();
 let trash = loadTrash();
+let appSettings = loadSettings();
 let currentUser = loadSession();
 let currentFilter = "Hamısı";
 let currentView = "dashboard";
@@ -689,6 +778,28 @@ function applyTranslations() {
   updateFilterLabels();
   updateViewLabels();
   updateRoleLabels();
+  syncSettingsForm();
+}
+
+function applyAppSettings() {
+  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
+  const darkMode = appSettings.themeMode === "dark" || (appSettings.themeMode === "system" && prefersDark);
+  document.body.classList.toggle("dark-mode", darkMode);
+  document.body.dataset.background = appSettings.backgroundStyle;
+  document.body.dataset.accent = appSettings.accentColor;
+}
+
+function syncSettingsForm() {
+  themeModeInput.value = appSettings.themeMode;
+  backgroundStyleInput.value = appSettings.backgroundStyle;
+  accentColorInput.value = appSettings.accentColor;
+  emailEnabledInput.checked = Boolean(appSettings.emailEnabled);
+  emailRecipientsInput.value = appSettings.emailRecipients;
+  emailProviderInput.value = appSettings.emailProvider;
+  ldapEnabledInput.checked = Boolean(appSettings.ldapEnabled);
+  ldapUrlInput.value = appSettings.ldapUrl;
+  ldapBaseDnInput.value = appSettings.ldapBaseDn;
+  ldapUserFilterInput.value = appSettings.ldapUserFilter;
 }
 
 function changeLanguage(language) {
@@ -768,6 +879,29 @@ function normalizeUser(user) {
 
 function loadTrash() {
   return loadJson(trashKey, () => []);
+}
+
+function defaultSettings() {
+  return {
+    themeMode: "light",
+    backgroundStyle: "calm",
+    accentColor: "teal",
+    emailEnabled: false,
+    emailRecipients: "",
+    emailProvider: "",
+    ldapEnabled: false,
+    ldapUrl: "",
+    ldapBaseDn: "",
+    ldapUserFilter: "(uid={username})"
+  };
+}
+
+function loadSettings() {
+  return { ...defaultSettings(), ...loadJson(settingsKey, defaultSettings) };
+}
+
+function saveAppSettings() {
+  localStorage.setItem(settingsKey, JSON.stringify(appSettings));
 }
 
 function loadSession() {
@@ -1366,6 +1500,7 @@ function renderViews() {
 }
 
 function render() {
+  applyAppSettings();
   applyTranslations();
   syncAuthView();
   renderProjectFilter();
@@ -1672,6 +1807,39 @@ importDataInput.addEventListener("change", () => {
   });
   reader.addEventListener("error", () => alert(text("backupError")));
   reader.readAsText(importDataInput.files[0]);
+});
+
+[themeModeInput, backgroundStyleInput, accentColorInput].forEach((input) => {
+  input.addEventListener("change", () => {
+    appSettings = {
+      ...appSettings,
+      themeMode: themeModeInput.value,
+      backgroundStyle: backgroundStyleInput.value,
+      accentColor: accentColorInput.value
+    };
+    saveAppSettings();
+    applyAppSettings();
+  });
+});
+
+saveSettingsButton.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  appSettings = {
+    ...appSettings,
+    themeMode: themeModeInput.value,
+    backgroundStyle: backgroundStyleInput.value,
+    accentColor: accentColorInput.value,
+    emailEnabled: emailEnabledInput.checked,
+    emailRecipients: emailRecipientsInput.value.trim(),
+    emailProvider: emailProviderInput.value.trim(),
+    ldapEnabled: ldapEnabledInput.checked,
+    ldapUrl: ldapUrlInput.value.trim(),
+    ldapBaseDn: ldapBaseDnInput.value.trim(),
+    ldapUserFilter: ldapUserFilterInput.value.trim() || "(uid={username})"
+  };
+  saveAppSettings();
+  applyAppSettings();
+  settingsStatus.textContent = text("settingsSaved");
 });
 
 addUserButton.addEventListener("click", () => {

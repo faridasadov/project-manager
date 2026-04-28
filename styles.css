@@ -28,6 +28,37 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+body.dark-mode {
+  --bg: #111827;
+  --ink: #e5edf4;
+  --muted: #a7b2c0;
+  --panel: #16202d;
+  --line: #334155;
+  --soft: #1f2937;
+  --shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.24);
+}
+
+body[data-background="plain"] {
+  background: var(--bg);
+}
+
+body[data-background="grid"] {
+  background:
+    linear-gradient(rgba(100, 113, 132, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 113, 132, 0.14) 1px, transparent 1px),
+    var(--bg);
+  background-size: 28px 28px;
+}
+
+body[data-accent="blue"] {
+  --teal: #2563eb;
+}
+
+body[data-accent="green"] {
+  --teal: #16a34a;
+}
+
 body.logged-out #appShell {
   display: none;
 }
@@ -65,7 +96,7 @@ body.user-role .layout {
   padding: 26px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.95);
+  background: color-mix(in srgb, var(--panel) 95%, transparent);
   box-shadow: var(--shadow);
 }
 
@@ -97,7 +128,7 @@ body.user-role .layout {
   align-items: center;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: rgba(255, 255, 255, 0.75);
+  background: color-mix(in srgb, var(--panel) 78%, transparent);
   padding: 0 11px;
   color: var(--muted);
   font-weight: 800;
@@ -114,7 +145,7 @@ button {
   min-height: 38px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fff;
+  background: var(--panel);
   color: var(--ink);
   padding: 0 13px;
   cursor: pointer;
@@ -126,7 +157,7 @@ button {
   align-items: center;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fff;
+  background: var(--panel);
   color: var(--ink);
   padding: 0 13px;
   cursor: pointer;
@@ -343,6 +374,30 @@ form {
   border-bottom: 1px solid var(--line);
 }
 
+.settings-grid {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  align-items: end;
+}
+
+.settings-grid .toggle-row {
+  min-height: 42px;
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 9px;
+  color: var(--ink);
+}
+
+.toggle-row input {
+  width: auto;
+}
+
+.settings-status {
+  margin: 0;
+  color: var(--teal);
+  font-weight: 900;
+}
+
 .resource-block {
   margin-top: 10px;
   border: 1px solid #dbe6e7;
@@ -480,7 +535,7 @@ textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fff;
+  background: var(--panel);
   color: var(--ink);
   padding: 10px 11px;
 }
@@ -1056,6 +1111,7 @@ textarea:focus {
   .form-grid,
   .task-card,
   .tools,
+  .settings-grid,
   .password-form,
   .resource-item {
     grid-template-columns: 1fr;

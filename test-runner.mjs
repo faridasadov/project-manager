@@ -58,7 +58,9 @@ const ids = [
   "totalCount", "activeCount", "doneCount", "dateRange", "resetDemo", "clearDone",
   "languageSelect", "loginLanguageSelect", "memberName", "addMember", "memberList", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
-  "memberCount", "teamCount", "linkCount"
+  "memberCount", "teamCount", "linkCount", "themeMode", "backgroundStyle", "accentColor",
+  "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
+  "ldapBaseDn", "ldapUserFilter", "saveSettings", "settingsStatus"
   , "loginScreen", "loginForm", "loginUsername", "loginPassword", "loginError",
   "logoutButton", "currentUserBadge", "newUsername", "newUserPassword",
   "newUserRole", "addUser", "userList", "userCount", "trashList", "trashCount"
@@ -78,6 +80,12 @@ elements["#languageSelect"].value = "az";
 elements["#loginLanguageSelect"].value = "az";
 elements["#newUserRole"].value = "user";
 elements["#newUserRole"].options = [{ value: "user" }, { value: "admin" }];
+elements["#themeMode"].value = "light";
+elements["#themeMode"].options = [{ value: "light" }, { value: "dark" }, { value: "system" }];
+elements["#backgroundStyle"].value = "calm";
+elements["#backgroundStyle"].options = [{ value: "calm" }, { value: "grid" }, { value: "plain" }];
+elements["#accentColor"].value = "teal";
+elements["#accentColor"].options = [{ value: "teal" }, { value: "blue" }, { value: "green" }];
 
 const filters = ["Hamısı", "Plan", "Davam edir", "Bitib"].map((filter) => {
   const button = new Element(`filter-${filter}`);
@@ -118,7 +126,7 @@ const context = {
   },
   window: { scrollTo: () => {} },
   document: {
-    body: { classList: { toggle: () => {}, add: () => {}, remove: () => {} } },
+    body: { dataset: {}, classList: { toggle: () => {}, add: () => {}, remove: () => {} } },
     documentElement: { lang: "az" },
     querySelector: (selector) => elements[selector],
     querySelectorAll: (selector) => {

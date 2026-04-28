@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-    <link rel="stylesheet" href="styles.css?v=20260428-admin-modal">
+    <link rel="stylesheet" href="styles.css?v=20260428-settings">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
@@ -154,6 +154,68 @@
           </div>
 
           <section class="resource-panel">
+          <details class="resource-block admin-only" open>
+            <summary>
+              <span data-i18n="settings">Settings</span>
+              <small data-i18n="new">Yeni</small>
+            </summary>
+            <div class="resource-body settings-grid">
+              <label>
+                <span data-i18n="themeMode">Görünüş modu</span>
+                <select id="themeMode">
+                  <option value="light" data-i18n="lightMode">Light</option>
+                  <option value="dark" data-i18n="darkMode">Dark</option>
+                  <option value="system" data-i18n="systemMode">System</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="backgroundStyle">Fon</span>
+                <select id="backgroundStyle">
+                  <option value="calm" data-i18n="backgroundCalm">Sakit</option>
+                  <option value="grid" data-i18n="backgroundGrid">Grid</option>
+                  <option value="plain" data-i18n="backgroundPlain">Sadə</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="accentColor">Əsas rəng</span>
+                <select id="accentColor">
+                  <option value="teal" data-i18n="accentTeal">Teal</option>
+                  <option value="blue" data-i18n="accentBlue">Blue</option>
+                  <option value="green" data-i18n="accentGreen">Green</option>
+                </select>
+              </label>
+              <label class="toggle-row">
+                <input id="emailEnabled" type="checkbox">
+                <span data-i18n="emailNotifications">Mail bildirişləri</span>
+              </label>
+              <label>
+                <span data-i18n="emailRecipients">Mail alanlar</span>
+                <input id="emailRecipients" type="email" multiple placeholder="admin@example.com" data-i18n-placeholder="emailRecipientsPlaceholder">
+              </label>
+              <label>
+                <span data-i18n="emailProvider">Mail provider/API</span>
+                <input id="emailProvider" type="text" placeholder="Backend API URL" data-i18n-placeholder="emailProviderPlaceholder">
+              </label>
+              <label class="toggle-row">
+                <input id="ldapEnabled" type="checkbox">
+                <span data-i18n="ldapEnabled">LDAP aktivdir</span>
+              </label>
+              <label>
+                <span data-i18n="ldapUrl">LDAP URL</span>
+                <input id="ldapUrl" type="text" placeholder="ldaps://ldap.example.com:636">
+              </label>
+              <label>
+                <span data-i18n="ldapBaseDn">Base DN</span>
+                <input id="ldapBaseDn" type="text" placeholder="dc=example,dc=com">
+              </label>
+              <label>
+                <span data-i18n="ldapUserFilter">User filter</span>
+                <input id="ldapUserFilter" type="text" placeholder="(uid={username})">
+              </label>
+              <button id="saveSettings" class="primary" type="button" data-i18n="saveSettings">Settings saxla</button>
+              <p id="settingsStatus" class="settings-status"></p>
+            </div>
+          </details>
 
           <details class="resource-block admin-only">
             <summary>
@@ -352,6 +414,6 @@
     </main>
     </div>
 
-    <script src="script.js?v=20260428-admin-modal"></script>
+    <script src="script.js?v=20260428-settings"></script>
   </body>
 </html>
