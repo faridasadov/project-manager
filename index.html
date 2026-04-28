@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-    <link rel="stylesheet" href="styles.css?v=20260428-project-pages">
+    <link rel="stylesheet" href="styles.css?v=20260428-roles-profiles">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
@@ -190,6 +190,8 @@
                   <option value="plain" data-i18n="backgroundPlain">Sadə</option>
                   <option value="focus" data-i18n="backgroundFocus">Focus</option>
                   <option value="paper" data-i18n="backgroundPaper">Kağız</option>
+                  <option value="steel" data-i18n="backgroundSteel">Steel</option>
+                  <option value="sunrise" data-i18n="backgroundSunrise">Sunrise</option>
                 </select>
               </label>
               <label>
@@ -200,6 +202,8 @@
                   <option value="green" data-i18n="accentGreen">Green</option>
                   <option value="amber" data-i18n="accentAmber">Amber</option>
                   <option value="red" data-i18n="accentRed">Red</option>
+                  <option value="violet" data-i18n="accentViolet">Violet</option>
+                  <option value="slate" data-i18n="accentSlate">Slate</option>
                 </select>
               </label>
               <label class="toggle-row admin-only">
@@ -235,22 +239,17 @@
             </div>
           </details>
 
-          <details class="resource-block" open>
+          <details class="resource-block admin-only" open>
             <summary>
               <span data-i18n="projects">Layihələr</span>
               <small id="projectCount">0</small>
             </summary>
             <div class="resource-body">
-              <label>
-                <span data-i18n="newProject">Yeni layihə</span>
-                <input id="newProjectName" type="text" placeholder="Layihə adı" data-i18n-placeholder="projectNamePlaceholder">
-              </label>
-              <button id="addProject" type="button" data-i18n="addProject">Layihə yarat</button>
               <div id="projectList" class="resource-list"></div>
             </div>
           </details>
 
-          <details class="resource-block admin-only">
+          <details class="resource-block">
             <summary>
               <span data-i18n="manageUsers">Userlər</span>
               <small id="userCount">0</small>
@@ -460,6 +459,6 @@
     </main>
     </div>
 
-    <script src="script.js?v=20260428-project-pages"></script>
+    <script src="script.js?v=20260428-roles-profiles"></script>
   </body>
 </html>

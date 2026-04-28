@@ -58,7 +58,7 @@ const ids = [
   "totalCount", "activeCount", "doneCount", "dateRange", "resetDemo", "clearDone",
   "languageSelect", "loginLanguageSelect", "memberName", "addMember", "memberList", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
-  "memberCount", "teamCount", "linkCount", "newProjectName", "addProject", "quickProjectName", "quickAddProject", "projectList",
+  "memberCount", "teamCount", "linkCount", "quickProjectName", "quickAddProject", "projectList",
   "projectCount", "themeMode", "backgroundStyle", "accentColor",
   "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
   "ldapBaseDn", "ldapUserFilter", "saveSettings", "settingsStatus"
@@ -84,9 +84,9 @@ elements["#newUserRole"].options = [{ value: "user" }, { value: "admin" }];
 elements["#themeMode"].value = "light";
 elements["#themeMode"].options = [{ value: "light" }, { value: "dark" }, { value: "system" }];
 elements["#backgroundStyle"].value = "calm";
-elements["#backgroundStyle"].options = [{ value: "calm" }, { value: "grid" }, { value: "plain" }];
+elements["#backgroundStyle"].options = [{ value: "calm" }, { value: "grid" }, { value: "plain" }, { value: "focus" }, { value: "paper" }, { value: "steel" }, { value: "sunrise" }];
 elements["#accentColor"].value = "teal";
-elements["#accentColor"].options = [{ value: "teal" }, { value: "blue" }, { value: "green" }];
+elements["#accentColor"].options = [{ value: "teal" }, { value: "blue" }, { value: "green" }, { value: "amber" }, { value: "red" }, { value: "violet" }, { value: "slate" }];
 
 const filters = ["Hamısı", "Plan", "Davam edir", "Bitib"].map((filter) => {
   const button = new Element(`filter-${filter}`);
@@ -190,8 +190,8 @@ elements["#linkResource"].value = "member:member-farid";
 elements["#addProjectLink"].dispatch("click");
 assert.match(elements["#projectLinks"].innerHTML, /QA project/, "resource can be linked to project");
 
-elements["#newProjectName"].value = "QA project";
-elements["#addProject"].dispatch("click");
+elements["#quickProjectName"].value = "QA project";
+elements["#quickAddProject"].dispatch("click");
 assert.match(elements["#projectList"].innerHTML, /QA project/, "project can be created");
 
 elements["#languageSelect"].value = "ru";

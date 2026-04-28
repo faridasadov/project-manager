@@ -65,6 +65,20 @@ body[data-background="paper"] {
   background-size: 100% 34px;
 }
 
+body[data-background="steel"] {
+  background:
+    linear-gradient(135deg, rgba(51, 65, 85, 0.16), transparent 36%),
+    linear-gradient(225deg, rgba(37, 99, 235, 0.12), transparent 32%),
+    var(--bg);
+}
+
+body[data-background="sunrise"] {
+  background:
+    linear-gradient(135deg, rgba(217, 119, 6, 0.18), transparent 34%),
+    linear-gradient(225deg, rgba(220, 38, 38, 0.10), transparent 30%),
+    var(--bg);
+}
+
 body[data-accent="blue"] {
   --teal: #2563eb;
 }
@@ -79,6 +93,14 @@ body[data-accent="amber"] {
 
 body[data-accent="red"] {
   --teal: #dc2626;
+}
+
+body[data-accent="violet"] {
+  --teal: #7c3aed;
+}
+
+body[data-accent="slate"] {
+  --teal: #475569;
 }
 
 body.logged-out #appShell {
@@ -547,6 +569,35 @@ form {
 .resource-item strong {
   display: block;
   color: var(--ink);
+}
+
+.user-profile-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+  overflow: hidden;
+}
+
+.user-profile-card summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.user-profile-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.user-profile-form .user-actions {
+  grid-column: 1 / -1;
+  justify-items: start;
 }
 
 .resource-item button {
@@ -1167,6 +1218,7 @@ textarea:focus {
   .project-card,
   .tools,
   .settings-grid,
+  .user-profile-form,
   .password-form,
   .resource-item {
     grid-template-columns: 1fr;

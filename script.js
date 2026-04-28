@@ -62,8 +62,24 @@ const translations = {
     addTaskToProject: "Task əlavə et",
     backgroundFocus: "Focus",
     backgroundPaper: "Kağız",
+    backgroundSteel: "Steel",
+    backgroundSunrise: "Sunrise",
     accentAmber: "Amber",
     accentRed: "Red",
+    accentViolet: "Violet",
+    accentSlate: "Slate",
+    fatherName: "Ata adı",
+    fullName: "Ad soyad",
+    email: "Mail",
+    position: "Vəzifə",
+    phone: "Telefon",
+    address: "Ünvan",
+    company: "Şirkət adı",
+    manager: "Manager",
+    userProfile: "İstifadəçi blankı",
+    saveProfile: "Blankı saxla",
+    responsibleManagers: "Cavabdeh managerlər",
+    saveManagers: "Managerləri saxla",
     projectResource: "Layihə resursu",
     noResource: "Resurs seçilməyib",
     start: "Başlama",
@@ -220,8 +236,24 @@ const translations = {
     addTaskToProject: "Добавить задачу",
     backgroundFocus: "Фокус",
     backgroundPaper: "Бумага",
+    backgroundSteel: "Steel",
+    backgroundSunrise: "Sunrise",
     accentAmber: "Янтарный",
     accentRed: "Красный",
+    accentViolet: "Фиолетовый",
+    accentSlate: "Slate",
+    fatherName: "Отчество",
+    fullName: "Имя Фамилия",
+    email: "Email",
+    position: "Должность",
+    phone: "Телефон",
+    address: "Адрес",
+    company: "Компания",
+    manager: "Менеджер",
+    userProfile: "Профиль пользователя",
+    saveProfile: "Сохранить профиль",
+    responsibleManagers: "Ответственные менеджеры",
+    saveManagers: "Сохранить менеджеров",
     projectResource: "Ресурс проекта",
     noResource: "Ресурс не выбран",
     start: "Начало",
@@ -378,8 +410,24 @@ const translations = {
     addTaskToProject: "Add task",
     backgroundFocus: "Focus",
     backgroundPaper: "Paper",
+    backgroundSteel: "Steel",
+    backgroundSunrise: "Sunrise",
     accentAmber: "Amber",
     accentRed: "Red",
+    accentViolet: "Violet",
+    accentSlate: "Slate",
+    fatherName: "Father name",
+    fullName: "Full name",
+    email: "Email",
+    position: "Position",
+    phone: "Phone",
+    address: "Address",
+    company: "Company",
+    manager: "Manager",
+    userProfile: "User profile",
+    saveProfile: "Save profile",
+    responsibleManagers: "Responsible managers",
+    saveManagers: "Save managers",
     projectResource: "Project resource",
     noResource: "No resource selected",
     start: "Start",
@@ -685,14 +733,14 @@ const demoProjectLinks = [
 ];
 
 const demoProjects = [
-  { id: "project-internal", name: "Internal portal" },
-  { id: "project-customer", name: "Customer rollout" }
+  { id: "project-internal", name: "Internal portal", managerIds: ["user-manager"] },
+  { id: "project-customer", name: "Customer rollout", managerIds: ["user-manager"] }
 ];
 
 const demoUsers = [
-  { id: "user-admin", username: "admin", passwordHash: md5("admin123"), role: "admin" },
-  { id: "user-manager", username: "manager", passwordHash: md5("manager123"), role: "manager" },
-  { id: "user-demo", username: "user", passwordHash: md5("user123"), role: "user" }
+  { id: "user-admin", username: "admin", passwordHash: md5("admin123"), role: "admin", managerId: "", profile: { fullName: "Admin User", email: "", fatherName: "", position: "Admin", phone: "", address: "", company: "" } },
+  { id: "user-manager", username: "manager", passwordHash: md5("manager123"), role: "manager", managerId: "", profile: { fullName: "Project Manager", email: "", fatherName: "", position: "Manager", phone: "", address: "", company: "" } },
+  { id: "user-demo", username: "user", passwordHash: md5("user123"), role: "user", managerId: "user-manager", profile: { fullName: "Demo User", email: "", fatherName: "", position: "User", phone: "", address: "", company: "" } }
 ];
 
 const statuses = ["Plan", "Davam edir", "Bitib"];
@@ -744,8 +792,6 @@ const linkResourceInput = document.querySelector("#linkResource");
 const addProjectLinkButton = document.querySelector("#addProjectLink");
 const projectLinksList = document.querySelector("#projectLinks");
 const linkCount = document.querySelector("#linkCount");
-const newProjectNameInput = document.querySelector("#newProjectName");
-const addProjectButton = document.querySelector("#addProject");
 const quickProjectNameInput = document.querySelector("#quickProjectName");
 const quickAddProjectButton = document.querySelector("#quickAddProject");
 const projectList = document.querySelector("#projectList");
@@ -918,9 +964,9 @@ function loadTeams() {
 
 function loadProjects() {
   const stored = loadJson(projectsKey, () => []);
-  if (stored.length) return stored;
+  if (stored.length) return stored.map(normalizeProject);
   const names = [...new Set([...demoProjects.map((project) => project.name), ...loadTasks().map((task) => task.project).filter(Boolean)])];
-  return names.map((name) => demoProjects.find((project) => project.name === name) || { id: createId(), name });
+  return names.map((name) => normalizeProject(demoProjects.find((project) => project.name === name) || { id: createId(), name }));
 }
 
 function loadProjectLinks() {
@@ -932,10 +978,27 @@ function loadUsers() {
 }
 
 function normalizeUser(user) {
+  const normalized = {
+    id: user.id,
+    username: user.username,
+    passwordHash: user.passwordHash || md5(user.password || ""),
+    role: user.role,
+    managerId: user.managerId || "",
+    profile: {
+      fullName: "",
+      fatherName: "",
+      email: "",
+      position: "",
+      phone: "",
+      address: "",
+      company: "",
+      ...(user.profile || {})
+    }
+  };
   if (user.passwordHash) {
-    return { id: user.id, username: user.username, passwordHash: user.passwordHash, role: user.role };
+    return normalized;
   }
-  return { id: user.id, username: user.username, passwordHash: md5(user.password || ""), role: user.role };
+  return normalized;
 }
 
 function loadTrash() {
@@ -994,6 +1057,10 @@ function normalizeTask(task) {
     progress: task.status === "Bitib" ? 100 : 0,
     ...task
   };
+}
+
+function normalizeProject(project) {
+  return { managerIds: [], ...project };
 }
 
 function saveTasks() {
@@ -1124,9 +1191,28 @@ function projectExists(name) {
 function createProject(name) {
   const cleanName = name.trim();
   if (!cleanName || projects.some((project) => project.name.toLowerCase() === cleanName.toLowerCase())) return false;
-  projects.push({ id: createId(), name: cleanName });
+  projects.push({ id: createId(), name: cleanName, managerIds: users.find((user) => user.role === "manager")?.id ? [users.find((user) => user.role === "manager").id] : [] });
   saveResources();
   return true;
+}
+
+function managerUsers(managerId) {
+  return users.filter((user) => user.managerId === managerId);
+}
+
+function projectManagers(project) {
+  return users.filter((user) => (project.managerIds || []).includes(user.id));
+}
+
+function canSeeProject(project) {
+  if (!currentUser) return true;
+  if (isAdmin()) return true;
+  if (currentUser.role === "manager") return (project.managerIds || []).includes(currentUser.id);
+  return currentUser.managerId && (project.managerIds || []).includes(currentUser.managerId);
+}
+
+function visibleProjects() {
+  return projects.filter(canSeeProject);
 }
 
 function openProjectPage(projectName) {
@@ -1164,6 +1250,22 @@ function roleLabel(role) {
   if (role === "admin") return text("adminRole");
   if (role === "manager") return text("managerRole");
   return text("userRole");
+}
+
+function managerOptions(selectedId = "") {
+  return [
+    `<option value="">${text("noOwnerSelect")}</option>`,
+    ...users
+      .filter((user) => user.role === "manager")
+      .map((user) => `<option value="${user.id}" ${user.id === selectedId ? "selected" : ""}>${escapeHtml(user.username)}</option>`)
+  ].join("");
+}
+
+function managerMultiOptions(selectedIds = []) {
+  return users
+    .filter((user) => user.role === "manager")
+    .map((user) => `<option value="${user.id}" ${selectedIds.includes(user.id) ? "selected" : ""}>${escapeHtml(user.username)}</option>`)
+    .join("");
 }
 
 function allResourceOptions() {
@@ -1212,6 +1314,10 @@ function visibleTasks() {
   const selectedProject = projectFilter.value;
 
   return tasks
+    .filter((task) => {
+      if (isAdmin()) return true;
+      return visibleProjects().some((project) => project.name === task.project);
+    })
     .filter((task) => currentFilter === "Hamısı" || task.status === currentFilter)
     .filter((task) => selectedProject === "Hamısı" || getProject(task) === selectedProject)
     .filter((task) => {
@@ -1224,7 +1330,7 @@ function visibleTasks() {
 
 function renderProjectFilter() {
   const selected = projectFilter.value || "Hamısı";
-  const projectNames = [...new Set([...projects.map((project) => project.name), ...tasks.map(getProject)])].sort();
+  const projectNames = [...new Set([...visibleProjects().map((project) => project.name), ...tasks.filter((task) => isAdmin()).map(getProject)])].sort();
   projectFilter.innerHTML = [
     `<option value="Hamısı">${text("allProjects")}</option>`,
     ...projectNames.map((project) => `<option value="${escapeHtml(project)}">${escapeHtml(project)}</option>`)
@@ -1243,7 +1349,7 @@ function renderResourceControls() {
   const currentProject = projectInput.value;
   projectInput.innerHTML = [
     `<option value="">${text("selectProject")}</option>`,
-    ...projects.map((project) => `<option value="${escapeHtml(project.name)}">${escapeHtml(project.name)}</option>`)
+    ...visibleProjects().map((project) => `<option value="${escapeHtml(project.name)}">${escapeHtml(project.name)}</option>`)
   ].join("");
   projectInput.value = projects.some((project) => project.name === currentProject) ? currentProject : "";
 
@@ -1276,8 +1382,16 @@ function renderResourceControls() {
     const taskCount = tasks.filter((task) => task.project === project.name).length;
     return `
       <div class="resource-item">
-        <span><strong>${escapeHtml(project.name)}</strong>${taskCount} ${text("tasks")}</span>
-        <button type="button" data-resource-action="delete-project" data-id="${project.id}">${text("remove")}</button>
+        <span><strong>${escapeHtml(project.name)}</strong>${taskCount} ${text("tasks")} · ${projectManagers(project).map((user) => user.username).join(", ") || text("noOwner")}</span>
+        <div class="user-actions">
+          <select class="project-manager-select" data-project-id="${project.id}" multiple size="3">
+            ${managerMultiOptions(project.managerIds || [])}
+          </select>
+          <div class="mini-actions">
+            <button type="button" data-resource-action="save-project-managers" data-id="${project.id}">${text("saveManagers")}</button>
+            <button type="button" data-resource-action="delete-project" data-id="${project.id}">${text("remove")}</button>
+          </div>
+        </div>
       </div>
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
@@ -1306,17 +1420,31 @@ function renderResourceControls() {
     </div>
   `).join("") : `<div class="empty">${text("empty")}</div>`;
 
-  userList.innerHTML = users.map((user) => `
-    <div class="resource-item">
-      <span><strong>${escapeHtml(user.username)}</strong>${roleLabel(user.role)}</span>
-      <div class="user-actions">
-        <form class="password-form" data-user-id="${user.id}">
+  const shownUsers = isAdmin() ? users : users.filter((user) => user.managerId === currentUser?.id);
+  userList.innerHTML = shownUsers.map((user) => `
+    <details class="user-profile-card">
+      <summary>
+        <span><strong>${escapeHtml(user.username)}</strong>${roleLabel(user.role)}${user.managerId ? ` · ${escapeHtml(users.find((item) => item.id === user.managerId)?.username || "")}` : ""}</span>
+      </summary>
+      <form class="user-profile-form" data-user-id="${user.id}">
+        <label><span>${text("fullName")}</span><input name="fullName" value="${escapeHtml(user.profile?.fullName || "")}" ${isAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("fatherName")}</span><input name="fatherName" value="${escapeHtml(user.profile?.fatherName || "")}" ${isAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("email")}</span><input name="email" type="email" value="${escapeHtml(user.profile?.email || "")}" ${isAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("position")}</span><input name="position" value="${escapeHtml(user.profile?.position || "")}" ${isAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("phone")}</span><input name="phone" value="${escapeHtml(user.profile?.phone || "")}" ${isAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("address")}</span><input name="address" value="${escapeHtml(user.profile?.address || "")}" ${isAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("company")}</span><input name="company" value="${escapeHtml(user.profile?.company || "")}" ${isAdmin() ? "" : "readonly"}></label>
+        <label class="admin-only"><span>${text("manager")}</span><select name="managerId">${managerOptions(user.managerId || "")}</select></label>
+        <div class="user-actions">
+        <div class="password-form" data-user-id="${user.id}">
           <input type="password" name="password" placeholder="${text("newPassword")}" required>
-          <button type="submit">${text("changePassword")}</button>
-        </form>
+          <button type="button" data-user-action="change-password" data-id="${user.id}">${text("changePassword")}</button>
+        </div>
         ${user.id === currentUser?.id ? "" : `<button type="button" data-user-action="delete-user" data-id="${user.id}">${text("remove")}</button>`}
-      </div>
-    </div>
+        ${isAdmin() ? `<button class="primary" type="submit">${text("saveProfile")}</button>` : ""}
+        </div>
+      </form>
+    </details>
   `).join("");
 
   trashList.innerHTML = trash.length ? trash.map((item) => {
@@ -1417,7 +1545,8 @@ function renderDeadlineAlerts() {
 }
 
 function renderProjectsView() {
-  projectCards.innerHTML = projects.length ? projects.map((project) => {
+  const shownProjects = visibleProjects();
+  projectCards.innerHTML = shownProjects.length ? shownProjects.map((project) => {
     const projectTasks = tasks.filter((task) => task.project === project.name);
     const done = projectTasks.filter((task) => task.status === "Bitib").length;
     const active = projectTasks.length - done;
@@ -1429,6 +1558,7 @@ function renderProjectsView() {
           <div class="task-meta">
             <span>${projectTasks.length} ${text("tasks")}</span>
             <span>${active} ${text("activeTasks")}</span>
+            <span>${projectManagers(project).map((user) => user.username).join(", ") || text("noOwner")}</span>
             <span>${percent}%</span>
           </div>
           <div class="progress-mini"><span style="width:${percent}%"></span></div>
@@ -1674,6 +1804,7 @@ function handleTaskAction(action, id) {
     taskName.value = task.name;
     projectInput.value = task.project || "";
     renderResourceControls();
+    projectInput.value = task.project || "";
     projectResourceInput.value = task.projectResource || "";
     startDate.value = task.start;
     endDate.value = task.end;
@@ -1983,7 +2114,8 @@ addUserButton.addEventListener("click", () => {
   const password = newUserPasswordInput.value;
   const role = newUserRoleInput.value;
   if (!username || !password || users.some((user) => user.username === username)) return;
-  users.push({ id: createId(), username, passwordHash: md5(password), role });
+  const managerId = role === "user" ? users.find((user) => user.role === "manager")?.id || "" : "";
+  users.push(normalizeUser({ id: createId(), username, passwordHash: md5(password), role, managerId }));
   newUsernameInput.value = "";
   newUserPasswordInput.value = "";
   saveUsers();
@@ -1991,26 +2123,59 @@ addUserButton.addEventListener("click", () => {
 });
 
 userList.addEventListener("click", (event) => {
-  if (!isAdmin()) return;
   const button = event.target.closest("button");
-  if (!button || button.dataset.userAction !== "delete-user") return;
-  users = users.filter((user) => user.id !== button.dataset.id);
-  saveUsers();
-  render();
+  if (!button) return;
+  if (button.dataset.userAction === "change-password") {
+    if (!isAdmin()) return;
+    const row = button.closest(".password-form");
+    const user = users.find((item) => item.id === button.dataset.id);
+    const input = row?.querySelector("input[name='password']");
+    const password = input?.value || "";
+    if (!user || !password) return;
+    user.passwordHash = md5(password);
+    input.value = "";
+    saveUsers();
+    render();
+  }
+  if (button.dataset.userAction === "delete-user") {
+    if (!isAdmin()) return;
+    users = users.filter((user) => user.id !== button.dataset.id);
+    projects = projects.map((project) => ({ ...project, managerIds: (project.managerIds || []).filter((id) => id !== button.dataset.id) }));
+    users = users.map((user) => user.managerId === button.dataset.id ? { ...user, managerId: "" } : user);
+    saveResources();
+    saveUsers();
+    render();
+  }
 });
 
 userList.addEventListener("submit", (event) => {
   if (!isAdmin()) return;
-  const passwordForm = event.target.closest(".password-form");
-  if (!passwordForm) return;
+  const profileForm = event.target.closest(".user-profile-form");
+  if (!profileForm) return;
   event.preventDefault();
-  const user = users.find((item) => item.id === passwordForm.dataset.userId);
-  const input = passwordForm.elements.password;
-  const password = input.value;
-  if (!user || !password) return;
-  user.passwordHash = md5(password);
-  delete user.password;
-  input.value = "";
+  if (!profileForm.elements.fullName && profileForm.elements.password) {
+    const user = users.find((item) => item.id === profileForm.dataset.userId);
+    const password = profileForm.elements.password.value;
+    if (!user || !password) return;
+    user.passwordHash = md5(password);
+    delete user.password;
+    profileForm.elements.password.value = "";
+    saveUsers();
+    render();
+    return;
+  }
+  const user = users.find((item) => item.id === profileForm.dataset.userId);
+  if (!user) return;
+  user.managerId = profileForm.elements.managerId?.value || "";
+  user.profile = {
+    fullName: profileForm.elements.fullName.value.trim(),
+    fatherName: profileForm.elements.fatherName.value.trim(),
+    email: profileForm.elements.email.value.trim(),
+    position: profileForm.elements.position.value.trim(),
+    phone: profileForm.elements.phone.value.trim(),
+    address: profileForm.elements.address.value.trim(),
+    company: profileForm.elements.company.value.trim()
+  };
   saveUsers();
   render();
 });
@@ -2029,10 +2194,6 @@ function addProjectFromInput(input) {
   input.value = "";
   openProjectPage(projectName);
 }
-
-addProjectButton.addEventListener("click", () => {
-  addProjectFromInput(newProjectNameInput);
-});
 
 quickAddProjectButton.addEventListener("click", () => {
   addProjectFromInput(quickProjectNameInput);
@@ -2108,6 +2269,14 @@ addProjectLinkButton.addEventListener("click", () => {
       if (!project || tasks.some((task) => task.project === project.name)) return;
       projects = projects.filter((item) => item.id !== id);
       projectLinks = projectLinks.filter((link) => link.project !== project.name);
+    }
+
+    if (action === "save-project-managers") {
+      const project = projects.find((item) => item.id === id);
+      const select = container.querySelector(`.project-manager-select[data-project-id="${id}"]`);
+      if (project && select) {
+        project.managerIds = [...select.selectedOptions].map((option) => option.value);
+      }
     }
 
     if (action === "delete-team") {
