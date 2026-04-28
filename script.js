@@ -6,6 +6,7 @@ const projectLinksKey = "project-manager-project-links-v1";
 const usersKey = "project-manager-users-v1";
 const sessionKey = "project-manager-session-v1";
 const trashKey = "project-manager-trash-v1";
+const backupVersion = 1;
 
 const translations = {
   az: {
@@ -93,6 +94,7 @@ const translations = {
     changePassword: "Parolu dəyiş",
     newPassword: "Yeni parol",
     adminRole: "Admin",
+    managerRole: "Manager",
     userRole: "User",
     comment: "Komment",
     comments: "Kommentlər",
@@ -104,6 +106,20 @@ const translations = {
     deleteForever: "Tam sil",
     deletedTask: "Silinmiş task",
     deletedProject: "Silinmiş layihə",
+    attachments: "Fayllar",
+    notify: "Bildirişlər",
+    notificationsEnabled: "Bildirişlər aktivdir",
+    notificationsBlocked: "Bildiriş icazəsi verilmədi.",
+    exportData: "Backup",
+    importData: "Import",
+    backupError: "Backup faylı oxunmadı.",
+    risk: "Risk",
+    deadlineAlerts: "Deadline xəbərdarlıqları",
+    overdue: "Gecikir",
+    dueSoon: "Yaxın deadline",
+    dueToday: "Bu gün bitir",
+    noDeadlineAlerts: "Riskli deadline yoxdur.",
+    fileTooLarge: "Fayl çox böyükdür. Hər fayl maksimum 800 KB ola bilər.",
     all: "Hamısı",
     statuses: { "Plan": "Plan", "Davam edir": "Davam edir", "Bitib": "Bitib" },
     priorities: { "Normal": "Normal", "Yüksək": "Yüksək", "Aşağı": "Aşağı" }
@@ -193,6 +209,7 @@ const translations = {
     changePassword: "Сменить пароль",
     newPassword: "Новый пароль",
     adminRole: "Админ",
+    managerRole: "Менеджер",
     userRole: "Пользователь",
     comment: "Комментарий",
     comments: "Комментарии",
@@ -204,6 +221,20 @@ const translations = {
     deleteForever: "Удалить навсегда",
     deletedTask: "Удаленная задача",
     deletedProject: "Удаленный проект",
+    attachments: "Файлы",
+    notify: "Уведомления",
+    notificationsEnabled: "Уведомления включены",
+    notificationsBlocked: "Разрешение на уведомления не выдано.",
+    exportData: "Backup",
+    importData: "Import",
+    backupError: "Не удалось прочитать backup файл.",
+    risk: "Риск",
+    deadlineAlerts: "Предупреждения по срокам",
+    overdue: "Просрочено",
+    dueSoon: "Скоро срок",
+    dueToday: "Срок сегодня",
+    noDeadlineAlerts: "Рискованных сроков нет.",
+    fileTooLarge: "Файл слишком большой. Максимум 800 KB на файл.",
     all: "Все",
     statuses: { "Plan": "План", "Davam edir": "В работе", "Bitib": "Выполнено" },
     priorities: { "Normal": "Нормальный", "Yüksək": "Высокий", "Aşağı": "Низкий" }
@@ -293,6 +324,7 @@ const translations = {
     changePassword: "Change password",
     newPassword: "New password",
     adminRole: "Admin",
+    managerRole: "Manager",
     userRole: "User",
     comment: "Comment",
     comments: "Comments",
@@ -304,6 +336,20 @@ const translations = {
     deleteForever: "Delete forever",
     deletedTask: "Deleted task",
     deletedProject: "Deleted project",
+    attachments: "Files",
+    notify: "Notifications",
+    notificationsEnabled: "Notifications enabled",
+    notificationsBlocked: "Notification permission was not granted.",
+    exportData: "Backup",
+    importData: "Import",
+    backupError: "Backup file could not be read.",
+    risk: "Risk",
+    deadlineAlerts: "Deadline alerts",
+    overdue: "Overdue",
+    dueSoon: "Due soon",
+    dueToday: "Due today",
+    noDeadlineAlerts: "No risky deadlines.",
+    fileTooLarge: "File is too large. Each file can be up to 800 KB.",
     all: "All",
     statuses: { "Plan": "Plan", "Davam edir": "In progress", "Bitib": "Done" },
     priorities: { "Normal": "Normal", "Yüksək": "High", "Aşağı": "Low" }
@@ -509,6 +555,7 @@ const demoProjectLinks = [
 
 const demoUsers = [
   { id: "user-admin", username: "admin", passwordHash: md5("admin123"), role: "admin" },
+  { id: "user-manager", username: "manager", passwordHash: md5("manager123"), role: "manager" },
   { id: "user-demo", username: "user", passwordHash: md5("user123"), role: "user" }
 ];
 
@@ -527,6 +574,7 @@ const priorityInput = document.querySelector("#priority");
 const ownerInput = document.querySelector("#owner");
 const progressInput = document.querySelector("#progress");
 const notesInput = document.querySelector("#notes");
+const attachmentsInput = document.querySelector("#attachments");
 const cancelEdit = document.querySelector("#cancelEdit");
 const gantt = document.querySelector("#gantt");
 const kanban = document.querySelector("#kanban");
@@ -538,6 +586,7 @@ const searchInput = document.querySelector("#searchInput");
 const projectFilter = document.querySelector("#projectFilter");
 const statusBars = document.querySelector("#statusBars");
 const upcomingList = document.querySelector("#upcomingList");
+const deadlineAlerts = document.querySelector("#deadlineAlerts");
 const totalCount = document.querySelector("#totalCount");
 const activeCount = document.querySelector("#activeCount");
 const doneCount = document.querySelector("#doneCount");
@@ -568,6 +617,9 @@ const loginPassword = document.querySelector("#loginPassword");
 const loginError = document.querySelector("#loginError");
 const loginLanguageSelect = document.querySelector("#loginLanguageSelect");
 const logoutButton = document.querySelector("#logoutButton");
+const notifyButton = document.querySelector("#notifyButton");
+const exportDataButton = document.querySelector("#exportData");
+const importDataInput = document.querySelector("#importData");
 const currentUserBadge = document.querySelector("#currentUserBadge");
 const newUsernameInput = document.querySelector("#newUsername");
 const newUserPasswordInput = document.querySelector("#newUserPassword");
@@ -654,7 +706,9 @@ function updateViewLabels() {
 
 function updateRoleLabels() {
   [...newUserRoleInput.options].forEach((option) => {
-    option.textContent = option.value === "admin" ? text("adminRole") : text("userRole");
+    if (option.value === "admin") option.textContent = text("adminRole");
+    if (option.value === "manager") option.textContent = text("managerRole");
+    if (option.value === "user") option.textContent = text("userRole");
   });
 }
 
@@ -722,6 +776,7 @@ function normalizeTask(task) {
     project: "",
     projectResource: "",
     comments: [],
+    attachments: [],
     progress: task.status === "Bitib" ? 100 : 0,
     ...task
   };
@@ -781,6 +836,49 @@ function formatDateTime(value) {
   }).format(new Date(value));
 }
 
+function todayStart() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function daysUntil(value) {
+  return Math.round((parseDate(value) - todayStart()) / 86400000);
+}
+
+function fileSizeLabel(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function readFileAsAttachment(file) {
+  const maxFileSize = 800 * 1024;
+  if (file.size > maxFileSize) {
+    return Promise.reject(new Error(text("fileTooLarge")));
+  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      resolve({
+        id: createId(),
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+        dataUrl: reader.result,
+        addedAt: new Date().toISOString()
+      });
+    });
+    reader.addEventListener("error", reject);
+    reader.readAsDataURL(file);
+  });
+}
+
+function readSelectedAttachments() {
+  if (!attachmentsInput?.files?.length) return Promise.resolve([]);
+  return Promise.all([...attachmentsInput.files].map(readFileAsAttachment));
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -826,6 +924,12 @@ function resourceTypeLabel(value) {
   return value.startsWith("team:") ? text("team") : text("member");
 }
 
+function roleLabel(role) {
+  if (role === "admin") return text("adminRole");
+  if (role === "manager") return text("managerRole");
+  return text("userRole");
+}
+
 function allResourceOptions() {
   return [
     ...members.map((member) => ({ value: resourceValue("member", member.id), label: member.name, type: text("member") })),
@@ -842,12 +946,17 @@ function isAdmin() {
   return currentUser?.role === "admin";
 }
 
+function canManageTasks() {
+  return ["admin", "manager"].includes(currentUser?.role);
+}
+
 function syncAuthView() {
   document.body.classList.toggle("logged-in", Boolean(currentUser));
   document.body.classList.toggle("logged-out", !currentUser);
   document.body.classList.toggle("admin-role", isAdmin());
+  document.body.classList.toggle("manager-role", currentUser?.role === "manager");
   document.body.classList.toggle("user-role", currentUser?.role === "user");
-  currentUserBadge.textContent = currentUser ? `${currentUser.username} (${currentUser.role})` : "";
+  currentUserBadge.textContent = currentUser ? `${currentUser.username} (${roleLabel(currentUser.role)})` : "";
 }
 
 function visibleTasks() {
@@ -933,7 +1042,7 @@ function renderResourceControls() {
 
   userList.innerHTML = users.map((user) => `
     <div class="resource-item">
-      <span><strong>${escapeHtml(user.username)}</strong>${user.role === "admin" ? text("adminRole") : text("userRole")}</span>
+      <span><strong>${escapeHtml(user.username)}</strong>${roleLabel(user.role)}</span>
       <div class="user-actions">
         <form class="password-form" data-user-id="${user.id}">
           <input type="password" name="password" placeholder="${text("newPassword")}" required>
@@ -1007,6 +1116,38 @@ function renderDashboard() {
       </div>
     </div>
   `).join("") : `<div class="empty">${text("noUpcoming")}</div>`;
+
+  renderDeadlineAlerts();
+}
+
+function deadlineAlertType(task) {
+  const days = daysUntil(task.end);
+  if (task.status === "Bitib") return null;
+  if (days < 0) return { type: "danger", label: text("overdue"), days };
+  if (days === 0) return { type: "warning", label: text("dueToday"), days };
+  if (days <= 3) return { type: "warning", label: text("dueSoon"), days };
+  return null;
+}
+
+function riskyTasks() {
+  return tasks
+    .map((task) => ({ task, alert: deadlineAlertType(task) }))
+    .filter((item) => item.alert)
+    .sort((a, b) => daysUntil(a.task.end) - daysUntil(b.task.end));
+}
+
+function renderDeadlineAlerts() {
+  const alerts = riskyTasks().slice(0, 6);
+  deadlineAlerts.innerHTML = alerts.length ? alerts.map(({ task, alert }) => `
+    <div class="compact-item ${alert.type}">
+      <strong>${escapeHtml(task.name)}</strong>
+      <div class="task-meta">
+        <span>${escapeHtml(getProject(task))}</span>
+        <span>${shortDate(task.end)}</span>
+        <span class="badge ${alert.type === "danger" ? "high" : ""}">${escapeHtml(alert.label)}</span>
+      </div>
+    </div>
+  `).join("") : `<div class="empty">${text("noDeadlineAlerts")}</div>`;
 }
 
 function renderTaskList() {
@@ -1029,11 +1170,26 @@ function renderTaskList() {
         </div>
         ${task.notes ? `<p>${escapeHtml(task.notes)}</p>` : ""}
         <div class="progress-mini"><span style="width:${Number(task.progress) || 0}%"></span></div>
+        ${renderAttachments(task)}
         ${renderComments(task)}
       </div>
       ${renderTaskActions(task)}
     </article>
   `).join("");
+}
+
+function renderAttachments(task) {
+  const attachments = task.attachments || [];
+  if (!attachments.length) return "";
+  return `
+    <div class="attachment-list">
+      ${attachments.map((attachment) => `
+        <a class="attachment-chip" href="${escapeHtml(attachment.dataUrl)}" download="${escapeHtml(attachment.name)}" title="${escapeHtml(attachment.name)} (${fileSizeLabel(Number(attachment.size) || 0)})">
+          <span>${escapeHtml(attachment.name)}</span>
+        </a>
+      `).join("")}
+    </div>
+  `;
 }
 
 function renderTaskActions(task) {
@@ -1088,6 +1244,7 @@ function renderKanban() {
           <span>${Number(task.progress) || 0}%</span>
         </div>
         ${renderComments(task)}
+        ${renderAttachments(task)}
         ${renderKanbanActions(task)}
       </article>
     `).join("");
@@ -1181,6 +1338,7 @@ function resetForm() {
   statusInput.value = "Plan";
   priorityInput.value = "Normal";
   progressInput.value = 0;
+  attachmentsInput.value = "";
 }
 
 function moveForward(task) {
@@ -1194,7 +1352,7 @@ function moveForward(task) {
 }
 
 function handleTaskAction(action, id) {
-  if (!isAdmin()) return;
+  if (!canManageTasks()) return;
   const task = tasks.find((item) => item.id === id);
   if (!task) return;
 
@@ -1230,15 +1388,90 @@ function handleTaskAction(action, id) {
   }
 }
 
-form.addEventListener("submit", (event) => {
+function backupPayload() {
+  return {
+    version: backupVersion,
+    exportedAt: new Date().toISOString(),
+    tasks,
+    members,
+    teams,
+    projectLinks,
+    users,
+    trash
+  };
+}
+
+function downloadJson(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function importBackup(payload) {
+  if (!payload || !Array.isArray(payload.tasks)) throw new Error(text("backupError"));
+  tasks = payload.tasks.map(normalizeTask);
+  members = Array.isArray(payload.members) ? payload.members : members;
+  teams = Array.isArray(payload.teams) ? payload.teams : teams;
+  projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
+  users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
+  trash = Array.isArray(payload.trash) ? payload.trash : trash;
+  saveTasks();
+  saveResources();
+  saveUsers();
+  saveTrash();
+  render();
+}
+
+function sendDeadlineNotifications() {
+  const alerts = riskyTasks();
+  if (!alerts.length || !("Notification" in window) || Notification.permission !== "granted") return;
+  alerts.slice(0, 3).forEach(({ task, alert }) => {
+    new Notification(`${alert.label}: ${task.name}`, {
+      body: `${getProject(task)} - ${shortDate(task.end)}`
+    });
+  });
+}
+
+async function enableNotifications() {
+  if (!("Notification" in window)) {
+    alert(text("notificationsBlocked"));
+    return;
+  }
+  const permission = Notification.permission === "default"
+    ? await Notification.requestPermission()
+    : Notification.permission;
+  if (permission !== "granted") {
+    alert(text("notificationsBlocked"));
+    return;
+  }
+  alert(text("notificationsEnabled"));
+  sendDeadlineNotifications();
+}
+
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!isAdmin()) return;
+  if (!canManageTasks()) return;
 
   if (parseDate(endDate.value) < parseDate(startDate.value)) {
     alert(text("invalidDate"));
     return;
   }
 
+  let selectedAttachments = [];
+  if (attachmentsInput?.files?.length) {
+    try {
+      selectedAttachments = await readSelectedAttachments();
+    } catch (error) {
+      alert(error.message || text("fileTooLarge"));
+      return;
+    }
+  }
+
+  const existingTask = tasks.find((item) => item.id === taskId.value);
   const progress = Math.min(100, Math.max(0, Number.parseInt(progressInput.value || "0", 10)));
   const task = {
     id: taskId.value || createId(),
@@ -1251,7 +1484,9 @@ form.addEventListener("submit", (event) => {
     priority: priorityInput.value,
     owner: ownerInput.value.trim(),
     progress: statusInput.value === "Bitib" ? 100 : progress,
-    notes: notesInput.value.trim()
+    notes: notesInput.value.trim(),
+    comments: existingTask?.comments || [],
+    attachments: [...(existingTask?.attachments || []), ...selectedAttachments]
   };
 
   const existingIndex = tasks.findIndex((item) => item.id === task.id);
@@ -1347,6 +1582,28 @@ logoutButton.addEventListener("click", () => {
   render();
 });
 
+notifyButton.addEventListener("click", enableNotifications);
+
+exportDataButton.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  downloadJson(`project-manager-backup-${isoDate(new Date())}.json`, backupPayload());
+});
+
+importDataInput.addEventListener("change", () => {
+  if (!isAdmin() || !importDataInput.files?.length) return;
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    try {
+      importBackup(JSON.parse(reader.result));
+      importDataInput.value = "";
+    } catch {
+      alert(text("backupError"));
+    }
+  });
+  reader.addEventListener("error", () => alert(text("backupError")));
+  reader.readAsText(importDataInput.files[0]);
+});
+
 addUserButton.addEventListener("click", () => {
   if (!isAdmin()) return;
   const username = newUsernameInput.value.trim();
@@ -1393,7 +1650,7 @@ projectResourceInput.addEventListener("change", () => {
 });
 
 addMemberButton.addEventListener("click", () => {
-  if (!isAdmin()) return;
+  if (!canManageTasks()) return;
   const name = memberNameInput.value.trim();
   if (!name) return;
   members.push({ id: createId(), name });
@@ -1403,7 +1660,7 @@ addMemberButton.addEventListener("click", () => {
 });
 
 addTeamButton.addEventListener("click", () => {
-  if (!isAdmin()) return;
+  if (!canManageTasks()) return;
   const name = teamNameInput.value.trim();
   const memberIds = [...teamMembersInput.selectedOptions].map((option) => option.value);
   if (!name) return;
@@ -1414,7 +1671,7 @@ addTeamButton.addEventListener("click", () => {
 });
 
 addProjectLinkButton.addEventListener("click", () => {
-  if (!isAdmin()) return;
+  if (!canManageTasks()) return;
   const project = linkProjectInput.value.trim();
   const resource = linkResourceInput.value;
   if (!project || !resource) return;
@@ -1428,7 +1685,7 @@ addProjectLinkButton.addEventListener("click", () => {
 
 [memberList, teamList, projectLinksList].forEach((container) => {
   container.addEventListener("click", (event) => {
-    if (!isAdmin()) return;
+    if (!canManageTasks()) return;
     const button = event.target.closest("button");
     if (!button) return;
     const action = button.dataset.resourceAction;
@@ -1464,7 +1721,7 @@ addProjectLinkButton.addEventListener("click", () => {
 });
 
 trashList.addEventListener("click", (event) => {
-  if (!isAdmin()) return;
+  if (!canManageTasks()) return;
   const button = event.target.closest("button");
   if (!button) return;
   const item = trash.find((trashItem) => trashItem.id === button.dataset.id);

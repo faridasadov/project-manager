@@ -45,6 +45,12 @@
           <option value="en">EN</option>
         </select>
         <button id="logoutButton" type="button" data-i18n="logout">Çıxış</button>
+        <button id="notifyButton" type="button" data-i18n="notify">Bildirişlər</button>
+        <button id="exportData" class="admin-only" type="button" data-i18n="exportData">Backup</button>
+        <label class="import-button admin-only">
+          <span data-i18n="importData">Import</span>
+          <input id="importData" type="file" accept="application/json">
+        </label>
         <button id="clearDone" class="admin-only" type="button" data-i18n="clearDone">Bitənləri təmizlə</button>
         <button id="resetDemo" class="admin-only" type="button" data-i18n="resetDemo">Demo yüklə</button>
       </div>
@@ -125,6 +131,11 @@
             <textarea id="notes" rows="4" placeholder="Qısa qeyd yaz" data-i18n-placeholder="notesPlaceholder"></textarea>
           </label>
 
+          <label>
+            <span data-i18n="attachments">Fayllar</span>
+            <input id="attachments" type="file" multiple>
+          </label>
+
           <div class="form-actions">
             <button class="primary" type="submit" data-i18n="save">Yadda saxla</button>
             <button id="cancelEdit" type="button" data-i18n="cancel">Ləğv et</button>
@@ -152,6 +163,7 @@
                 <span data-i18n="role">Rol</span>
                 <select id="newUserRole">
                   <option value="user">User</option>
+                  <option value="manager">Manager</option>
                   <option value="admin">Admin</option>
                 </select>
               </label>
@@ -279,6 +291,15 @@
                 </div>
               </div>
               <div id="upcomingList" class="compact-list"></div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <div>
+                  <p class="kicker" data-i18n="risk">Risk</p>
+                  <h2 data-i18n="deadlineAlerts">Deadline xəbərdarlıqları</h2>
+                </div>
+              </div>
+              <div id="deadlineAlerts" class="compact-list"></div>
             </article>
           </div>
         </section>

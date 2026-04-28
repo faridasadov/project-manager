@@ -11,6 +11,7 @@
   --red: #dc2626;
   --soft: #f7faf9;
   --shadow: 0 18px 48px rgba(31, 41, 55, 0.10);
+  --shadow-soft: 0 10px 30px rgba(31, 41, 55, 0.08);
 }
 
 * {
@@ -38,6 +39,10 @@ body.logged-in #loginScreen {
 body.user-role .admin-only,
 body.user-role .task-actions,
 body.user-role .composer {
+  display: none;
+}
+
+body.manager-role .admin-only {
   display: none;
 }
 
@@ -112,6 +117,27 @@ button {
   color: var(--ink);
   padding: 0 13px;
   cursor: pointer;
+}
+
+.import-button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  padding: 0 13px;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+.import-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 button:hover {
@@ -198,7 +224,7 @@ h2 {
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .composer {
@@ -479,7 +505,7 @@ textarea:focus {
 
 .insight-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 18px;
 }
 
@@ -550,6 +576,16 @@ textarea:focus {
   margin-bottom: 6px;
 }
 
+.compact-item.danger {
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+
+.compact-item.warning {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
 .task-card {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -604,6 +640,34 @@ textarea:focus {
   display: block;
   height: 100%;
   background: var(--teal);
+}
+
+.attachment-list {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 240px;
+  min-height: 30px;
+  border: 1px solid #d6e0e3;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  padding: 0 10px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.attachment-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .comments {
@@ -818,9 +882,46 @@ textarea:focus {
 }
 
 @media (max-width: 620px) {
+  body {
+    background: var(--bg);
+  }
+
+  .top-shell,
+  .layout {
+    width: min(100% - 20px, 1380px);
+  }
+
+  h1 {
+    font-size: 2rem;
+    line-height: 1.08;
+  }
+
+  .header-actions,
+  .view-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .header-actions > *,
+  .view-tabs > * {
+    min-width: 0;
+  }
+
   .form-grid,
   .task-card,
-  .tools {
+  .tools,
+  .password-form,
+  .resource-item {
     grid-template-columns: 1fr;
+  }
+
+  .summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .task-actions,
+  .kanban-actions,
+  .mini-actions {
+    justify-content: start;
   }
 }
