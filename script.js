@@ -107,6 +107,9 @@ const translations = {
     deletedTask: "Silinmiş task",
     deletedProject: "Silinmiş layihə",
     attachments: "Fayllar",
+    chooseFiles: "Fayl seç",
+    noFilesSelected: "Fayl seçilməyib",
+    filesSelected: "fayl seçildi",
     notify: "Bildirişlər",
     notificationsEnabled: "Bildirişlər aktivdir",
     notificationsBlocked: "Bildiriş icazəsi verilmədi.",
@@ -222,6 +225,9 @@ const translations = {
     deletedTask: "Удаленная задача",
     deletedProject: "Удаленный проект",
     attachments: "Файлы",
+    chooseFiles: "Выбрать файл",
+    noFilesSelected: "Файл не выбран",
+    filesSelected: "файл(ов) выбрано",
     notify: "Уведомления",
     notificationsEnabled: "Уведомления включены",
     notificationsBlocked: "Разрешение на уведомления не выдано.",
@@ -337,6 +343,9 @@ const translations = {
     deletedTask: "Deleted task",
     deletedProject: "Deleted project",
     attachments: "Files",
+    chooseFiles: "Choose file",
+    noFilesSelected: "No file selected",
+    filesSelected: "file(s) selected",
     notify: "Notifications",
     notificationsEnabled: "Notifications enabled",
     notificationsBlocked: "Notification permission was not granted.",
@@ -1232,7 +1241,11 @@ function renderComments(task) {
   const formHtml = task.status === "Bitib" ? "" : `
       <form class="comment-form" data-task-id="${task.id}">
         <textarea name="comment" rows="3" placeholder="${text("commentPlaceholder")}" required></textarea>
-        <input name="attachments" type="file" multiple aria-label="${text("attachments")}">
+        <label class="file-picker">
+          <span>${text("chooseFiles")}</span>
+          <input class="comment-attachment-input" name="attachments" type="file" multiple aria-label="${text("attachments")}">
+        </label>
+        <small class="file-picker-status">${text("noFilesSelected")}</small>
         <button type="submit">${text("addComment")}</button>
       </form>
   `;
@@ -1547,6 +1560,17 @@ form.addEventListener("submit", async (event) => {
     if (attachmentInput) attachmentInput.value = "";
     saveTasks();
     render();
+  });
+
+  container.addEventListener("change", (event) => {
+    const input = event.target.closest(".comment-attachment-input");
+    if (!input) return;
+    const formNode = input.closest(".comment-form");
+    const status = formNode?.querySelector(".file-picker-status");
+    if (!status) return;
+    status.textContent = input.files?.length
+      ? `${input.files.length} ${text("filesSelected")}`
+      : text("noFilesSelected");
   });
 });
 
