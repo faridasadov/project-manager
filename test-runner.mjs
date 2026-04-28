@@ -234,6 +234,7 @@ elements["#logoutButton"].dispatch("click");
 elements["#loginUsername"].value = "commenter";
 elements["#loginPassword"].value = "newComment123";
 elements["#loginForm"].dispatch("submit", { preventDefault: () => {} });
+assert.match(elements["#taskList"].innerHTML, /Redaktə olunmuş task/, "user sees tasks from their manager projects");
 const commentInput = { value: "User comment" };
 elements["#taskList"].dispatch("submit", {
   preventDefault: () => {},
@@ -251,6 +252,12 @@ elements["#taskList"].dispatch("submit", {
   }
 });
 assert.match(elements["#taskList"].innerHTML, /Second user comment/, "same user can add multiple comments");
+
+elements["#logoutButton"].dispatch("click");
+elements["#loginUsername"].value = "manager";
+elements["#loginPassword"].value = "manager123";
+elements["#loginForm"].dispatch("submit", { preventDefault: () => {} });
+assert.match(elements["#taskList"].innerHTML, /Redaktə olunmuş task/, "manager sees tasks from assigned projects");
 
 elements["#logoutButton"].dispatch("click");
 elements["#loginUsername"].value = "admin";

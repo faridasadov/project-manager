@@ -1239,7 +1239,10 @@ function projectExists(name) {
 function createProject(name) {
   const cleanName = name.trim();
   if (!cleanName || projects.some((project) => project.name.toLowerCase() === cleanName.toLowerCase())) return false;
-  projects.push({ id: createId(), name: cleanName, managerIds: users.find((user) => user.role === "manager")?.id ? [users.find((user) => user.role === "manager").id] : [] });
+  const defaultManagerId = currentUser?.role === "manager"
+    ? currentUser.id
+    : users.find((user) => user.role === "manager")?.id || "";
+  projects.push({ id: createId(), name: cleanName, managerIds: defaultManagerId ? [defaultManagerId] : [] });
   saveResources();
   return true;
 }
@@ -1255,12 +1258,26 @@ function projectManagers(project) {
 function canSeeProject(project) {
   if (!currentUser) return true;
   if (isAdmin()) return true;
-  if (currentUser.role === "manager") return (project.managerIds || []).includes(currentUser.id);
-  return currentUser.managerId && (project.managerIds || []).includes(currentUser.managerId);
+  return projectHasRoleAccess(project)
+    || projectHasResourceAccess(project.name)
+    || tasks.some((task) => task.project === project.name && taskHasDirectAccess(task));
 }
 
 function visibleProjects() {
   return projects.filter(canSeeProject);
+}
+
+function canSeeTask(task) {
+  if (!currentUser) return true;
+  if (isAdmin()) return true;
+  const project = projects.find((item) => item.name === task.project);
+  return projectHasRoleAccess(project)
+    || taskHasDirectAccess(task)
+    || projectHasResourceAccess(task.project);
+}
+
+function accessibleTasks() {
+  return tasks.filter(canSeeTask);
 }
 
 function openProjectPage(projectName) {
@@ -1339,6 +1356,42 @@ function linkedResourcesForProject(project) {
   return [...new Set(directLinks)];
 }
 
+function resourceIncludesUser(resource, userId) {
+  if (!resource || !userId) return false;
+  if (resource === resourceValue("user", userId)) return true;
+  if (!resource.startsWith("team:")) return false;
+  const teamId = resource.split(":")[1];
+  const team = teams.find((item) => item.id === teamId);
+  return Boolean(team?.memberIds?.some((memberId) => memberId === userId || memberId === resourceValue("user", userId)));
+}
+
+function visibleUserIdsForCurrentUser() {
+  if (!currentUser) return [];
+  if (isAdmin()) return users.map((user) => user.id);
+  if (currentUser.role === "manager") return [currentUser.id, ...managerUsers(currentUser.id).map((user) => user.id)];
+  return [currentUser.id];
+}
+
+function resourceInCurrentScope(resource) {
+  return visibleUserIdsForCurrentUser().some((userId) => resourceIncludesUser(resource, userId));
+}
+
+function projectHasRoleAccess(project) {
+  if (!project || !currentUser) return false;
+  const managerIds = project.managerIds || [];
+  if (currentUser.role === "manager") return managerIds.includes(currentUser.id);
+  if (currentUser.role === "user") return Boolean(currentUser.managerId && managerIds.includes(currentUser.managerId));
+  return false;
+}
+
+function taskHasDirectAccess(task) {
+  return [task.owner, task.projectResource].some(resourceInCurrentScope);
+}
+
+function projectHasResourceAccess(projectName) {
+  return linkedResourcesForProject(projectName).some(resourceInCurrentScope);
+}
+
 function isAdmin() {
   return currentUser?.role === "admin";
 }
@@ -1379,11 +1432,7 @@ function visibleTasks() {
   const query = searchInput.value.trim().toLowerCase();
   const selectedProject = projectFilter.value;
 
-  return tasks
-    .filter((task) => {
-      if (isAdmin()) return true;
-      return visibleProjects().some((project) => project.name === task.project);
-    })
+  return accessibleTasks()
     .filter((task) => currentFilter === "Hamısı" || task.status === currentFilter)
     .filter((task) => selectedProject === "Hamısı" || getProject(task) === selectedProject)
     .filter((task) => {
@@ -1536,17 +1585,18 @@ function renderResourceControls() {
 }
 
 function renderSummary() {
-  totalCount.textContent = tasks.length;
-  activeCount.textContent = tasks.filter((task) => task.status !== "Bitib").length;
-  doneCount.textContent = tasks.filter((task) => task.status === "Bitib").length;
+  const shownTasks = accessibleTasks();
+  totalCount.textContent = shownTasks.length;
+  activeCount.textContent = shownTasks.filter((task) => task.status !== "Bitib").length;
+  doneCount.textContent = shownTasks.filter((task) => task.status === "Bitib").length;
 
-  if (!tasks.length) {
+  if (!shownTasks.length) {
     dateRange.textContent = "-";
     return;
   }
 
-  const starts = tasks.map((task) => parseDate(task.start));
-  const ends = tasks.map((task) => parseDate(task.end));
+  const starts = shownTasks.map((task) => parseDate(task.start));
+  const ends = shownTasks.map((task) => parseDate(task.end));
   const minStart = new Date(Math.min(...starts));
   const maxEnd = new Date(Math.max(...ends));
   const totalDays = Math.max(1, Math.round((maxEnd - minStart) / 86400000) + 1);
@@ -1554,9 +1604,10 @@ function renderSummary() {
 }
 
 function renderDashboard() {
-  const total = Math.max(1, tasks.length);
+  const shownTasks = accessibleTasks();
+  const total = Math.max(1, shownTasks.length);
   statusBars.innerHTML = statuses.map((status) => {
-    const count = tasks.filter((task) => task.status === status).length;
+    const count = shownTasks.filter((task) => task.status === status).length;
     const width = Math.round((count / total) * 100);
     return `
       <div class="status-line">
@@ -1566,7 +1617,7 @@ function renderDashboard() {
     `;
   }).join("");
 
-  const upcoming = tasks
+  const upcoming = shownTasks
     .filter((task) => task.status !== "Bitib")
     .sort((a, b) => parseDate(a.end) - parseDate(b.end))
     .slice(0, 5);
@@ -1595,7 +1646,7 @@ function deadlineAlertType(task) {
 }
 
 function riskyTasks() {
-  return tasks
+  return accessibleTasks()
     .map((task) => ({ task, alert: deadlineAlertType(task) }))
     .filter((item) => item.alert)
     .sort((a, b) => daysUntil(a.task.end) - daysUntil(b.task.end));
@@ -1618,7 +1669,7 @@ function renderDeadlineAlerts() {
 function renderProjectsView() {
   const shownProjects = visibleProjects();
   projectCards.innerHTML = shownProjects.length ? shownProjects.map((project) => {
-    const projectTasks = tasks.filter((task) => task.project === project.name);
+    const projectTasks = accessibleTasks().filter((task) => task.project === project.name);
     const done = projectTasks.filter((task) => task.status === "Bitib").length;
     const active = projectTasks.length - done;
     const percent = projectTasks.length ? Math.round((done / projectTasks.length) * 100) : 0;
@@ -1841,7 +1892,7 @@ function renderGantt() {
 function renderReports() {
   const shownProjects = visibleProjects();
   reports.innerHTML = shownProjects.length ? shownProjects.map((project) => {
-    const projectTasks = tasks.filter((task) => task.project === project.name)
+    const projectTasks = accessibleTasks().filter((task) => task.project === project.name)
       .sort((a, b) => parseDate(a.start) - parseDate(b.start));
     const rows = projectTasks.length ? projectTasks.map((task) => `
       <div class="report-row">
