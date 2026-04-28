@@ -142,6 +142,7 @@ const translations = {
     loginKicker: "Project access",
     loginTitle: "Daxil ol",
     username: "İstifadəçi adı",
+    login: "Login",
     password: "Şifrə",
     loginButton: "Daxil ol",
     logout: "Çıxış",
@@ -319,6 +320,7 @@ const translations = {
     loginKicker: "Доступ к проекту",
     loginTitle: "Войти",
     username: "Имя пользователя",
+    login: "Логин",
     password: "Пароль",
     loginButton: "Войти",
     logout: "Выйти",
@@ -496,6 +498,7 @@ const translations = {
     loginKicker: "Project access",
     loginTitle: "Sign in",
     username: "Username",
+    login: "Login",
     password: "Password",
     loginButton: "Sign in",
     logout: "Logout",
@@ -1448,9 +1451,10 @@ function renderResourceControls() {
   userList.innerHTML = shownUsers.map((user) => `
     <details class="user-profile-card">
       <summary>
-        <span><strong>${escapeHtml(user.username)}</strong>${roleLabel(user.role)}${user.managerId ? ` · ${escapeHtml(users.find((item) => item.id === user.managerId)?.username || "")}` : ""}</span>
+        <span><strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>${escapeHtml(user.profile?.position || roleLabel(user.role))} · ${escapeHtml(user.username)}${user.managerId ? ` · ${escapeHtml(users.find((item) => item.id === user.managerId)?.username || "")}` : ""}</span>
       </summary>
       <form class="user-profile-form" data-user-id="${user.id}">
+        <label><span>${text("login")}</span><input name="username" value="${escapeHtml(user.username)}" ${isAdmin() ? "" : "readonly"}></label>
         <label><span>${text("fullName")}</span><input name="fullName" value="${escapeHtml(user.profile?.fullName || "")}" ${isAdmin() ? "" : "readonly"}></label>
         <label><span>${text("fatherName")}</span><input name="fatherName" value="${escapeHtml(user.profile?.fatherName || "")}" ${isAdmin() ? "" : "readonly"}></label>
         <label><span>${text("email")}</span><input name="email" type="email" value="${escapeHtml(user.profile?.email || "")}" ${isAdmin() ? "" : "readonly"}></label>
@@ -2220,6 +2224,10 @@ userList.addEventListener("submit", (event) => {
   }
   const user = users.find((item) => item.id === profileForm.dataset.userId);
   if (!user) return;
+  const nextUsername = profileForm.elements.username.value.trim();
+  if (nextUsername && !users.some((item) => item.id !== user.id && item.username === nextUsername)) {
+    user.username = nextUsername;
+  }
   user.managerId = profileForm.elements.managerId?.value || "";
   user.profile = {
     fullName: profileForm.elements.fullName.value.trim(),
