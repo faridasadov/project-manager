@@ -593,6 +593,41 @@ textarea:focus {
   padding: 14px;
 }
 
+.task-actions {
+  align-self: start;
+  display: grid;
+  grid-template-columns: 1fr;
+  min-width: 112px;
+  gap: 7px;
+}
+
+.action-button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 12px;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.10);
+}
+
+.action-button:hover {
+  filter: brightness(0.96);
+}
+
+.edit-action {
+  background: var(--teal);
+}
+
+.next-action {
+  background: var(--blue);
+}
+
+.danger-action {
+  background: var(--red);
+}
+
 .task-card h3 {
   margin-top: 0;
   font-size: 1.05rem;
@@ -913,6 +948,12 @@ textarea:focus {
   .password-form,
   .resource-item {
     grid-template-columns: 1fr;
+  }
+
+  .task-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-width: 0;
+    width: 100%;
   }
 
   .summary {

@@ -1194,11 +1194,11 @@ function renderAttachments(task) {
 
 function renderTaskActions(task) {
   const actions = task.status === "Bitib"
-    ? `<button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>`
+    ? `<button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>`
     : `
-        <button type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
-        <button type="button" data-action="next" data-id="${task.id}">${text("next")}</button>
-        <button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
+        <button class="action-button edit-action" type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
+        <button class="action-button next-action" type="button" data-action="next" data-id="${task.id}">${text("next")}</button>
+        <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
       `;
   return `<div class="task-actions">${actions}</div>`;
 }
