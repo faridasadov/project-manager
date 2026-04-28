@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-    <link rel="stylesheet" href="styles.css?v=20260428-attachments-comments">
+    <link rel="stylesheet" href="styles.css?v=20260428-admin-modal">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
@@ -46,13 +46,7 @@
         </select>
         <button id="logoutButton" type="button" data-i18n="logout">Çıxış</button>
         <button id="notifyButton" type="button" data-i18n="notify">Bildirişlər</button>
-        <button id="exportData" class="admin-only" type="button" data-i18n="exportData">Backup</button>
-        <label class="import-button admin-only">
-          <span data-i18n="importData">Import</span>
-          <input id="importData" type="file" accept="application/json">
-        </label>
-        <button id="clearDone" class="admin-only" type="button" data-i18n="clearDone">Bitənləri təmizlə</button>
-        <button id="resetDemo" class="admin-only" type="button" data-i18n="resetDemo">Demo yüklə</button>
+        <button id="openAdminPanel" class="manage-only" type="button" data-i18n="adminPanel">Admin panel</button>
       </div>
     </header>
 
@@ -136,9 +130,30 @@
             <button id="cancelEdit" type="button" data-i18n="cancel">Ləğv et</button>
           </div>
         </form>
+      </aside>
 
-        <section class="resource-panel">
-          <h2 data-i18n="resources">Resurslar</h2>
+      <div id="adminModal" class="modal-shell" aria-hidden="true">
+        <div class="modal-backdrop" data-modal-close="true"></div>
+        <section class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="adminPanelTitle">
+          <div class="modal-head">
+            <div>
+              <p class="kicker" data-i18n="adminPanel">Admin panel</p>
+              <h2 id="adminPanelTitle" data-i18n="resources">Resurslar</h2>
+            </div>
+            <button id="closeAdminPanel" class="icon-button" type="button" aria-label="Bağla" data-i18n-aria="close">×</button>
+          </div>
+
+          <div class="admin-tools admin-only">
+            <button id="exportData" type="button" data-i18n="exportData">Backup</button>
+            <label class="import-button">
+              <span data-i18n="importData">Import</span>
+              <input id="importData" type="file" accept="application/json">
+            </label>
+            <button id="clearDone" type="button" data-i18n="clearDone">Bitənləri təmizlə</button>
+            <button id="resetDemo" type="button" data-i18n="resetDemo">Demo yüklə</button>
+          </div>
+
+          <section class="resource-panel">
 
           <details class="resource-block admin-only">
             <summary>
@@ -229,8 +244,9 @@
               <div id="trashList" class="resource-list"></div>
             </div>
           </details>
+          </section>
         </section>
-      </aside>
+      </div>
 
       <section class="workspace">
         <section class="control-strip">
@@ -336,6 +352,6 @@
     </main>
     </div>
 
-    <script src="script.js?v=20260428-attachments-comments"></script>
+    <script src="script.js?v=20260428-admin-modal"></script>
   </body>
 </html>

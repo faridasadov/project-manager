@@ -15,6 +15,8 @@ const translations = {
     appTitle: "Plan, task və icra paneli",
     clearDone: "Bitənləri təmizlə",
     resetDemo: "Demo yüklə",
+    adminPanel: "Admin panel",
+    close: "Bağla",
     newTask: "Yeni task",
     editTask: "Taskı redaktə et",
     taskFormAria: "Task forması",
@@ -133,6 +135,8 @@ const translations = {
     appTitle: "План, задачи и панель контроля",
     clearDone: "Очистить выполненные",
     resetDemo: "Загрузить демо",
+    adminPanel: "Админ панель",
+    close: "Закрыть",
     newTask: "Новая задача",
     editTask: "Редактировать задачу",
     taskFormAria: "Форма задачи",
@@ -251,6 +255,8 @@ const translations = {
     appTitle: "Plan, tasks and execution board",
     clearDone: "Clear done",
     resetDemo: "Load demo",
+    adminPanel: "Admin panel",
+    close: "Close",
     newTask: "New task",
     editTask: "Edit task",
     taskFormAria: "Task form",
@@ -626,6 +632,9 @@ const loginError = document.querySelector("#loginError");
 const loginLanguageSelect = document.querySelector("#loginLanguageSelect");
 const logoutButton = document.querySelector("#logoutButton");
 const notifyButton = document.querySelector("#notifyButton");
+const openAdminPanelButton = document.querySelector("#openAdminPanel");
+const closeAdminPanelButton = document.querySelector("#closeAdminPanel");
+const adminModal = document.querySelector("#adminModal");
 const exportDataButton = document.querySelector("#exportData");
 const importDataInput = document.querySelector("#importData");
 const currentUserBadge = document.querySelector("#currentUserBadge");
@@ -956,6 +965,18 @@ function isAdmin() {
 
 function canManageTasks() {
   return ["admin", "manager"].includes(currentUser?.role);
+}
+
+function openAdminPanel() {
+  if (!canManageTasks()) return;
+  adminModal.classList.add("open");
+  adminModal.setAttribute("aria-hidden", "false");
+  closeAdminPanelButton.focus();
+}
+
+function closeAdminPanel() {
+  adminModal.classList.remove("open");
+  adminModal.setAttribute("aria-hidden", "true");
 }
 
 function syncAuthView() {
@@ -1619,10 +1640,19 @@ loginForm.addEventListener("submit", (event) => {
 logoutButton.addEventListener("click", () => {
   currentUser = null;
   localStorage.removeItem(sessionKey);
+  closeAdminPanel();
   render();
 });
 
 notifyButton.addEventListener("click", enableNotifications);
+openAdminPanelButton.addEventListener("click", openAdminPanel);
+closeAdminPanelButton.addEventListener("click", closeAdminPanel);
+adminModal.addEventListener("click", (event) => {
+  if (event.target.dataset.modalClose) closeAdminPanel();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && adminModal.classList.contains("open")) closeAdminPanel();
+});
 
 exportDataButton.addEventListener("click", () => {
   if (!isAdmin()) return;

@@ -33,6 +33,8 @@ class Element {
     this.listeners[type]?.(event);
   }
 
+  focus() {}
+
   reset() {
     Object.values(elements).forEach((element) => {
       if (element.formField) element.value = "";
@@ -52,7 +54,7 @@ const ids = [
   "taskForm", "formTitle", "taskId", "taskName", "project", "startDate", "endDate",
   "projectResource", "status", "priority", "owner", "progress", "notes", "cancelEdit", "gantt",
   "kanban", "taskList", "searchInput", "projectFilter", "statusBars", "upcomingList",
-  "deadlineAlerts", "notifyButton", "exportData", "importData",
+  "deadlineAlerts", "notifyButton", "openAdminPanel", "closeAdminPanel", "adminModal", "exportData", "importData",
   "totalCount", "activeCount", "doneCount", "dateRange", "resetDemo", "clearDone",
   "languageSelect", "loginLanguageSelect", "memberName", "addMember", "memberList", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
@@ -124,7 +126,8 @@ const context = {
       if (selector === ".view-tab") return viewTabs;
       if (selector === ".view") return views;
       return [];
-    }
+    },
+    addEventListener: () => {}
   }
 };
 context.document.documentElement = { lang: "az" };
