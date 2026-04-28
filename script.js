@@ -787,10 +787,6 @@ const dateRange = document.querySelector("#dateRange");
 const resetDemo = document.querySelector("#resetDemo");
 const clearDone = document.querySelector("#clearDone");
 const languageSelect = document.querySelector("#languageSelect");
-const memberNameInput = document.querySelector("#memberName");
-const addMemberButton = document.querySelector("#addMember");
-const memberList = document.querySelector("#memberList");
-const memberCount = document.querySelector("#memberCount");
 const teamNameInput = document.querySelector("#teamName");
 const teamMembersInput = document.querySelector("#teamMembers");
 const addTeamButton = document.querySelector("#addTeam");
@@ -824,6 +820,10 @@ const currentUserBadge = document.querySelector("#currentUserBadge");
 const newUsernameInput = document.querySelector("#newUsername");
 const newUserPasswordInput = document.querySelector("#newUserPassword");
 const newUserRoleInput = document.querySelector("#newUserRole");
+const newUserFullNameInput = document.querySelector("#newUserFullName");
+const newUserPositionInput = document.querySelector("#newUserPosition");
+const newUserEmailInput = document.querySelector("#newUserEmail");
+const newUserAddressInput = document.querySelector("#newUserAddress");
 const addUserButton = document.querySelector("#addUser");
 const userList = document.querySelector("#userList");
 const userCount = document.querySelector("#userCount");
@@ -1285,15 +1285,13 @@ function managerMultiOptions(selectedIds = []) {
 function allResourceOptions() {
   return [
     ...users.filter((user) => user.role !== "admin").map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: text("userRole") })),
-    ...members.map((member) => ({ value: resourceValue("member", member.id), label: member.name, type: text("member") })),
     ...teams.map((team) => ({ value: resourceValue("team", team.id), label: team.name, type: text("team") }))
   ];
 }
 
 function teamMemberOptions(selectedIds = []) {
   return [
-    ...users.filter((user) => user.role !== "admin").map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: text("userRole") })),
-    ...members.map((member) => ({ value: resourceValue("member", member.id), label: member.name, type: text("member") }))
+    ...users.filter((user) => user.role !== "admin").map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: text("userRole") }))
   ].map((option) => `<option value="${option.value}" ${selectedIds.includes(option.value) ? "selected" : ""}>${option.type}: ${escapeHtml(option.label)}</option>`).join("");
 }
 
@@ -1364,7 +1362,6 @@ function renderResourceControls() {
   const options = allResourceOptions();
   userCount.textContent = users.length;
   projectCount.textContent = projects.length;
-  memberCount.textContent = members.length;
   teamCount.textContent = teams.length;
   linkCount.textContent = projectLinks.length;
   trashCount.textContent = trash.length;
@@ -1415,13 +1412,6 @@ function renderResourceControls() {
       </div>
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
-
-  memberList.innerHTML = members.length ? members.map((member) => `
-    <div class="resource-item">
-      <span><strong>${escapeHtml(member.name)}</strong>${text("member")}</span>
-      <button type="button" data-resource-action="delete-member" data-id="${member.id}">${text("remove")}</button>
-    </div>
-  `).join("") : `<div class="empty">${text("empty")}</div>`;
 
   teamList.innerHTML = teams.length ? teams.map((team) => {
     const values = (team.memberIds || []).map((id) => id.includes(":") ? id : resourceValue("member", id));
@@ -2162,13 +2152,26 @@ addUserButton.addEventListener("click", () => {
   const role = newUserRoleInput.value;
   if (!username || !password || users.some((user) => user.username === username)) return;
   const managerId = role === "user" ? users.find((user) => user.role === "manager")?.id || "" : "";
-  const user = normalizeUser({ id: createId(), username, passwordHash: md5(password), role, managerId, profile: { fullName: username } });
+  const user = normalizeUser({
+    id: createId(),
+    username,
+    passwordHash: md5(password),
+    role,
+    managerId,
+    profile: {
+      fullName: newUserFullNameInput.value.trim() || username,
+      position: newUserPositionInput.value.trim(),
+      email: newUserEmailInput.value.trim(),
+      address: newUserAddressInput.value.trim()
+    }
+  });
   users.push(user);
-  if (role !== "admin") {
-    members.push({ id: `user-member-${user.id}`, name: user.profile.fullName || user.username, userId: user.id });
-  }
   newUsernameInput.value = "";
   newUserPasswordInput.value = "";
+  newUserFullNameInput.value = "";
+  newUserPositionInput.value = "";
+  newUserEmailInput.value = "";
+  newUserAddressInput.value = "";
   saveUsers();
   render();
 });
@@ -2227,11 +2230,6 @@ userList.addEventListener("submit", (event) => {
     address: profileForm.elements.address.value.trim(),
     company: profileForm.elements.company.value.trim()
   };
-  members = members.map((member) => member.userId === user.id ? { ...member, name: user.profile.fullName || user.username } : member);
-  if (user.role !== "admin" && !members.some((member) => member.userId === user.id)) {
-    members.push({ id: `user-member-${user.id}`, name: user.profile.fullName || user.username, userId: user.id });
-  }
-  saveResources();
   saveUsers();
   render();
 });
@@ -2270,16 +2268,6 @@ projectCards.addEventListener("click", (event) => {
   openProjectPage(projectName);
 });
 
-addMemberButton.addEventListener("click", () => {
-  if (!canManageTasks()) return;
-  const name = memberNameInput.value.trim();
-  if (!name) return;
-  members.push({ id: createId(), name });
-  memberNameInput.value = "";
-  saveResources();
-  render();
-});
-
 addTeamButton.addEventListener("click", () => {
   if (!canManageTasks()) return;
   const name = teamNameInput.value.trim();
@@ -2304,21 +2292,13 @@ addProjectLinkButton.addEventListener("click", () => {
   render();
 });
 
-[projectList, memberList, teamList, projectLinksList].forEach((container) => {
+[projectList, teamList, projectLinksList].forEach((container) => {
   container.addEventListener("click", (event) => {
     if (!canManageTasks()) return;
     const button = event.target.closest("button");
     if (!button) return;
     const action = button.dataset.resourceAction;
     const id = button.dataset.id;
-
-    if (action === "delete-member") {
-      members = members.filter((member) => member.id !== id);
-      teams = teams.map((team) => ({ ...team, memberIds: team.memberIds.filter((memberId) => memberId !== id) }));
-      tasks = tasks.map((task) => task.owner === resourceValue("member", id) ? { ...task, owner: "" } : task);
-      projectLinks = projectLinks.filter((link) => link.resource !== resourceValue("member", id));
-      saveTasks();
-    }
 
     if (action === "delete-project") {
       const project = projects.find((item) => item.id === id);

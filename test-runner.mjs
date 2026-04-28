@@ -56,12 +56,13 @@ const ids = [
   "kanban", "taskList", "searchInput", "projectFilter", "statusBars", "upcomingList",
   "deadlineAlerts", "projectCards", "notifyButton", "openAdminPanel", "closeAdminPanel", "adminModal", "exportData", "importData",
   "totalCount", "activeCount", "doneCount", "dateRange", "resetDemo", "clearDone",
-  "languageSelect", "loginLanguageSelect", "memberName", "addMember", "memberList", "teamName", "teamMembers",
+  "languageSelect", "loginLanguageSelect", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
-  "memberCount", "teamCount", "linkCount", "quickProjectName", "quickAddProject", "projectList",
+  "teamCount", "linkCount", "quickProjectName", "quickAddProject", "projectList",
   "projectCount", "themeMode", "backgroundStyle", "accentColor",
   "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
-  "ldapBaseDn", "ldapUserFilter", "saveSettings", "settingsStatus"
+  "ldapBaseDn", "ldapUserFilter", "saveSettings", "settingsStatus",
+  "newUserFullName", "newUserPosition", "newUserEmail", "newUserAddress"
   , "loginScreen", "loginForm", "loginUsername", "loginPassword", "loginError",
   "logoutButton", "currentUserBadge", "newUsername", "newUserPassword",
   "newUserRole", "addUser", "userList", "userCount", "trashList", "trashCount"
@@ -149,10 +150,8 @@ assert.equal(elements["#totalCount"].textContent, 3, "demo count renders");
 assert.match(elements["#gantt"].innerHTML, /Interface dizaynı/, "gantt renders");
 assert.match(elements["#kanban"].innerHTML, /Plan/, "kanban renders");
 assert.match(elements["#statusBars"].innerHTML, /Davam edir/, "dashboard renders");
-assert.match(elements["#memberList"].innerHTML, /Farid Asadov/, "member list renders");
 assert.match(elements["#teamList"].innerHTML, /Core Team/, "team list renders");
 assert.match(elements["#projectLinks"].innerHTML, /Internal portal/, "project links render");
-assert.equal(elements["#memberCount"].textContent, 3, "member count renders");
 
 elements["#loginUsername"].value = "admin";
 elements["#loginPassword"].value = "admin123";
@@ -176,12 +175,8 @@ elements["#userList"].dispatch("submit", {
 });
 assert.doesNotMatch(store.get("project-manager-users-v1"), /newComment123/, "changed password is stored as hash");
 
-elements["#memberName"].value = "Test Member";
-elements["#addMember"].dispatch("click");
-assert.match(elements["#memberList"].innerHTML, /Test Member/, "member can be added");
-
 elements["#teamName"].value = "Test Team";
-elements["#teamMembers"].selectedOptions = [{ value: "member-farid" }];
+elements["#teamMembers"].selectedOptions = [{ value: "user:user-demo" }];
 elements["#addTeam"].dispatch("click");
 assert.match(elements["#teamList"].innerHTML, /Test Team/, "team can be added");
 
