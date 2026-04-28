@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="az">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project Manager</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <section id="loginScreen" class="login-screen">
+      <form id="loginForm" class="login-card">
+        <div class="login-language">
+          <select id="loginLanguageSelect" aria-label="Dil seçimi">
+            <option value="az">AZ</option>
+            <option value="ru">RU</option>
+            <option value="en">EN</option>
+          </select>
+        </div>
+        <p class="kicker" data-i18n="loginKicker">Project access</p>
+        <h1 data-i18n="loginTitle">Daxil ol</h1>
+        <label>
+          <span data-i18n="username">İstifadəçi adı</span>
+          <input id="loginUsername" type="text" autocomplete="username" required>
+        </label>
+        <label>
+          <span data-i18n="password">Şifrə</span>
+          <input id="loginPassword" type="password" autocomplete="current-password" required>
+        </label>
+        <p id="loginError" class="login-error"></p>
+        <button class="primary" type="submit" data-i18n="loginButton">Daxil ol</button>
+      </form>
+    </section>
+
+    <div id="appShell">
+    <header class="top-shell">
+      <div>
+        <p class="kicker" data-i18n="appKicker">Project workspace</p>
+        <h1 data-i18n="appTitle">Plan, task və icra paneli</h1>
+      </div>
+      <div class="header-actions">
+        <span id="currentUserBadge" class="user-badge"></span>
+        <select id="languageSelect" aria-label="Dil seçimi">
+          <option value="az">AZ</option>
+          <option value="ru">RU</option>
+          <option value="en">EN</option>
+        </select>
+        <button id="logoutButton" type="button" data-i18n="logout">Çıxış</button>
+        <button id="clearDone" class="admin-only" type="button" data-i18n="clearDone">Bitənləri təmizlə</button>
+        <button id="resetDemo" class="admin-only" type="button" data-i18n="resetDemo">Demo yüklə</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="composer" aria-label="Task forması" data-i18n-aria="taskFormAria">
+        <div class="composer-head">
+          <span class="dot"></span>
+          <h2 id="formTitle">Yeni task</h2>
+        </div>
+
+        <form id="taskForm">
+          <input id="taskId" type="hidden">
+
+          <label>
+            <span data-i18n="taskName">Task adı</span>
+            <input id="taskName" type="text" placeholder="Məsələn: Router konfiqurasiyası" data-i18n-placeholder="taskNamePlaceholder" required>
+          </label>
+
+          <label>
+            <span data-i18n="project">Layihə</span>
+            <input id="project" type="text" placeholder="Məsələn: Network upgrade" data-i18n-placeholder="projectPlaceholder">
+          </label>
+
+          <label>
+            <span data-i18n="projectResource">Layihə resursu</span>
+            <select id="projectResource">
+              <option value="" data-i18n="noResource">Resurs seçilməyib</option>
+            </select>
+          </label>
+
+          <div class="form-grid">
+            <label>
+              <span data-i18n="start">Başlama</span>
+              <input id="startDate" type="date" required>
+            </label>
+            <label>
+              <span data-i18n="end">Bitmə</span>
+              <input id="endDate" type="date" required>
+            </label>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              <span data-i18n="status">Status</span>
+              <select id="status">
+                <option value="Plan">Plan</option>
+                <option value="Davam edir">Davam edir</option>
+                <option value="Bitib">Bitib</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="priority">Prioritet</span>
+              <select id="priority">
+                <option value="Normal">Normal</option>
+                <option value="Yüksək">Yüksək</option>
+                <option value="Aşağı">Aşağı</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              <span data-i18n="owner">Məsul şəxs</span>
+              <select id="owner">
+                <option value="" data-i18n="noOwnerSelect">Seçilməyib</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="progress">Progress %</span>
+              <input id="progress" type="number" min="0" max="100" value="0">
+            </label>
+          </div>
+
+          <label>
+            <span data-i18n="notes">Qeyd</span>
+            <textarea id="notes" rows="4" placeholder="Qısa qeyd yaz" data-i18n-placeholder="notesPlaceholder"></textarea>
+          </label>
+
+          <div class="form-actions">
+            <button class="primary" type="submit" data-i18n="save">Yadda saxla</button>
+            <button id="cancelEdit" type="button" data-i18n="cancel">Ləğv et</button>
+          </div>
+        </form>
+
+        <section class="resource-panel">
+          <h2 data-i18n="resources">Resurslar</h2>
+
+          <details class="resource-block admin-only">
+            <summary>
+              <span data-i18n="manageUsers">Userlər</span>
+              <small id="userCount">0</small>
+            </summary>
+            <div class="resource-body">
+              <label>
+                <span data-i18n="newUser">Yeni user</span>
+                <input id="newUsername" type="text" placeholder="username" data-i18n-placeholder="usernamePlaceholder">
+              </label>
+              <label>
+                <span data-i18n="password">Şifrə</span>
+                <input id="newUserPassword" type="password" placeholder="password" data-i18n-placeholder="passwordPlaceholder">
+              </label>
+              <label>
+                <span data-i18n="role">Rol</span>
+                <select id="newUserRole">
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </label>
+              <button id="addUser" type="button" data-i18n="addUser">User əlavə et</button>
+              <div id="userList" class="resource-list"></div>
+            </div>
+          </details>
+
+          <details class="resource-block">
+            <summary>
+              <span data-i18n="addMember">Şəxs əlavə et</span>
+              <small id="memberCount">0</small>
+            </summary>
+            <div class="resource-body">
+              <label>
+                <span data-i18n="newMember">Yeni məsul şəxs</span>
+                <input id="memberName" type="text" placeholder="Ad Soyad" data-i18n-placeholder="memberNamePlaceholder">
+              </label>
+              <button id="addMember" type="button" data-i18n="addMember">Şəxs əlavə et</button>
+              <div id="memberList" class="resource-list"></div>
+            </div>
+          </details>
+
+          <details class="resource-block">
+            <summary>
+              <span data-i18n="addTeam">Komanda əlavə et</span>
+              <small id="teamCount">0</small>
+            </summary>
+            <div class="resource-body">
+              <label>
+                <span data-i18n="newTeam">Yeni komanda</span>
+                <input id="teamName" type="text" placeholder="Komanda adı" data-i18n-placeholder="teamNamePlaceholder">
+              </label>
+              <label>
+                <span data-i18n="teamMembers">Komanda üzvləri</span>
+                <select id="teamMembers" multiple size="4"></select>
+              </label>
+              <button id="addTeam" type="button" data-i18n="addTeam">Komanda əlavə et</button>
+              <div id="teamList" class="resource-list"></div>
+            </div>
+          </details>
+
+          <details class="resource-block">
+            <summary>
+              <span data-i18n="addProjectLink">Layihəyə bağla</span>
+              <small id="linkCount">0</small>
+            </summary>
+            <div class="resource-body">
+              <label>
+                <span data-i18n="linkProject">Layihəyə bağla</span>
+                <input id="linkProject" type="text" placeholder="Layihə adı" data-i18n-placeholder="linkProjectPlaceholder">
+              </label>
+              <label>
+                <span data-i18n="resource">Resurs</span>
+                <select id="linkResource"></select>
+              </label>
+              <button id="addProjectLink" type="button" data-i18n="addProjectLink">Bağla</button>
+              <div id="projectLinks" class="resource-list"></div>
+            </div>
+          </details>
+
+          <details class="resource-block">
+            <summary>
+              <span data-i18n="trash">Zibil qutusu</span>
+              <small id="trashCount">0</small>
+            </summary>
+            <div class="resource-body">
+              <div id="trashList" class="resource-list"></div>
+            </div>
+          </details>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <section class="control-strip">
+          <div class="view-tabs" aria-label="Görünüşlər" data-i18n-aria="viewsAria">
+            <button class="view-tab active" data-view="dashboard" type="button">Dashboard</button>
+            <button class="view-tab" data-view="list" type="button" data-i18n="list">Siyahı</button>
+            <button class="view-tab" data-view="kanban" type="button">Kanban</button>
+            <button class="view-tab" data-view="gantt" type="button">Gantt</button>
+          </div>
+          <div class="tools">
+            <input id="searchInput" type="search" placeholder="Task, layihə, məsul şəxs axtar" data-i18n-placeholder="searchPlaceholder">
+            <select id="projectFilter">
+              <option value="Hamısı">Bütün layihələr</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="summary" aria-label="Layihə statistikası">
+          <article>
+            <span id="totalCount">0</span>
+            <p data-i18n="totalTasks">Cəmi task</p>
+          </article>
+          <article>
+            <span id="activeCount">0</span>
+            <p data-i18n="activeTasks">Aktiv task</p>
+          </article>
+          <article>
+            <span id="doneCount">0</span>
+            <p data-i18n="doneTasks">Bitmiş task</p>
+          </article>
+          <article>
+            <span id="dateRange">-</span>
+            <p data-i18n="projectDuration">Layihə müddəti</p>
+          </article>
+        </section>
+
+        <section id="dashboardView" class="view active-view">
+          <div class="insight-grid">
+            <article class="panel">
+              <div class="section-head">
+                <div>
+                  <p class="kicker" data-i18n="status">Status</p>
+                  <h2 data-i18n="executionStatus">İcra vəziyyəti</h2>
+                </div>
+              </div>
+              <div id="statusBars" class="status-bars"></div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <div>
+                  <p class="kicker">Deadline</p>
+                  <h2 data-i18n="upcomingTasks">Yaxın tasklar</h2>
+                </div>
+              </div>
+              <div id="upcomingList" class="compact-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="listView" class="view">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <p class="kicker" data-i18n="tasks">Tasklar</p>
+                <h2 data-i18n="list">Siyahı</h2>
+              </div>
+              <div class="filters" aria-label="Status filteri" data-i18n-aria="statusFilterAria">
+                <button class="filter active" data-filter="Hamısı" type="button">Hamısı</button>
+                <button class="filter" data-filter="Plan" type="button">Plan</button>
+                <button class="filter" data-filter="Davam edir" type="button">Davam edir</button>
+                <button class="filter" data-filter="Bitib" type="button">Bitib</button>
+              </div>
+            </div>
+            <div id="taskList" class="task-list"></div>
+          </div>
+        </section>
+
+        <section id="kanbanView" class="view">
+          <div id="kanban" class="kanban"></div>
+        </section>
+
+        <section id="ganttView" class="view">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <p class="kicker">Timeline</p>
+                <h2 data-i18n="ganttChart">Gantt cədvəli</h2>
+              </div>
+            </div>
+            <div id="gantt" class="gantt" aria-live="polite"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,1514 @@
+const storageKey = "project-manager-tasks-v2";
+const languageKey = "project-manager-language";
+const membersKey = "project-manager-members-v1";
+const teamsKey = "project-manager-teams-v1";
+const projectLinksKey = "project-manager-project-links-v1";
+const usersKey = "project-manager-users-v1";
+const sessionKey = "project-manager-session-v1";
+const trashKey = "project-manager-trash-v1";
+
+const translations = {
+  az: {
+    locale: "az-AZ",
+    appKicker: "Project workspace",
+    appTitle: "Plan, task və icra paneli",
+    clearDone: "Bitənləri təmizlə",
+    resetDemo: "Demo yüklə",
+    newTask: "Yeni task",
+    editTask: "Taskı redaktə et",
+    taskFormAria: "Task forması",
+    taskName: "Task adı",
+    taskNamePlaceholder: "Məsələn: Router konfiqurasiyası",
+    project: "Layihə",
+    projectPlaceholder: "Məsələn: Network upgrade",
+    projectResource: "Layihə resursu",
+    noResource: "Resurs seçilməyib",
+    start: "Başlama",
+    end: "Bitmə",
+    status: "Status",
+    priority: "Prioritet",
+    owner: "Məsul şəxs",
+    noOwnerSelect: "Seçilməyib",
+    ownerPlaceholder: "Ad və ya komanda",
+    progress: "Progress %",
+    notes: "Qeyd",
+    notesPlaceholder: "Qısa qeyd yaz",
+    save: "Yadda saxla",
+    cancel: "Ləğv et",
+    viewsAria: "Görünüşlər",
+    dashboard: "Dashboard",
+    list: "Siyahı",
+    kanban: "Kanban",
+    gantt: "Gantt",
+    searchPlaceholder: "Task, layihə, məsul şəxs axtar",
+    allProjects: "Bütün layihələr",
+    totalTasks: "Cəmi task",
+    activeTasks: "Aktiv task",
+    doneTasks: "Bitmiş task",
+    projectDuration: "Layihə müddəti",
+    executionStatus: "İcra vəziyyəti",
+    upcomingTasks: "Yaxın tasklar",
+    tasks: "Tasklar",
+    statusFilterAria: "Status filteri",
+    ganttChart: "Gantt cədvəli",
+    noUpcoming: "Yaxın deadline yoxdur.",
+    noTask: "Task yoxdur. Soldakı formadan yeni task əlavə et.",
+    noTaskFilter: "Bu filterdə task yoxdur.",
+    empty: "Boşdur",
+    noOwner: "Məsul şəxs yoxdur",
+    edit: "Redaktə",
+    next: "İrəli",
+    delete: "Sil",
+    day: "gün",
+    invalidDate: "Bitmə tarixi başlama tarixindən əvvəl ola bilməz.",
+    unassignedProject: "Layihəsiz",
+    resources: "Resurslar",
+    newMember: "Yeni məsul şəxs",
+    memberNamePlaceholder: "Ad Soyad",
+    addMember: "Şəxs əlavə et",
+    newTeam: "Yeni komanda",
+    teamNamePlaceholder: "Komanda adı",
+    teamMembers: "Komanda üzvləri",
+    addTeam: "Komanda əlavə et",
+    linkProject: "Layihəyə bağla",
+    linkProjectPlaceholder: "Layihə adı",
+    resource: "Resurs",
+    addProjectLink: "Bağla",
+    remove: "Sil",
+    member: "Şəxs",
+    team: "Komanda",
+    loginKicker: "Project access",
+    loginTitle: "Daxil ol",
+    username: "İstifadəçi adı",
+    password: "Şifrə",
+    loginButton: "Daxil ol",
+    logout: "Çıxış",
+    loginError: "İstifadəçi adı və ya şifrə yanlışdır.",
+    manageUsers: "Userlər",
+    newUser: "Yeni user",
+    usernamePlaceholder: "username",
+    passwordPlaceholder: "password",
+    role: "Rol",
+    addUser: "User əlavə et",
+    changePassword: "Parolu dəyiş",
+    newPassword: "Yeni parol",
+    adminRole: "Admin",
+    userRole: "User",
+    comment: "Komment",
+    comments: "Kommentlər",
+    addComment: "Komment yaz",
+    commentPlaceholder: "Komment yaz",
+    noComments: "Komment yoxdur",
+    trash: "Zibil qutusu",
+    restore: "Bərpa et",
+    deleteForever: "Tam sil",
+    deletedTask: "Silinmiş task",
+    deletedProject: "Silinmiş layihə",
+    all: "Hamısı",
+    statuses: { "Plan": "Plan", "Davam edir": "Davam edir", "Bitib": "Bitib" },
+    priorities: { "Normal": "Normal", "Yüksək": "Yüksək", "Aşağı": "Aşağı" }
+  },
+  ru: {
+    locale: "ru-RU",
+    appKicker: "Рабочее пространство",
+    appTitle: "План, задачи и панель контроля",
+    clearDone: "Очистить выполненные",
+    resetDemo: "Загрузить демо",
+    newTask: "Новая задача",
+    editTask: "Редактировать задачу",
+    taskFormAria: "Форма задачи",
+    taskName: "Название задачи",
+    taskNamePlaceholder: "Например: настройка роутера",
+    project: "Проект",
+    projectPlaceholder: "Например: Network upgrade",
+    projectResource: "Ресурс проекта",
+    noResource: "Ресурс не выбран",
+    start: "Начало",
+    end: "Окончание",
+    status: "Статус",
+    priority: "Приоритет",
+    owner: "Ответственный",
+    noOwnerSelect: "Не выбрано",
+    ownerPlaceholder: "Имя или команда",
+    progress: "Прогресс %",
+    notes: "Заметка",
+    notesPlaceholder: "Короткая заметка",
+    save: "Сохранить",
+    cancel: "Отмена",
+    viewsAria: "Виды",
+    dashboard: "Панель",
+    list: "Список",
+    kanban: "Канбан",
+    gantt: "Гантт",
+    searchPlaceholder: "Поиск по задаче, проекту, ответственному",
+    allProjects: "Все проекты",
+    totalTasks: "Всего задач",
+    activeTasks: "Активные задачи",
+    doneTasks: "Выполнено",
+    projectDuration: "Длительность проекта",
+    executionStatus: "Статус выполнения",
+    upcomingTasks: "Ближайшие задачи",
+    tasks: "Задачи",
+    statusFilterAria: "Фильтр статуса",
+    ganttChart: "Диаграмма Гантта",
+    noUpcoming: "Ближайших дедлайнов нет.",
+    noTask: "Задач нет. Добавьте новую задачу через форму слева.",
+    noTaskFilter: "По этому фильтру задач нет.",
+    empty: "Пусто",
+    noOwner: "Ответственный не указан",
+    edit: "Редактировать",
+    next: "Далее",
+    delete: "Удалить",
+    day: "дн.",
+    invalidDate: "Дата окончания не может быть раньше даты начала.",
+    unassignedProject: "Без проекта",
+    resources: "Ресурсы",
+    newMember: "Новый ответственный",
+    memberNamePlaceholder: "Имя Фамилия",
+    addMember: "Добавить сотрудника",
+    newTeam: "Новая команда",
+    teamNamePlaceholder: "Название команды",
+    teamMembers: "Участники команды",
+    addTeam: "Добавить команду",
+    linkProject: "Привязать к проекту",
+    linkProjectPlaceholder: "Название проекта",
+    resource: "Ресурс",
+    addProjectLink: "Привязать",
+    remove: "Удалить",
+    member: "Сотрудник",
+    team: "Команда",
+    loginKicker: "Доступ к проекту",
+    loginTitle: "Войти",
+    username: "Имя пользователя",
+    password: "Пароль",
+    loginButton: "Войти",
+    logout: "Выйти",
+    loginError: "Неверное имя пользователя или пароль.",
+    manageUsers: "Пользователи",
+    newUser: "Новый пользователь",
+    usernamePlaceholder: "username",
+    passwordPlaceholder: "password",
+    role: "Роль",
+    addUser: "Добавить пользователя",
+    changePassword: "Сменить пароль",
+    newPassword: "Новый пароль",
+    adminRole: "Админ",
+    userRole: "Пользователь",
+    comment: "Комментарий",
+    comments: "Комментарии",
+    addComment: "Добавить комментарий",
+    commentPlaceholder: "Написать комментарий",
+    noComments: "Комментариев нет",
+    trash: "Корзина",
+    restore: "Восстановить",
+    deleteForever: "Удалить навсегда",
+    deletedTask: "Удаленная задача",
+    deletedProject: "Удаленный проект",
+    all: "Все",
+    statuses: { "Plan": "План", "Davam edir": "В работе", "Bitib": "Выполнено" },
+    priorities: { "Normal": "Нормальный", "Yüksək": "Высокий", "Aşağı": "Низкий" }
+  },
+  en: {
+    locale: "en-US",
+    appKicker: "Project workspace",
+    appTitle: "Plan, tasks and execution board",
+    clearDone: "Clear done",
+    resetDemo: "Load demo",
+    newTask: "New task",
+    editTask: "Edit task",
+    taskFormAria: "Task form",
+    taskName: "Task name",
+    taskNamePlaceholder: "Example: Router configuration",
+    project: "Project",
+    projectPlaceholder: "Example: Network upgrade",
+    projectResource: "Project resource",
+    noResource: "No resource selected",
+    start: "Start",
+    end: "End",
+    status: "Status",
+    priority: "Priority",
+    owner: "Owner",
+    noOwnerSelect: "Not selected",
+    ownerPlaceholder: "Name or team",
+    progress: "Progress %",
+    notes: "Notes",
+    notesPlaceholder: "Write a short note",
+    save: "Save",
+    cancel: "Cancel",
+    viewsAria: "Views",
+    dashboard: "Dashboard",
+    list: "List",
+    kanban: "Kanban",
+    gantt: "Gantt",
+    searchPlaceholder: "Search task, project, owner",
+    allProjects: "All projects",
+    totalTasks: "Total tasks",
+    activeTasks: "Active tasks",
+    doneTasks: "Done tasks",
+    projectDuration: "Project duration",
+    executionStatus: "Execution status",
+    upcomingTasks: "Upcoming tasks",
+    tasks: "Tasks",
+    statusFilterAria: "Status filter",
+    ganttChart: "Gantt chart",
+    noUpcoming: "No upcoming deadlines.",
+    noTask: "No tasks. Add a new task from the form on the left.",
+    noTaskFilter: "No tasks for this filter.",
+    empty: "Empty",
+    noOwner: "No owner",
+    edit: "Edit",
+    next: "Next",
+    delete: "Delete",
+    day: "days",
+    invalidDate: "End date cannot be earlier than start date.",
+    unassignedProject: "No project",
+    resources: "Resources",
+    newMember: "New owner",
+    memberNamePlaceholder: "Full name",
+    addMember: "Add person",
+    newTeam: "New team",
+    teamNamePlaceholder: "Team name",
+    teamMembers: "Team members",
+    addTeam: "Add team",
+    linkProject: "Link to project",
+    linkProjectPlaceholder: "Project name",
+    resource: "Resource",
+    addProjectLink: "Link",
+    remove: "Remove",
+    member: "Person",
+    team: "Team",
+    loginKicker: "Project access",
+    loginTitle: "Sign in",
+    username: "Username",
+    password: "Password",
+    loginButton: "Sign in",
+    logout: "Logout",
+    loginError: "Username or password is incorrect.",
+    manageUsers: "Users",
+    newUser: "New user",
+    usernamePlaceholder: "username",
+    passwordPlaceholder: "password",
+    role: "Role",
+    addUser: "Add user",
+    changePassword: "Change password",
+    newPassword: "New password",
+    adminRole: "Admin",
+    userRole: "User",
+    comment: "Comment",
+    comments: "Comments",
+    addComment: "Add comment",
+    commentPlaceholder: "Write a comment",
+    noComments: "No comments",
+    trash: "Trash",
+    restore: "Restore",
+    deleteForever: "Delete forever",
+    deletedTask: "Deleted task",
+    deletedProject: "Deleted project",
+    all: "All",
+    statuses: { "Plan": "Plan", "Davam edir": "In progress", "Bitib": "Done" },
+    priorities: { "Normal": "Normal", "Yüksək": "High", "Aşağı": "Low" }
+  }
+};
+
+function createId() {
+  if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return `task-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function md5(input) {
+  function add32(a, b) {
+    return (a + b) & 0xffffffff;
+  }
+
+  function cmn(q, a, b, x, s, t) {
+    a = add32(add32(a, q), add32(x, t));
+    return add32((a << s) | (a >>> (32 - s)), b);
+  }
+
+  function ff(a, b, c, d, x, s, t) {
+    return cmn((b & c) | (~b & d), a, b, x, s, t);
+  }
+
+  function gg(a, b, c, d, x, s, t) {
+    return cmn((b & d) | (c & ~d), a, b, x, s, t);
+  }
+
+  function hh(a, b, c, d, x, s, t) {
+    return cmn(b ^ c ^ d, a, b, x, s, t);
+  }
+
+  function ii(a, b, c, d, x, s, t) {
+    return cmn(c ^ (b | ~d), a, b, x, s, t);
+  }
+
+  function md5Cycle(state, block) {
+    let [a, b, c, d] = state;
+    const oa = a;
+    const ob = b;
+    const oc = c;
+    const od = d;
+
+    a = ff(a, b, c, d, block[0], 7, -680876936);
+    d = ff(d, a, b, c, block[1], 12, -389564586);
+    c = ff(c, d, a, b, block[2], 17, 606105819);
+    b = ff(b, c, d, a, block[3], 22, -1044525330);
+    a = ff(a, b, c, d, block[4], 7, -176418897);
+    d = ff(d, a, b, c, block[5], 12, 1200080426);
+    c = ff(c, d, a, b, block[6], 17, -1473231341);
+    b = ff(b, c, d, a, block[7], 22, -45705983);
+    a = ff(a, b, c, d, block[8], 7, 1770035416);
+    d = ff(d, a, b, c, block[9], 12, -1958414417);
+    c = ff(c, d, a, b, block[10], 17, -42063);
+    b = ff(b, c, d, a, block[11], 22, -1990404162);
+    a = ff(a, b, c, d, block[12], 7, 1804603682);
+    d = ff(d, a, b, c, block[13], 12, -40341101);
+    c = ff(c, d, a, b, block[14], 17, -1502002290);
+    b = ff(b, c, d, a, block[15], 22, 1236535329);
+
+    a = gg(a, b, c, d, block[1], 5, -165796510);
+    d = gg(d, a, b, c, block[6], 9, -1069501632);
+    c = gg(c, d, a, b, block[11], 14, 643717713);
+    b = gg(b, c, d, a, block[0], 20, -373897302);
+    a = gg(a, b, c, d, block[5], 5, -701558691);
+    d = gg(d, a, b, c, block[10], 9, 38016083);
+    c = gg(c, d, a, b, block[15], 14, -660478335);
+    b = gg(b, c, d, a, block[4], 20, -405537848);
+    a = gg(a, b, c, d, block[9], 5, 568446438);
+    d = gg(d, a, b, c, block[14], 9, -1019803690);
+    c = gg(c, d, a, b, block[3], 14, -187363961);
+    b = gg(b, c, d, a, block[8], 20, 1163531501);
+    a = gg(a, b, c, d, block[13], 5, -1444681467);
+    d = gg(d, a, b, c, block[2], 9, -51403784);
+    c = gg(c, d, a, b, block[7], 14, 1735328473);
+    b = gg(b, c, d, a, block[12], 20, -1926607734);
+
+    a = hh(a, b, c, d, block[5], 4, -378558);
+    d = hh(d, a, b, c, block[8], 11, -2022574463);
+    c = hh(c, d, a, b, block[11], 16, 1839030562);
+    b = hh(b, c, d, a, block[14], 23, -35309556);
+    a = hh(a, b, c, d, block[1], 4, -1530992060);
+    d = hh(d, a, b, c, block[4], 11, 1272893353);
+    c = hh(c, d, a, b, block[7], 16, -155497632);
+    b = hh(b, c, d, a, block[10], 23, -1094730640);
+    a = hh(a, b, c, d, block[13], 4, 681279174);
+    d = hh(d, a, b, c, block[0], 11, -358537222);
+    c = hh(c, d, a, b, block[3], 16, -722521979);
+    b = hh(b, c, d, a, block[6], 23, 76029189);
+    a = hh(a, b, c, d, block[9], 4, -640364487);
+    d = hh(d, a, b, c, block[12], 11, -421815835);
+    c = hh(c, d, a, b, block[15], 16, 530742520);
+    b = hh(b, c, d, a, block[2], 23, -995338651);
+
+    a = ii(a, b, c, d, block[0], 6, -198630844);
+    d = ii(d, a, b, c, block[7], 10, 1126891415);
+    c = ii(c, d, a, b, block[14], 15, -1416354905);
+    b = ii(b, c, d, a, block[5], 21, -57434055);
+    a = ii(a, b, c, d, block[12], 6, 1700485571);
+    d = ii(d, a, b, c, block[3], 10, -1894986606);
+    c = ii(c, d, a, b, block[10], 15, -1051523);
+    b = ii(b, c, d, a, block[1], 21, -2054922799);
+    a = ii(a, b, c, d, block[8], 6, 1873313359);
+    d = ii(d, a, b, c, block[15], 10, -30611744);
+    c = ii(c, d, a, b, block[6], 15, -1560198380);
+    b = ii(b, c, d, a, block[13], 21, 1309151649);
+    a = ii(a, b, c, d, block[4], 6, -145523070);
+    d = ii(d, a, b, c, block[11], 10, -1120210379);
+    c = ii(c, d, a, b, block[2], 15, 718787259);
+    b = ii(b, c, d, a, block[9], 21, -343485551);
+
+    state[0] = add32(a, oa);
+    state[1] = add32(b, ob);
+    state[2] = add32(c, oc);
+    state[3] = add32(d, od);
+  }
+
+  function blocks(bytes) {
+    const result = [];
+    for (let i = 0; i < bytes.length; i += 64) {
+      const block = new Array(16).fill(0);
+      for (let j = 0; j < 64 && i + j < bytes.length; j += 1) {
+        block[j >> 2] |= bytes[i + j] << ((j % 4) << 3);
+      }
+      result.push(block);
+    }
+    return result;
+  }
+
+  const bytes = Array.from(new TextEncoder().encode(String(input)));
+  const bitLength = bytes.length * 8;
+  bytes.push(0x80);
+  while (bytes.length % 64 !== 56) bytes.push(0);
+  for (let i = 0; i < 8; i += 1) {
+    bytes.push((bitLength / (2 ** (8 * i))) & 0xff);
+  }
+
+  const state = [1732584193, -271733879, -1732584194, 271733878];
+  blocks(bytes).forEach((block) => md5Cycle(state, block));
+  return state.map((word) => {
+    let hex = "";
+    for (let i = 0; i < 4; i += 1) {
+      hex += ((word >> (i * 8)) & 0xff).toString(16).padStart(2, "0");
+    }
+    return hex;
+  }).join("");
+}
+
+const demoTaskTemplates = [
+  {
+    name: "Tələbləri toplamaq",
+    project: "Internal portal",
+    start: "2026-04-27",
+    end: "2026-04-29",
+    status: "Bitib",
+    priority: "Yüksək",
+    owner: "team:team-core",
+    progress: 100,
+    notes: "Layihənin məqsədləri və ekranları qeyd olunur."
+  },
+  {
+    name: "Interface dizaynı",
+    project: "Internal portal",
+    start: "2026-04-30",
+    end: "2026-05-05",
+    status: "Davam edir",
+    priority: "Yüksək",
+    owner: "member:member-leyla",
+    progress: 55,
+    notes: "Əsas ekran, task forması və Gantt görünüşü hazırlanır."
+  },
+  {
+    name: "Test və təhvil",
+    project: "Customer rollout",
+    start: "2026-05-06",
+    end: "2026-05-09",
+    status: "Plan",
+    priority: "Normal",
+    owner: "member:member-farid",
+    progress: 0,
+    notes: "Son yoxlamalar və istifadəçi testləri."
+  }
+];
+
+const demoMemberTemplates = [
+  { id: "member-farid", name: "Farid Asadov" },
+  { id: "member-leyla", name: "Leyla Aliyeva" },
+  { id: "member-nicat", name: "Nicat Karimov" }
+];
+
+const demoTeamTemplates = [
+  { id: "team-core", name: "Core Team", memberIds: ["member-farid", "member-leyla"] },
+  { id: "team-network", name: "Network Team", memberIds: ["member-farid", "member-nicat"] }
+];
+
+const demoProjectLinks = [
+  { id: "link-internal-core", project: "Internal portal", resource: "team:team-core" },
+  { id: "link-customer-network", project: "Customer rollout", resource: "team:team-network" }
+];
+
+const demoUsers = [
+  { id: "user-admin", username: "admin", passwordHash: md5("admin123"), role: "admin" },
+  { id: "user-demo", username: "user", passwordHash: md5("user123"), role: "user" }
+];
+
+const statuses = ["Plan", "Davam edir", "Bitib"];
+
+const form = document.querySelector("#taskForm");
+const formTitle = document.querySelector("#formTitle");
+const taskId = document.querySelector("#taskId");
+const taskName = document.querySelector("#taskName");
+const projectInput = document.querySelector("#project");
+const projectResourceInput = document.querySelector("#projectResource");
+const startDate = document.querySelector("#startDate");
+const endDate = document.querySelector("#endDate");
+const statusInput = document.querySelector("#status");
+const priorityInput = document.querySelector("#priority");
+const ownerInput = document.querySelector("#owner");
+const progressInput = document.querySelector("#progress");
+const notesInput = document.querySelector("#notes");
+const cancelEdit = document.querySelector("#cancelEdit");
+const gantt = document.querySelector("#gantt");
+const kanban = document.querySelector("#kanban");
+const taskList = document.querySelector("#taskList");
+const filters = document.querySelectorAll(".filter");
+const viewTabs = document.querySelectorAll(".view-tab");
+const views = document.querySelectorAll(".view");
+const searchInput = document.querySelector("#searchInput");
+const projectFilter = document.querySelector("#projectFilter");
+const statusBars = document.querySelector("#statusBars");
+const upcomingList = document.querySelector("#upcomingList");
+const totalCount = document.querySelector("#totalCount");
+const activeCount = document.querySelector("#activeCount");
+const doneCount = document.querySelector("#doneCount");
+const dateRange = document.querySelector("#dateRange");
+const resetDemo = document.querySelector("#resetDemo");
+const clearDone = document.querySelector("#clearDone");
+const languageSelect = document.querySelector("#languageSelect");
+const memberNameInput = document.querySelector("#memberName");
+const addMemberButton = document.querySelector("#addMember");
+const memberList = document.querySelector("#memberList");
+const memberCount = document.querySelector("#memberCount");
+const teamNameInput = document.querySelector("#teamName");
+const teamMembersInput = document.querySelector("#teamMembers");
+const addTeamButton = document.querySelector("#addTeam");
+const teamList = document.querySelector("#teamList");
+const teamCount = document.querySelector("#teamCount");
+const linkProjectInput = document.querySelector("#linkProject");
+const linkResourceInput = document.querySelector("#linkResource");
+const addProjectLinkButton = document.querySelector("#addProjectLink");
+const projectLinksList = document.querySelector("#projectLinks");
+const linkCount = document.querySelector("#linkCount");
+const trashList = document.querySelector("#trashList");
+const trashCount = document.querySelector("#trashCount");
+const loginScreen = document.querySelector("#loginScreen");
+const loginForm = document.querySelector("#loginForm");
+const loginUsername = document.querySelector("#loginUsername");
+const loginPassword = document.querySelector("#loginPassword");
+const loginError = document.querySelector("#loginError");
+const loginLanguageSelect = document.querySelector("#loginLanguageSelect");
+const logoutButton = document.querySelector("#logoutButton");
+const currentUserBadge = document.querySelector("#currentUserBadge");
+const newUsernameInput = document.querySelector("#newUsername");
+const newUserPasswordInput = document.querySelector("#newUserPassword");
+const newUserRoleInput = document.querySelector("#newUserRole");
+const addUserButton = document.querySelector("#addUser");
+const userList = document.querySelector("#userList");
+const userCount = document.querySelector("#userCount");
+
+let tasks = loadTasks();
+let members = loadMembers();
+let teams = loadTeams();
+let projectLinks = loadProjectLinks();
+let users = loadUsers();
+let trash = loadTrash();
+let currentUser = loadSession();
+let currentFilter = "Hamısı";
+let currentView = "dashboard";
+let currentLanguage = localStorage.getItem(languageKey) || "az";
+saveUsers();
+
+function text(key) {
+  return translations[currentLanguage][key] || translations.az[key] || key;
+}
+
+function statusLabel(status) {
+  return translations[currentLanguage].statuses[status] || status;
+}
+
+function priorityLabel(priority) {
+  return translations[currentLanguage].priorities[priority] || priority;
+}
+
+function applyTranslations() {
+  document.documentElement.lang = currentLanguage;
+  languageSelect.value = currentLanguage;
+  loginLanguageSelect.value = currentLanguage;
+
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    node.textContent = text(node.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+    node.placeholder = text(node.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((node) => {
+    node.setAttribute("aria-label", text(node.dataset.i18nAria));
+  });
+
+  formTitle.textContent = taskId.value ? text("editTask") : text("newTask");
+  updateSelectLabels();
+  updateFilterLabels();
+  updateViewLabels();
+  updateRoleLabels();
+}
+
+function changeLanguage(language) {
+  currentLanguage = language;
+  localStorage.setItem(languageKey, currentLanguage);
+  render();
+}
+
+function updateSelectLabels() {
+  [...statusInput.options].forEach((option) => {
+    option.textContent = statusLabel(option.value);
+  });
+  [...priorityInput.options].forEach((option) => {
+    option.textContent = priorityLabel(option.value);
+  });
+}
+
+function updateFilterLabels() {
+  filters.forEach((button) => {
+    button.textContent = button.dataset.filter === "Hamısı" ? text("all") : statusLabel(button.dataset.filter);
+  });
+}
+
+function updateViewLabels() {
+  viewTabs.forEach((button) => {
+    if (button.dataset.view === "dashboard") button.textContent = text("dashboard");
+    if (button.dataset.view === "list") button.textContent = text("list");
+    if (button.dataset.view === "kanban") button.textContent = text("kanban");
+    if (button.dataset.view === "gantt") button.textContent = text("gantt");
+  });
+}
+
+function updateRoleLabels() {
+  [...newUserRoleInput.options].forEach((option) => {
+    option.textContent = option.value === "admin" ? text("adminRole") : text("userRole");
+  });
+}
+
+function createDemoTasks() {
+  return demoTaskTemplates.map((task) => ({ ...task, id: createId() }));
+}
+
+function loadJson(key, fallback) {
+  const stored = localStorage.getItem(key);
+  if (!stored) return fallback();
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return fallback();
+  }
+}
+
+function loadMembers() {
+  return loadJson(membersKey, () => demoMemberTemplates.map((member) => ({ ...member })));
+}
+
+function loadTeams() {
+  return loadJson(teamsKey, () => demoTeamTemplates.map((team) => ({ ...team, memberIds: [...team.memberIds] })));
+}
+
+function loadProjectLinks() {
+  return loadJson(projectLinksKey, () => demoProjectLinks.map((link) => ({ ...link })));
+}
+
+function loadUsers() {
+  return loadJson(usersKey, () => demoUsers.map((user) => ({ ...user }))).map(normalizeUser);
+}
+
+function normalizeUser(user) {
+  if (user.passwordHash) {
+    return { id: user.id, username: user.username, passwordHash: user.passwordHash, role: user.role };
+  }
+  return { id: user.id, username: user.username, passwordHash: md5(user.password || ""), role: user.role };
+}
+
+function loadTrash() {
+  return loadJson(trashKey, () => []);
+}
+
+function loadSession() {
+  const userId = localStorage.getItem(sessionKey);
+  return userId ? users?.find((user) => user.id === userId) || null : null;
+}
+
+function loadTasks() {
+  const stored = localStorage.getItem(storageKey);
+  if (!stored) {
+    return createDemoTasks();
+  }
+
+  try {
+    return JSON.parse(stored).map(normalizeTask);
+  } catch {
+    return createDemoTasks();
+  }
+}
+
+function normalizeTask(task) {
+  return {
+    project: "",
+    projectResource: "",
+    comments: [],
+    progress: task.status === "Bitib" ? 100 : 0,
+    ...task
+  };
+}
+
+function saveTasks() {
+  localStorage.setItem(storageKey, JSON.stringify(tasks));
+}
+
+function saveResources() {
+  localStorage.setItem(membersKey, JSON.stringify(members));
+  localStorage.setItem(teamsKey, JSON.stringify(teams));
+  localStorage.setItem(projectLinksKey, JSON.stringify(projectLinks));
+}
+
+function saveUsers() {
+  localStorage.setItem(usersKey, JSON.stringify(users));
+}
+
+function saveTrash() {
+  localStorage.setItem(trashKey, JSON.stringify(trash));
+}
+
+function parseDate(value) {
+  return new Date(`${value}T00:00:00`);
+}
+
+function daysBetween(start, end) {
+  return Math.round((parseDate(end) - parseDate(start)) / 86400000);
+}
+
+function addDays(date, days) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function isoDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function shortDate(value) {
+  return new Intl.DateTimeFormat(translations[currentLanguage].locale, {
+    day: "2-digit",
+    month: "short"
+  }).format(parseDate(value));
+}
+
+function formatDateTime(value) {
+  if (!value) return "";
+  return new Intl.DateTimeFormat(translations[currentLanguage].locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function statusClass(status) {
+  if (status === "Bitib") return "done";
+  if (status === "Davam edir") return "active";
+  return "plan";
+}
+
+function priorityClass(priority) {
+  return priority === "Yüksək" ? "high" : "";
+}
+
+function getProject(task) {
+  return task.project || text("unassignedProject");
+}
+
+function resourceValue(type, id) {
+  return `${type}:${id}`;
+}
+
+function resourceLabel(value) {
+  if (!value) return text("noOwner");
+  const [type, id] = value.split(":");
+  if (type === "member") {
+    const member = members.find((item) => item.id === id);
+    return member ? member.name : value;
+  }
+  if (type === "team") {
+    const team = teams.find((item) => item.id === id);
+    return team ? team.name : value;
+  }
+  return value;
+}
+
+function resourceTypeLabel(value) {
+  return value.startsWith("team:") ? text("team") : text("member");
+}
+
+function allResourceOptions() {
+  return [
+    ...members.map((member) => ({ value: resourceValue("member", member.id), label: member.name, type: text("member") })),
+    ...teams.map((team) => ({ value: resourceValue("team", team.id), label: team.name, type: text("team") }))
+  ];
+}
+
+function linkedResourcesForProject(project) {
+  const directLinks = projectLinks.filter((link) => link.project === project).map((link) => link.resource);
+  return [...new Set(directLinks)];
+}
+
+function isAdmin() {
+  return currentUser?.role === "admin";
+}
+
+function syncAuthView() {
+  document.body.classList.toggle("logged-in", Boolean(currentUser));
+  document.body.classList.toggle("logged-out", !currentUser);
+  document.body.classList.toggle("admin-role", isAdmin());
+  document.body.classList.toggle("user-role", currentUser?.role === "user");
+  currentUserBadge.textContent = currentUser ? `${currentUser.username} (${currentUser.role})` : "";
+}
+
+function visibleTasks() {
+  const query = searchInput.value.trim().toLowerCase();
+  const selectedProject = projectFilter.value;
+
+  return tasks
+    .filter((task) => currentFilter === "Hamısı" || task.status === currentFilter)
+    .filter((task) => selectedProject === "Hamısı" || getProject(task) === selectedProject)
+    .filter((task) => {
+      if (!query) return true;
+      return [task.name, task.project, resourceLabel(task.owner), task.notes]
+        .some((value) => String(value || "").toLowerCase().includes(query));
+    })
+    .sort((a, b) => parseDate(a.start) - parseDate(b.start));
+}
+
+function renderProjectFilter() {
+  const selected = projectFilter.value || "Hamısı";
+  const projects = [...new Set(tasks.map(getProject))].sort();
+  projectFilter.innerHTML = [
+    `<option value="Hamısı">${text("allProjects")}</option>`,
+    ...projects.map((project) => `<option value="${escapeHtml(project)}">${escapeHtml(project)}</option>`)
+  ].join("");
+  projectFilter.value = projects.includes(selected) ? selected : "Hamısı";
+}
+
+function renderResourceControls() {
+  const options = allResourceOptions();
+  userCount.textContent = users.length;
+  memberCount.textContent = members.length;
+  teamCount.textContent = teams.length;
+  linkCount.textContent = projectLinks.length;
+  trashCount.textContent = trash.length;
+  const currentOwner = ownerInput.value;
+  ownerInput.innerHTML = [
+    `<option value="">${text("noOwnerSelect")}</option>`,
+    ...options.map((option) => `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`)
+  ].join("");
+  ownerInput.value = options.some((option) => option.value === currentOwner) ? currentOwner : "";
+
+  const selectedProject = projectInput.value.trim();
+  const linked = selectedProject ? linkedResourcesForProject(selectedProject) : [];
+  const projectOptions = linked.length ? options.filter((option) => linked.includes(option.value)) : options;
+  const currentProjectResource = projectResourceInput.value;
+  projectResourceInput.innerHTML = [
+    `<option value="">${text("noResource")}</option>`,
+    ...projectOptions.map((option) => `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`)
+  ].join("");
+  projectResourceInput.value = projectOptions.some((option) => option.value === currentProjectResource) ? currentProjectResource : "";
+
+  teamMembersInput.innerHTML = members.map((member) => (
+    `<option value="${member.id}">${escapeHtml(member.name)}</option>`
+  )).join("");
+
+  linkResourceInput.innerHTML = options.map((option) => (
+    `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`
+  )).join("");
+
+  memberList.innerHTML = members.length ? members.map((member) => `
+    <div class="resource-item">
+      <span><strong>${escapeHtml(member.name)}</strong>${text("member")}</span>
+      <button type="button" data-resource-action="delete-member" data-id="${member.id}">${text("remove")}</button>
+    </div>
+  `).join("") : `<div class="empty">${text("empty")}</div>`;
+
+  teamList.innerHTML = teams.length ? teams.map((team) => {
+    const names = team.memberIds.map((id) => members.find((member) => member.id === id)?.name).filter(Boolean);
+    return `
+      <div class="resource-item">
+        <span><strong>${escapeHtml(team.name)}</strong>${escapeHtml(names.join(", ") || text("empty"))}</span>
+        <button type="button" data-resource-action="delete-team" data-id="${team.id}">${text("remove")}</button>
+      </div>
+    `;
+  }).join("") : `<div class="empty">${text("empty")}</div>`;
+
+  projectLinksList.innerHTML = projectLinks.length ? projectLinks.map((link) => `
+    <div class="resource-item">
+      <span><strong>${escapeHtml(link.project)}</strong>${resourceTypeLabel(link.resource)}: ${escapeHtml(resourceLabel(link.resource))}</span>
+      <button type="button" data-resource-action="delete-link" data-id="${link.id}">${text("remove")}</button>
+    </div>
+  `).join("") : `<div class="empty">${text("empty")}</div>`;
+
+  userList.innerHTML = users.map((user) => `
+    <div class="resource-item">
+      <span><strong>${escapeHtml(user.username)}</strong>${user.role === "admin" ? text("adminRole") : text("userRole")}</span>
+      <div class="user-actions">
+        <form class="password-form" data-user-id="${user.id}">
+          <input type="password" name="password" placeholder="${text("newPassword")}" required>
+          <button type="submit">${text("changePassword")}</button>
+        </form>
+        ${user.id === currentUser?.id ? "" : `<button type="button" data-user-action="delete-user" data-id="${user.id}">${text("remove")}</button>`}
+      </div>
+    </div>
+  `).join("");
+
+  trashList.innerHTML = trash.length ? trash.map((item) => {
+    const title = item.type === "task" ? item.data.name : item.data.project;
+    const subtitle = item.type === "task"
+      ? text("deletedTask")
+      : `${text("deletedProject")} - ${resourceLabel(item.data.resource)}`;
+    return `
+      <div class="resource-item">
+        <span><strong>${escapeHtml(title)}</strong>${escapeHtml(subtitle)}</span>
+        <div class="mini-actions">
+          <button type="button" data-trash-action="restore" data-id="${item.id}">${text("restore")}</button>
+          <button type="button" data-trash-action="delete-forever" data-id="${item.id}">${text("deleteForever")}</button>
+        </div>
+      </div>
+    `;
+  }).join("") : `<div class="empty">${text("empty")}</div>`;
+}
+
+function renderSummary() {
+  totalCount.textContent = tasks.length;
+  activeCount.textContent = tasks.filter((task) => task.status !== "Bitib").length;
+  doneCount.textContent = tasks.filter((task) => task.status === "Bitib").length;
+
+  if (!tasks.length) {
+    dateRange.textContent = "-";
+    return;
+  }
+
+  const starts = tasks.map((task) => parseDate(task.start));
+  const ends = tasks.map((task) => parseDate(task.end));
+  const minStart = new Date(Math.min(...starts));
+  const maxEnd = new Date(Math.max(...ends));
+  const totalDays = Math.max(1, Math.round((maxEnd - minStart) / 86400000) + 1);
+  dateRange.textContent = `${totalDays} ${text("day")}`;
+}
+
+function renderDashboard() {
+  const total = Math.max(1, tasks.length);
+  statusBars.innerHTML = statuses.map((status) => {
+    const count = tasks.filter((task) => task.status === status).length;
+    const width = Math.round((count / total) * 100);
+    return `
+      <div class="status-line">
+        <div><span>${statusLabel(status)}</span><strong>${count}</strong></div>
+        <div class="meter"><span class="${statusClass(status)}" style="width:${width}%"></span></div>
+      </div>
+    `;
+  }).join("");
+
+  const upcoming = tasks
+    .filter((task) => task.status !== "Bitib")
+    .sort((a, b) => parseDate(a.end) - parseDate(b.end))
+    .slice(0, 5);
+
+  upcomingList.innerHTML = upcoming.length ? upcoming.map((task) => `
+    <div class="compact-item">
+      <strong>${escapeHtml(task.name)}</strong>
+      <div class="task-meta">
+        <span>${escapeHtml(getProject(task))}</span>
+        <span>${shortDate(task.end)}</span>
+        <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
+      </div>
+    </div>
+  `).join("") : `<div class="empty">${text("noUpcoming")}</div>`;
+}
+
+function renderTaskList() {
+  const shown = visibleTasks();
+  if (!shown.length) {
+    taskList.innerHTML = `<div class="empty">${text("noTask")}</div>`;
+    return;
+  }
+
+  taskList.innerHTML = shown.map((task) => `
+    <article class="task-card">
+      <div>
+        <h3>${escapeHtml(task.name)}</h3>
+        <div class="task-meta">
+          <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
+          <span class="badge ${priorityClass(task.priority)}">${priorityLabel(task.priority)}</span>
+          <span>${escapeHtml(getProject(task))}</span>
+          <span>${shortDate(task.start)} - ${shortDate(task.end)}</span>
+          <span>${escapeHtml(resourceLabel(task.owner))}</span>
+        </div>
+        ${task.notes ? `<p>${escapeHtml(task.notes)}</p>` : ""}
+        <div class="progress-mini"><span style="width:${Number(task.progress) || 0}%"></span></div>
+        ${renderComments(task)}
+      </div>
+      ${renderTaskActions(task)}
+    </article>
+  `).join("");
+}
+
+function renderTaskActions(task) {
+  const actions = task.status === "Bitib"
+    ? `<button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>`
+    : `
+        <button type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
+        <button type="button" data-action="next" data-id="${task.id}">${text("next")}</button>
+        <button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
+      `;
+  return `<div class="task-actions">${actions}</div>`;
+}
+
+function renderComments(task) {
+  const comments = task.comments || [];
+  const items = comments.length ? comments.map((comment) => `
+    <div class="comment-item">
+      <div class="comment-head">
+        <strong>${escapeHtml(comment.author)}</strong>
+        <time datetime="${escapeHtml(comment.createdAt || "")}">${escapeHtml(formatDateTime(comment.createdAt))}</time>
+      </div>
+      <span>${escapeHtml(comment.text)}</span>
+    </div>
+  `).join("") : `<div class="comment-empty">${text("noComments")}</div>`;
+
+  const formHtml = task.status === "Bitib" ? "" : `
+      <form class="comment-form" data-task-id="${task.id}">
+        <textarea name="comment" rows="3" placeholder="${text("commentPlaceholder")}" required></textarea>
+        <button type="submit">${text("addComment")}</button>
+      </form>
+  `;
+
+  return `
+    <div class="comments">
+      <h4>${text("comments")}</h4>
+      ${items}
+      ${formHtml}
+    </div>
+  `;
+}
+
+function renderKanban() {
+  const shown = visibleTasks();
+  kanban.innerHTML = statuses.map((status) => {
+    const columnTasks = shown.filter((task) => task.status === status);
+    const cards = columnTasks.map((task) => `
+      <article class="kanban-card">
+        <strong>${escapeHtml(task.name)}</strong>
+        <div class="task-meta">
+          <span>${escapeHtml(getProject(task))}</span>
+          <span>${shortDate(task.end)}</span>
+          <span>${Number(task.progress) || 0}%</span>
+        </div>
+        ${renderComments(task)}
+        ${renderKanbanActions(task)}
+      </article>
+    `).join("");
+
+    return `
+      <section class="kanban-column">
+        <h2>${statusLabel(status)} (${columnTasks.length})</h2>
+        ${cards || `<div class="empty">${text("empty")}</div>`}
+      </section>
+    `;
+  }).join("");
+}
+
+function renderKanbanActions(task) {
+  const actions = task.status === "Bitib"
+    ? `<button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>`
+    : `
+        <button type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
+        <button type="button" data-action="next" data-id="${task.id}">${text("next")}</button>
+        <button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
+      `;
+  return `<div class="kanban-actions">${actions}</div>`;
+}
+
+function renderGantt() {
+  const shown = visibleTasks();
+  if (!shown.length) {
+    gantt.innerHTML = `<div class="empty">${text("noTaskFilter")}</div>`;
+    return;
+  }
+
+  const starts = shown.map((task) => parseDate(task.start));
+  const ends = shown.map((task) => parseDate(task.end));
+  const minStart = new Date(Math.min(...starts));
+  const maxEnd = new Date(Math.max(...ends));
+  const days = Math.max(1, Math.round((maxEnd - minStart) / 86400000) + 1);
+  const dayHeaders = Array.from({ length: days }, (_, index) => {
+    const date = addDays(minStart, index);
+    return `<div class="gantt-day">${shortDate(isoDate(date))}</div>`;
+  }).join("");
+
+  const rows = shown.map((task) => {
+    const offset = daysBetween(isoDate(minStart), task.start);
+    const span = Math.max(1, daysBetween(task.start, task.end) + 1);
+    return `
+      <div class="gantt-row">
+        <div class="gantt-task-name" title="${escapeHtml(task.name)}">${escapeHtml(task.name)}</div>
+        <div class="gantt-lane" style="--days:${days}; grid-template-columns: repeat(${days}, minmax(44px, 1fr));">
+          <div class="bar ${statusClass(task.status)}" style="grid-column: ${offset + 1} / span ${span};">
+            ${span} ${text("day")} - ${Number(task.progress) || 0}%
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  gantt.innerHTML = `
+    <div class="gantt-grid">
+      <div class="gantt-header">
+        <div class="gantt-label">Task</div>
+        <div class="gantt-days" style="grid-template-columns: repeat(${days}, minmax(44px, 1fr));">${dayHeaders}</div>
+      </div>
+      ${rows}
+    </div>
+  `;
+}
+
+function renderViews() {
+  views.forEach((view) => view.classList.toggle("active-view", view.id === `${currentView}View`));
+}
+
+function render() {
+  applyTranslations();
+  syncAuthView();
+  renderProjectFilter();
+  renderResourceControls();
+  renderSummary();
+  renderDashboard();
+  renderTaskList();
+  renderKanban();
+  renderGantt();
+  renderViews();
+}
+
+function resetForm() {
+  form.reset();
+  taskId.value = "";
+  formTitle.textContent = text("newTask");
+  projectResourceInput.value = "";
+  ownerInput.value = "";
+  statusInput.value = "Plan";
+  priorityInput.value = "Normal";
+  progressInput.value = 0;
+}
+
+function moveForward(task) {
+  if (task.status === "Plan") {
+    task.status = "Davam edir";
+    task.progress = Math.max(Number(task.progress) || 0, 35);
+  } else if (task.status === "Davam edir") {
+    task.status = "Bitib";
+    task.progress = 100;
+  }
+}
+
+function handleTaskAction(action, id) {
+  if (!isAdmin()) return;
+  const task = tasks.find((item) => item.id === id);
+  if (!task) return;
+
+  if (action === "edit") {
+    taskId.value = task.id;
+    taskName.value = task.name;
+    projectInput.value = task.project || "";
+    renderResourceControls();
+    projectResourceInput.value = task.projectResource || "";
+    startDate.value = task.start;
+    endDate.value = task.end;
+    statusInput.value = task.status;
+    priorityInput.value = task.priority;
+    ownerInput.value = task.owner;
+    progressInput.value = Number(task.progress) || 0;
+    notesInput.value = task.notes;
+    formTitle.textContent = text("editTask");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  if (action === "next") {
+    moveForward(task);
+    saveTasks();
+    render();
+  }
+
+  if (action === "delete") {
+    trash.push({ id: createId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
+    tasks = tasks.filter((item) => item.id !== task.id);
+    saveTrash();
+    saveTasks();
+    render();
+  }
+}
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (!isAdmin()) return;
+
+  if (parseDate(endDate.value) < parseDate(startDate.value)) {
+    alert(text("invalidDate"));
+    return;
+  }
+
+  const progress = Math.min(100, Math.max(0, Number.parseInt(progressInput.value || "0", 10)));
+  const task = {
+    id: taskId.value || createId(),
+    name: taskName.value.trim(),
+    project: projectInput.value.trim(),
+    projectResource: projectResourceInput.value,
+    start: startDate.value,
+    end: endDate.value,
+    status: statusInput.value,
+    priority: priorityInput.value,
+    owner: ownerInput.value.trim(),
+    progress: statusInput.value === "Bitib" ? 100 : progress,
+    notes: notesInput.value.trim()
+  };
+
+  const existingIndex = tasks.findIndex((item) => item.id === task.id);
+  if (existingIndex >= 0) {
+    tasks[existingIndex] = task;
+  } else {
+    tasks.push(task);
+  }
+
+  if (task.project && task.projectResource && !projectLinks.some((link) => link.project === task.project && link.resource === task.projectResource)) {
+    projectLinks.push({ id: createId(), project: task.project, resource: task.projectResource });
+    saveResources();
+  }
+
+  saveTasks();
+  resetForm();
+  render();
+});
+
+[taskList, kanban].forEach((container) => {
+  container.addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    handleTaskAction(button.dataset.action, button.dataset.id);
+  });
+
+  container.addEventListener("submit", (event) => {
+    const commentForm = event.target.closest(".comment-form");
+    if (!commentForm || !currentUser) return;
+    event.preventDefault();
+    const task = tasks.find((item) => item.id === commentForm.dataset.taskId);
+    const input = commentForm.elements.comment;
+    const value = input.value.trim();
+    if (!task || !value) return;
+    task.comments = task.comments || [];
+    task.comments.push({
+      id: createId(),
+      author: currentUser.username,
+      text: value,
+      createdAt: new Date().toISOString()
+    });
+    input.value = "";
+    saveTasks();
+    render();
+  });
+});
+
+filters.forEach((button) => {
+  button.addEventListener("click", () => {
+    currentFilter = button.dataset.filter;
+    filters.forEach((item) => item.classList.toggle("active", item === button));
+    render();
+  });
+});
+
+viewTabs.forEach((button) => {
+  button.addEventListener("click", () => {
+    currentView = button.dataset.view;
+    viewTabs.forEach((item) => item.classList.toggle("active", item === button));
+    renderViews();
+  });
+});
+
+searchInput.addEventListener("input", render);
+projectFilter.addEventListener("change", render);
+cancelEdit.addEventListener("click", resetForm);
+languageSelect.addEventListener("change", () => {
+  changeLanguage(languageSelect.value);
+});
+loginLanguageSelect.addEventListener("change", () => {
+  changeLanguage(loginLanguageSelect.value);
+});
+
+loginForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const username = loginUsername.value.trim();
+  const password = loginPassword.value;
+  const user = users.find((item) => item.username === username && item.passwordHash === md5(password));
+  if (!user) {
+    loginError.textContent = text("loginError");
+    return;
+  }
+  currentUser = user;
+  localStorage.setItem(sessionKey, user.id);
+  loginError.textContent = "";
+  loginPassword.value = "";
+  render();
+});
+
+logoutButton.addEventListener("click", () => {
+  currentUser = null;
+  localStorage.removeItem(sessionKey);
+  render();
+});
+
+addUserButton.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  const username = newUsernameInput.value.trim();
+  const password = newUserPasswordInput.value;
+  const role = newUserRoleInput.value;
+  if (!username || !password || users.some((user) => user.username === username)) return;
+  users.push({ id: createId(), username, passwordHash: md5(password), role });
+  newUsernameInput.value = "";
+  newUserPasswordInput.value = "";
+  saveUsers();
+  render();
+});
+
+userList.addEventListener("click", (event) => {
+  if (!isAdmin()) return;
+  const button = event.target.closest("button");
+  if (!button || button.dataset.userAction !== "delete-user") return;
+  users = users.filter((user) => user.id !== button.dataset.id);
+  saveUsers();
+  render();
+});
+
+userList.addEventListener("submit", (event) => {
+  if (!isAdmin()) return;
+  const passwordForm = event.target.closest(".password-form");
+  if (!passwordForm) return;
+  event.preventDefault();
+  const user = users.find((item) => item.id === passwordForm.dataset.userId);
+  const input = passwordForm.elements.password;
+  const password = input.value;
+  if (!user || !password) return;
+  user.passwordHash = md5(password);
+  delete user.password;
+  input.value = "";
+  saveUsers();
+  render();
+});
+
+projectInput.addEventListener("input", renderResourceControls);
+projectResourceInput.addEventListener("change", () => {
+  if (projectResourceInput.value) {
+    ownerInput.value = projectResourceInput.value;
+  }
+});
+
+addMemberButton.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  const name = memberNameInput.value.trim();
+  if (!name) return;
+  members.push({ id: createId(), name });
+  memberNameInput.value = "";
+  saveResources();
+  render();
+});
+
+addTeamButton.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  const name = teamNameInput.value.trim();
+  const memberIds = [...teamMembersInput.selectedOptions].map((option) => option.value);
+  if (!name) return;
+  teams.push({ id: createId(), name, memberIds });
+  teamNameInput.value = "";
+  saveResources();
+  render();
+});
+
+addProjectLinkButton.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  const project = linkProjectInput.value.trim();
+  const resource = linkResourceInput.value;
+  if (!project || !resource) return;
+  if (!projectLinks.some((link) => link.project === project && link.resource === resource)) {
+    projectLinks.push({ id: createId(), project, resource });
+  }
+  linkProjectInput.value = "";
+  saveResources();
+  render();
+});
+
+[memberList, teamList, projectLinksList].forEach((container) => {
+  container.addEventListener("click", (event) => {
+    if (!isAdmin()) return;
+    const button = event.target.closest("button");
+    if (!button) return;
+    const action = button.dataset.resourceAction;
+    const id = button.dataset.id;
+
+    if (action === "delete-member") {
+      members = members.filter((member) => member.id !== id);
+      teams = teams.map((team) => ({ ...team, memberIds: team.memberIds.filter((memberId) => memberId !== id) }));
+      tasks = tasks.map((task) => task.owner === resourceValue("member", id) ? { ...task, owner: "" } : task);
+      projectLinks = projectLinks.filter((link) => link.resource !== resourceValue("member", id));
+      saveTasks();
+    }
+
+    if (action === "delete-team") {
+      teams = teams.filter((team) => team.id !== id);
+      tasks = tasks.map((task) => task.owner === resourceValue("team", id) ? { ...task, owner: "" } : task);
+      projectLinks = projectLinks.filter((link) => link.resource !== resourceValue("team", id));
+      saveTasks();
+    }
+
+    if (action === "delete-link") {
+      const link = projectLinks.find((item) => item.id === id);
+      if (link) {
+        trash.push({ id: createId(), type: "project", data: { ...link }, deletedAt: new Date().toISOString() });
+      }
+      projectLinks = projectLinks.filter((link) => link.id !== id);
+    }
+
+    saveResources();
+    saveTrash();
+    render();
+  });
+});
+
+trashList.addEventListener("click", (event) => {
+  if (!isAdmin()) return;
+  const button = event.target.closest("button");
+  if (!button) return;
+  const item = trash.find((trashItem) => trashItem.id === button.dataset.id);
+  if (!item) return;
+
+  if (button.dataset.trashAction === "restore") {
+    if (item.type === "task" && !tasks.some((task) => task.id === item.data.id)) {
+      tasks.push(item.data);
+      saveTasks();
+    }
+    if (item.type === "project" && !projectLinks.some((link) => link.id === item.data.id)) {
+      projectLinks.push(item.data);
+      saveResources();
+    }
+  }
+
+  trash = trash.filter((trashItem) => trashItem.id !== item.id);
+  saveTrash();
+  render();
+});
+
+resetDemo.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  tasks = createDemoTasks();
+  members = demoMemberTemplates.map((member) => ({ ...member }));
+  teams = demoTeamTemplates.map((team) => ({ ...team, memberIds: [...team.memberIds] }));
+  projectLinks = demoProjectLinks.map((link) => ({ ...link }));
+  trash = [];
+  users = demoUsers.map((user) => ({ ...user }));
+  currentUser = users.find((user) => user.role === "admin") || null;
+  if (currentUser) localStorage.setItem(sessionKey, currentUser.id);
+  saveTasks();
+  saveResources();
+  saveUsers();
+  saveTrash();
+  resetForm();
+  render();
+});
+
+clearDone.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  tasks = tasks.filter((task) => task.status !== "Bitib");
+  saveTasks();
+  render();
+});
+
+render();
