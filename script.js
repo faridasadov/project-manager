@@ -3,6 +3,7 @@ const languageKey = "project-manager-language";
 const membersKey = "project-manager-members-v1";
 const teamsKey = "project-manager-teams-v1";
 const projectLinksKey = "project-manager-project-links-v1";
+const projectsKey = "project-manager-projects-v1";
 const usersKey = "project-manager-users-v1";
 const sessionKey = "project-manager-session-v1";
 const trashKey = "project-manager-trash-v1";
@@ -50,6 +51,11 @@ const translations = {
     taskNamePlaceholder: "Məsələn: Router konfiqurasiyası",
     project: "Layihə",
     projectPlaceholder: "Məsələn: Network upgrade",
+    selectProject: "Layihə seç",
+    projects: "Layihələr",
+    newProject: "Yeni layihə",
+    projectNamePlaceholder: "Layihə adı",
+    addProject: "Layihə yarat",
     projectResource: "Layihə resursu",
     noResource: "Resurs seçilməyib",
     start: "Başlama",
@@ -195,6 +201,11 @@ const translations = {
     taskNamePlaceholder: "Например: настройка роутера",
     project: "Проект",
     projectPlaceholder: "Например: Network upgrade",
+    selectProject: "Выберите проект",
+    projects: "Проекты",
+    newProject: "Новый проект",
+    projectNamePlaceholder: "Название проекта",
+    addProject: "Создать проект",
     projectResource: "Ресурс проекта",
     noResource: "Ресурс не выбран",
     start: "Начало",
@@ -340,6 +351,11 @@ const translations = {
     taskNamePlaceholder: "Example: Router configuration",
     project: "Project",
     projectPlaceholder: "Example: Network upgrade",
+    selectProject: "Select project",
+    projects: "Projects",
+    newProject: "New project",
+    projectNamePlaceholder: "Project name",
+    addProject: "Create project",
     projectResource: "Project resource",
     noResource: "No resource selected",
     start: "Start",
@@ -644,6 +660,11 @@ const demoProjectLinks = [
   { id: "link-customer-network", project: "Customer rollout", resource: "team:team-network" }
 ];
 
+const demoProjects = [
+  { id: "project-internal", name: "Internal portal" },
+  { id: "project-customer", name: "Customer rollout" }
+];
+
 const demoUsers = [
   { id: "user-admin", username: "admin", passwordHash: md5("admin123"), role: "admin" },
   { id: "user-manager", username: "manager", passwordHash: md5("manager123"), role: "manager" },
@@ -698,6 +719,10 @@ const linkResourceInput = document.querySelector("#linkResource");
 const addProjectLinkButton = document.querySelector("#addProjectLink");
 const projectLinksList = document.querySelector("#projectLinks");
 const linkCount = document.querySelector("#linkCount");
+const newProjectNameInput = document.querySelector("#newProjectName");
+const addProjectButton = document.querySelector("#addProject");
+const projectList = document.querySelector("#projectList");
+const projectCount = document.querySelector("#projectCount");
 const trashList = document.querySelector("#trashList");
 const trashCount = document.querySelector("#trashCount");
 const loginScreen = document.querySelector("#loginScreen");
@@ -736,11 +761,12 @@ const settingsStatus = document.querySelector("#settingsStatus");
 let tasks = loadTasks();
 let members = loadMembers();
 let teams = loadTeams();
+let projects = loadProjects();
 let projectLinks = loadProjectLinks();
 let users = loadUsers();
 let trash = loadTrash();
-let appSettings = loadSettings();
 let currentUser = loadSession();
+let appSettings = loadSettings();
 let currentFilter = "Hamısı";
 let currentView = "dashboard";
 let currentLanguage = localStorage.getItem(languageKey) || "az";
@@ -862,6 +888,13 @@ function loadTeams() {
   return loadJson(teamsKey, () => demoTeamTemplates.map((team) => ({ ...team, memberIds: [...team.memberIds] })));
 }
 
+function loadProjects() {
+  const stored = loadJson(projectsKey, () => []);
+  if (stored.length) return stored;
+  const names = [...new Set([...demoProjects.map((project) => project.name), ...loadTasks().map((task) => task.project).filter(Boolean)])];
+  return names.map((name) => demoProjects.find((project) => project.name === name) || { id: createId(), name });
+}
+
 function loadProjectLinks() {
   return loadJson(projectLinksKey, () => demoProjectLinks.map((link) => ({ ...link })));
 }
@@ -897,11 +930,13 @@ function defaultSettings() {
 }
 
 function loadSettings() {
-  return { ...defaultSettings(), ...loadJson(settingsKey, defaultSettings) };
+  const key = currentUser ? `${settingsKey}-${currentUser.id}` : settingsKey;
+  return { ...defaultSettings(), ...loadJson(key, defaultSettings) };
 }
 
 function saveAppSettings() {
-  localStorage.setItem(settingsKey, JSON.stringify(appSettings));
+  const key = currentUser ? `${settingsKey}-${currentUser.id}` : settingsKey;
+  localStorage.setItem(key, JSON.stringify(appSettings));
 }
 
 function loadSession() {
@@ -940,6 +975,7 @@ function saveTasks() {
 function saveResources() {
   localStorage.setItem(membersKey, JSON.stringify(members));
   localStorage.setItem(teamsKey, JSON.stringify(teams));
+  localStorage.setItem(projectsKey, JSON.stringify(projects));
   localStorage.setItem(projectLinksKey, JSON.stringify(projectLinks));
 }
 
@@ -1053,6 +1089,10 @@ function getProject(task) {
   return task.project || text("unassignedProject");
 }
 
+function projectExists(name) {
+  return projects.some((project) => project.name === name);
+}
+
 function resourceValue(type, id) {
   return `${type}:${id}`;
 }
@@ -1102,7 +1142,7 @@ function canManageTasks() {
 }
 
 function openAdminPanel() {
-  if (!canManageTasks()) return;
+  if (!currentUser) return;
   adminModal.classList.add("open");
   adminModal.setAttribute("aria-hidden", "false");
   closeAdminPanelButton.focus();
@@ -1139,21 +1179,29 @@ function visibleTasks() {
 
 function renderProjectFilter() {
   const selected = projectFilter.value || "Hamısı";
-  const projects = [...new Set(tasks.map(getProject))].sort();
+  const projectNames = [...new Set([...projects.map((project) => project.name), ...tasks.map(getProject)])].sort();
   projectFilter.innerHTML = [
     `<option value="Hamısı">${text("allProjects")}</option>`,
-    ...projects.map((project) => `<option value="${escapeHtml(project)}">${escapeHtml(project)}</option>`)
+    ...projectNames.map((project) => `<option value="${escapeHtml(project)}">${escapeHtml(project)}</option>`)
   ].join("");
-  projectFilter.value = projects.includes(selected) ? selected : "Hamısı";
+  projectFilter.value = projectNames.includes(selected) ? selected : "Hamısı";
 }
 
 function renderResourceControls() {
   const options = allResourceOptions();
   userCount.textContent = users.length;
+  projectCount.textContent = projects.length;
   memberCount.textContent = members.length;
   teamCount.textContent = teams.length;
   linkCount.textContent = projectLinks.length;
   trashCount.textContent = trash.length;
+  const currentProject = projectInput.value;
+  projectInput.innerHTML = [
+    `<option value="">${text("selectProject")}</option>`,
+    ...projects.map((project) => `<option value="${escapeHtml(project.name)}">${escapeHtml(project.name)}</option>`)
+  ].join("");
+  projectInput.value = projects.some((project) => project.name === currentProject) ? currentProject : "";
+
   const currentOwner = ownerInput.value;
   ownerInput.innerHTML = [
     `<option value="">${text("noOwnerSelect")}</option>`,
@@ -1178,6 +1226,16 @@ function renderResourceControls() {
   linkResourceInput.innerHTML = options.map((option) => (
     `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`
   )).join("");
+
+  projectList.innerHTML = projects.length ? projects.map((project) => {
+    const taskCount = tasks.filter((task) => task.project === project.name).length;
+    return `
+      <div class="resource-item">
+        <span><strong>${escapeHtml(project.name)}</strong>${taskCount} ${text("tasks")}</span>
+        <button type="button" data-resource-action="delete-project" data-id="${project.id}">${text("remove")}</button>
+      </div>
+    `;
+  }).join("") : `<div class="empty">${text("empty")}</div>`;
 
   memberList.innerHTML = members.length ? members.map((member) => `
     <div class="resource-item">
@@ -1576,6 +1634,7 @@ function backupPayload() {
     version: backupVersion,
     exportedAt: new Date().toISOString(),
     tasks,
+    projects,
     members,
     teams,
     projectLinks,
@@ -1597,6 +1656,7 @@ function downloadJson(filename, data) {
 function importBackup(payload) {
   if (!payload || !Array.isArray(payload.tasks)) throw new Error(text("backupError"));
   tasks = payload.tasks.map(normalizeTask);
+  projects = Array.isArray(payload.projects) ? payload.projects : projects;
   members = Array.isArray(payload.members) ? payload.members : members;
   teams = Array.isArray(payload.teams) ? payload.teams : teams;
   projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
@@ -1661,6 +1721,7 @@ form.addEventListener("submit", async (event) => {
     comments: existingTask?.comments || [],
     attachments: existingTask?.attachments || []
   };
+  if (!projectExists(task.project)) return;
 
   const existingIndex = tasks.findIndex((item) => item.id === task.id);
   if (existingIndex >= 0) {
@@ -1767,6 +1828,7 @@ loginForm.addEventListener("submit", (event) => {
   }
   currentUser = user;
   localStorage.setItem(sessionKey, user.id);
+  appSettings = loadSettings();
   loginError.textContent = "";
   loginPassword.value = "";
   render();
@@ -1775,6 +1837,7 @@ loginForm.addEventListener("submit", (event) => {
 logoutButton.addEventListener("click", () => {
   currentUser = null;
   localStorage.removeItem(sessionKey);
+  appSettings = loadSettings();
   closeAdminPanel();
   render();
 });
@@ -1823,19 +1886,19 @@ importDataInput.addEventListener("change", () => {
 });
 
 saveSettingsButton.addEventListener("click", () => {
-  if (!isAdmin()) return;
+  if (!currentUser) return;
   appSettings = {
     ...appSettings,
     themeMode: themeModeInput.value,
     backgroundStyle: backgroundStyleInput.value,
     accentColor: accentColorInput.value,
-    emailEnabled: emailEnabledInput.checked,
-    emailRecipients: emailRecipientsInput.value.trim(),
-    emailProvider: emailProviderInput.value.trim(),
-    ldapEnabled: ldapEnabledInput.checked,
-    ldapUrl: ldapUrlInput.value.trim(),
-    ldapBaseDn: ldapBaseDnInput.value.trim(),
-    ldapUserFilter: ldapUserFilterInput.value.trim() || "(uid={username})"
+    emailEnabled: isAdmin() ? emailEnabledInput.checked : appSettings.emailEnabled,
+    emailRecipients: isAdmin() ? emailRecipientsInput.value.trim() : appSettings.emailRecipients,
+    emailProvider: isAdmin() ? emailProviderInput.value.trim() : appSettings.emailProvider,
+    ldapEnabled: isAdmin() ? ldapEnabledInput.checked : appSettings.ldapEnabled,
+    ldapUrl: isAdmin() ? ldapUrlInput.value.trim() : appSettings.ldapUrl,
+    ldapBaseDn: isAdmin() ? ldapBaseDnInput.value.trim() : appSettings.ldapBaseDn,
+    ldapUserFilter: isAdmin() ? ldapUserFilterInput.value.trim() || "(uid={username})" : appSettings.ldapUserFilter
   };
   saveAppSettings();
   applyAppSettings();
@@ -1880,11 +1943,21 @@ userList.addEventListener("submit", (event) => {
   render();
 });
 
-projectInput.addEventListener("input", renderResourceControls);
+projectInput.addEventListener("change", renderResourceControls);
 projectResourceInput.addEventListener("change", () => {
   if (projectResourceInput.value) {
     ownerInput.value = projectResourceInput.value;
   }
+});
+
+addProjectButton.addEventListener("click", () => {
+  if (!canManageTasks()) return;
+  const name = newProjectNameInput.value.trim();
+  if (!name || projects.some((project) => project.name.toLowerCase() === name.toLowerCase())) return;
+  projects.push({ id: createId(), name });
+  newProjectNameInput.value = "";
+  saveResources();
+  render();
 });
 
 addMemberButton.addEventListener("click", () => {
@@ -1921,7 +1994,7 @@ addProjectLinkButton.addEventListener("click", () => {
   render();
 });
 
-[memberList, teamList, projectLinksList].forEach((container) => {
+[projectList, memberList, teamList, projectLinksList].forEach((container) => {
   container.addEventListener("click", (event) => {
     if (!canManageTasks()) return;
     const button = event.target.closest("button");
@@ -1935,6 +2008,13 @@ addProjectLinkButton.addEventListener("click", () => {
       tasks = tasks.map((task) => task.owner === resourceValue("member", id) ? { ...task, owner: "" } : task);
       projectLinks = projectLinks.filter((link) => link.resource !== resourceValue("member", id));
       saveTasks();
+    }
+
+    if (action === "delete-project") {
+      const project = projects.find((item) => item.id === id);
+      if (!project || tasks.some((task) => task.project === project.name)) return;
+      projects = projects.filter((item) => item.id !== id);
+      projectLinks = projectLinks.filter((link) => link.project !== project.name);
     }
 
     if (action === "delete-team") {
@@ -1986,6 +2066,7 @@ resetDemo.addEventListener("click", () => {
   tasks = createDemoTasks();
   members = demoMemberTemplates.map((member) => ({ ...member }));
   teams = demoTeamTemplates.map((team) => ({ ...team, memberIds: [...team.memberIds] }));
+  projects = demoProjects.map((project) => ({ ...project }));
   projectLinks = demoProjectLinks.map((link) => ({ ...link }));
   trash = [];
   users = demoUsers.map((user) => ({ ...user }));

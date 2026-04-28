@@ -58,7 +58,8 @@ const ids = [
   "totalCount", "activeCount", "doneCount", "dateRange", "resetDemo", "clearDone",
   "languageSelect", "loginLanguageSelect", "memberName", "addMember", "memberList", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
-  "memberCount", "teamCount", "linkCount", "themeMode", "backgroundStyle", "accentColor",
+  "memberCount", "teamCount", "linkCount", "newProjectName", "addProject", "projectList",
+  "projectCount", "themeMode", "backgroundStyle", "accentColor",
   "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
   "ldapBaseDn", "ldapUserFilter", "saveSettings", "settingsStatus"
   , "loginScreen", "loginForm", "loginUsername", "loginPassword", "loginError",
@@ -188,6 +189,10 @@ elements["#linkProject"].value = "QA project";
 elements["#linkResource"].value = "member:member-farid";
 elements["#addProjectLink"].dispatch("click");
 assert.match(elements["#projectLinks"].innerHTML, /QA project/, "resource can be linked to project");
+
+elements["#newProjectName"].value = "QA project";
+elements["#addProject"].dispatch("click");
+assert.match(elements["#projectList"].innerHTML, /QA project/, "project can be created");
 
 elements["#languageSelect"].value = "ru";
 elements["#languageSelect"].dispatch("change");

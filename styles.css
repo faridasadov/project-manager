@@ -68,7 +68,6 @@ body.logged-in #loginScreen {
 }
 
 body.user-role .admin-only,
-body.user-role .manage-only,
 body.user-role .task-actions,
 body.user-role .composer {
   display: none;

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-    <link rel="stylesheet" href="styles.css?v=20260428-settings">
+    <link rel="stylesheet" href="styles.css?v=20260428-projects">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
@@ -46,7 +46,7 @@
         </select>
         <button id="logoutButton" type="button" data-i18n="logout">Çıxış</button>
         <button id="notifyButton" type="button" data-i18n="notify">Bildirişlər</button>
-        <button id="openAdminPanel" class="manage-only" type="button" data-i18n="adminPanel">Admin panel</button>
+        <button id="openAdminPanel" type="button" data-i18n="adminPanel">Admin panel</button>
       </div>
     </header>
 
@@ -67,7 +67,9 @@
 
           <label>
             <span data-i18n="project">Layihə</span>
-            <input id="project" type="text" placeholder="Məsələn: Network upgrade" data-i18n-placeholder="projectPlaceholder">
+            <select id="project" required>
+              <option value="" data-i18n="selectProject">Layihə seç</option>
+            </select>
           </label>
 
           <label>
@@ -154,7 +156,7 @@
           </div>
 
           <section class="resource-panel">
-          <details class="resource-block admin-only" open>
+          <details class="resource-block" open>
             <summary>
               <span data-i18n="settings">Settings</span>
               <small data-i18n="new">Yeni</small>
@@ -184,36 +186,51 @@
                   <option value="green" data-i18n="accentGreen">Green</option>
                 </select>
               </label>
-              <label class="toggle-row">
+              <label class="toggle-row admin-only">
                 <input id="emailEnabled" type="checkbox">
                 <span data-i18n="emailNotifications">Mail bildirişləri</span>
               </label>
-              <label>
+              <label class="admin-only">
                 <span data-i18n="emailRecipients">Mail alanlar</span>
                 <input id="emailRecipients" type="email" multiple placeholder="admin@example.com" data-i18n-placeholder="emailRecipientsPlaceholder">
               </label>
-              <label>
+              <label class="admin-only">
                 <span data-i18n="emailProvider">Mail provider/API</span>
                 <input id="emailProvider" type="text" placeholder="Backend API URL" data-i18n-placeholder="emailProviderPlaceholder">
               </label>
-              <label class="toggle-row">
+              <label class="toggle-row admin-only">
                 <input id="ldapEnabled" type="checkbox">
                 <span data-i18n="ldapEnabled">LDAP aktivdir</span>
               </label>
-              <label>
+              <label class="admin-only">
                 <span data-i18n="ldapUrl">LDAP URL</span>
                 <input id="ldapUrl" type="text" placeholder="ldaps://ldap.example.com:636">
               </label>
-              <label>
+              <label class="admin-only">
                 <span data-i18n="ldapBaseDn">Base DN</span>
                 <input id="ldapBaseDn" type="text" placeholder="dc=example,dc=com">
               </label>
-              <label>
+              <label class="admin-only">
                 <span data-i18n="ldapUserFilter">User filter</span>
                 <input id="ldapUserFilter" type="text" placeholder="(uid={username})">
               </label>
               <button id="saveSettings" class="primary" type="button" data-i18n="saveSettings">Settings saxla</button>
               <p id="settingsStatus" class="settings-status"></p>
+            </div>
+          </details>
+
+          <details class="resource-block" open>
+            <summary>
+              <span data-i18n="projects">Layihələr</span>
+              <small id="projectCount">0</small>
+            </summary>
+            <div class="resource-body">
+              <label>
+                <span data-i18n="newProject">Yeni layihə</span>
+                <input id="newProjectName" type="text" placeholder="Layihə adı" data-i18n-placeholder="projectNamePlaceholder">
+              </label>
+              <button id="addProject" type="button" data-i18n="addProject">Layihə yarat</button>
+              <div id="projectList" class="resource-list"></div>
             </div>
           </details>
 
@@ -414,6 +431,6 @@
     </main>
     </div>
 
-    <script src="script.js?v=20260428-settings"></script>
+    <script src="script.js?v=20260428-projects"></script>
   </body>
 </html>
