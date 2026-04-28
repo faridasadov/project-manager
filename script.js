@@ -56,6 +56,14 @@ const translations = {
     newProject: "Yeni layihə",
     projectNamePlaceholder: "Layihə adı",
     addProject: "Layihə yarat",
+    createProjectFirst: "Əvvəl layihə yarat",
+    projectPages: "Layihə səhifələri",
+    openProject: "Layihəni aç",
+    addTaskToProject: "Task əlavə et",
+    backgroundFocus: "Focus",
+    backgroundPaper: "Kağız",
+    accentAmber: "Amber",
+    accentRed: "Red",
     projectResource: "Layihə resursu",
     noResource: "Resurs seçilməyib",
     start: "Başlama",
@@ -206,6 +214,14 @@ const translations = {
     newProject: "Новый проект",
     projectNamePlaceholder: "Название проекта",
     addProject: "Создать проект",
+    createProjectFirst: "Сначала создайте проект",
+    projectPages: "Страницы проектов",
+    openProject: "Открыть проект",
+    addTaskToProject: "Добавить задачу",
+    backgroundFocus: "Фокус",
+    backgroundPaper: "Бумага",
+    accentAmber: "Янтарный",
+    accentRed: "Красный",
     projectResource: "Ресурс проекта",
     noResource: "Ресурс не выбран",
     start: "Начало",
@@ -356,6 +372,14 @@ const translations = {
     newProject: "New project",
     projectNamePlaceholder: "Project name",
     addProject: "Create project",
+    createProjectFirst: "Create project first",
+    projectPages: "Project pages",
+    openProject: "Open project",
+    addTaskToProject: "Add task",
+    backgroundFocus: "Focus",
+    backgroundPaper: "Paper",
+    accentAmber: "Amber",
+    accentRed: "Red",
     projectResource: "Project resource",
     noResource: "No resource selected",
     start: "Start",
@@ -695,6 +719,7 @@ const viewTabs = document.querySelectorAll(".view-tab");
 const views = document.querySelectorAll(".view");
 const searchInput = document.querySelector("#searchInput");
 const projectFilter = document.querySelector("#projectFilter");
+const projectCards = document.querySelector("#projectCards");
 const statusBars = document.querySelector("#statusBars");
 const upcomingList = document.querySelector("#upcomingList");
 const deadlineAlerts = document.querySelector("#deadlineAlerts");
@@ -721,6 +746,8 @@ const projectLinksList = document.querySelector("#projectLinks");
 const linkCount = document.querySelector("#linkCount");
 const newProjectNameInput = document.querySelector("#newProjectName");
 const addProjectButton = document.querySelector("#addProject");
+const quickProjectNameInput = document.querySelector("#quickProjectName");
+const quickAddProjectButton = document.querySelector("#quickAddProject");
 const projectList = document.querySelector("#projectList");
 const projectCount = document.querySelector("#projectCount");
 const trashList = document.querySelector("#trashList");
@@ -852,6 +879,7 @@ function updateFilterLabels() {
 function updateViewLabels() {
   viewTabs.forEach((button) => {
     if (button.dataset.view === "dashboard") button.textContent = text("dashboard");
+    if (button.dataset.view === "projects") button.textContent = text("projects");
     if (button.dataset.view === "list") button.textContent = text("list");
     if (button.dataset.view === "kanban") button.textContent = text("kanban");
     if (button.dataset.view === "gantt") button.textContent = text("gantt");
@@ -1091,6 +1119,23 @@ function getProject(task) {
 
 function projectExists(name) {
   return projects.some((project) => project.name === name);
+}
+
+function createProject(name) {
+  const cleanName = name.trim();
+  if (!cleanName || projects.some((project) => project.name.toLowerCase() === cleanName.toLowerCase())) return false;
+  projects.push({ id: createId(), name: cleanName });
+  saveResources();
+  return true;
+}
+
+function openProjectPage(projectName) {
+  projectFilter.value = projectName;
+  currentView = "list";
+  viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === "list"));
+  projectInput.value = projectName;
+  renderResourceControls();
+  render();
 }
 
 function resourceValue(type, id) {
@@ -1371,6 +1416,32 @@ function renderDeadlineAlerts() {
   `).join("") : `<div class="empty">${text("noDeadlineAlerts")}</div>`;
 }
 
+function renderProjectsView() {
+  projectCards.innerHTML = projects.length ? projects.map((project) => {
+    const projectTasks = tasks.filter((task) => task.project === project.name);
+    const done = projectTasks.filter((task) => task.status === "Bitib").length;
+    const active = projectTasks.length - done;
+    const percent = projectTasks.length ? Math.round((done / projectTasks.length) * 100) : 0;
+    return `
+      <article class="project-card">
+        <div>
+          <h3>${escapeHtml(project.name)}</h3>
+          <div class="task-meta">
+            <span>${projectTasks.length} ${text("tasks")}</span>
+            <span>${active} ${text("activeTasks")}</span>
+            <span>${percent}%</span>
+          </div>
+          <div class="progress-mini"><span style="width:${percent}%"></span></div>
+        </div>
+        <div class="project-card-actions">
+          <button type="button" data-project-action="open" data-project="${escapeHtml(project.name)}">${text("openProject")}</button>
+          <button class="primary" type="button" data-project-action="add-task" data-project="${escapeHtml(project.name)}">${text("addTaskToProject")}</button>
+        </div>
+      </article>
+    `;
+  }).join("") : `<div class="empty">${text("empty")}</div>`;
+}
+
 function renderTaskList() {
   const shown = visibleTasks();
   if (!shown.length) {
@@ -1565,6 +1636,7 @@ function render() {
   renderResourceControls();
   renderSummary();
   renderDashboard();
+  renderProjectsView();
   renderTaskList();
   renderKanban();
   renderGantt();
@@ -1950,14 +2022,35 @@ projectResourceInput.addEventListener("change", () => {
   }
 });
 
-addProjectButton.addEventListener("click", () => {
+function addProjectFromInput(input) {
   if (!canManageTasks()) return;
-  const name = newProjectNameInput.value.trim();
-  if (!name || projects.some((project) => project.name.toLowerCase() === name.toLowerCase())) return;
-  projects.push({ id: createId(), name });
-  newProjectNameInput.value = "";
-  saveResources();
-  render();
+  const projectName = input.value.trim();
+  if (!createProject(projectName)) return;
+  input.value = "";
+  openProjectPage(projectName);
+}
+
+addProjectButton.addEventListener("click", () => {
+  addProjectFromInput(newProjectNameInput);
+});
+
+quickAddProjectButton.addEventListener("click", () => {
+  addProjectFromInput(quickProjectNameInput);
+});
+
+quickProjectNameInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    addProjectFromInput(quickProjectNameInput);
+  }
+});
+
+projectCards.addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button) return;
+  const projectName = button.dataset.project;
+  if (!projectName) return;
+  openProjectPage(projectName);
 });
 
 addMemberButton.addEventListener("click", () => {

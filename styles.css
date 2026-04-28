@@ -51,12 +51,34 @@ body[data-background="grid"] {
   background-size: 28px 28px;
 }
 
+body[data-background="focus"] {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.16), transparent 28%),
+    radial-gradient(circle at 80% 10%, rgba(15, 118, 110, 0.14), transparent 24%),
+    var(--bg);
+}
+
+body[data-background="paper"] {
+  background:
+    linear-gradient(0deg, rgba(100, 113, 132, 0.08) 1px, transparent 1px),
+    var(--bg);
+  background-size: 100% 34px;
+}
+
 body[data-accent="blue"] {
   --teal: #2563eb;
 }
 
 body[data-accent="green"] {
   --teal: #16a34a;
+}
+
+body[data-accent="amber"] {
+  --teal: #d97706;
+}
+
+body[data-accent="red"] {
+  --teal: #dc2626;
 }
 
 body.logged-out #appShell {
@@ -277,6 +299,18 @@ h2 {
   align-items: center;
   gap: 10px;
   margin-bottom: 16px;
+}
+
+.project-create {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.compact-head {
+  margin-bottom: 0;
 }
 
 .dot {
@@ -676,17 +710,38 @@ textarea:focus {
 }
 
 .compact-list,
-.task-list {
+.task-list,
+.project-cards {
   display: grid;
   gap: 10px;
 }
 
 .compact-item,
 .task-card,
-.kanban-card {
+.kanban-card,
+.project-card {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--soft);
+}
+
+.project-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+}
+
+.project-card h3 {
+  margin-bottom: 7px;
+}
+
+.project-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .compact-item {
@@ -1109,6 +1164,7 @@ textarea:focus {
 
   .form-grid,
   .task-card,
+  .project-card,
   .tools,
   .settings-grid,
   .password-form,

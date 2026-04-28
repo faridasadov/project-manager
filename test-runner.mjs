@@ -54,11 +54,11 @@ const ids = [
   "taskForm", "formTitle", "taskId", "taskName", "project", "startDate", "endDate",
   "projectResource", "status", "priority", "owner", "progress", "notes", "cancelEdit", "gantt",
   "kanban", "taskList", "searchInput", "projectFilter", "statusBars", "upcomingList",
-  "deadlineAlerts", "notifyButton", "openAdminPanel", "closeAdminPanel", "adminModal", "exportData", "importData",
+  "deadlineAlerts", "projectCards", "notifyButton", "openAdminPanel", "closeAdminPanel", "adminModal", "exportData", "importData",
   "totalCount", "activeCount", "doneCount", "dateRange", "resetDemo", "clearDone",
   "languageSelect", "loginLanguageSelect", "memberName", "addMember", "memberList", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
-  "memberCount", "teamCount", "linkCount", "newProjectName", "addProject", "projectList",
+  "memberCount", "teamCount", "linkCount", "newProjectName", "addProject", "quickProjectName", "quickAddProject", "projectList",
   "projectCount", "themeMode", "backgroundStyle", "accentColor",
   "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
   "ldapBaseDn", "ldapUserFilter", "saveSettings", "settingsStatus"
@@ -94,13 +94,13 @@ const filters = ["Hamısı", "Plan", "Davam edir", "Bitib"].map((filter) => {
   return button;
 });
 
-const viewTabs = ["dashboard", "list", "kanban", "gantt"].map((view) => {
+const viewTabs = ["dashboard", "projects", "list", "kanban", "gantt"].map((view) => {
   const button = new Element(`view-${view}`);
   button.dataset.view = view;
   return button;
 });
 
-const views = ["dashboardView", "listView", "kanbanView", "ganttView"].map((id) => {
+const views = ["dashboardView", "projectsView", "listView", "kanbanView", "ganttView"].map((id) => {
   const view = new Element(`#${id}`);
   view.id = id;
   return view;
