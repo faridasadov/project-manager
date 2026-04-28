@@ -52,7 +52,7 @@ const ids = [
   "taskForm", "formTitle", "taskId", "taskName", "project", "startDate", "endDate",
   "projectResource", "status", "priority", "owner", "progress", "notes", "cancelEdit", "gantt",
   "kanban", "taskList", "searchInput", "projectFilter", "statusBars", "upcomingList",
-  "deadlineAlerts", "attachments", "notifyButton", "exportData", "importData",
+  "deadlineAlerts", "notifyButton", "exportData", "importData",
   "totalCount", "activeCount", "doneCount", "dateRange", "resetDemo", "clearDone",
   "languageSelect", "loginLanguageSelect", "memberName", "addMember", "memberList", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",

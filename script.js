@@ -574,7 +574,6 @@ const priorityInput = document.querySelector("#priority");
 const ownerInput = document.querySelector("#owner");
 const progressInput = document.querySelector("#progress");
 const notesInput = document.querySelector("#notes");
-const attachmentsInput = document.querySelector("#attachments");
 const cancelEdit = document.querySelector("#cancelEdit");
 const gantt = document.querySelector("#gantt");
 const kanban = document.querySelector("#kanban");
@@ -874,9 +873,9 @@ function readFileAsAttachment(file) {
   });
 }
 
-function readSelectedAttachments() {
-  if (!attachmentsInput?.files?.length) return Promise.resolve([]);
-  return Promise.all([...attachmentsInput.files].map(readFileAsAttachment));
+function readSelectedAttachments(input) {
+  if (!input?.files?.length) return Promise.resolve([]);
+  return Promise.all([...input.files].map(readFileAsAttachment));
 }
 
 function escapeHtml(value) {
@@ -1192,6 +1191,20 @@ function renderAttachments(task) {
   `;
 }
 
+function renderCommentAttachments(comment) {
+  const attachments = comment.attachments || [];
+  if (!attachments.length) return "";
+  return `
+    <div class="attachment-list compact-attachments">
+      ${attachments.map((attachment) => `
+        <a class="attachment-chip" href="${escapeHtml(attachment.dataUrl)}" download="${escapeHtml(attachment.name)}" title="${escapeHtml(attachment.name)} (${fileSizeLabel(Number(attachment.size) || 0)})">
+          <span>${escapeHtml(attachment.name)}</span>
+        </a>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderTaskActions(task) {
   const actions = task.status === "Bitib"
     ? `<button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>`
@@ -1212,12 +1225,14 @@ function renderComments(task) {
         <time datetime="${escapeHtml(comment.createdAt || "")}">${escapeHtml(formatDateTime(comment.createdAt))}</time>
       </div>
       <span>${escapeHtml(comment.text)}</span>
+      ${renderCommentAttachments(comment)}
     </div>
   `).join("") : `<div class="comment-empty">${text("noComments")}</div>`;
 
   const formHtml = task.status === "Bitib" ? "" : `
       <form class="comment-form" data-task-id="${task.id}">
         <textarea name="comment" rows="3" placeholder="${text("commentPlaceholder")}" required></textarea>
+        <input name="attachments" type="file" multiple aria-label="${text("attachments")}">
         <button type="submit">${text("addComment")}</button>
       </form>
   `;
@@ -1338,7 +1353,6 @@ function resetForm() {
   statusInput.value = "Plan";
   priorityInput.value = "Normal";
   progressInput.value = 0;
-  attachmentsInput.value = "";
 }
 
 function moveForward(task) {
@@ -1461,16 +1475,6 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  let selectedAttachments = [];
-  if (attachmentsInput?.files?.length) {
-    try {
-      selectedAttachments = await readSelectedAttachments();
-    } catch (error) {
-      alert(error.message || text("fileTooLarge"));
-      return;
-    }
-  }
-
   const existingTask = tasks.find((item) => item.id === taskId.value);
   const progress = Math.min(100, Math.max(0, Number.parseInt(progressInput.value || "0", 10)));
   const task = {
@@ -1486,7 +1490,7 @@ form.addEventListener("submit", async (event) => {
     progress: statusInput.value === "Bitib" ? 100 : progress,
     notes: notesInput.value.trim(),
     comments: existingTask?.comments || [],
-    attachments: [...(existingTask?.attachments || []), ...selectedAttachments]
+    attachments: existingTask?.attachments || []
   };
 
   const existingIndex = tasks.findIndex((item) => item.id === task.id);
@@ -1513,7 +1517,7 @@ form.addEventListener("submit", async (event) => {
     handleTaskAction(button.dataset.action, button.dataset.id);
   });
 
-  container.addEventListener("submit", (event) => {
+  container.addEventListener("submit", async (event) => {
     const commentForm = event.target.closest(".comment-form");
     if (!commentForm || !currentUser) return;
     event.preventDefault();
@@ -1521,14 +1525,26 @@ form.addEventListener("submit", async (event) => {
     const input = commentForm.elements.comment;
     const value = input.value.trim();
     if (!task || !value) return;
+    const attachmentInput = commentForm.elements.attachments;
+    let attachments = [];
+    if (attachmentInput?.files?.length) {
+      try {
+        attachments = await readSelectedAttachments(attachmentInput);
+      } catch (error) {
+        alert(error.message || text("fileTooLarge"));
+        return;
+      }
+    }
     task.comments = task.comments || [];
     task.comments.push({
       id: createId(),
       author: currentUser.username,
       text: value,
+      attachments,
       createdAt: new Date().toISOString()
     });
     input.value = "";
+    if (attachmentInput) attachmentInput.value = "";
     saveTasks();
     render();
   });
@@ -1763,7 +1779,12 @@ resetDemo.addEventListener("click", () => {
 
 clearDone.addEventListener("click", () => {
   if (!isAdmin()) return;
+  const doneTasks = tasks.filter((task) => task.status === "Bitib");
+  doneTasks.forEach((task) => {
+    trash.push({ id: createId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
+  });
   tasks = tasks.filter((task) => task.status !== "Bitib");
+  saveTrash();
   saveTasks();
   render();
 });
