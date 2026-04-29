@@ -62,7 +62,10 @@ const ids = [
   "totalCount", "activeCount", "doneCount", "dateRange", "resetDemo", "clearDone",
   "languageSelect", "loginLanguageSelect", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
-  "teamCount", "linkCount", "quickProjectName", "quickAddProject", "focusNewProject", "projectList",
+  "teamCount", "linkCount", "projectForm", "projectName", "projectLeader", "projectTeamMembers",
+  "addProjectTeamMembers", "selectedProjectTeamMembers",
+  "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress",
+  "focusNewProject", "closeProjectComposer", "cancelProjectCreate", "projectComposerModal", "projectList",
   "projectCount", "themeMode", "backgroundStyle", "accentColor",
   "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
   "ldapBaseDn", "ldapUserFilter", "saveSettings", "settingsStatus",
@@ -73,7 +76,10 @@ const ids = [
 ];
 
 ids.forEach((id) => element(`#${id}`));
-["taskId", "taskName", "project", "projectResource", "startDate", "endDate", "status", "priority", "owner", "progress", "notes"].forEach((id) => {
+[
+  "taskId", "taskName", "project", "projectResource", "startDate", "endDate", "status", "priority", "owner", "progress", "notes",
+  "projectName", "projectLeader", "projectTeamMembers", "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress"
+].forEach((id) => {
   elements[`#${id}`].formField = true;
 });
 
@@ -82,6 +88,11 @@ elements["#status"].options = [{ value: "Plan" }, { value: "Davam edir" }, { val
 elements["#priority"].value = "Normal";
 elements["#priority"].options = [{ value: "Normal" }, { value: "Yüksək" }, { value: "Aşağı" }];
 elements["#progress"].value = "0";
+elements["#projectStatus"].value = "Plan";
+elements["#projectStatus"].options = [{ value: "Plan" }, { value: "Davam edir" }, { value: "Bitib" }];
+elements["#projectPriority"].value = "Normal";
+elements["#projectPriority"].options = [{ value: "Normal" }, { value: "Yüksək" }, { value: "Aşağı" }];
+elements["#projectProgress"].value = "0";
 elements["#languageSelect"].value = "az";
 elements["#loginLanguageSelect"].value = "az";
 elements["#newUserRole"].value = "user";
@@ -199,9 +210,19 @@ elements["#linkResource"].value = "member:member-farid";
 elements["#addProjectLink"].dispatch("click");
 assert.match(elements["#projectLinks"].innerHTML, /QA project/, "resource can be linked to project");
 
-elements["#quickProjectName"].value = "QA project";
-elements["#quickAddProject"].dispatch("click");
+elements["#projectName"].value = "QA project";
+elements["#projectLeader"].value = "user-manager";
+elements["#projectTeamMembers"].selectedOptions = [{ value: "user:user-demo" }];
+elements["#addProjectTeamMembers"].dispatch("click");
+assert.match(elements["#selectedProjectTeamMembers"].innerHTML, /Demo User/, "selected member can be added to project team");
+elements["#projectStartDate"].value = "2026-05-10";
+elements["#projectEndDate"].value = "2026-05-20";
+elements["#projectStatus"].value = "Plan";
+elements["#projectPriority"].value = "Yüksək";
+elements["#projectProgress"].value = "15";
+elements["#projectForm"].dispatch("submit", { preventDefault: () => {} });
 assert.match(elements["#projectList"].innerHTML, /QA project/, "project can be created");
+assert.match(elements["#projectCards"].innerHTML, /15%/, "project metadata renders");
 
 elements["#languageSelect"].value = "ru";
 elements["#languageSelect"].dispatch("change");

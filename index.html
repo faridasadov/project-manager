@@ -148,6 +148,86 @@
       </aside>
       </div>
 
+      <div id="projectComposerModal" class="modal-shell task-composer-shell" aria-hidden="true">
+        <div class="modal-backdrop" data-project-modal-close="true"></div>
+        <aside class="composer task-composer-modal" aria-label="Layihə forması" data-i18n-aria="projectFormAria" role="dialog" aria-modal="true" aria-labelledby="projectFormTitle">
+        <div class="task-composer-top">
+          <div>
+            <p class="kicker" data-i18n="projects">Layihələr</p>
+            <h2 id="projectFormTitle" data-i18n="newProject">Yeni layihə</h2>
+          </div>
+          <button id="closeProjectComposer" class="icon-button" type="button" aria-label="Bağla" data-i18n-aria="close">×</button>
+        </div>
+
+        <div class="composer-head task-form-head">
+          <span class="dot"></span>
+          <div>
+            <p class="kicker" data-i18n="projectPages">Layihə səhifələri</p>
+            <h3 data-i18n="addProject">Layihə yarat</h3>
+          </div>
+        </div>
+
+        <form id="projectForm">
+          <label>
+            <span data-i18n="projectName">Layihənin adı</span>
+            <input id="projectName" type="text" placeholder="Layihə adı" data-i18n-placeholder="projectNamePlaceholder" required>
+          </label>
+
+          <label>
+            <span data-i18n="projectLeader">Layihə rəhbəri</span>
+            <select id="projectLeader"></select>
+          </label>
+
+          <label>
+            <span data-i18n="projectTeamMembers">Komanda üzvləri</span>
+            <select id="projectTeamMembers" multiple size="5"></select>
+          </label>
+          <button id="addProjectTeamMembers" type="button" data-i18n="addSelectedTeamMembers">Komandaya əlavə et</button>
+          <div id="selectedProjectTeamMembers" class="selected-manager-list project-team-selection"></div>
+
+          <div class="form-grid">
+            <label>
+              <span data-i18n="start">Başlama</span>
+              <input id="projectStartDate" type="date" required>
+            </label>
+            <label>
+              <span data-i18n="end">Bitmə</span>
+              <input id="projectEndDate" type="date" required>
+            </label>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              <span data-i18n="status">Status</span>
+              <select id="projectStatus">
+                <option value="Plan">Plan</option>
+                <option value="Davam edir">Davam edir</option>
+                <option value="Bitib">Bitib</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="priority">Prioritet</span>
+              <select id="projectPriority">
+                <option value="Normal">Normal</option>
+                <option value="Yüksək">Yüksək</option>
+                <option value="Aşağı">Aşağı</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            <span data-i18n="progress">Progress %</span>
+            <input id="projectProgress" type="number" min="0" max="100" value="0">
+          </label>
+
+          <div class="form-actions">
+            <button class="primary" type="submit" data-i18n="save">Yadda saxla</button>
+            <button id="cancelProjectCreate" type="button" data-i18n="cancel">Ləğv et</button>
+          </div>
+        </form>
+      </aside>
+      </div>
+
       <div id="adminModal" class="modal-shell" aria-hidden="true">
         <div class="modal-backdrop" data-modal-close="true"></div>
         <section class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="adminPanelTitle">
@@ -483,17 +563,6 @@
               </div>
               <button id="focusNewProject" class="primary" type="button" data-i18n="addProject">Layihə yarat</button>
             </div>
-            <section class="project-create project-create-inline">
-              <div class="composer-head compact-head">
-                <span class="dot"></span>
-                <h3 data-i18n="newProject">Yeni layihə</h3>
-              </div>
-              <label>
-                <span data-i18n="newProject">Yeni layihə</span>
-                <input id="quickProjectName" type="text" placeholder="Layihə adı" data-i18n-placeholder="projectNamePlaceholder">
-              </label>
-              <button id="quickAddProject" class="primary" type="button" data-i18n="addProject">Layihə yarat</button>
-            </section>
             <div id="projectCards" class="project-cards"></div>
           </div>
         </section>

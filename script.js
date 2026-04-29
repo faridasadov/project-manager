@@ -56,6 +56,12 @@ const translations = {
     newProject: "Yeni layihə",
     projectNamePlaceholder: "Layihə adı",
     addProject: "Layihə yarat",
+    projectFormAria: "Layihə forması",
+    projectName: "Layihənin adı",
+    projectLeader: "Layihə rəhbəri",
+    projectTeamMembers: "Komanda üzvləri",
+    addSelectedTeamMembers: "Komandaya əlavə et",
+    removeTeamMember: "Çıxar",
     createProjectFirst: "Əvvəl layihə yarat",
     projectPages: "Layihə səhifələri",
     openProject: "Layihəni aç",
@@ -255,6 +261,12 @@ const translations = {
     newProject: "Новый проект",
     projectNamePlaceholder: "Название проекта",
     addProject: "Создать проект",
+    projectFormAria: "Форма проекта",
+    projectName: "Название проекта",
+    projectLeader: "Руководитель проекта",
+    projectTeamMembers: "Участники команды",
+    addSelectedTeamMembers: "Добавить в команду",
+    removeTeamMember: "Убрать",
     createProjectFirst: "Сначала создайте проект",
     projectPages: "Страницы проектов",
     openProject: "Открыть проект",
@@ -454,6 +466,12 @@ const translations = {
     newProject: "New project",
     projectNamePlaceholder: "Project name",
     addProject: "Create project",
+    projectFormAria: "Project form",
+    projectName: "Project name",
+    projectLeader: "Project leader",
+    projectTeamMembers: "Team members",
+    addSelectedTeamMembers: "Add to team",
+    removeTeamMember: "Remove",
     createProjectFirst: "Create project first",
     projectPages: "Project pages",
     openProject: "Open project",
@@ -880,11 +898,11 @@ const demoProjectLinks = [
 ];
 
 const demoProjects = [
-  { id: "project-internal", name: "Internal portal", managerIds: ["user-manager"] },
-  { id: "project-customer", name: "Customer rollout", managerIds: ["user-manager"] },
-  { id: "project-mobile", name: "Mobile banking", managerIds: ["user-manager", "user-manager-2"] },
-  { id: "project-erp", name: "Warehouse ERP", managerIds: ["user-manager-2"] },
-  { id: "project-analytics", name: "Analytics portal", managerIds: ["user-manager"] }
+  { id: "project-internal", name: "Internal portal", managerIds: ["user-manager"], teamMemberIds: ["user:user-aysel", "user:user-rashad"], start: "2026-05-01", end: "2026-05-16", status: "Davam edir", priority: "Yüksək", progress: 55 },
+  { id: "project-customer", name: "Customer rollout", managerIds: ["user-manager"], teamMemberIds: ["member:member-farid", "member:member-nicat"], start: "2026-05-03", end: "2026-05-18", status: "Plan", priority: "Normal", progress: 0 },
+  { id: "project-mobile", name: "Mobile banking", managerIds: ["user-manager", "user-manager-2"], teamMemberIds: ["user:user-aysel", "user:user-rashad"], start: "2026-05-06", end: "2026-05-24", status: "Davam edir", priority: "Yüksək", progress: 40 },
+  { id: "project-erp", name: "Warehouse ERP", managerIds: ["user-manager-2"], teamMemberIds: ["user:user-rashad", "user:user-nigar"], start: "2026-05-09", end: "2026-05-25", status: "Davam edir", priority: "Yüksək", progress: 35 },
+  { id: "project-analytics", name: "Analytics portal", managerIds: ["user-manager"], teamMemberIds: ["user:user-aysel", "member:member-leyla"], start: "2026-05-12", end: "2026-05-27", status: "Plan", priority: "Normal", progress: 0 }
 ];
 
 const demoUsers = [
@@ -950,8 +968,17 @@ const linkResourceInput = document.querySelector("#linkResource");
 const addProjectLinkButton = document.querySelector("#addProjectLink");
 const projectLinksList = document.querySelector("#projectLinks");
 const linkCount = document.querySelector("#linkCount");
-const quickProjectNameInput = document.querySelector("#quickProjectName");
-const quickAddProjectButton = document.querySelector("#quickAddProject");
+const projectForm = document.querySelector("#projectForm");
+const projectNameInput = document.querySelector("#projectName");
+const projectLeaderInput = document.querySelector("#projectLeader");
+const projectTeamMembersInput = document.querySelector("#projectTeamMembers");
+const addProjectTeamMembersButton = document.querySelector("#addProjectTeamMembers");
+const selectedProjectTeamMembers = document.querySelector("#selectedProjectTeamMembers");
+const projectStartDateInput = document.querySelector("#projectStartDate");
+const projectEndDateInput = document.querySelector("#projectEndDate");
+const projectStatusInput = document.querySelector("#projectStatus");
+const projectPriorityInput = document.querySelector("#projectPriority");
+const projectProgressInput = document.querySelector("#projectProgress");
 const focusNewProjectButton = document.querySelector("#focusNewProject");
 const projectList = document.querySelector("#projectList");
 const projectCount = document.querySelector("#projectCount");
@@ -968,6 +995,9 @@ const notifyButton = document.querySelector("#notifyButton");
 const openTaskComposerButton = document.querySelector("#openTaskComposer");
 const closeTaskComposerButton = document.querySelector("#closeTaskComposer");
 const taskComposerModal = document.querySelector("#taskComposerModal");
+const closeProjectComposerButton = document.querySelector("#closeProjectComposer");
+const cancelProjectCreateButton = document.querySelector("#cancelProjectCreate");
+const projectComposerModal = document.querySelector("#projectComposerModal");
 const openAdminPanelButton = document.querySelector("#openAdminPanel");
 const closeAdminPanelButton = document.querySelector("#closeAdminPanel");
 const adminModal = document.querySelector("#adminModal");
@@ -1017,6 +1047,7 @@ let currentFilter = "Hamısı";
 let currentView = "dashboard";
 let currentLanguage = localStorage.getItem(languageKey) || "az";
 let activeManagerProjectId = "";
+let selectedProjectTeamMemberIds = [];
 let selectedCalendarDay = "";
 let calendarRange = { start: "2026-05-01", end: "2026-05-31" };
 ensureDemoData();
@@ -1089,6 +1120,12 @@ function updateSelectLabels() {
     option.textContent = statusLabel(option.value);
   });
   [...priorityInput.options].forEach((option) => {
+    option.textContent = priorityLabel(option.value);
+  });
+  [...projectStatusInput.options].forEach((option) => {
+    option.textContent = statusLabel(option.value);
+  });
+  [...projectPriorityInput.options].forEach((option) => {
     option.textContent = priorityLabel(option.value);
   });
 }
@@ -1290,7 +1327,19 @@ function normalizeTask(task) {
 }
 
 function normalizeProject(project) {
-  return { managerIds: [], ...project };
+  const progress = Math.min(100, Math.max(0, Number.parseInt(project.progress || "0", 10)));
+  const teamMemberIds = (project.teamMemberIds || []).map((id) => id.includes(":") ? id : resourceValue("member", id));
+  return {
+    managerIds: [],
+    teamMemberIds: [],
+    start: "",
+    end: "",
+    status: "Plan",
+    priority: "Normal",
+    ...project,
+    teamMemberIds,
+    progress: project.status === "Bitib" ? 100 : progress
+  };
 }
 
 function saveTasks() {
@@ -1331,6 +1380,7 @@ function isoDate(date) {
 }
 
 function shortDate(value) {
+  if (!value) return "-";
   return new Intl.DateTimeFormat(translations[currentLanguage].locale, {
     day: "2-digit",
     month: "short"
@@ -1418,15 +1468,33 @@ function projectExists(name) {
   return projects.some((project) => project.name === name);
 }
 
-function createProject(name) {
+function createProject(name, details = {}) {
   const cleanName = name.trim();
   if (!cleanName || projects.some((project) => project.name.toLowerCase() === cleanName.toLowerCase())) return false;
   const defaultManagerId = currentUser?.role === "manager"
     ? currentUser.id
     : users.find((user) => user.role === "manager")?.id || "";
-  projects.push({ id: createId(), name: cleanName, managerIds: defaultManagerId ? [defaultManagerId] : [] });
+  const managerIds = details.managerId ? [details.managerId] : (defaultManagerId ? [defaultManagerId] : []);
+  const progress = Math.min(100, Math.max(0, Number.parseInt(details.progress || "0", 10)));
+  const project = normalizeProject({
+    id: createId(),
+    name: cleanName,
+    managerIds,
+    teamMemberIds: details.teamMemberIds || [],
+    start: details.start || "",
+    end: details.end || "",
+    status: details.status || "Plan",
+    priority: details.priority || "Normal",
+    progress: details.status === "Bitib" ? 100 : progress
+  });
+  projects.push(project);
+  project.teamMemberIds.forEach((resource) => {
+    if (!projectLinks.some((link) => link.project === cleanName && link.resource === resource)) {
+      projectLinks.push({ id: createId(), project: cleanName, resource });
+    }
+  });
   saveResources();
-  return true;
+  return project;
 }
 
 function managerUsers(managerId) {
@@ -1545,7 +1613,8 @@ function teamMemberOptions(selectedIds = []) {
 
 function linkedResourcesForProject(project) {
   const directLinks = projectLinks.filter((link) => link.project === project).map((link) => link.resource);
-  return [...new Set(directLinks)];
+  const projectMembers = projects.find((item) => item.name === project)?.teamMemberIds || [];
+  return [...new Set([...directLinks, ...projectMembers])];
 }
 
 function resourceIncludesUser(resource, userId) {
@@ -1666,6 +1735,41 @@ function closeTaskComposer() {
   taskComposerModal.setAttribute("aria-hidden", "true");
 }
 
+function renderSelectedProjectTeamMembers() {
+  selectedProjectTeamMembers.innerHTML = selectedProjectTeamMemberIds.length
+    ? selectedProjectTeamMemberIds.map((id) => `
+      <span class="selected-manager-chip project-team-chip">
+        ${escapeHtml(resourceLabel(id))}
+        <button type="button" data-project-team-remove="${escapeHtml(id)}">${text("removeTeamMember")}</button>
+      </span>
+    `).join("")
+    : `<div class="empty">${text("empty")}</div>`;
+}
+
+function resetProjectForm() {
+  projectForm.reset();
+  selectedProjectTeamMemberIds = [];
+  projectStatusInput.value = "Plan";
+  projectPriorityInput.value = "Normal";
+  projectProgressInput.value = 0;
+  projectLeaderInput.value = currentUser?.role === "manager" ? currentUser.id : "";
+  renderSelectedProjectTeamMembers();
+}
+
+function openProjectComposer() {
+  if (!currentUser || !canManageTasks()) return;
+  resetProjectForm();
+  renderResourceControls();
+  projectComposerModal.classList.add("open");
+  projectComposerModal.setAttribute("aria-hidden", "false");
+  projectNameInput.focus();
+}
+
+function closeProjectComposer() {
+  projectComposerModal.classList.remove("open");
+  projectComposerModal.setAttribute("aria-hidden", "true");
+}
+
 function syncAuthView() {
   document.body.classList.toggle("logged-in", Boolean(currentUser));
   document.body.classList.toggle("logged-out", !currentUser);
@@ -1732,6 +1836,11 @@ function renderResourceControls() {
   projectResourceInput.value = projectOptions.some((option) => option.value === currentProjectResource) ? currentProjectResource : "";
 
   teamMembersInput.innerHTML = teamMemberOptions();
+  const currentLeader = projectLeaderInput.value || (currentUser?.role === "manager" ? currentUser.id : "");
+  projectLeaderInput.innerHTML = managerOptions(currentLeader);
+  projectLeaderInput.value = users.some((user) => user.id === currentLeader && user.role === "manager") ? currentLeader : "";
+  projectTeamMembersInput.innerHTML = teamMemberOptions();
+  renderSelectedProjectTeamMembers();
 
   linkResourceInput.innerHTML = options.map((option) => (
     `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`
@@ -1740,11 +1849,13 @@ function renderResourceControls() {
   projectList.innerHTML = projects.length ? projects.map((project) => {
     const taskCount = tasks.filter((task) => task.project === project.name).length;
     const managerNames = projectManagers(project).map((user) => user.username);
+    const memberNames = (project.teamMemberIds || []).map(resourceLabel).filter(Boolean);
     return `
       <div class="resource-item">
-        <span><strong>${escapeHtml(project.name)}</strong>${taskCount} ${text("tasks")}</span>
+        <span><strong>${escapeHtml(project.name)}</strong>${taskCount} ${text("tasks")} · ${shortDate(project.start)} - ${shortDate(project.end)} · ${statusLabel(project.status)} · ${priorityLabel(project.priority)} · ${Number(project.progress) || 0}%</span>
         <div class="user-actions">
           <span class="manager-summary"><strong>${text("responsibleManagers")}</strong>${escapeHtml(managerNames.join(", ") || text("noManagersSelected"))}</span>
+          <span class="manager-summary"><strong>${text("projectTeamMembers")}</strong>${escapeHtml(memberNames.join(", ") || text("empty"))}</span>
           <div class="mini-actions">
             <button type="button" data-resource-action="open-project-managers" data-id="${project.id}">${text("selectManagers")}</button>
           </div>
@@ -1987,16 +2098,23 @@ function renderProjectsView() {
     const projectTasks = accessibleTasks().filter((task) => task.project === project.name);
     const done = projectTasks.filter((task) => task.status === "Bitib").length;
     const active = projectTasks.length - done;
-    const percent = projectTasks.length ? Math.round((done / projectTasks.length) * 100) : 0;
+    const fallbackPercent = projectTasks.length ? Math.round((done / projectTasks.length) * 100) : 0;
+    const percent = Number.isFinite(Number(project.progress)) ? Number(project.progress) : fallbackPercent;
+    const managerNames = projectManagers(project).map((user) => user.profile?.fullName || user.username);
+    const memberNames = (project.teamMemberIds || []).map(resourceLabel).filter(Boolean);
     return `
       <article class="project-card">
         <div>
           <h3>${escapeHtml(project.name)}</h3>
           <div class="task-meta">
+            <span>${text("projectLeader")}: ${escapeHtml(managerNames.join(", ") || text("noOwner"))}</span>
+            <span>${text("projectTeamMembers")}: ${escapeHtml(memberNames.join(", ") || text("empty"))}</span>
+            <span>${shortDate(project.start)} - ${shortDate(project.end)}</span>
+            <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
+            <span class="badge ${priorityClass(project.priority)}">${priorityLabel(project.priority)}</span>
+            <span>${percent}%</span>
             <span>${projectTasks.length} ${text("tasks")}</span>
             <span>${active} ${text("activeTasks")}</span>
-            <span>${projectManagers(project).map((user) => user.username).join(", ") || text("noOwner")}</span>
-            <span>${percent}%</span>
           </div>
           <div class="progress-mini"><span style="width:${percent}%"></span></div>
         </div>
@@ -2781,30 +2899,57 @@ projectResourceInput.addEventListener("change", () => {
   }
 });
 
-function addProjectFromInput(input) {
-  if (!canManageTasks()) return;
-  const projectName = input.value.trim();
-  if (!createProject(projectName)) return;
-  input.value = "";
-  openProjectPage(projectName);
-}
-
-quickAddProjectButton.addEventListener("click", () => {
-  addProjectFromInput(quickProjectNameInput);
-});
-
 focusNewProjectButton.addEventListener("click", () => {
   currentView = "projects";
   viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === "projects"));
   renderViews();
-  quickProjectNameInput.focus();
+  openProjectComposer();
 });
 
-quickProjectNameInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    addProjectFromInput(quickProjectNameInput);
+projectForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (!canManageTasks()) return;
+
+  if (parseDate(projectEndDateInput.value) < parseDate(projectStartDateInput.value)) {
+    alert(text("invalidDate"));
+    return;
   }
+
+  const progress = Math.min(100, Math.max(0, Number.parseInt(projectProgressInput.value || "0", 10)));
+  const project = createProject(projectNameInput.value, {
+    managerId: projectLeaderInput.value,
+    teamMemberIds: selectedProjectTeamMemberIds,
+    start: projectStartDateInput.value,
+    end: projectEndDateInput.value,
+    status: projectStatusInput.value,
+    priority: projectPriorityInput.value,
+    progress
+  });
+  if (!project) return;
+  closeProjectComposer();
+  openProjectPage(project.name);
+});
+
+addProjectTeamMembersButton.addEventListener("click", () => {
+  const selected = [...projectTeamMembersInput.selectedOptions].map((option) => option.value);
+  selectedProjectTeamMemberIds = [...new Set([...selectedProjectTeamMemberIds, ...selected])];
+  [...projectTeamMembersInput.options].forEach((option) => {
+    option.selected = false;
+  });
+  renderSelectedProjectTeamMembers();
+});
+
+selectedProjectTeamMembers.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-project-team-remove]");
+  if (!button) return;
+  selectedProjectTeamMemberIds = selectedProjectTeamMemberIds.filter((id) => id !== button.dataset.projectTeamRemove);
+  renderSelectedProjectTeamMembers();
+});
+
+closeProjectComposerButton.addEventListener("click", closeProjectComposer);
+cancelProjectCreateButton.addEventListener("click", closeProjectComposer);
+projectComposerModal.addEventListener("click", (event) => {
+  if (event.target.dataset.projectModalClose) closeProjectComposer();
 });
 
 projectCards.addEventListener("click", (event) => {
