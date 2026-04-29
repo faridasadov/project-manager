@@ -1050,6 +1050,8 @@ let activeManagerProjectId = "";
 let selectedProjectTeamMemberIds = [];
 let selectedCalendarDay = "";
 let calendarRange = { start: "2026-05-01", end: "2026-05-31" };
+let backendSyncReady = false;
+let backendSaveTimer = 0;
 ensureDemoData();
 saveUsers();
 
@@ -1344,6 +1346,7 @@ function normalizeProject(project) {
 
 function saveTasks() {
   localStorage.setItem(storageKey, JSON.stringify(tasks));
+  scheduleBackendSave();
 }
 
 function saveResources() {
@@ -1351,14 +1354,17 @@ function saveResources() {
   localStorage.setItem(teamsKey, JSON.stringify(teams));
   localStorage.setItem(projectsKey, JSON.stringify(projects));
   localStorage.setItem(projectLinksKey, JSON.stringify(projectLinks));
+  scheduleBackendSave();
 }
 
 function saveUsers() {
   localStorage.setItem(usersKey, JSON.stringify(users));
+  scheduleBackendSave();
 }
 
 function saveTrash() {
   localStorage.setItem(trashKey, JSON.stringify(trash));
+  scheduleBackendSave();
 }
 
 function parseDate(value) {
@@ -2482,6 +2488,55 @@ function backupPayload() {
   };
 }
 
+function canUseBackend() {
+  return typeof fetch === "function" && window.location?.protocol !== "file:";
+}
+
+function backendUrl(path) {
+  const location = window.location;
+  const sameOriginBackend = location?.port && location.port !== "80";
+  const base = sameOriginBackend ? "" : `${location.protocol}//${location.hostname}:3000`;
+  return `${base}${path}`;
+}
+
+function scheduleBackendSave() {
+  if (!backendSyncReady || !canUseBackend()) return;
+  clearTimeout(backendSaveTimer);
+  backendSaveTimer = setTimeout(() => {
+    saveBackendState();
+  }, 350);
+}
+
+async function saveBackendState() {
+  if (!canUseBackend()) return;
+  try {
+    await fetch(backendUrl("/api/state"), {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(backupPayload())
+    });
+  } catch (error) {
+    console.warn("Backend save failed", error);
+  }
+}
+
+async function syncBackendState() {
+  if (!canUseBackend()) return;
+  try {
+    const response = await fetch(backendUrl("/api/state"), { cache: "no-store" });
+    if (response.ok) {
+      importBackup(await response.json());
+    } else if (response.status === 404) {
+      backendSyncReady = true;
+      await saveBackendState();
+      return;
+    }
+  } catch (error) {
+    console.warn("Backend sync failed", error);
+  }
+  backendSyncReady = true;
+}
+
 function downloadJson(filename, data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -3087,3 +3142,4 @@ clearDone.addEventListener("click", () => {
 });
 
 render();
+syncBackendState();
