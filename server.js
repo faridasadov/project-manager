@@ -11,6 +11,7 @@ import nodemailer from "nodemailer";
 const rootDir = dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 3000);
 const authSecret = process.env.AUTH_SECRET || "project-manager-change-this-secret";
+const corsOrigin = process.env.CORS_ORIGIN || "*";
 const dbConfig = {
   host: process.env.DB_HOST || "127.0.0.1",
   port: Number(process.env.DB_PORT || 3306),
@@ -45,7 +46,7 @@ function sendJson(response, statusCode, payload) {
   response.writeHead(statusCode, {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
-    "access-control-allow-origin": "*",
+    "access-control-allow-origin": corsOrigin,
     "access-control-allow-methods": "GET, PUT, OPTIONS",
     "access-control-allow-headers": "content-type, authorization"
   });
@@ -149,6 +150,130 @@ async function ensureSchema() {
       CHECK (JSON_VALID(settings_json))
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS users (
+      id VARCHAR(128) NOT NULL PRIMARY KEY,
+      username VARCHAR(190) NOT NULL UNIQUE,
+      role VARCHAR(32) NOT NULL,
+      manager_id VARCHAR(128) NULL,
+      full_name VARCHAR(255) NULL,
+      email VARCHAR(255) NULL,
+      profile_json LONGTEXT NULL CHECK (profile_json IS NULL OR JSON_VALID(profile_json)),
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS projects (
+      id VARCHAR(128) NOT NULL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      status VARCHAR(64) NOT NULL,
+      priority VARCHAR(64) NOT NULL,
+      progress INT NOT NULL DEFAULT 0,
+      start_date DATE NULL,
+      end_date DATE NULL,
+      archived TINYINT(1) NOT NULL DEFAULT 0,
+      payload_json LONGTEXT NULL CHECK (payload_json IS NULL OR JSON_VALID(payload_json)),
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_projects_name (name),
+      INDEX idx_projects_archived (archived)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS project_members (
+      project_id VARCHAR(128) NOT NULL,
+      resource VARCHAR(255) NOT NULL,
+      member_role VARCHAR(64) NOT NULL DEFAULT 'member',
+      PRIMARY KEY (project_id, resource, member_role)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS tasks (
+      id VARCHAR(128) NOT NULL PRIMARY KEY,
+      project_name VARCHAR(255) NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      status VARCHAR(64) NOT NULL,
+      priority VARCHAR(64) NOT NULL,
+      owner VARCHAR(255) NULL,
+      start_date DATE NULL,
+      end_date DATE NULL,
+      progress INT NOT NULL DEFAULT 0,
+      payload_json LONGTEXT NULL CHECK (payload_json IS NULL OR JSON_VALID(payload_json)),
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_tasks_project (project_name),
+      INDEX idx_tasks_status (status),
+      INDEX idx_tasks_end (end_date)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS teams (
+      id VARCHAR(128) NOT NULL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      payload_json LONGTEXT NULL CHECK (payload_json IS NULL OR JSON_VALID(payload_json))
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS team_members (
+      team_id VARCHAR(128) NOT NULL,
+      member_resource VARCHAR(255) NOT NULL,
+      PRIMARY KEY (team_id, member_resource)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS project_links (
+      id VARCHAR(128) NOT NULL PRIMARY KEY,
+      project_name VARCHAR(255) NOT NULL,
+      resource VARCHAR(255) NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS comments (
+      id VARCHAR(128) NOT NULL PRIMARY KEY,
+      task_id VARCHAR(128) NOT NULL,
+      author VARCHAR(255) NOT NULL,
+      body TEXT NOT NULL,
+      created_at DATETIME NULL,
+      payload_json LONGTEXT NULL CHECK (payload_json IS NULL OR JSON_VALID(payload_json)),
+      INDEX idx_comments_task (task_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS attachments (
+      id VARCHAR(128) NOT NULL PRIMARY KEY,
+      task_id VARCHAR(128) NOT NULL,
+      comment_id VARCHAR(128) NULL,
+      file_name VARCHAR(255) NOT NULL,
+      mime_type VARCHAR(255) NULL,
+      file_size INT NOT NULL DEFAULT 0,
+      data_url LONGTEXT NULL,
+      created_at DATETIME NULL,
+      INDEX idx_attachments_task (task_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      type VARCHAR(64) NOT NULL,
+      recipient VARCHAR(255) NULL,
+      subject VARCHAR(255) NULL,
+      body TEXT NULL,
+      status VARCHAR(64) NOT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      payload_json LONGTEXT NULL CHECK (payload_json IS NULL OR JSON_VALID(payload_json))
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      actor VARCHAR(255) NULL,
+      action VARCHAR(128) NOT NULL,
+      entity_type VARCHAR(64) NULL,
+      entity_id VARCHAR(128) NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      details_json LONGTEXT NULL CHECK (details_json IS NULL OR JSON_VALID(details_json)),
+      INDEX idx_audit_created (created_at),
+      INDEX idx_audit_actor (actor)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
 }
 
 async function readState() {
@@ -169,7 +294,157 @@ async function writeState(payload) {
      ON DUPLICATE KEY UPDATE state_json = VALUES(state_json)`,
     [JSON.stringify(nextState)]
   );
+  await syncRelationalState(nextState);
   return nextState;
+}
+
+function sqlDate(value) {
+  return value || null;
+}
+
+function json(value) {
+  return JSON.stringify(value || {});
+}
+
+async function syncRelationalState(state) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.execute("DELETE FROM attachments");
+    await connection.execute("DELETE FROM comments");
+    await connection.execute("DELETE FROM project_members");
+    await connection.execute("DELETE FROM team_members");
+    await connection.execute("DELETE FROM project_links");
+    await connection.execute("DELETE FROM tasks");
+    await connection.execute("DELETE FROM teams");
+    await connection.execute("DELETE FROM projects");
+    await connection.execute("DELETE FROM users");
+
+    for (const user of state.users || []) {
+      await connection.execute(
+        `INSERT INTO users (id, username, role, manager_id, full_name, email, profile_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          user.id,
+          user.username,
+          user.role || "user",
+          user.managerId || null,
+          user.profile?.fullName || "",
+          user.profile?.email || "",
+          json(user.profile)
+        ]
+      );
+    }
+
+    for (const project of state.projects || []) {
+      await connection.execute(
+        `INSERT INTO projects (id, name, status, priority, progress, start_date, end_date, archived, payload_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          project.id,
+          project.name,
+          project.status || "Plan",
+          project.priority || "Normal",
+          Number(project.progress) || 0,
+          sqlDate(project.start),
+          sqlDate(project.end),
+          project.archived ? 1 : 0,
+          json(project)
+        ]
+      );
+      for (const managerId of project.managerIds || []) {
+        await connection.execute(
+          "INSERT INTO project_members (project_id, resource, member_role) VALUES (?, ?, 'manager')",
+          [project.id, managerId]
+        );
+      }
+      for (const resource of project.teamMemberIds || []) {
+        await connection.execute(
+          "INSERT INTO project_members (project_id, resource, member_role) VALUES (?, ?, 'member')",
+          [project.id, resource]
+        );
+      }
+    }
+
+    for (const task of state.tasks || []) {
+      await connection.execute(
+        `INSERT INTO tasks (id, project_name, name, status, priority, owner, start_date, end_date, progress, payload_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          task.id,
+          task.project || "",
+          task.name,
+          task.status || "Plan",
+          task.priority || "Normal",
+          task.owner || "",
+          sqlDate(task.start),
+          sqlDate(task.end),
+          Number(task.progress) || 0,
+          json(task)
+        ]
+      );
+      for (const comment of task.comments || []) {
+        await connection.execute(
+          `INSERT INTO comments (id, task_id, author, body, created_at, payload_json)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [
+            comment.id || `${task.id}:${comment.createdAt || Date.now()}`,
+            task.id,
+            comment.author || "",
+            comment.text || "",
+            comment.createdAt ? new Date(comment.createdAt) : null,
+            json(comment)
+          ]
+        );
+      }
+      for (const attachment of task.attachments || []) {
+        await connection.execute(
+          `INSERT INTO attachments (id, task_id, comment_id, file_name, mime_type, file_size, data_url, created_at)
+           VALUES (?, ?, NULL, ?, ?, ?, ?, ?)`,
+          [
+            attachment.id,
+            task.id,
+            attachment.name,
+            attachment.type || "",
+            Number(attachment.size) || 0,
+            attachment.dataUrl || "",
+            attachment.addedAt ? new Date(attachment.addedAt) : null
+          ]
+        );
+      }
+    }
+
+    for (const team of state.teams || []) {
+      await connection.execute(
+        "INSERT INTO teams (id, name, payload_json) VALUES (?, ?, ?)",
+        [team.id, team.name, json(team)]
+      );
+      for (const member of team.memberIds || []) {
+        await connection.execute(
+          "INSERT INTO team_members (team_id, member_resource) VALUES (?, ?)",
+          [team.id, member]
+        );
+      }
+    }
+
+    for (const link of state.projectLinks || []) {
+      await connection.execute(
+        "INSERT INTO project_links (id, project_name, resource) VALUES (?, ?, ?)",
+        [link.id, link.project, link.resource]
+      );
+    }
+
+    await connection.execute(
+      "INSERT INTO audit_logs (actor, action, entity_type, entity_id, details_json) VALUES (?, 'state_saved', 'state', '1', ?)",
+      [state.savedBy || "system", JSON.stringify({ taskCount: state.tasks?.length || 0, projectCount: state.projects?.length || 0 })]
+    );
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 function defaultSettings() {
@@ -294,6 +569,48 @@ async function sendMailWithSettings(settings, message) {
   return { ok: true, messageId: info.messageId };
 }
 
+function daysUntil(value) {
+  if (!value) return 999;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((new Date(`${value}T00:00:00`) - today) / 86400000);
+}
+
+function riskyTasks(state) {
+  return (state?.tasks || [])
+    .filter((task) => task.status !== "Bitib")
+    .map((task) => {
+      const days = daysUntil(task.end);
+      if (days < 0) return { label: "Overdue", taskName: task.name, project: task.project, end: task.end };
+      if (days === 0) return { label: "Due today", taskName: task.name, project: task.project, end: task.end };
+      if (days <= 3) return { label: "Due soon", taskName: task.name, project: task.project, end: task.end };
+      return null;
+    })
+    .filter(Boolean);
+}
+
+async function runDeadlineScheduler() {
+  const state = await readState();
+  const settings = await readSettings();
+  const alerts = riskyTasks(state);
+  if (!alerts.length) return;
+  const lines = alerts.slice(0, 20).map((alert) => `- ${alert.label}: ${alert.taskName} (${alert.project}, ${alert.end})`);
+  const result = await sendMailWithSettings(settings, {
+    subject: "Project Manager deadline alerts",
+    text: lines.join("\n")
+  });
+  await pool.execute(
+    "INSERT INTO notifications (type, recipient, subject, body, status, payload_json) VALUES ('deadline_email', ?, ?, ?, ?, ?)",
+    [
+      settings.emailRecipients || "",
+      "Project Manager deadline alerts",
+      lines.join("\n"),
+      result.skipped ? "skipped" : "sent",
+      JSON.stringify({ result, count: alerts.length })
+    ]
+  );
+}
+
 async function handleApi(request, response) {
   if (request.url?.startsWith("/api/") && request.method === "OPTIONS") {
     response.writeHead(204, {
@@ -317,6 +634,20 @@ async function handleApi(request, response) {
     } catch {
       sendJson(response, 500, { error: "Could not read settings" });
     }
+    return true;
+  }
+
+  if (request.url === "/api/audit-logs" && request.method === "GET") {
+    if (!requireAuth(request, response, ["admin"])) return true;
+    const [rows] = await pool.execute("SELECT actor, action, entity_type, entity_id, created_at, details_json FROM audit_logs ORDER BY id DESC LIMIT 100");
+    sendJson(response, 200, rows);
+    return true;
+  }
+
+  if (request.url === "/api/notifications" && request.method === "GET") {
+    if (!requireAuth(request, response, ["admin", "manager"])) return true;
+    const [rows] = await pool.execute("SELECT type, recipient, subject, status, created_at, payload_json FROM notifications ORDER BY id DESC LIMIT 100");
+    sendJson(response, 200, rows);
     return true;
   }
 
@@ -413,14 +744,15 @@ async function handleApi(request, response) {
   }
 
   if (request.url === "/api/state" && request.method === "PUT") {
-    if (!requireAuth(request, response)) return true;
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
     try {
       const payload = JSON.parse(await readBody(request));
       if (!validateState(payload)) {
         sendJson(response, 400, { error: "Invalid project manager state" });
         return true;
       }
-      const nextState = await writeState(payload);
+      const nextState = await writeState({ ...payload, savedBy: actor.username });
       sendJson(response, 200, { ok: true, savedAt: nextState.savedAt });
     } catch (error) {
       sendJson(response, 400, { error: "Could not save state" });
@@ -471,3 +803,9 @@ const server = createServer(async (request, response) => {
 server.listen(port, () => {
   console.log(`Project Manager backend running on http://localhost:${port}`);
 });
+
+if (process.env.DEADLINE_SCHEDULER !== "off") {
+  setInterval(() => {
+    runDeadlineScheduler().catch((error) => console.error("Deadline scheduler failed", error));
+  }, 6 * 60 * 60 * 1000);
+}

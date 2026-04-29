@@ -1,0 +1,15 @@
+[Unit]
+Description=Project Manager backend
+After=network.target mariadb.service
+Requires=mariadb.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/project-manager
+ExecStart=/usr/bin/node /opt/project-manager/server.js
+Restart=always
+RestartSec=3
+EnvironmentFile=/etc/project-manager.env
+
+[Install]
+WantedBy=multi-user.target

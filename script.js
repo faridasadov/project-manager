@@ -57,6 +57,8 @@ const translations = {
     newProject: "Yeni layihə",
     projectNamePlaceholder: "Layihə adı",
     addProject: "Layihə yarat",
+    editProject: "Layihəni redaktə et",
+    archiveProject: "Arxivlə",
     projectFormAria: "Layihə forması",
     projectName: "Layihənin adı",
     projectLeader: "Layihə rəhbəri",
@@ -262,6 +264,8 @@ const translations = {
     newProject: "Новый проект",
     projectNamePlaceholder: "Название проекта",
     addProject: "Создать проект",
+    editProject: "Редактировать проект",
+    archiveProject: "Архив",
     projectFormAria: "Форма проекта",
     projectName: "Название проекта",
     projectLeader: "Руководитель проекта",
@@ -467,6 +471,8 @@ const translations = {
     newProject: "New project",
     projectNamePlaceholder: "Project name",
     addProject: "Create project",
+    editProject: "Edit project",
+    archiveProject: "Archive",
     projectFormAria: "Project form",
     projectName: "Project name",
     projectLeader: "Project leader",
@@ -970,6 +976,7 @@ const addProjectLinkButton = document.querySelector("#addProjectLink");
 const projectLinksList = document.querySelector("#projectLinks");
 const linkCount = document.querySelector("#linkCount");
 const projectForm = document.querySelector("#projectForm");
+const projectFormTitle = document.querySelector("#projectFormTitle");
 const projectNameInput = document.querySelector("#projectName");
 const projectLeaderInput = document.querySelector("#projectLeader");
 const projectTeamMembersInput = document.querySelector("#projectTeamMembers");
@@ -1049,6 +1056,7 @@ let currentView = "dashboard";
 let currentLanguage = localStorage.getItem(languageKey) || "az";
 let activeManagerProjectId = "";
 let selectedProjectTeamMemberIds = [];
+let activeProjectEditId = "";
 let selectedCalendarDay = "";
 let calendarRange = { start: "2026-05-01", end: "2026-05-31" };
 let backendSyncReady = false;
@@ -1338,6 +1346,7 @@ function normalizeProject(project) {
     teamMemberIds: [],
     start: "",
     end: "",
+    archived: false,
     status: "Plan",
     priority: "Normal",
     ...project,
@@ -1505,6 +1514,35 @@ function createProject(name, details = {}) {
   return project;
 }
 
+function updateProject(projectId, details = {}) {
+  const project = projects.find((item) => item.id === projectId);
+  if (!project) return null;
+  const cleanName = details.name.trim();
+  if (!cleanName || projects.some((item) => item.id !== projectId && item.name.toLowerCase() === cleanName.toLowerCase())) return null;
+  const previousName = project.name;
+  project.name = cleanName;
+  project.managerIds = details.managerId ? [details.managerId] : [];
+  project.teamMemberIds = details.teamMemberIds || [];
+  project.start = details.start || "";
+  project.end = details.end || "";
+  project.status = details.status || "Plan";
+  project.priority = details.priority || "Normal";
+  project.progress = project.status === "Bitib" ? 100 : Math.min(100, Math.max(0, Number.parseInt(details.progress || "0", 10)));
+  if (previousName !== cleanName) {
+    tasks = tasks.map((task) => task.project === previousName ? { ...task, project: cleanName } : task);
+    projectLinks = projectLinks.map((link) => link.project === previousName ? { ...link, project: cleanName } : link);
+    saveTasks();
+  }
+  projectLinks = projectLinks.filter((link) => link.project !== cleanName || !link.resource.startsWith("user:"));
+  project.teamMemberIds.forEach((resource) => {
+    if (!projectLinks.some((link) => link.project === cleanName && link.resource === resource)) {
+      projectLinks.push({ id: createId(), project: cleanName, resource });
+    }
+  });
+  saveResources();
+  return project;
+}
+
 function managerUsers(managerId) {
   return users.filter((user) => user.managerId === managerId);
 }
@@ -1522,7 +1560,7 @@ function canSeeProject(project) {
 }
 
 function visibleProjects() {
-  return projects.filter(canSeeProject);
+  return projects.filter((project) => !project.archived).filter(canSeeProject);
 }
 
 function canSeeTask(task) {
@@ -1756,7 +1794,9 @@ function renderSelectedProjectTeamMembers() {
 
 function resetProjectForm() {
   projectForm.reset();
+  activeProjectEditId = "";
   selectedProjectTeamMemberIds = [];
+  projectFormTitle.textContent = text("newProject");
   projectStatusInput.value = "Plan";
   projectPriorityInput.value = "Normal";
   projectProgressInput.value = 0;
@@ -1773,9 +1813,30 @@ function openProjectComposer() {
   projectNameInput.focus();
 }
 
+function openProjectEditor(projectName) {
+  const project = projects.find((item) => item.name === projectName);
+  if (!project || !canManageTasks()) return;
+  activeProjectEditId = project.id;
+  selectedProjectTeamMemberIds = [...(project.teamMemberIds || [])];
+  renderResourceControls();
+  projectFormTitle.textContent = text("editProject");
+  projectNameInput.value = project.name;
+  projectLeaderInput.value = project.managerIds?.[0] || "";
+  projectStartDateInput.value = project.start || "";
+  projectEndDateInput.value = project.end || "";
+  projectStatusInput.value = project.status || "Plan";
+  projectPriorityInput.value = project.priority || "Normal";
+  projectProgressInput.value = Number(project.progress) || 0;
+  renderSelectedProjectTeamMembers();
+  projectComposerModal.classList.add("open");
+  projectComposerModal.setAttribute("aria-hidden", "false");
+  projectNameInput.focus();
+}
+
 function closeProjectComposer() {
   projectComposerModal.classList.remove("open");
   projectComposerModal.setAttribute("aria-hidden", "true");
+  activeProjectEditId = "";
 }
 
 function syncAuthView() {
@@ -1932,10 +1993,10 @@ function renderResourceControls() {
   `).join("");
 
   trashList.innerHTML = trash.length ? trash.map((item) => {
-    const title = item.type === "task" ? item.data.name : item.data.project;
+    const title = item.type === "task" ? item.data.name : (item.data.project || item.data.name);
     const subtitle = item.type === "task"
       ? text("deletedTask")
-      : `${text("deletedProject")} - ${resourceLabel(item.data.resource)}`;
+      : item.type === "projectRecord" ? text("deletedProject") : `${text("deletedProject")} - ${resourceLabel(item.data.resource)}`;
     return `
       <div class="resource-item">
         <span><strong>${escapeHtml(title)}</strong>${escapeHtml(subtitle)}</span>
@@ -2128,6 +2189,9 @@ function renderProjectsView() {
         </div>
         <div class="project-card-actions">
           <button type="button" data-project-action="open" data-project="${escapeHtml(project.name)}">${text("openProject")}</button>
+          <button type="button" data-project-action="edit" data-project="${escapeHtml(project.name)}">${text("editProject")}</button>
+          <button type="button" data-project-action="archive" data-project="${escapeHtml(project.name)}">${text("archiveProject")}</button>
+          <button type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>
           <button class="primary" type="button" data-project-action="add-task" data-project="${escapeHtml(project.name)}">${text("addTaskToProject")}</button>
         </div>
       </article>
@@ -3092,7 +3156,8 @@ projectForm.addEventListener("submit", (event) => {
   }
 
   const progress = Math.min(100, Math.max(0, Number.parseInt(projectProgressInput.value || "0", 10)));
-  const project = createProject(projectNameInput.value, {
+  const payload = {
+    name: projectNameInput.value,
     managerId: projectLeaderInput.value,
     teamMemberIds: selectedProjectTeamMemberIds,
     start: projectStartDateInput.value,
@@ -3100,7 +3165,10 @@ projectForm.addEventListener("submit", (event) => {
     status: projectStatusInput.value,
     priority: projectPriorityInput.value,
     progress
-  });
+  };
+  const project = activeProjectEditId
+    ? updateProject(activeProjectEditId, payload)
+    : createProject(projectNameInput.value, payload);
   if (!project) return;
   closeProjectComposer();
   openProjectPage(project.name);
@@ -3135,6 +3203,33 @@ projectCards.addEventListener("click", (event) => {
   if (!projectName) return;
   if (button.dataset.projectAction === "add-task") {
     openTaskComposerForProject(projectName);
+    return;
+  }
+  if (button.dataset.projectAction === "edit") {
+    openProjectEditor(projectName);
+    return;
+  }
+  if (button.dataset.projectAction === "archive") {
+    const project = projects.find((item) => item.name === projectName);
+    if (project) {
+      project.archived = true;
+      saveResources();
+      render();
+    }
+    return;
+  }
+  if (button.dataset.projectAction === "delete") {
+    const project = projects.find((item) => item.name === projectName);
+    if (project) {
+      trash.push({ id: createId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
+      projects = projects.filter((item) => item.id !== project.id);
+      tasks = tasks.map((task) => task.project === projectName ? { ...task, project: "" } : task);
+      projectLinks = projectLinks.filter((link) => link.project !== projectName);
+      saveTrash();
+      saveTasks();
+      saveResources();
+      render();
+    }
     return;
   }
   openProjectPage(projectName);
@@ -3222,6 +3317,10 @@ trashList.addEventListener("click", (event) => {
     }
     if (item.type === "project" && !projectLinks.some((link) => link.id === item.data.id)) {
       projectLinks.push(item.data);
+      saveResources();
+    }
+    if (item.type === "projectRecord" && !projects.some((project) => project.id === item.data.id)) {
+      projects.push(normalizeProject(item.data));
       saveResources();
     }
   }

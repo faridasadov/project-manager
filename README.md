@@ -35,6 +35,7 @@ Environment:
 - `DB_PASSWORD=project_manager_2026`
 - `SMTP_URL=smtp://user:password@mail.example.com:587`
 - `MAIL_FROM=project-manager@example.com`
+- `DEADLINE_SCHEDULER=on`
 
 API:
 
@@ -49,6 +50,23 @@ API:
 Mail settings use `emailProvider` as either an SMTP URL or an HTTP endpoint that accepts a JSON payload.
 LDAP login uses `ldapUrl`, `ldapBaseDn`, and `ldapUserFilter`; the default filter is `(uid={username})`.
 If the database has no state yet, `POST /api/auth/login` accepts the demo admin credentials so the first browser session can bootstrap the state.
+
+## Operations
+
+Install on a fresh Alma/RHEL-style server:
+
+```bash
+sudo APP_DIR=/opt/project-manager DB_PASSWORD='change-this' scripts/install-server.sh
+```
+
+Database backup and restore:
+
+```bash
+scripts/backup-db.sh
+scripts/restore-db.sh backups/project-manager-YYYYMMDD-HHMMSS.sql
+```
+
+The backend keeps the compatibility `app_state` JSON document and also syncs normalized MariaDB tables for users, projects, tasks, teams, comments, attachments, notifications, and audit logs.
 
 ## GitHub Pages
 
