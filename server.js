@@ -728,6 +728,32 @@ async function handleApi(request, response) {
     return true;
   }
 
+  if (request.url === "/api/mail/test" && request.method === "POST") {
+    if (!requireAuth(request, response, ["admin"])) return true;
+    try {
+      const payload = JSON.parse(await readBody(request) || "{}");
+      const settings = await readSettings();
+      const result = await sendMailWithSettings(settings, {
+        subject: payload.subject || "Project Manager test email",
+        text: "Project Manager mail ayarlari test edildi."
+      });
+      await pool.execute(
+        "INSERT INTO notifications (type, recipient, subject, body, status, payload_json) VALUES ('test_email', ?, ?, ?, ?, ?)",
+        [
+          settings.emailRecipients || "",
+          payload.subject || "Project Manager test email",
+          "Project Manager mail ayarlari test edildi.",
+          result.skipped ? "skipped" : "sent",
+          JSON.stringify(result)
+        ]
+      );
+      sendJson(response, 200, result);
+    } catch {
+      sendJson(response, 500, { error: "Could not send test email" });
+    }
+    return true;
+  }
+
   if (request.url === "/api/state" && request.method === "GET") {
     if (!requireAuth(request, response)) return true;
     try {

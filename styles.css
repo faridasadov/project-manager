@@ -1005,6 +1005,20 @@ textarea:focus {
   justify-content: flex-end;
 }
 
+.project-archive-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.compact-section-head {
+  margin-bottom: 10px;
+}
+
+.archived-project-card {
+  opacity: 0.82;
+}
+
 .report-list {
   display: grid;
   gap: 14px;

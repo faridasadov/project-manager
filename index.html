@@ -317,6 +317,7 @@
                 <input id="ldapUserFilter" type="text" placeholder="(uid={username})">
               </label>
               <button id="saveSettings" class="primary" type="button" data-i18n="saveSettings">Settings saxla</button>
+              <button id="testMail" type="button" data-i18n="testMail">Mail test et</button>
               <p id="settingsStatus" class="settings-status"></p>
             </div>
           </details>
@@ -564,6 +565,15 @@
               <button id="focusNewProject" class="primary" type="button" data-i18n="addProject">Layihə yarat</button>
             </div>
             <div id="projectCards" class="project-cards"></div>
+            <section class="project-archive-section">
+              <div class="section-head compact-section-head">
+                <div>
+                  <p class="kicker" data-i18n="archiveProject">Arxivlə</p>
+                  <h2 data-i18n="archivedProjects">Arxiv layihələr</h2>
+                </div>
+              </div>
+              <div id="archivedProjectCards" class="project-cards"></div>
+            </section>
           </div>
         </section>
 

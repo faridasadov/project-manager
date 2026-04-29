@@ -55,7 +55,7 @@ const ids = [
   "projectResource", "status", "priority", "owner", "progress", "notes", "cancelEdit", "gantt", "reports",
   "kanban", "dashboardCalendar", "calendarBoard", "calendarDetails", "dashboardCalendarStart",
   "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusBars", "upcomingList",
-  "deadlineAlerts", "projectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
+  "deadlineAlerts", "projectCards", "archivedProjectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
   "openAdminPanel", "closeAdminPanel", "adminModal", "managerAssignModal", "closeManagerAssign",
   "cancelManagerAssign", "saveProjectManagers", "managerAssignTitle", "managerAssignList", "selectedManagersPreview",
   "exportData", "importData",
@@ -68,7 +68,7 @@ const ids = [
   "focusNewProject", "closeProjectComposer", "cancelProjectCreate", "projectComposerModal", "projectList",
   "projectCount", "themeMode", "backgroundStyle", "accentColor",
   "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
-  "ldapBaseDn", "ldapUserFilter", "saveSettings", "settingsStatus",
+  "ldapBaseDn", "ldapUserFilter", "saveSettings", "testMail", "settingsStatus",
   "newUserFullName", "newUserPosition", "newUserEmail", "newUserAddress"
   , "loginScreen", "loginForm", "loginUsername", "loginPassword", "loginError",
   "logoutButton", "currentUserBadge", "newUsername", "newUserPassword",
@@ -223,6 +223,14 @@ elements["#projectProgress"].value = "15";
 elements["#projectForm"].dispatch("submit", { preventDefault: () => {} });
 assert.match(elements["#projectList"].innerHTML, /QA project/, "project can be created");
 assert.match(elements["#projectCards"].innerHTML, /15%/, "project metadata renders");
+elements["#projectCards"].dispatch("click", {
+  target: { closest: () => ({ dataset: { projectAction: "archive", project: "QA project" } }) }
+});
+assert.match(elements["#archivedProjectCards"].innerHTML, /QA project/, "archived project is visible");
+elements["#archivedProjectCards"].dispatch("click", {
+  target: { closest: () => ({ dataset: { projectAction: "restore-archive", project: "QA project" } }) }
+});
+assert.match(elements["#projectCards"].innerHTML, /QA project/, "archived project can be restored");
 
 elements["#languageSelect"].value = "ru";
 elements["#languageSelect"].dispatch("change");
@@ -252,7 +260,7 @@ assert.ok(addedId, "task id is rendered");
 elements["#taskList"].dispatch("click", {
   target: { closest: () => ({ dataset: { action: "edit", id: addedId } }) }
 });
-assert.equal(elements["#formTitle"].textContent, "Taskı redaktə et", "edit opens");
+assert.equal(elements["#formTitle"].textContent, "Tapşırığı redaktə et", "edit opens");
 elements["#taskName"].value = "Redaktə olunmuş task";
 elements["#taskForm"].dispatch("submit", { preventDefault: () => {} });
 assert.match(elements["#taskList"].innerHTML, /Redaktə olunmuş task/, "edit saves");
@@ -324,7 +332,7 @@ assert.match(elements["#taskList"].innerHTML, /Redaktə olunmuş task/, "trash r
 
 elements["#searchInput"].value = "Customer";
 elements["#searchInput"].dispatch("input");
-assert.match(elements["#taskList"].innerHTML, /Customer rollout|Task yoxdur/, "search runs");
+assert.match(elements["#taskList"].innerHTML, /Customer rollout|Tapşırıq yoxdur/, "search runs");
 
 elements["#taskName"].value = "Yanlış tarix";
 elements["#startDate"].value = "2026-05-20";

@@ -39,16 +39,19 @@ const translations = {
     emailRecipientsPlaceholder: "admin@example.com",
     emailProvider: "Mail provider/API",
     emailProviderPlaceholder: "Backend API URL",
+    testMail: "Mail test et",
+    mailTestSent: "Mail testi göndərildi.",
+    mailTestSkipped: "Mail testi göndərilmədi. Mail ayarlarını yoxlayın.",
     ldapEnabled: "LDAP aktivdir",
     ldapUrl: "LDAP URL",
     ldapBaseDn: "Base DN",
     ldapUserFilter: "User filter",
     saveSettings: "Settings saxla",
     settingsSaved: "Settings saxlandı.",
-    newTask: "Yeni task",
-    editTask: "Taskı redaktə et",
-    taskFormAria: "Task forması",
-    taskName: "Task adı",
+    newTask: "Yeni tapşırıq",
+    editTask: "Tapşırığı redaktə et",
+    taskFormAria: "Tapşırıq forması",
+    taskName: "Tapşırıq adı",
     taskNamePlaceholder: "Məsələn: Router konfiqurasiyası",
     project: "Layihə",
     projectPlaceholder: "Məsələn: Network upgrade",
@@ -59,6 +62,8 @@ const translations = {
     addProject: "Layihə yarat",
     editProject: "Layihəni redaktə et",
     archiveProject: "Arxivlə",
+    archivedProjects: "Arxiv layihələr",
+    restoreProject: "Bərpa et",
     projectFormAria: "Layihə forması",
     projectName: "Layihənin adı",
     projectLeader: "Layihə rəhbəri",
@@ -68,7 +73,7 @@ const translations = {
     createProjectFirst: "Əvvəl layihə yarat",
     projectPages: "Layihə səhifələri",
     openProject: "Layihəni aç",
-    addTaskToProject: "Task əlavə et",
+    addTaskToProject: "Tapşırıq əlavə et",
     backgroundFocus: "Focus",
     backgroundPaper: "Kağız",
     backgroundSteel: "Steel",
@@ -108,32 +113,32 @@ const translations = {
     cancel: "Ləğv et",
     viewsAria: "Görünüşlər",
     dashboard: "Dashboard",
-    list: "Tasklar",
-    taskListTitle: "Tasklar siyahısı",
+    list: "Tapşırıqlar",
+    taskListTitle: "Tapşırıqlar siyahısı",
     kanban: "Kanban",
     calendar: "Calendar",
     deadlineCalendar: "Deadline calendar",
     rangeStart: "Başlama",
     rangeEnd: "Bitmə",
     selectedDay: "Seçilən gün",
-    projectAndTask: "Layihə və task",
+    projectAndTask: "Layihə və tapşırıq",
     selectCalendarDay: "Calendar-da gün seçin.",
     noTaskOnDay: "Bu gün üçün task yoxdur.",
     gantt: "Gantt",
-    searchPlaceholder: "Task, layihə, məsul şəxs axtar",
+    searchPlaceholder: "Tapşırıq, layihə, məsul şəxs axtar",
     allProjects: "Bütün layihələr",
-    totalTasks: "Cəmi task",
-    activeTasks: "Aktiv task",
-    doneTasks: "Bitmiş task",
+    totalTasks: "Cəmi tapşırıq",
+    activeTasks: "Aktiv tapşırıq",
+    doneTasks: "Bitmiş tapşırıq",
     projectDuration: "Layihə müddəti",
     executionStatus: "İcra vəziyyəti",
-    upcomingTasks: "Yaxın tasklar",
-    tasks: "Tasklar",
+    upcomingTasks: "Yaxın tapşırıqlar",
+    tasks: "Tapşırıqlar",
     statusFilterAria: "Status filteri",
     ganttChart: "Gantt cədvəli",
     noUpcoming: "Yaxın deadline yoxdur.",
-    noTask: "Task yoxdur. Soldakı formadan yeni task əlavə et.",
-    noTaskFilter: "Bu filterdə task yoxdur.",
+    noTask: "Tapşırıq yoxdur. Formadan yeni tapşırıq əlavə et.",
+    noTaskFilter: "Bu filterdə tapşırıq yoxdur.",
     empty: "Boşdur",
     noOwner: "Məsul şəxs yoxdur",
     edit: "Redaktə",
@@ -142,7 +147,7 @@ const translations = {
     doneRequest: "Bitdi",
     approveDone: "Təsdiq et",
     pendingDone: "Təsdiq gözləyir",
-    confirmDone: "Taskın bitdiyinə əminsiniz?",
+    confirmDone: "Tapşırığın bitdiyinə əminsiniz?",
     reports: "Hesabat",
     projectReports: "Layihə hesabatları",
     requestedAt: "Bitmə sorğusu",
@@ -196,7 +201,7 @@ const translations = {
     trash: "Zibil qutusu",
     restore: "Bərpa et",
     deleteForever: "Tam sil",
-    deletedTask: "Silinmiş task",
+    deletedTask: "Silinmiş tapşırıq",
     deletedProject: "Silinmiş layihə",
     attachments: "Fayllar",
     chooseFiles: "Fayl seç",
@@ -246,6 +251,12 @@ const translations = {
     emailRecipientsPlaceholder: "admin@example.com",
     emailProvider: "Email provider/API",
     emailProviderPlaceholder: "Backend API URL",
+    testMail: "Test email",
+    mailTestSent: "Test email was sent.",
+    mailTestSkipped: "Test email was not sent. Check email settings.",
+    testMail: "Проверить email",
+    mailTestSent: "Тестовое письмо отправлено.",
+    mailTestSkipped: "Тестовое письмо не отправлено. Проверьте настройки email.",
     ldapEnabled: "LDAP включен",
     ldapUrl: "LDAP URL",
     ldapBaseDn: "Base DN",
@@ -266,6 +277,8 @@ const translations = {
     addProject: "Создать проект",
     editProject: "Редактировать проект",
     archiveProject: "Архив",
+    archivedProjects: "Архивные проекты",
+    restoreProject: "Восстановить",
     projectFormAria: "Форма проекта",
     projectName: "Название проекта",
     projectLeader: "Руководитель проекта",
@@ -473,6 +486,8 @@ const translations = {
     addProject: "Create project",
     editProject: "Edit project",
     archiveProject: "Archive",
+    archivedProjects: "Archived projects",
+    restoreProject: "Restore",
     projectFormAria: "Project form",
     projectName: "Project name",
     projectLeader: "Project leader",
@@ -955,6 +970,7 @@ const views = document.querySelectorAll(".view");
 const searchInput = document.querySelector("#searchInput");
 const projectFilter = document.querySelector("#projectFilter");
 const projectCards = document.querySelector("#projectCards");
+const archivedProjectCards = document.querySelector("#archivedProjectCards");
 const statusBars = document.querySelector("#statusBars");
 const upcomingList = document.querySelector("#upcomingList");
 const deadlineAlerts = document.querySelector("#deadlineAlerts");
@@ -1040,6 +1056,7 @@ const ldapUrlInput = document.querySelector("#ldapUrl");
 const ldapBaseDnInput = document.querySelector("#ldapBaseDn");
 const ldapUserFilterInput = document.querySelector("#ldapUserFilter");
 const saveSettingsButton = document.querySelector("#saveSettings");
+const testMailButton = document.querySelector("#testMail");
 const settingsStatus = document.querySelector("#settingsStatus");
 
 let tasks = loadTasks();
@@ -2197,6 +2214,27 @@ function renderProjectsView() {
       </article>
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
+  renderArchivedProjects();
+}
+
+function renderArchivedProjects() {
+  const archived = projects.filter((project) => project.archived).filter(canSeeProject);
+  archivedProjectCards.innerHTML = archived.length ? archived.map((project) => `
+    <article class="project-card archived-project-card">
+      <div>
+        <h3>${escapeHtml(project.name)}</h3>
+        <div class="task-meta">
+          <span>${shortDate(project.start)} - ${shortDate(project.end)}</span>
+          <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
+          <span>${Number(project.progress) || 0}%</span>
+        </div>
+      </div>
+      <div class="project-card-actions">
+        <button type="button" data-project-action="restore-archive" data-project="${escapeHtml(project.name)}">${text("restoreProject")}</button>
+        <button type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>
+      </div>
+    </article>
+  `).join("") : `<div class="empty">${text("empty")}</div>`;
 }
 
 function renderTaskList() {
@@ -2735,6 +2773,17 @@ async function sendBackendDeadlineEmail(alerts) {
   }
 }
 
+async function sendBackendTestMail() {
+  if (!canUseBackend()) return { skipped: true };
+  const response = await fetch(backendUrl("/api/mail/test"), {
+    method: "POST",
+    headers: authHeaders({ "content-type": "application/json" }),
+    body: JSON.stringify({ subject: "Project Manager test email" })
+  });
+  if (!response.ok) throw new Error("Mail test failed");
+  return response.json();
+}
+
 async function enableNotifications() {
   if (!("Notification" in window)) {
     sendDeadlineNotifications();
@@ -3039,6 +3088,17 @@ saveSettingsButton.addEventListener("click", () => {
   settingsStatus.textContent = text("settingsSaved");
 });
 
+testMailButton.addEventListener("click", async () => {
+  if (!isAdmin()) return;
+  settingsStatus.textContent = "";
+  try {
+    const result = await sendBackendTestMail();
+    settingsStatus.textContent = result.skipped ? text("mailTestSkipped") : text("mailTestSent");
+  } catch {
+    settingsStatus.textContent = text("mailTestSkipped");
+  }
+});
+
 addUserButton.addEventListener("click", () => {
   if (!isAdmin()) return;
   const username = newUsernameInput.value.trim();
@@ -3218,6 +3278,15 @@ projectCards.addEventListener("click", (event) => {
     }
     return;
   }
+  if (button.dataset.projectAction === "restore-archive") {
+    const project = projects.find((item) => item.name === projectName);
+    if (project) {
+      project.archived = false;
+      saveResources();
+      render();
+    }
+    return;
+  }
   if (button.dataset.projectAction === "delete") {
     const project = projects.find((item) => item.name === projectName);
     if (project) {
@@ -3233,6 +3302,28 @@ projectCards.addEventListener("click", (event) => {
     return;
   }
   openProjectPage(projectName);
+});
+
+archivedProjectCards.addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button) return;
+  const projectName = button.dataset.project;
+  const project = projects.find((item) => item.name === projectName);
+  if (!project) return;
+  if (button.dataset.projectAction === "restore-archive") {
+    project.archived = false;
+    saveResources();
+    render();
+    return;
+  }
+  if (button.dataset.projectAction === "delete") {
+    trash.push({ id: createId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
+    projects = projects.filter((item) => item.id !== project.id);
+    projectLinks = projectLinks.filter((link) => link.project !== projectName);
+    saveTrash();
+    saveResources();
+    render();
+  }
 });
 
 addTeamButton.addEventListener("click", () => {
