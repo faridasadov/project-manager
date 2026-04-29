@@ -51,22 +51,23 @@
     </header>
 
     <main class="layout">
-      <aside class="composer" aria-label="Task forması" data-i18n-aria="taskFormAria">
-        <section class="project-create">
-          <div class="composer-head compact-head">
-            <span class="dot"></span>
-            <h2 data-i18n="createProjectFirst">Əvvəl layihə yarat</h2>
+      <div id="taskComposerModal" class="modal-shell task-composer-shell" aria-hidden="true">
+        <div class="modal-backdrop" data-task-modal-close="true"></div>
+        <aside class="composer task-composer-modal" aria-label="Task forması" data-i18n-aria="taskFormAria" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+        <div class="task-composer-top">
+          <div>
+            <p class="kicker" data-i18n="appKicker">Project workspace</p>
+            <h2 id="formTitle">Yeni task</h2>
           </div>
-          <label>
-            <span data-i18n="newProject">Yeni layihə</span>
-            <input id="quickProjectName" type="text" placeholder="Layihə adı" data-i18n-placeholder="projectNamePlaceholder">
-          </label>
-          <button id="quickAddProject" class="primary" type="button" data-i18n="addProject">Layihə yarat</button>
-        </section>
+          <button id="closeTaskComposer" class="icon-button" type="button" aria-label="Bağla" data-i18n-aria="close">×</button>
+        </div>
 
-        <div class="composer-head">
+        <div class="composer-head task-form-head">
           <span class="dot"></span>
-          <h2 id="formTitle">Yeni task</h2>
+          <div>
+            <p class="kicker" data-i18n="tasks">Tasklar</p>
+            <h3 data-i18n="newTask">Yeni task</h3>
+          </div>
         </div>
 
         <form id="taskForm">
@@ -145,6 +146,7 @@
           </div>
         </form>
       </aside>
+      </div>
 
       <div id="adminModal" class="modal-shell" aria-hidden="true">
         <div class="modal-backdrop" data-modal-close="true"></div>
@@ -345,12 +347,39 @@
         </section>
       </div>
 
+      <div id="managerAssignModal" class="modal-shell manager-assign-shell" aria-hidden="true">
+        <div class="modal-backdrop" data-manager-modal-close="true"></div>
+        <section class="admin-modal manager-assign-modal" role="dialog" aria-modal="true" aria-labelledby="managerAssignTitle">
+          <div class="modal-head">
+            <div>
+              <p class="kicker" data-i18n="responsibleManagers">Cavabdeh şəxslər</p>
+              <h2 id="managerAssignTitle" data-i18n="selectManagers">Manager seç</h2>
+            </div>
+            <button id="closeManagerAssign" class="icon-button" type="button" aria-label="Bağla" data-i18n-aria="close">×</button>
+          </div>
+          <div class="manager-assign-body">
+            <div>
+              <p class="kicker" data-i18n="manager">Manager</p>
+              <div id="managerAssignList" class="manager-choice-list"></div>
+            </div>
+            <div>
+              <p class="kicker" data-i18n="selectedManagers">Seçilən managerlər</p>
+              <div id="selectedManagersPreview" class="selected-manager-list"></div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="saveProjectManagers" class="primary" type="button" data-i18n="saveManagers">Managerləri saxla</button>
+            <button id="cancelManagerAssign" type="button" data-i18n="cancel">Ləğv et</button>
+          </div>
+        </section>
+      </div>
+
       <section class="workspace">
         <section class="control-strip">
           <div class="view-tabs" aria-label="Görünüşlər" data-i18n-aria="viewsAria">
             <button class="view-tab active" data-view="dashboard" type="button">Dashboard</button>
             <button class="view-tab" data-view="projects" type="button" data-i18n="projects">Layihələr</button>
-            <button class="view-tab" data-view="list" type="button" data-i18n="list">Siyahı</button>
+            <button class="view-tab" data-view="list" type="button" data-i18n="list">Tasklar</button>
             <button class="view-tab" data-view="kanban" type="button">Kanban</button>
             <button class="view-tab" data-view="gantt" type="button">Gantt</button>
             <button class="view-tab" data-view="reports" type="button" data-i18n="reports">Hesabat</button>
@@ -421,7 +450,19 @@
                 <p class="kicker" data-i18n="projects">Layihələr</p>
                 <h2 data-i18n="projectPages">Layihə səhifələri</h2>
               </div>
+              <button id="focusNewProject" class="primary" type="button" data-i18n="addProject">Layihə yarat</button>
             </div>
+            <section class="project-create project-create-inline">
+              <div class="composer-head compact-head">
+                <span class="dot"></span>
+                <h3 data-i18n="newProject">Yeni layihə</h3>
+              </div>
+              <label>
+                <span data-i18n="newProject">Yeni layihə</span>
+                <input id="quickProjectName" type="text" placeholder="Layihə adı" data-i18n-placeholder="projectNamePlaceholder">
+              </label>
+              <button id="quickAddProject" class="primary" type="button" data-i18n="addProject">Layihə yarat</button>
+            </section>
             <div id="projectCards" class="project-cards"></div>
           </div>
         </section>
@@ -431,8 +472,9 @@
             <div class="section-head">
               <div>
                 <p class="kicker" data-i18n="tasks">Tasklar</p>
-                <h2 data-i18n="list">Siyahı</h2>
+                <h2 data-i18n="taskListTitle">Tasklar siyahısı</h2>
               </div>
+              <button id="openTaskComposer" class="primary" type="button" data-i18n="addTaskToProject">Task əlavə et</button>
               <div class="filters" aria-label="Status filteri" data-i18n-aria="statusFilterAria">
                 <button class="filter active" data-filter="Hamısı" type="button">Hamısı</button>
                 <button class="filter" data-filter="Plan" type="button">Plan</button>

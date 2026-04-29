@@ -54,11 +54,14 @@ const ids = [
   "taskForm", "formTitle", "taskId", "taskName", "project", "startDate", "endDate",
   "projectResource", "status", "priority", "owner", "progress", "notes", "cancelEdit", "gantt", "reports",
   "kanban", "taskList", "searchInput", "projectFilter", "statusBars", "upcomingList",
-  "deadlineAlerts", "projectCards", "notifyButton", "openAdminPanel", "closeAdminPanel", "adminModal", "exportData", "importData",
+  "deadlineAlerts", "projectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
+  "openAdminPanel", "closeAdminPanel", "adminModal", "managerAssignModal", "closeManagerAssign",
+  "cancelManagerAssign", "saveProjectManagers", "managerAssignTitle", "managerAssignList", "selectedManagersPreview",
+  "exportData", "importData",
   "totalCount", "activeCount", "doneCount", "dateRange", "resetDemo", "clearDone",
   "languageSelect", "loginLanguageSelect", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
-  "teamCount", "linkCount", "quickProjectName", "quickAddProject", "projectList",
+  "teamCount", "linkCount", "quickProjectName", "quickAddProject", "focusNewProject", "projectList",
   "projectCount", "themeMode", "backgroundStyle", "accentColor",
   "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
   "ldapBaseDn", "ldapUserFilter", "saveSettings", "settingsStatus",
@@ -153,6 +156,8 @@ assert.match(elements["#kanban"].innerHTML, /Plan/, "kanban renders");
 assert.match(elements["#statusBars"].innerHTML, /Davam edir/, "dashboard renders");
 assert.match(elements["#teamList"].innerHTML, /Core Team/, "team list renders");
 assert.match(elements["#projectLinks"].innerHTML, /Internal portal/, "project links render");
+assert.match(elements["#projectList"].innerHTML, /open-project-managers/, "project manager picker button renders");
+assert.doesNotMatch(elements["#projectList"].innerHTML, /delete-project|project-manager-select/, "project list does not expose delete or inline manager select");
 
 elements["#loginUsername"].value = "admin";
 elements["#loginPassword"].value = "admin123";

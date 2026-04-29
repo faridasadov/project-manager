@@ -78,7 +78,10 @@ const translations = {
     manager: "Manager",
     userProfile: "İstifadəçi blankı",
     saveProfile: "Blankı saxla",
-    responsibleManagers: "Cavabdeh managerlər",
+    responsibleManagers: "Cavabdeh şəxslər",
+    selectManagers: "Manager seç",
+    selectedManagers: "Seçilən managerlər",
+    noManagersSelected: "Manager seçilməyib",
     saveManagers: "Managerləri saxla",
     projectResource: "Layihə resursu",
     noResource: "Resurs seçilməyib",
@@ -96,7 +99,8 @@ const translations = {
     cancel: "Ləğv et",
     viewsAria: "Görünüşlər",
     dashboard: "Dashboard",
-    list: "Siyahı",
+    list: "Tasklar",
+    taskListTitle: "Tasklar siyahısı",
     kanban: "Kanban",
     gantt: "Gantt",
     searchPlaceholder: "Task, layihə, məsul şəxs axtar",
@@ -266,6 +270,9 @@ const translations = {
     userProfile: "Профиль пользователя",
     saveProfile: "Сохранить профиль",
     responsibleManagers: "Ответственные менеджеры",
+    selectManagers: "Выбрать менеджера",
+    selectedManagers: "Выбранные менеджеры",
+    noManagersSelected: "Менеджер не выбран",
     saveManagers: "Сохранить менеджеров",
     projectResource: "Ресурс проекта",
     noResource: "Ресурс не выбран",
@@ -284,6 +291,7 @@ const translations = {
     viewsAria: "Виды",
     dashboard: "Панель",
     list: "Список",
+    taskListTitle: "Список задач",
     kanban: "Канбан",
     gantt: "Гантт",
     searchPlaceholder: "Поиск по задаче, проекту, ответственному",
@@ -453,6 +461,9 @@ const translations = {
     userProfile: "User profile",
     saveProfile: "Save profile",
     responsibleManagers: "Responsible managers",
+    selectManagers: "Select manager",
+    selectedManagers: "Selected managers",
+    noManagersSelected: "No manager selected",
     saveManagers: "Save managers",
     projectResource: "Project resource",
     noResource: "No resource selected",
@@ -471,6 +482,7 @@ const translations = {
     viewsAria: "Views",
     dashboard: "Dashboard",
     list: "List",
+    taskListTitle: "Task list",
     kanban: "Kanban",
     gantt: "Gantt",
     searchPlaceholder: "Search task, project, owner",
@@ -830,6 +842,7 @@ const projectLinksList = document.querySelector("#projectLinks");
 const linkCount = document.querySelector("#linkCount");
 const quickProjectNameInput = document.querySelector("#quickProjectName");
 const quickAddProjectButton = document.querySelector("#quickAddProject");
+const focusNewProjectButton = document.querySelector("#focusNewProject");
 const projectList = document.querySelector("#projectList");
 const projectCount = document.querySelector("#projectCount");
 const trashList = document.querySelector("#trashList");
@@ -842,9 +855,19 @@ const loginError = document.querySelector("#loginError");
 const loginLanguageSelect = document.querySelector("#loginLanguageSelect");
 const logoutButton = document.querySelector("#logoutButton");
 const notifyButton = document.querySelector("#notifyButton");
+const openTaskComposerButton = document.querySelector("#openTaskComposer");
+const closeTaskComposerButton = document.querySelector("#closeTaskComposer");
+const taskComposerModal = document.querySelector("#taskComposerModal");
 const openAdminPanelButton = document.querySelector("#openAdminPanel");
 const closeAdminPanelButton = document.querySelector("#closeAdminPanel");
 const adminModal = document.querySelector("#adminModal");
+const managerAssignModal = document.querySelector("#managerAssignModal");
+const closeManagerAssignButton = document.querySelector("#closeManagerAssign");
+const cancelManagerAssignButton = document.querySelector("#cancelManagerAssign");
+const saveProjectManagersButton = document.querySelector("#saveProjectManagers");
+const managerAssignTitle = document.querySelector("#managerAssignTitle");
+const managerAssignList = document.querySelector("#managerAssignList");
+const selectedManagersPreview = document.querySelector("#selectedManagersPreview");
 const exportDataButton = document.querySelector("#exportData");
 const importDataInput = document.querySelector("#importData");
 const currentUserBadge = document.querySelector("#currentUserBadge");
@@ -883,6 +906,7 @@ let appSettings = loadSettings();
 let currentFilter = "Hamısı";
 let currentView = "dashboard";
 let currentLanguage = localStorage.getItem(languageKey) || "az";
+let activeManagerProjectId = "";
 saveUsers();
 
 function text(key) {
@@ -1289,6 +1313,16 @@ function openProjectPage(projectName) {
   render();
 }
 
+function openTaskComposerForProject(projectName = "") {
+  resetForm();
+  if (projectName && projectExists(projectName)) {
+    projectInput.value = projectName;
+    renderResourceControls();
+    projectInput.value = projectName;
+  }
+  openTaskComposer();
+}
+
 function resourceValue(type, id) {
   return `${type}:${id}`;
 }
@@ -1419,6 +1453,61 @@ function closeAdminPanel() {
   adminModal.setAttribute("aria-hidden", "true");
 }
 
+function managerPickerIds() {
+  return [...managerAssignList.querySelectorAll("input[name='projectManager']:checked")].map((input) => input.value);
+}
+
+function updateSelectedManagersPreview(selectedIds = managerPickerIds()) {
+  const selected = users.filter((user) => selectedIds.includes(user.id));
+  selectedManagersPreview.innerHTML = selected.length
+    ? selected.map((user) => `<span class="selected-manager-chip">${escapeHtml(user.profile?.fullName || user.username)}</span>`).join("")
+    : `<div class="empty">${text("noManagersSelected")}</div>`;
+}
+
+function managerChoiceItems(selectedIds = []) {
+  const managers = users.filter((user) => user.role === "manager");
+  return managers.length ? managers.map((user) => `
+    <label class="manager-choice">
+      <input type="checkbox" name="projectManager" value="${user.id}" ${selectedIds.includes(user.id) ? "checked" : ""}>
+      <span>
+        <strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>
+        <small>${escapeHtml(user.username)}</small>
+      </span>
+    </label>
+  `).join("") : `<div class="empty">${text("empty")}</div>`;
+}
+
+function openManagerAssign(projectId) {
+  if (!isAdmin()) return;
+  const project = projects.find((item) => item.id === projectId);
+  if (!project) return;
+  activeManagerProjectId = project.id;
+  managerAssignTitle.textContent = project.name;
+  managerAssignList.innerHTML = managerChoiceItems(project.managerIds || []);
+  updateSelectedManagersPreview(project.managerIds || []);
+  managerAssignModal.classList.add("open");
+  managerAssignModal.setAttribute("aria-hidden", "false");
+  closeManagerAssignButton.focus();
+}
+
+function closeManagerAssign() {
+  activeManagerProjectId = "";
+  managerAssignModal.classList.remove("open");
+  managerAssignModal.setAttribute("aria-hidden", "true");
+}
+
+function openTaskComposer() {
+  if (!currentUser || !canManageTasks()) return;
+  taskComposerModal.classList.add("open");
+  taskComposerModal.setAttribute("aria-hidden", "false");
+  taskName.focus();
+}
+
+function closeTaskComposer() {
+  taskComposerModal.classList.remove("open");
+  taskComposerModal.setAttribute("aria-hidden", "true");
+}
+
 function syncAuthView() {
   document.body.classList.toggle("logged-in", Boolean(currentUser));
   document.body.classList.toggle("logged-out", !currentUser);
@@ -1492,16 +1581,14 @@ function renderResourceControls() {
 
   projectList.innerHTML = projects.length ? projects.map((project) => {
     const taskCount = tasks.filter((task) => task.project === project.name).length;
+    const managerNames = projectManagers(project).map((user) => user.username);
     return `
       <div class="resource-item">
-        <span><strong>${escapeHtml(project.name)}</strong>${taskCount} ${text("tasks")} · ${projectManagers(project).map((user) => user.username).join(", ") || text("noOwner")}</span>
+        <span><strong>${escapeHtml(project.name)}</strong>${taskCount} ${text("tasks")}</span>
         <div class="user-actions">
-          <select class="project-manager-select" data-project-id="${project.id}" multiple size="3">
-            ${managerMultiOptions(project.managerIds || [])}
-          </select>
+          <span class="manager-summary"><strong>${text("responsibleManagers")}</strong>${escapeHtml(managerNames.join(", ") || text("noManagersSelected"))}</span>
           <div class="mini-actions">
-            <button type="button" data-resource-action="save-project-managers" data-id="${project.id}">${text("saveManagers")}</button>
-            <button type="button" data-resource-action="delete-project" data-id="${project.id}">${text("remove")}</button>
+            <button type="button" data-resource-action="open-project-managers" data-id="${project.id}">${text("selectManagers")}</button>
           </div>
         </div>
       </div>
@@ -1975,7 +2062,7 @@ function handleTaskAction(action, id) {
     progressInput.value = Number(task.progress) || 0;
     notesInput.value = task.notes;
     formTitle.textContent = text("editTask");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    openTaskComposer();
   }
 
   if (action === "next") {
@@ -2142,6 +2229,7 @@ form.addEventListener("submit", async (event) => {
 
   saveTasks();
   resetForm();
+  closeTaskComposer();
   render();
 });
 
@@ -2214,7 +2302,10 @@ viewTabs.forEach((button) => {
 
 searchInput.addEventListener("input", render);
 projectFilter.addEventListener("change", render);
-cancelEdit.addEventListener("click", resetForm);
+cancelEdit.addEventListener("click", () => {
+  resetForm();
+  closeTaskComposer();
+});
 languageSelect.addEventListener("change", () => {
   changeLanguage(languageSelect.value);
 });
@@ -2244,17 +2335,45 @@ logoutButton.addEventListener("click", () => {
   localStorage.removeItem(sessionKey);
   appSettings = loadSettings();
   closeAdminPanel();
+  closeManagerAssign();
+  closeTaskComposer();
   render();
 });
 
 notifyButton.addEventListener("click", enableNotifications);
+openTaskComposerButton.addEventListener("click", () => {
+  const selectedProject = projectFilter.value === "Hamısı" ? "" : projectFilter.value;
+  openTaskComposerForProject(selectedProject);
+});
+closeTaskComposerButton.addEventListener("click", closeTaskComposer);
+taskComposerModal.addEventListener("click", (event) => {
+  if (event.target.dataset.taskModalClose) closeTaskComposer();
+});
 openAdminPanelButton.addEventListener("click", openAdminPanel);
 closeAdminPanelButton.addEventListener("click", closeAdminPanel);
 adminModal.addEventListener("click", (event) => {
   if (event.target.dataset.modalClose) closeAdminPanel();
 });
+closeManagerAssignButton.addEventListener("click", closeManagerAssign);
+cancelManagerAssignButton.addEventListener("click", closeManagerAssign);
+managerAssignModal.addEventListener("click", (event) => {
+  if (event.target.dataset.managerModalClose) closeManagerAssign();
+});
+managerAssignList.addEventListener("change", () => {
+  updateSelectedManagersPreview();
+});
+saveProjectManagersButton.addEventListener("click", () => {
+  const project = projects.find((item) => item.id === activeManagerProjectId);
+  if (!project || !isAdmin()) return;
+  project.managerIds = managerPickerIds();
+  saveResources();
+  closeManagerAssign();
+  render();
+});
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && adminModal.classList.contains("open")) closeAdminPanel();
+  if (event.key === "Escape" && managerAssignModal.classList.contains("open")) closeManagerAssign();
+  if (event.key === "Escape" && taskComposerModal.classList.contains("open")) closeTaskComposer();
 });
 
 exportDataButton.addEventListener("click", () => {
@@ -2422,6 +2541,13 @@ quickAddProjectButton.addEventListener("click", () => {
   addProjectFromInput(quickProjectNameInput);
 });
 
+focusNewProjectButton.addEventListener("click", () => {
+  currentView = "projects";
+  viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === "projects"));
+  renderViews();
+  quickProjectNameInput.focus();
+});
+
 quickProjectNameInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     event.preventDefault();
@@ -2434,6 +2560,10 @@ projectCards.addEventListener("click", (event) => {
   if (!button) return;
   const projectName = button.dataset.project;
   if (!projectName) return;
+  if (button.dataset.projectAction === "add-task") {
+    openTaskComposerForProject(projectName);
+    return;
+  }
   openProjectPage(projectName);
 });
 
@@ -2469,19 +2599,9 @@ addProjectLinkButton.addEventListener("click", () => {
     const action = button.dataset.resourceAction;
     const id = button.dataset.id;
 
-    if (action === "delete-project") {
-      const project = projects.find((item) => item.id === id);
-      if (!project || tasks.some((task) => task.project === project.name)) return;
-      projects = projects.filter((item) => item.id !== id);
-      projectLinks = projectLinks.filter((link) => link.project !== project.name);
-    }
-
-    if (action === "save-project-managers") {
-      const project = projects.find((item) => item.id === id);
-      const select = container.querySelector(`.project-manager-select[data-project-id="${id}"]`);
-      if (project && select) {
-        project.managerIds = [...select.selectedOptions].map((option) => option.value);
-      }
+    if (action === "open-project-managers") {
+      openManagerAssign(id);
+      return;
     }
 
     if (action === "delete-team") {
