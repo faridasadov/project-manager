@@ -27,6 +27,7 @@ Default URL: `http://localhost:3000`
 Environment:
 
 - `PORT=3000` changes the server port.
+- `AUTH_SECRET=change-this-long-random-secret`
 - `DB_HOST=127.0.0.1`
 - `DB_PORT=3306`
 - `DB_NAME=project_manager`
@@ -38,15 +39,16 @@ Environment:
 API:
 
 - `GET /api/health`
-- `GET /api/state`
-- `PUT /api/state`
-- `GET /api/settings`
-- `PUT /api/settings`
 - `POST /api/auth/login`
+- `GET /api/state` requires `Authorization: Bearer <token>`
+- `PUT /api/state` requires `Authorization: Bearer <token>`
+- `GET /api/settings` requires `Authorization: Bearer <token>`
+- `PUT /api/settings` requires admin token
 - `POST /api/mail/deadline-alerts`
 
 Mail settings use `emailProvider` as either an SMTP URL or an HTTP endpoint that accepts a JSON payload.
 LDAP login uses `ldapUrl`, `ldapBaseDn`, and `ldapUserFilter`; the default filter is `(uid={username})`.
+If the database has no state yet, `POST /api/auth/login` accepts the demo admin credentials so the first browser session can bootstrap the state.
 
 ## GitHub Pages
 

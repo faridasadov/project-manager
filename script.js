@@ -6,6 +6,7 @@ const projectLinksKey = "project-manager-project-links-v1";
 const projectsKey = "project-manager-projects-v1";
 const usersKey = "project-manager-users-v1";
 const sessionKey = "project-manager-session-v1";
+const authTokenKey = "project-manager-auth-token-v1";
 const trashKey = "project-manager-trash-v1";
 const settingsKey = "project-manager-settings-v1";
 const backupVersion = 1;
@@ -1052,6 +1053,7 @@ let selectedCalendarDay = "";
 let calendarRange = { start: "2026-05-01", end: "2026-05-31" };
 let backendSyncReady = false;
 let backendSaveTimer = 0;
+let authToken = localStorage.getItem(authTokenKey) || "";
 ensureDemoData();
 saveUsers();
 
@@ -2499,6 +2501,13 @@ function backendUrl(path) {
   return `${base}${path}`;
 }
 
+function authHeaders(extraHeaders = {}) {
+  return {
+    ...extraHeaders,
+    ...(authToken ? { authorization: `Bearer ${authToken}` } : {})
+  };
+}
+
 function scheduleBackendSave() {
   if (!backendSyncReady || !canUseBackend()) return;
   clearTimeout(backendSaveTimer);
@@ -2512,7 +2521,7 @@ async function saveBackendState() {
   try {
     await fetch(backendUrl("/api/state"), {
       method: "PUT",
-      headers: { "content-type": "application/json" },
+      headers: authHeaders({ "content-type": "application/json" }),
       body: JSON.stringify(backupPayload())
     });
   } catch (error) {
@@ -2523,7 +2532,7 @@ async function saveBackendState() {
 async function syncBackendState() {
   if (!canUseBackend()) return;
   try {
-    const response = await fetch(backendUrl("/api/state"), { cache: "no-store" });
+    const response = await fetch(backendUrl("/api/state"), { cache: "no-store", headers: authHeaders() });
     if (response.ok) {
       importBackup(await response.json());
     } else if (response.status === 404) {
@@ -2542,7 +2551,7 @@ async function saveBackendSettings() {
   try {
     await fetch(backendUrl("/api/settings"), {
       method: "PUT",
-      headers: { "content-type": "application/json" },
+      headers: authHeaders({ "content-type": "application/json" }),
       body: JSON.stringify({
         emailEnabled: appSettings.emailEnabled,
         emailRecipients: appSettings.emailRecipients,
@@ -2561,7 +2570,7 @@ async function saveBackendSettings() {
 async function syncBackendSettings() {
   if (!canUseBackend() || !currentUser) return;
   try {
-    const response = await fetch(backendUrl("/api/settings"), { cache: "no-store" });
+    const response = await fetch(backendUrl("/api/settings"), { cache: "no-store", headers: authHeaders() });
     if (!response.ok) return;
     const serverSettings = await response.json();
     appSettings = {
@@ -2591,6 +2600,10 @@ async function backendLogin(username, password) {
     });
     if (!response.ok) return null;
     const payload = await response.json();
+    if (payload.token) {
+      authToken = payload.token;
+      localStorage.setItem(authTokenKey, authToken);
+    }
     return payload.user ? normalizeUser(payload.user) : null;
   } catch (error) {
     console.warn("Backend login failed", error);
@@ -2642,7 +2655,7 @@ async function sendBackendDeadlineEmail(alerts) {
   try {
     await fetch(backendUrl("/api/mail/deadline-alerts"), {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: authHeaders({ "content-type": "application/json" }),
       body: JSON.stringify({
         subject: "Project Manager deadline alerts",
         alerts: alerts.slice(0, 10).map(({ task, alert }) => ({
@@ -2829,15 +2842,16 @@ loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const username = loginUsername.value.trim();
   const password = loginPassword.value;
-  let user = users.find((item) => item.username === username && item.passwordHash === md5(password));
+  const localUser = users.find((item) => item.username === username && item.passwordHash === md5(password));
+  let user = localUser;
   if (!user) {
     user = await backendLogin(username, password);
-    if (user && !users.some((item) => item.id === user.id || item.username === user.username)) {
-      users.push(user);
-      saveUsers();
-    }
-    user = users.find((item) => item.username === user?.username) || user;
   }
+  if (user && !users.some((item) => item.id === user.id || item.username === user.username)) {
+    users.push(user);
+    saveUsers();
+  }
+  user = users.find((item) => item.username === user?.username) || user;
   if (!user) {
     loginError.textContent = text("loginError");
     return;
@@ -2848,12 +2862,22 @@ loginForm.addEventListener("submit", async (event) => {
   loginError.textContent = "";
   loginPassword.value = "";
   render();
-  syncBackendSettings();
+  if (localUser && canUseBackend()) {
+    backendLogin(username, password).then(() => {
+      syncBackendState();
+      syncBackendSettings();
+    });
+  } else {
+    syncBackendState();
+    syncBackendSettings();
+  }
 });
 
 logoutButton.addEventListener("click", () => {
   currentUser = null;
+  authToken = "";
   localStorage.removeItem(sessionKey);
+  localStorage.removeItem(authTokenKey);
   appSettings = loadSettings();
   closeAdminPanel();
   closeManagerAssign();

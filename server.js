@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { stat } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import { dirname, extname, normalize, resolve } from "node:path";
@@ -9,6 +10,7 @@ import nodemailer from "nodemailer";
 
 const rootDir = dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 3000);
+const authSecret = process.env.AUTH_SECRET || "project-manager-change-this-secret";
 const dbConfig = {
   host: process.env.DB_HOST || "127.0.0.1",
   port: Number(process.env.DB_PORT || 3306),
@@ -20,6 +22,11 @@ const dbConfig = {
   charset: "utf8mb4"
 };
 const pool = mysql.createPool(dbConfig);
+const bootstrapUsers = [
+  { id: "user-admin", username: "admin", passwordHash: md5("admin123"), role: "admin", managerId: "", profile: { fullName: "Admin User", email: "", fatherName: "", position: "Admin", phone: "", address: "", company: "" } },
+  { id: "user-manager", username: "manager", passwordHash: md5("manager123"), role: "manager", managerId: "", profile: { fullName: "Project Manager", email: "", fatherName: "", position: "Manager", phone: "", address: "", company: "" } },
+  { id: "user-demo", username: "user", passwordHash: md5("user123"), role: "user", managerId: "user-manager", profile: { fullName: "Demo User", email: "", fatherName: "", position: "User", phone: "", address: "", company: "" } }
+];
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -40,9 +47,63 @@ function sendJson(response, statusCode, payload) {
     "cache-control": "no-store",
     "access-control-allow-origin": "*",
     "access-control-allow-methods": "GET, PUT, OPTIONS",
-    "access-control-allow-headers": "content-type"
+    "access-control-allow-headers": "content-type, authorization"
   });
   response.end(JSON.stringify(payload));
+}
+
+function md5(value) {
+  return createHash("md5").update(String(value)).digest("hex");
+}
+
+function base64Url(value) {
+  return Buffer.from(JSON.stringify(value)).toString("base64url");
+}
+
+function signToken(payload) {
+  const body = base64Url(payload);
+  const signature = createHmac("sha256", authSecret).update(body).digest("base64url");
+  return `${body}.${signature}`;
+}
+
+function verifyToken(token) {
+  try {
+    if (!token || !token.includes(".")) return null;
+    const [body, signature] = token.split(".");
+    const expected = createHmac("sha256", authSecret).update(body).digest("base64url");
+    const signatureBuffer = Buffer.from(signature);
+    const expectedBuffer = Buffer.from(expected);
+    if (signatureBuffer.length !== expectedBuffer.length || !timingSafeEqual(signatureBuffer, expectedBuffer)) return null;
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+    if (!payload.exp || payload.exp < Date.now()) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function authPayload(request) {
+  const header = request.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  return verifyToken(token);
+}
+
+function requireAuth(request, response, roles = []) {
+  const payload = authPayload(request);
+  if (!payload || (roles.length && !roles.includes(payload.role))) {
+    sendJson(response, 401, { error: "Unauthorized" });
+    return null;
+  }
+  return payload;
+}
+
+function tokenForUser(user) {
+  return signToken({
+    sub: user.id,
+    username: user.username,
+    role: user.role || "user",
+    exp: Date.now() + 12 * 60 * 60 * 1000
+  });
 }
 
 function readBody(request) {
@@ -238,7 +299,7 @@ async function handleApi(request, response) {
     response.writeHead(204, {
       "access-control-allow-origin": "*",
       "access-control-allow-methods": "GET, PUT, OPTIONS",
-      "access-control-allow-headers": "content-type"
+      "access-control-allow-headers": "content-type, authorization"
     });
     response.end();
     return true;
@@ -250,6 +311,7 @@ async function handleApi(request, response) {
   }
 
   if (request.url === "/api/settings" && request.method === "GET") {
+    if (!requireAuth(request, response)) return true;
     try {
       sendJson(response, 200, await readSettings());
     } catch {
@@ -259,6 +321,7 @@ async function handleApi(request, response) {
   }
 
   if (request.url === "/api/settings" && request.method === "PUT") {
+    if (!requireAuth(request, response, ["admin"])) return true;
     try {
       const payload = JSON.parse(await readBody(request));
       sendJson(response, 200, { ok: true, settings: await writeSettings(payload) });
@@ -271,32 +334,42 @@ async function handleApi(request, response) {
   if (request.url === "/api/auth/login" && request.method === "POST") {
     try {
       const { username, password } = JSON.parse(await readBody(request));
-      const settings = await readSettings();
-      const ldapUser = await authenticateLdap(String(username || "").trim(), String(password || ""), settings);
-      if (!ldapUser) {
-        sendJson(response, 401, { ok: false, error: "Invalid LDAP credentials" });
+      const cleanUsername = String(username || "").trim();
+      const cleanPassword = String(password || "");
+      const state = await readState();
+      const localUsers = state?.users?.length ? state.users : bootstrapUsers;
+      const localUser = localUsers.find((user) => user.username === cleanUsername && user.passwordHash === md5(cleanPassword));
+      if (localUser) {
+        sendJson(response, 200, { ok: true, token: tokenForUser(localUser), user: localUser });
         return true;
       }
-      const state = await readState();
+      const settings = await readSettings();
+      const ldapUser = await authenticateLdap(cleanUsername, cleanPassword, settings);
+      if (!ldapUser) {
+        sendJson(response, 401, { ok: false, error: "Invalid credentials" });
+        return true;
+      }
       const existingUser = state?.users?.find((user) => user.username === ldapUser.username);
+      const user = existingUser || {
+        id: `ldap:${ldapUser.username}`,
+        username: ldapUser.username,
+        passwordHash: "",
+        role: "user",
+        managerId: "",
+        profile: {
+          fullName: ldapUser.fullName,
+          email: ldapUser.email,
+          fatherName: "",
+          position: "",
+          phone: "",
+          address: "",
+          company: ""
+        }
+      };
       sendJson(response, 200, {
         ok: true,
-        user: existingUser || {
-          id: `ldap:${ldapUser.username}`,
-          username: ldapUser.username,
-          passwordHash: "",
-          role: "user",
-          managerId: "",
-          profile: {
-            fullName: ldapUser.fullName,
-            email: ldapUser.email,
-            fatherName: "",
-            position: "",
-            phone: "",
-            address: "",
-            company: ""
-          }
-        }
+        token: tokenForUser(user),
+        user
       });
     } catch {
       sendJson(response, 401, { ok: false, error: "LDAP login failed" });
@@ -305,6 +378,7 @@ async function handleApi(request, response) {
   }
 
   if (request.url === "/api/mail/deadline-alerts" && request.method === "POST") {
+    if (!requireAuth(request, response)) return true;
     try {
       const payload = JSON.parse(await readBody(request));
       const alerts = Array.isArray(payload.alerts) ? payload.alerts : [];
@@ -324,6 +398,7 @@ async function handleApi(request, response) {
   }
 
   if (request.url === "/api/state" && request.method === "GET") {
+    if (!requireAuth(request, response)) return true;
     try {
       const state = await readState();
       if (!state) {
@@ -338,6 +413,7 @@ async function handleApi(request, response) {
   }
 
   if (request.url === "/api/state" && request.method === "PUT") {
+    if (!requireAuth(request, response)) return true;
     try {
       const payload = JSON.parse(await readBody(request));
       if (!validateState(payload)) {
