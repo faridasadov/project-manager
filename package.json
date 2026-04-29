@@ -8,6 +8,8 @@
     "test": "node --check script.js && node test-runner.mjs"
   },
   "dependencies": {
-    "mysql2": "^3.22.3"
+    "ldapjs": "^3.0.7",
+    "mysql2": "^3.22.3",
+    "nodemailer": "^8.0.7"
   }
 }

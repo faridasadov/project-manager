@@ -32,12 +32,21 @@ Environment:
 - `DB_NAME=project_manager`
 - `DB_USER=project_manager`
 - `DB_PASSWORD=project_manager_2026`
+- `SMTP_URL=smtp://user:password@mail.example.com:587`
+- `MAIL_FROM=project-manager@example.com`
 
 API:
 
 - `GET /api/health`
 - `GET /api/state`
 - `PUT /api/state`
+- `GET /api/settings`
+- `PUT /api/settings`
+- `POST /api/auth/login`
+- `POST /api/mail/deadline-alerts`
+
+Mail settings use `emailProvider` as either an SMTP URL or an HTTP endpoint that accepts a JSON payload.
+LDAP login uses `ldapUrl`, `ldapBaseDn`, and `ldapUserFilter`; the default filter is `(uid={username})`.
 
 ## GitHub Pages
 

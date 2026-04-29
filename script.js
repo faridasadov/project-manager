@@ -2537,6 +2537,67 @@ async function syncBackendState() {
   backendSyncReady = true;
 }
 
+async function saveBackendSettings() {
+  if (!canUseBackend() || !isAdmin()) return;
+  try {
+    await fetch(backendUrl("/api/settings"), {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        emailEnabled: appSettings.emailEnabled,
+        emailRecipients: appSettings.emailRecipients,
+        emailProvider: appSettings.emailProvider,
+        ldapEnabled: appSettings.ldapEnabled,
+        ldapUrl: appSettings.ldapUrl,
+        ldapBaseDn: appSettings.ldapBaseDn,
+        ldapUserFilter: appSettings.ldapUserFilter
+      })
+    });
+  } catch (error) {
+    console.warn("Backend settings save failed", error);
+  }
+}
+
+async function syncBackendSettings() {
+  if (!canUseBackend() || !currentUser) return;
+  try {
+    const response = await fetch(backendUrl("/api/settings"), { cache: "no-store" });
+    if (!response.ok) return;
+    const serverSettings = await response.json();
+    appSettings = {
+      ...appSettings,
+      emailEnabled: Boolean(serverSettings.emailEnabled),
+      emailRecipients: serverSettings.emailRecipients || "",
+      emailProvider: serverSettings.emailProvider || "",
+      ldapEnabled: Boolean(serverSettings.ldapEnabled),
+      ldapUrl: serverSettings.ldapUrl || "",
+      ldapBaseDn: serverSettings.ldapBaseDn || "",
+      ldapUserFilter: serverSettings.ldapUserFilter || "(uid={username})"
+    };
+    saveAppSettings();
+    render();
+  } catch (error) {
+    console.warn("Backend settings sync failed", error);
+  }
+}
+
+async function backendLogin(username, password) {
+  if (!canUseBackend()) return null;
+  try {
+    const response = await fetch(backendUrl("/api/auth/login"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+    if (!response.ok) return null;
+    const payload = await response.json();
+    return payload.user ? normalizeUser(payload.user) : null;
+  } catch (error) {
+    console.warn("Backend login failed", error);
+    return null;
+  }
+}
+
 function downloadJson(filename, data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -2565,16 +2626,41 @@ function importBackup(payload) {
 
 function sendDeadlineNotifications() {
   const alerts = riskyTasks();
-  if (!alerts.length || !("Notification" in window) || Notification.permission !== "granted") return;
-  alerts.slice(0, 3).forEach(({ task, alert }) => {
-    new Notification(`${alert.label}: ${task.name}`, {
-      body: `${getProject(task)} - ${shortDate(task.end)}`
+  if (!alerts.length) return;
+  if ("Notification" in window && Notification.permission === "granted") {
+    alerts.slice(0, 3).forEach(({ task, alert }) => {
+      new Notification(`${alert.label}: ${task.name}`, {
+        body: `${getProject(task)} - ${shortDate(task.end)}`
+      });
     });
-  });
+  }
+  sendBackendDeadlineEmail(alerts);
+}
+
+async function sendBackendDeadlineEmail(alerts) {
+  if (!canUseBackend() || !appSettings.emailEnabled) return;
+  try {
+    await fetch(backendUrl("/api/mail/deadline-alerts"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        subject: "Project Manager deadline alerts",
+        alerts: alerts.slice(0, 10).map(({ task, alert }) => ({
+          label: alert.label,
+          taskName: task.name,
+          project: getProject(task),
+          end: task.end
+        }))
+      })
+    });
+  } catch (error) {
+    console.warn("Deadline email failed", error);
+  }
 }
 
 async function enableNotifications() {
   if (!("Notification" in window)) {
+    sendDeadlineNotifications();
     alert(text("notificationsBlocked"));
     return;
   }
@@ -2582,6 +2668,7 @@ async function enableNotifications() {
     ? await Notification.requestPermission()
     : Notification.permission;
   if (permission !== "granted") {
+    sendDeadlineNotifications();
     alert(text("notificationsBlocked"));
     return;
   }
@@ -2738,11 +2825,19 @@ loginLanguageSelect.addEventListener("change", () => {
   changeLanguage(loginLanguageSelect.value);
 });
 
-loginForm.addEventListener("submit", (event) => {
+loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const username = loginUsername.value.trim();
   const password = loginPassword.value;
-  const user = users.find((item) => item.username === username && item.passwordHash === md5(password));
+  let user = users.find((item) => item.username === username && item.passwordHash === md5(password));
+  if (!user) {
+    user = await backendLogin(username, password);
+    if (user && !users.some((item) => item.id === user.id || item.username === user.username)) {
+      users.push(user);
+      saveUsers();
+    }
+    user = users.find((item) => item.username === user?.username) || user;
+  }
   if (!user) {
     loginError.textContent = text("loginError");
     return;
@@ -2753,6 +2848,7 @@ loginForm.addEventListener("submit", (event) => {
   loginError.textContent = "";
   loginPassword.value = "";
   render();
+  syncBackendSettings();
 });
 
 logoutButton.addEventListener("click", () => {
@@ -2850,6 +2946,7 @@ saveSettingsButton.addEventListener("click", () => {
     ldapUserFilter: isAdmin() ? ldapUserFilterInput.value.trim() || "(uid={username})" : appSettings.ldapUserFilter
   };
   saveAppSettings();
+  saveBackendSettings();
   applyAppSettings();
   settingsStatus.textContent = text("settingsSaved");
 });
@@ -3143,3 +3240,4 @@ clearDone.addEventListener("click", () => {
 
 render();
 syncBackendState();
+syncBackendSettings();
