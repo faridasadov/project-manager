@@ -102,6 +102,14 @@ const translations = {
     list: "Tasklar",
     taskListTitle: "Tasklar siyahısı",
     kanban: "Kanban",
+    calendar: "Calendar",
+    deadlineCalendar: "Deadline calendar",
+    rangeStart: "Başlama",
+    rangeEnd: "Bitmə",
+    selectedDay: "Seçilən gün",
+    projectAndTask: "Layihə və task",
+    selectCalendarDay: "Calendar-da gün seçin.",
+    noTaskOnDay: "Bu gün üçün task yoxdur.",
     gantt: "Gantt",
     searchPlaceholder: "Task, layihə, məsul şəxs axtar",
     allProjects: "Bütün layihələr",
@@ -293,6 +301,14 @@ const translations = {
     list: "Список",
     taskListTitle: "Список задач",
     kanban: "Канбан",
+    calendar: "Календарь",
+    deadlineCalendar: "Календарь дедлайнов",
+    rangeStart: "Начало",
+    rangeEnd: "Конец",
+    selectedDay: "Выбранный день",
+    projectAndTask: "Проект и задача",
+    selectCalendarDay: "Выберите день в календаре.",
+    noTaskOnDay: "На этот день задач нет.",
     gantt: "Гантт",
     searchPlaceholder: "Поиск по задаче, проекту, ответственному",
     allProjects: "Все проекты",
@@ -484,6 +500,14 @@ const translations = {
     list: "List",
     taskListTitle: "Task list",
     kanban: "Kanban",
+    calendar: "Calendar",
+    deadlineCalendar: "Deadline calendar",
+    rangeStart: "Start",
+    rangeEnd: "End",
+    selectedDay: "Selected day",
+    projectAndTask: "Project and task",
+    selectCalendarDay: "Select a day in the calendar.",
+    noTaskOnDay: "No task for this day.",
     gantt: "Gantt",
     searchPlaceholder: "Search task, project, owner",
     allProjects: "All projects",
@@ -764,6 +788,72 @@ const demoTaskTemplates = [
     owner: "member:member-farid",
     progress: 0,
     notes: "Son yoxlamalar və istifadəçi testləri."
+  },
+  {
+    name: "API gateway planı",
+    project: "Mobile banking",
+    start: "2026-05-01",
+    end: "2026-05-04",
+    status: "Davam edir",
+    priority: "Yüksək",
+    owner: "user:user-aysel",
+    progress: 40,
+    notes: "Mobile banking layihəsi üçün API gateway və security flow hazırlanır."
+  },
+  {
+    name: "Notification service",
+    project: "Mobile banking",
+    start: "2026-05-05",
+    end: "2026-05-08",
+    status: "Plan",
+    priority: "Normal",
+    owner: "user:user-rashad",
+    progress: 0,
+    notes: "Push, email və deadline reminder bildirişləri bağlanır."
+  },
+  {
+    name: "Inventory schema",
+    project: "Warehouse ERP",
+    start: "2026-05-02",
+    end: "2026-05-06",
+    status: "Davam edir",
+    priority: "Yüksək",
+    owner: "team:team-erp",
+    progress: 35,
+    notes: "Məhsul, anbar, hərəkət və audit cədvəlləri modelləşdirilir."
+  },
+  {
+    name: "Barcode testləri",
+    project: "Warehouse ERP",
+    start: "2026-05-07",
+    end: "2026-05-11",
+    status: "Plan",
+    priority: "Normal",
+    owner: "user:user-nigar",
+    progress: 0,
+    notes: "Mobil scan və qəbul/təhvil workflow testləri."
+  },
+  {
+    name: "Executive dashboard",
+    project: "Analytics portal",
+    start: "2026-05-03",
+    end: "2026-05-09",
+    status: "Plan",
+    priority: "Yüksək",
+    owner: "team:team-analytics",
+    progress: 0,
+    notes: "Rəhbərlik üçün KPI, overdue və performans dashboard-u."
+  },
+  {
+    name: "Data export API",
+    project: "Analytics portal",
+    start: "2026-05-10",
+    end: "2026-05-14",
+    status: "Plan",
+    priority: "Normal",
+    owner: "user:user-aysel",
+    progress: 0,
+    notes: "PDF/Excel export endpoint-ləri və permission yoxlamaları."
   }
 ];
 
@@ -775,23 +865,36 @@ const demoMemberTemplates = [
 
 const demoTeamTemplates = [
   { id: "team-core", name: "Core Team", memberIds: ["member-farid", "member-leyla"] },
-  { id: "team-network", name: "Network Team", memberIds: ["member-farid", "member-nicat"] }
+  { id: "team-network", name: "Network Team", memberIds: ["member-farid", "member-nicat"] },
+  { id: "team-erp", name: "ERP Team", memberIds: ["user:user-rashad", "user:user-nigar"] },
+  { id: "team-analytics", name: "Analytics Team", memberIds: ["user:user-aysel", "member-leyla"] }
 ];
 
 const demoProjectLinks = [
   { id: "link-internal-core", project: "Internal portal", resource: "team:team-core" },
-  { id: "link-customer-network", project: "Customer rollout", resource: "team:team-network" }
+  { id: "link-customer-network", project: "Customer rollout", resource: "team:team-network" },
+  { id: "link-mobile-aysel", project: "Mobile banking", resource: "user:user-aysel" },
+  { id: "link-mobile-rashad", project: "Mobile banking", resource: "user:user-rashad" },
+  { id: "link-erp-team", project: "Warehouse ERP", resource: "team:team-erp" },
+  { id: "link-analytics-team", project: "Analytics portal", resource: "team:team-analytics" }
 ];
 
 const demoProjects = [
   { id: "project-internal", name: "Internal portal", managerIds: ["user-manager"] },
-  { id: "project-customer", name: "Customer rollout", managerIds: ["user-manager"] }
+  { id: "project-customer", name: "Customer rollout", managerIds: ["user-manager"] },
+  { id: "project-mobile", name: "Mobile banking", managerIds: ["user-manager", "user-manager-2"] },
+  { id: "project-erp", name: "Warehouse ERP", managerIds: ["user-manager-2"] },
+  { id: "project-analytics", name: "Analytics portal", managerIds: ["user-manager"] }
 ];
 
 const demoUsers = [
   { id: "user-admin", username: "admin", passwordHash: md5("admin123"), role: "admin", managerId: "", profile: { fullName: "Admin User", email: "", fatherName: "", position: "Admin", phone: "", address: "", company: "" } },
   { id: "user-manager", username: "manager", passwordHash: md5("manager123"), role: "manager", managerId: "", profile: { fullName: "Project Manager", email: "", fatherName: "", position: "Manager", phone: "", address: "", company: "" } },
-  { id: "user-demo", username: "user", passwordHash: md5("user123"), role: "user", managerId: "user-manager", profile: { fullName: "Demo User", email: "", fatherName: "", position: "User", phone: "", address: "", company: "" } }
+  { id: "user-manager-2", username: "manager2", passwordHash: md5("manager123"), role: "manager", managerId: "", profile: { fullName: "Aysel Manager", email: "aysel.manager@example.com", fatherName: "", position: "Delivery Manager", phone: "", address: "", company: "PMO" } },
+  { id: "user-demo", username: "user", passwordHash: md5("user123"), role: "user", managerId: "user-manager", profile: { fullName: "Demo User", email: "", fatherName: "", position: "User", phone: "", address: "", company: "" } },
+  { id: "user-aysel", username: "aysel", passwordHash: md5("user123"), role: "user", managerId: "user-manager", profile: { fullName: "Aysel Mammadova", email: "aysel@example.com", fatherName: "", position: "Frontend developer", phone: "", address: "", company: "Digital" } },
+  { id: "user-rashad", username: "rashad", passwordHash: md5("user123"), role: "user", managerId: "user-manager-2", profile: { fullName: "Rashad Aliyev", email: "rashad@example.com", fatherName: "", position: "Backend developer", phone: "", address: "", company: "Digital" } },
+  { id: "user-nigar", username: "nigar", passwordHash: md5("user123"), role: "user", managerId: "user-manager-2", profile: { fullName: "Nigar Karimova", email: "nigar@example.com", fatherName: "", position: "QA engineer", phone: "", address: "", company: "Digital" } }
 ];
 
 const statuses = ["Plan", "Davam edir", "Bitib"];
@@ -813,6 +916,13 @@ const cancelEdit = document.querySelector("#cancelEdit");
 const gantt = document.querySelector("#gantt");
 const reports = document.querySelector("#reports");
 const kanban = document.querySelector("#kanban");
+const dashboardCalendar = document.querySelector("#dashboardCalendar");
+const calendarBoard = document.querySelector("#calendarBoard");
+const calendarDetails = document.querySelector("#calendarDetails");
+const dashboardCalendarStart = document.querySelector("#dashboardCalendarStart");
+const dashboardCalendarEnd = document.querySelector("#dashboardCalendarEnd");
+const calendarStart = document.querySelector("#calendarStart");
+const calendarEnd = document.querySelector("#calendarEnd");
 const taskList = document.querySelector("#taskList");
 const filters = document.querySelectorAll(".filter");
 const viewTabs = document.querySelectorAll(".view-tab");
@@ -907,6 +1017,9 @@ let currentFilter = "Hamısı";
 let currentView = "dashboard";
 let currentLanguage = localStorage.getItem(languageKey) || "az";
 let activeManagerProjectId = "";
+let selectedCalendarDay = "";
+let calendarRange = { start: "2026-05-01", end: "2026-05-31" };
+ensureDemoData();
 saveUsers();
 
 function text(key) {
@@ -1007,6 +1120,51 @@ function updateRoleLabels() {
 
 function createDemoTasks() {
   return demoTaskTemplates.map((task) => ({ ...task, id: createId() }));
+}
+
+function ensureDemoData() {
+  let changedTasks = false;
+  let changedResources = false;
+  let changedUsers = false;
+
+  demoUsers.forEach((user) => {
+    if (!users.some((item) => item.id === user.id || item.username === user.username)) {
+      users.push(normalizeUser({ ...user }));
+      changedUsers = true;
+    }
+  });
+
+  demoTeamTemplates.forEach((team) => {
+    if (!teams.some((item) => item.id === team.id)) {
+      teams.push({ ...team, memberIds: [...team.memberIds] });
+      changedResources = true;
+    }
+  });
+
+  demoProjects.forEach((project) => {
+    if (!projects.some((item) => item.id === project.id || item.name === project.name)) {
+      projects.push(normalizeProject({ ...project }));
+      changedResources = true;
+    }
+  });
+
+  demoProjectLinks.forEach((link) => {
+    if (!projectLinks.some((item) => item.project === link.project && item.resource === link.resource)) {
+      projectLinks.push({ ...link });
+      changedResources = true;
+    }
+  });
+
+  demoTaskTemplates.forEach((task) => {
+    if (!tasks.some((item) => item.project === task.project && item.name === task.name)) {
+      tasks.push(normalizeTask({ ...task, id: createId() }));
+      changedTasks = true;
+    }
+  });
+
+  if (changedTasks) saveTasks();
+  if (changedResources) saveResources();
+  if (changedUsers) saveUsers();
 }
 
 function loadJson(key, fallback) {
@@ -1753,6 +1911,76 @@ function renderDeadlineAlerts() {
   `).join("") : `<div class="empty">${text("noDeadlineAlerts")}</div>`;
 }
 
+function isoDateFromParts(year, month, day) {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function calendarBounds() {
+  const start = calendarRange.start || "2026-05-01";
+  const end = calendarRange.end || "2026-05-31";
+  return start <= end ? { start, end } : { start: end, end: start };
+}
+
+function calendarDays() {
+  const { start, end } = calendarBounds();
+  const days = [];
+  const [startYear, startMonth, startDay] = start.split("-").map(Number);
+  const [endYear, endMonth, endDay] = end.split("-").map(Number);
+  const cursor = new Date(startYear, startMonth - 1, startDay);
+  const limit = new Date(endYear, endMonth - 1, endDay);
+  while (cursor <= limit) {
+    days.push(isoDateFromParts(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate()));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return days;
+}
+
+function calendarTasksForDate(date) {
+  return accessibleTasks().filter((task) => task.end === date);
+}
+
+function renderCalendarMarkup(compact = false) {
+  return calendarDays().map((date) => {
+    const dayTasks = calendarTasksForDate(date);
+    const selected = date === selectedCalendarDay;
+    const day = Number(date.slice(-2));
+    return `
+      <button class="calendar-day ${compact ? "compact" : ""} ${selected ? "selected" : ""}" type="button" data-calendar-day="${date}">
+        <strong>${day}</strong>
+        <em>${date.slice(5, 7)}/${date.slice(0, 4)}</em>
+        ${dayTasks.length ? `<span>${dayTasks.length} ${text("tasks")}</span><small>${escapeHtml(getProject(dayTasks[0]))}</small>` : `<span>${text("empty")}</span>`}
+      </button>
+    `;
+  }).join("");
+}
+
+function renderCalendarDetails() {
+  if (!selectedCalendarDay) {
+    calendarDetails.innerHTML = `<div class="empty">${text("selectCalendarDay")}</div>`;
+    return;
+  }
+  const dayTasks = calendarTasksForDate(selectedCalendarDay);
+  calendarDetails.innerHTML = dayTasks.length ? dayTasks.map((task) => `
+    <div class="compact-item">
+      <strong>${escapeHtml(getProject(task))}</strong>
+      <div class="task-meta">
+        <span>${escapeHtml(task.name)}</span>
+        <span>${shortDate(task.end)}</span>
+        <span>${escapeHtml(resourceLabel(task.owner))}</span>
+        <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
+      </div>
+    </div>
+  `).join("") : `<div class="empty">${text("noTaskOnDay")}</div>`;
+}
+
+function renderCalendar() {
+  [dashboardCalendarStart, calendarStart].forEach((input) => { input.value = calendarRange.start; });
+  [dashboardCalendarEnd, calendarEnd].forEach((input) => { input.value = calendarRange.end; });
+  dashboardCalendar.innerHTML = renderCalendarMarkup(true);
+  calendarBoard.innerHTML = renderCalendarMarkup(false);
+  renderCalendarDetails();
+}
+
 function renderProjectsView() {
   const shownProjects = visibleProjects();
   projectCards.innerHTML = shownProjects.length ? shownProjects.map((project) => {
@@ -2015,6 +2243,7 @@ function render() {
   renderProjectsView();
   renderTaskList();
   renderKanban();
+  renderCalendar();
   renderGantt();
   renderReports();
   renderViews();
@@ -2302,6 +2531,29 @@ viewTabs.forEach((button) => {
 
 searchInput.addEventListener("input", render);
 projectFilter.addEventListener("change", render);
+function handleCalendarClick(event) {
+  const button = event.target.closest("[data-calendar-day]");
+  if (!button) return;
+  selectedCalendarDay = button.dataset.calendarDay;
+  renderCalendar();
+}
+function syncCalendarRangeFromInputs(source) {
+  calendarRange = {
+    start: source.start.value || calendarRange.start,
+    end: source.end.value || calendarRange.end
+  };
+  selectedCalendarDay = "";
+  renderCalendar();
+}
+dashboardCalendar.addEventListener("click", handleCalendarClick);
+calendarBoard.addEventListener("click", handleCalendarClick);
+[
+  { start: dashboardCalendarStart, end: dashboardCalendarEnd },
+  { start: calendarStart, end: calendarEnd }
+].forEach((source) => {
+  source.start.addEventListener("change", () => syncCalendarRangeFromInputs(source));
+  source.end.addEventListener("change", () => syncCalendarRangeFromInputs(source));
+});
 cancelEdit.addEventListener("click", () => {
   resetForm();
   closeTaskComposer();

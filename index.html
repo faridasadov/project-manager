@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-  <link rel="stylesheet" href="styles.css?v=20260428-visibility-fix">
+  <link rel="stylesheet" href="styles.css?v=20260429-calendar-range">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
@@ -381,6 +381,7 @@
             <button class="view-tab" data-view="projects" type="button" data-i18n="projects">Layihələr</button>
             <button class="view-tab" data-view="list" type="button" data-i18n="list">Tasklar</button>
             <button class="view-tab" data-view="kanban" type="button">Kanban</button>
+            <button class="view-tab" data-view="calendar" type="button" data-i18n="calendar">Calendar</button>
             <button class="view-tab" data-view="gantt" type="button">Gantt</button>
             <button class="view-tab" data-view="reports" type="button" data-i18n="reports">Hesabat</button>
           </div>
@@ -441,6 +442,36 @@
               <div id="deadlineAlerts" class="compact-list"></div>
             </article>
           </div>
+          <div class="dashboard-calendar-grid">
+            <article class="panel">
+              <div class="section-head">
+                <div>
+                  <p class="kicker" data-i18n="calendar">Calendar</p>
+                  <h2 data-i18n="deadlineCalendar">Deadline calendar</h2>
+                </div>
+              </div>
+              <div class="calendar-controls">
+                <label>
+                  <span data-i18n="rangeStart">Başlama</span>
+                  <input id="dashboardCalendarStart" type="date">
+                </label>
+                <label>
+                  <span data-i18n="rangeEnd">Bitmə</span>
+                  <input id="dashboardCalendarEnd" type="date">
+                </label>
+              </div>
+              <div id="dashboardCalendar" class="calendar-grid compact-calendar"></div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <div>
+                  <p class="kicker" data-i18n="selectedDay">Seçilən gün</p>
+                  <h2 data-i18n="projectAndTask">Layihə və task</h2>
+                </div>
+              </div>
+              <div id="calendarDetails" class="compact-list"></div>
+            </article>
+          </div>
         </section>
 
         <section id="projectsView" class="view">
@@ -490,6 +521,28 @@
           <div id="kanban" class="kanban"></div>
         </section>
 
+        <section id="calendarView" class="view">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <p class="kicker" data-i18n="calendar">Calendar</p>
+                <h2 data-i18n="deadlineCalendar">Deadline calendar</h2>
+              </div>
+            </div>
+            <div class="calendar-controls">
+              <label>
+                <span data-i18n="rangeStart">Başlama</span>
+                <input id="calendarStart" type="date">
+              </label>
+              <label>
+                <span data-i18n="rangeEnd">Bitmə</span>
+                <input id="calendarEnd" type="date">
+              </label>
+            </div>
+            <div id="calendarBoard" class="calendar-grid"></div>
+          </div>
+        </section>
+
         <section id="ganttView" class="view">
           <div class="panel">
             <div class="section-head">
@@ -517,6 +570,6 @@
     </main>
     </div>
 
-  <script src="script.js?v=20260428-visibility-fix"></script>
+  <script src="script.js?v=20260429-calendar-range"></script>
 </body>
 </html>

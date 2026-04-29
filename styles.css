@@ -849,10 +849,19 @@ textarea:focus {
   margin-bottom: 14px;
 }
 
-.insight-grid {
+.insight-grid,
+.dashboard-calendar-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
   gap: 18px;
+}
+
+.insight-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.dashboard-calendar-grid {
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.6fr);
+  margin-top: 18px;
 }
 
 .status-bars {
@@ -899,9 +908,61 @@ textarea:focus {
 
 .compact-list,
 .task-list,
-.project-cards {
+.project-cards,
+.calendar-grid {
   display: grid;
   gap: 10px;
+}
+
+.calendar-grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.calendar-day {
+  min-height: 92px;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+  padding: 10px;
+  text-align: left;
+}
+
+.calendar-day.compact {
+  min-height: 68px;
+}
+
+.calendar-day.selected {
+  border-color: var(--teal);
+  background: color-mix(in srgb, var(--panel) 80%, var(--teal) 10%);
+  outline: 3px solid rgba(15, 118, 110, 0.16);
+}
+
+.calendar-day strong {
+  font-size: 1.05rem;
+}
+
+.calendar-day span,
+.calendar-day small,
+.calendar-day em {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.calendar-day em {
+  font-style: normal;
 }
 
 .compact-item,
@@ -1366,6 +1427,7 @@ textarea:focus {
   .layout,
   .summary,
   .insight-grid,
+  .dashboard-calendar-grid,
   .kanban {
     grid-template-columns: 1fr;
   }
@@ -1423,6 +1485,8 @@ textarea:focus {
   }
 
   .form-grid,
+  .calendar-grid,
+  .calendar-controls,
   .task-card,
   .project-card,
   .tools,

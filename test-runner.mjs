@@ -53,7 +53,8 @@ function element(selector, value = "") {
 const ids = [
   "taskForm", "formTitle", "taskId", "taskName", "project", "startDate", "endDate",
   "projectResource", "status", "priority", "owner", "progress", "notes", "cancelEdit", "gantt", "reports",
-  "kanban", "taskList", "searchInput", "projectFilter", "statusBars", "upcomingList",
+  "kanban", "dashboardCalendar", "calendarBoard", "calendarDetails", "dashboardCalendarStart",
+  "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusBars", "upcomingList",
   "deadlineAlerts", "projectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
   "openAdminPanel", "closeAdminPanel", "adminModal", "managerAssignModal", "closeManagerAssign",
   "cancelManagerAssign", "saveProjectManagers", "managerAssignTitle", "managerAssignList", "selectedManagersPreview",
@@ -98,13 +99,13 @@ const filters = ["Hamısı", "Plan", "Davam edir", "Bitib"].map((filter) => {
   return button;
 });
 
-const viewTabs = ["dashboard", "projects", "list", "kanban", "gantt", "reports"].map((view) => {
+const viewTabs = ["dashboard", "projects", "list", "kanban", "calendar", "gantt", "reports"].map((view) => {
   const button = new Element(`view-${view}`);
   button.dataset.view = view;
   return button;
 });
 
-const views = ["dashboardView", "projectsView", "listView", "kanbanView", "ganttView", "reportsView"].map((id) => {
+const views = ["dashboardView", "projectsView", "listView", "kanbanView", "calendarView", "ganttView", "reportsView"].map((id) => {
   const view = new Element(`#${id}`);
   view.id = id;
   return view;
@@ -150,9 +151,16 @@ context.globalThis = context;
 vm.createContext(context);
 vm.runInContext(readFileSync("/root/project-manager/script.js", "utf8"), context);
 
-assert.equal(elements["#totalCount"].textContent, 3, "demo count renders");
+assert.equal(elements["#totalCount"].textContent, 9, "demo count renders");
 assert.match(elements["#gantt"].innerHTML, /Interface dizaynı/, "gantt renders");
 assert.match(elements["#kanban"].innerHTML, /Plan/, "kanban renders");
+assert.match(elements["#calendarBoard"].innerHTML, /Mobile banking|Warehouse ERP|Analytics portal/, "calendar renders seeded project tasks");
+assert.match(elements["#dashboardCalendar"].innerHTML, /data-calendar-day/, "dashboard calendar renders clickable days");
+elements["#calendarStart"].value = "2026-05-10";
+elements["#calendarEnd"].value = "2026-05-14";
+elements["#calendarStart"].dispatch("change");
+assert.match(elements["#calendarBoard"].innerHTML, /Warehouse ERP|Analytics portal/, "calendar range filters tasks");
+assert.doesNotMatch(elements["#calendarBoard"].innerHTML, /Mobile banking/, "calendar range excludes tasks outside selected period");
 assert.match(elements["#statusBars"].innerHTML, /Davam edir/, "dashboard renders");
 assert.match(elements["#teamList"].innerHTML, /Core Team/, "team list renders");
 assert.match(elements["#projectLinks"].innerHTML, /Internal portal/, "project links render");
@@ -214,7 +222,7 @@ elements["#owner"].value = "QA";
 elements["#progress"].value = "10";
 elements["#notes"].value = "Əlavə etmə testi";
 elements["#taskForm"].dispatch("submit", { preventDefault: () => {} });
-assert.equal(elements["#totalCount"].textContent, 4, "new task can be added");
+assert.equal(elements["#totalCount"].textContent, 10, "new task can be added");
 assert.match(elements["#taskList"].innerHTML, /Yeni yoxlama taskı/, "new task appears");
 
 const addedId = elements["#taskList"].innerHTML.match(/data-id="([^"]+)">Redaktə<\/button>/)?.[1];
@@ -307,6 +315,6 @@ elements["#clearDone"].dispatch("click");
 assert.equal(elements["#doneCount"].textContent, 0, "clear done works");
 
 elements["#resetDemo"].dispatch("click");
-assert.equal(elements["#totalCount"].textContent, 3, "demo reset works");
+assert.equal(elements["#totalCount"].textContent, 9, "demo reset works");
 
 console.log("All project manager tests passed.");
