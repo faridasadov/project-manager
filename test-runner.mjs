@@ -260,7 +260,7 @@ assert.ok(addedId, "task id is rendered");
 elements["#taskList"].dispatch("click", {
   target: { closest: () => ({ dataset: { action: "edit", id: addedId } }) }
 });
-assert.equal(elements["#formTitle"].textContent, "Tapşırığı redaktə et", "edit opens");
+assert.equal(elements["#formTitle"].textContent, "Taskı redaktə et", "edit opens");
 elements["#taskName"].value = "Redaktə olunmuş task";
 elements["#taskForm"].dispatch("submit", { preventDefault: () => {} });
 assert.match(elements["#taskList"].innerHTML, /Redaktə olunmuş task/, "edit saves");
@@ -332,7 +332,7 @@ assert.match(elements["#taskList"].innerHTML, /Redaktə olunmuş task/, "trash r
 
 elements["#searchInput"].value = "Customer";
 elements["#searchInput"].dispatch("input");
-assert.match(elements["#taskList"].innerHTML, /Customer rollout|Tapşırıq yoxdur/, "search runs");
+assert.match(elements["#taskList"].innerHTML, /Customer rollout|Task yoxdur/, "search runs");
 
 elements["#taskName"].value = "Yanlış tarix";
 elements["#startDate"].value = "2026-05-20";

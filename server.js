@@ -759,7 +759,7 @@ async function stateToPdf(state) {
     ], [160, 80, 70, 70, 70, 65]);
   });
 
-  drawPdfSectionTitle(document, "Tapşırıqlar");
+  drawPdfSectionTitle(document, "Tasklar");
   drawPdfRow(document, ["Ad", "Layihə", "Status", "Prioritet", "İcraçı", "Progress"], [140, 105, 70, 60, 75, 65]);
   (state.tasks || []).forEach((task) => {
     drawPdfRow(document, [
