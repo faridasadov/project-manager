@@ -54,7 +54,7 @@ const ids = [
   "taskForm", "formTitle", "taskId", "taskName", "project", "startDate", "endDate",
   "projectResource", "status", "priority", "owner", "progress", "notes", "parentTask", "taskDependencies", "cancelEdit", "gantt", "reports",
   "kanban", "dashboardCalendar", "calendarBoard", "calendarDetails", "dashboardCalendarStart",
-  "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusBars", "upcomingList",
+  "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusFilters", "statusBars", "upcomingList",
   "deadlineAlerts", "projectCards", "archivedProjectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
   "openAdminPanel", "closeAdminPanel", "adminModal", "managerAssignModal", "closeManagerAssign",
   "cancelManagerAssign", "saveProjectManagers", "managerAssignTitle", "managerAssignList", "selectedManagersPreview",
@@ -66,7 +66,7 @@ const ids = [
   "addProjectTeamMembers", "selectedProjectTeamMembers",
   "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress",
   "focusNewProject", "closeProjectComposer", "cancelProjectCreate", "projectComposerModal", "projectList",
-  "projectCount", "themeMode", "backgroundStyle", "accentColor",
+  "projectCount", "themeMode", "backgroundStyle", "accentColor", "workflowStatusName", "addWorkflowStatus", "workflowStatusList",
   "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
   "ldapBaseDn", "ldapUserFilter", "ldapBindDn", "ldapBindPassword", "ldapGroupRoleMap", "saveSettings", "testMail", "settingsStatus",
   "newUserFullName", "newUserPosition", "newUserEmail", "newUserAddress"

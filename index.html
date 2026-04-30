@@ -303,6 +303,14 @@
                   <option value="slate" data-i18n="accentSlate">Slate</option>
                 </select>
               </label>
+              <div class="admin-only workflow-settings">
+                <span data-i18n="workflowStatuses">Workflow statusları</span>
+                <div id="workflowStatusList" class="workflow-status-list"></div>
+                <div class="inline-editor">
+                  <input id="workflowStatusName" type="text" placeholder="Review" data-i18n-placeholder="newWorkflowStatus">
+                  <button id="addWorkflowStatus" type="button" data-i18n="addWorkflowStatus">Status əlavə et</button>
+                </div>
+              </div>
               <label class="toggle-row admin-only">
                 <input id="emailEnabled" type="checkbox">
                 <span data-i18n="emailNotifications">Mail bildirişləri</span>
@@ -612,7 +620,7 @@
                 <h2 data-i18n="taskListTitle">Tasklar siyahısı</h2>
               </div>
               <button id="openTaskComposer" class="primary" type="button" data-i18n="addTaskToProject">Task əlavə et</button>
-              <div class="filters" aria-label="Status filteri" data-i18n-aria="statusFilterAria">
+              <div id="statusFilters" class="filters" aria-label="Status filteri" data-i18n-aria="statusFilterAria">
                 <button class="filter active" data-filter="Hamısı" type="button">Hamısı</button>
                 <button class="filter" data-filter="Plan" type="button">Plan</button>
                 <button class="filter" data-filter="Davam edir" type="button">Davam edir</button>

@@ -10,6 +10,8 @@ const authTokenKey = "project-manager-auth-token-v1";
 const trashKey = "project-manager-trash-v1";
 const settingsKey = "project-manager-settings-v1";
 const backupVersion = 1;
+const defaultWorkflowStatuses = ["Plan", "Davam edir", "Bitib"];
+const protectedWorkflowStatuses = new Set(defaultWorkflowStatuses);
 
 const translations = {
   az: {
@@ -39,6 +41,10 @@ const translations = {
     emailRecipientsPlaceholder: "admin@example.com",
     emailProvider: "Mail provider/API",
     emailProviderPlaceholder: "Backend API URL",
+    workflowStatuses: "Workflow statusları",
+    newWorkflowStatus: "Yeni status",
+    addWorkflowStatus: "Status əlavə et",
+    requiredWorkflowStatus: "Sistem statusu",
     testMail: "Mail test et",
     mailTestSent: "Mail testi göndərildi.",
     mailTestSkipped: "Mail testi göndərilmədi. Mail ayarlarını yoxlayın.",
@@ -260,6 +266,10 @@ const translations = {
     emailRecipientsPlaceholder: "admin@example.com",
     emailProvider: "Email provider/API",
     emailProviderPlaceholder: "Backend API URL",
+    workflowStatuses: "Статусы workflow",
+    newWorkflowStatus: "Новый статус",
+    addWorkflowStatus: "Добавить статус",
+    requiredWorkflowStatus: "Системный статус",
     testMail: "Test email",
     mailTestSent: "Test email was sent.",
     mailTestSkipped: "Test email was not sent. Check email settings.",
@@ -484,6 +494,10 @@ const translations = {
     emailRecipientsPlaceholder: "admin@example.com",
     emailProvider: "Email provider/API",
     emailProviderPlaceholder: "Backend API URL",
+    workflowStatuses: "Workflow statuses",
+    newWorkflowStatus: "New status",
+    addWorkflowStatus: "Add status",
+    requiredWorkflowStatus: "System status",
     ldapEnabled: "LDAP enabled",
     ldapUrl: "LDAP URL",
     ldapBaseDn: "Base DN",
@@ -964,7 +978,7 @@ const demoUsers = [
   { id: "user-nigar", username: "nigar", passwordHash: md5("user123"), role: "user", managerId: "user-manager-2", profile: { fullName: "Nigar Karimova", email: "nigar@example.com", fatherName: "", position: "QA engineer", phone: "", address: "", company: "Digital" } }
 ];
 
-const statuses = ["Plan", "Davam edir", "Bitib"];
+let statuses = [...defaultWorkflowStatuses];
 
 const form = document.querySelector("#taskForm");
 const formTitle = document.querySelector("#formTitle");
@@ -993,7 +1007,8 @@ const dashboardCalendarEnd = document.querySelector("#dashboardCalendarEnd");
 const calendarStart = document.querySelector("#calendarStart");
 const calendarEnd = document.querySelector("#calendarEnd");
 const taskList = document.querySelector("#taskList");
-const filters = document.querySelectorAll(".filter");
+const statusFilters = document.querySelector("#statusFilters");
+let filters = document.querySelectorAll(".filter");
 const viewTabs = document.querySelectorAll(".view-tab");
 const views = document.querySelectorAll(".view");
 const searchInput = document.querySelector("#searchInput");
@@ -1079,6 +1094,9 @@ const userCount = document.querySelector("#userCount");
 const themeModeInput = document.querySelector("#themeMode");
 const backgroundStyleInput = document.querySelector("#backgroundStyle");
 const accentColorInput = document.querySelector("#accentColor");
+const workflowStatusNameInput = document.querySelector("#workflowStatusName");
+const addWorkflowStatusButton = document.querySelector("#addWorkflowStatus");
+const workflowStatusList = document.querySelector("#workflowStatusList");
 const emailEnabledInput = document.querySelector("#emailEnabled");
 const emailRecipientsInput = document.querySelector("#emailRecipients");
 const emailProviderInput = document.querySelector("#emailProvider");
@@ -1102,6 +1120,7 @@ let users = loadUsers();
 let trash = loadTrash();
 let currentUser = loadSession();
 let appSettings = loadSettings();
+statuses = normalizeWorkflowStatuses(appSettings.workflowStatuses);
 let currentFilter = "Hamısı";
 let currentView = "dashboard";
 let currentLanguage = localStorage.getItem(languageKey) || "az";
@@ -1124,11 +1143,26 @@ function statusLabel(status) {
   return translations[currentLanguage].statuses[status] || status;
 }
 
+function normalizeWorkflowStatuses(values = defaultWorkflowStatuses) {
+  const cleaned = (Array.isArray(values) ? values : defaultWorkflowStatuses)
+    .map((status) => String(status || "").trim())
+    .filter(Boolean);
+  const unique = [...new Set([...cleaned, ...defaultWorkflowStatuses])];
+  return unique.filter((status) => status !== "Bitib").concat("Bitib");
+}
+
+function syncWorkflowStatuses() {
+  statuses = normalizeWorkflowStatuses(appSettings.workflowStatuses);
+  appSettings.workflowStatuses = statuses;
+}
+
 function priorityLabel(priority) {
   return translations[currentLanguage].priorities[priority] || priority;
 }
 
 function applyTranslations() {
+  syncWorkflowStatuses();
+  renderStatusControls();
   document.documentElement.lang = currentLanguage;
   languageSelect.value = currentLanguage;
   loginLanguageSelect.value = currentLanguage;
@@ -1149,6 +1183,7 @@ function applyTranslations() {
   updateViewLabels();
   updateRoleLabels();
   syncSettingsForm();
+  renderWorkflowStatusList();
 }
 
 function applyAppSettings() {
@@ -1196,6 +1231,21 @@ function updateSelectLabels() {
   });
 }
 
+function renderStatusControls() {
+  const taskStatus = statusInput.value || "Plan";
+  const projectStatus = projectStatusInput.value || "Plan";
+  statusInput.innerHTML = statuses.map((status) => `<option value="${escapeHtml(status)}">${escapeHtml(statusLabel(status))}</option>`).join("");
+  projectStatusInput.innerHTML = statuses.map((status) => `<option value="${escapeHtml(status)}">${escapeHtml(statusLabel(status))}</option>`).join("");
+  statusInput.value = statuses.includes(taskStatus) ? taskStatus : "Plan";
+  projectStatusInput.value = statuses.includes(projectStatus) ? projectStatus : "Plan";
+
+  statusFilters.innerHTML = [
+    `<button class="filter ${currentFilter === "Hamısı" ? "active" : ""}" data-filter="Hamısı" type="button">${text("all")}</button>`,
+    ...statuses.map((status) => `<button class="filter ${currentFilter === status ? "active" : ""}" data-filter="${escapeHtml(status)}" type="button">${escapeHtml(statusLabel(status))}</button>`)
+  ].join("");
+  filters = document.querySelectorAll(".filter");
+}
+
 function updateFilterLabels() {
   filters.forEach((button) => {
     button.textContent = button.dataset.filter === "Hamısı" ? text("all") : statusLabel(button.dataset.filter);
@@ -1219,6 +1269,18 @@ function updateRoleLabels() {
     if (option.value === "manager") option.textContent = text("managerRole");
     if (option.value === "user") option.textContent = text("userRole");
   });
+}
+
+function renderWorkflowStatusList() {
+  if (!workflowStatusList) return;
+  workflowStatusList.innerHTML = statuses.map((status) => `
+    <span class="workflow-status-chip">
+      ${escapeHtml(statusLabel(status))}
+      ${protectedWorkflowStatuses.has(status)
+        ? `<small>${text("requiredWorkflowStatus")}</small>`
+        : `<button type="button" data-workflow-remove="${escapeHtml(status)}">${text("remove")}</button>`}
+    </span>
+  `).join("");
 }
 
 function createDemoTasks() {
@@ -1336,6 +1398,7 @@ function defaultSettings() {
     themeMode: "light",
     backgroundStyle: "calm",
     accentColor: "teal",
+    workflowStatuses: [...defaultWorkflowStatuses],
     emailEnabled: false,
     emailRecipients: "",
     emailProvider: "",
@@ -1529,7 +1592,7 @@ function escapeHtml(value) {
 
 function statusClass(status) {
   if (status === "Bitib") return "done";
-  if (status === "Davam edir") return "active";
+  if (status !== "Plan") return "active";
   return "plan";
 }
 
@@ -2568,12 +2631,13 @@ function resetForm() {
 }
 
 function moveForward(task) {
-  if (task.status === "Plan") {
-    task.status = "Davam edir";
-    task.progress = Math.max(Number(task.progress) || 0, 35);
+  const currentIndex = statuses.indexOf(task.status);
+  const nextStatus = statuses[Math.min(statuses.length - 1, Math.max(0, currentIndex) + 1)];
+  if (nextStatus && nextStatus !== "Bitib") {
+    task.status = nextStatus;
+    const stepProgress = Math.round(((statuses.indexOf(nextStatus) + 1) / statuses.length) * 90);
+    task.progress = Math.max(Number(task.progress) || 0, stepProgress);
     task.startedAt = task.startedAt || new Date().toISOString();
-  } else if (task.status === "Davam edir") {
-    task.progress = Math.max(Number(task.progress) || 0, 65);
   }
 }
 
@@ -2745,7 +2809,8 @@ async function saveBackendSettings() {
         ldapUserFilter: appSettings.ldapUserFilter,
         ldapBindDn: appSettings.ldapBindDn,
         ldapBindPassword: appSettings.ldapBindPassword,
-        ldapGroupRoleMap: appSettings.ldapGroupRoleMap
+        ldapGroupRoleMap: appSettings.ldapGroupRoleMap,
+        workflowStatuses: appSettings.workflowStatuses
       })
     });
   } catch (error) {
@@ -2770,8 +2835,10 @@ async function syncBackendSettings() {
       ldapUserFilter: serverSettings.ldapUserFilter || "(uid={username})",
       ldapBindDn: serverSettings.ldapBindDn || "",
       ldapBindPassword: "",
-      ldapGroupRoleMap: serverSettings.ldapGroupRoleMap || ""
+      ldapGroupRoleMap: serverSettings.ldapGroupRoleMap || "",
+      workflowStatuses: normalizeWorkflowStatuses(serverSettings.workflowStatuses || appSettings.workflowStatuses)
     };
+    syncWorkflowStatuses();
     saveAppSettings();
     render();
   } catch (error) {
@@ -3004,12 +3071,12 @@ form.addEventListener("submit", async (event) => {
   });
 });
 
-filters.forEach((button) => {
-  button.addEventListener("click", () => {
-    currentFilter = button.dataset.filter;
-    filters.forEach((item) => item.classList.toggle("active", item === button));
-    render();
-  });
+statusFilters.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-filter]");
+  if (!button) return;
+  currentFilter = button.dataset.filter;
+  filters.forEach((item) => item.classList.toggle("active", item === button));
+  render();
 });
 
 viewTabs.forEach((button) => {
@@ -3199,8 +3266,10 @@ saveSettingsButton.addEventListener("click", () => {
     ldapUserFilter: isAdmin() ? ldapUserFilterInput.value.trim() || "(uid={username})" : appSettings.ldapUserFilter,
     ldapBindDn: isAdmin() ? ldapBindDnInput.value.trim() : appSettings.ldapBindDn,
     ldapBindPassword: isAdmin() ? ldapBindPasswordInput.value : appSettings.ldapBindPassword,
-    ldapGroupRoleMap: isAdmin() ? ldapGroupRoleMapInput.value.trim() : appSettings.ldapGroupRoleMap
+    ldapGroupRoleMap: isAdmin() ? ldapGroupRoleMapInput.value.trim() : appSettings.ldapGroupRoleMap,
+    workflowStatuses: normalizeWorkflowStatuses(appSettings.workflowStatuses)
   };
+  syncWorkflowStatuses();
   saveAppSettings();
   saveBackendSettings();
   applyAppSettings();
@@ -3216,6 +3285,37 @@ testMailButton.addEventListener("click", async () => {
   } catch {
     settingsStatus.textContent = text("mailTestSkipped");
   }
+});
+
+addWorkflowStatusButton.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  const nextStatus = workflowStatusNameInput.value.trim();
+  if (!nextStatus || statuses.some((status) => status.toLowerCase() === nextStatus.toLowerCase())) return;
+  const withoutDone = statuses.filter((status) => status !== "Bitib");
+  appSettings.workflowStatuses = normalizeWorkflowStatuses([...withoutDone, nextStatus, "Bitib"]);
+  syncWorkflowStatuses();
+  workflowStatusNameInput.value = "";
+  saveAppSettings();
+  saveBackendSettings();
+  render();
+});
+
+workflowStatusList.addEventListener("click", (event) => {
+  if (!isAdmin()) return;
+  const button = event.target.closest("button[data-workflow-remove]");
+  if (!button) return;
+  const status = button.dataset.workflowRemove;
+  if (protectedWorkflowStatuses.has(status)) return;
+  appSettings.workflowStatuses = normalizeWorkflowStatuses(statuses.filter((item) => item !== status));
+  tasks = tasks.map((task) => task.status === status ? { ...task, status: "Plan" } : task);
+  projects = projects.map((project) => project.status === status ? { ...project, status: "Plan" } : project);
+  currentFilter = currentFilter === status ? "Hamısı" : currentFilter;
+  syncWorkflowStatuses();
+  saveAppSettings();
+  saveResources();
+  saveTasks();
+  saveBackendSettings();
+  render();
 });
 
 addUserButton.addEventListener("click", () => {

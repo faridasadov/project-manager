@@ -489,7 +489,8 @@ function defaultSettings() {
     ldapUserFilter: "(uid={username})",
     ldapBindDn: "",
     ldapBindPassword: "",
-    ldapGroupRoleMap: ""
+    ldapGroupRoleMap: "",
+    workflowStatuses: ["Plan", "Davam edir", "Bitib"]
   };
 }
 
@@ -506,7 +507,10 @@ function publicSettings(settings, options = {}) {
     ldapBindDn: merged.ldapBindDn || "",
     ldapBindPassword: options.includeSecrets ? merged.ldapBindPassword || "" : "",
     ldapBindPasswordSet: Boolean(merged.ldapBindPassword || process.env.LDAP_BIND_PASSWORD),
-    ldapGroupRoleMap: merged.ldapGroupRoleMap || ""
+    ldapGroupRoleMap: merged.ldapGroupRoleMap || "",
+    workflowStatuses: Array.isArray(merged.workflowStatuses) && merged.workflowStatuses.length
+      ? merged.workflowStatuses.map((status) => String(status || "").trim()).filter(Boolean)
+      : ["Plan", "Davam edir", "Bitib"]
   };
 }
 

@@ -592,6 +592,35 @@ form {
   color: var(--ink);
 }
 
+.workflow-settings {
+  display: grid;
+  gap: 8px;
+}
+
+.workflow-status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workflow-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  font-weight: 800;
+  font-size: 0.82rem;
+}
+
+.inline-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
 .toggle-row input {
   width: auto;
 }
