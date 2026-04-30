@@ -47,10 +47,22 @@ function sendJson(response, statusCode, payload) {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
     "access-control-allow-origin": corsOrigin,
-    "access-control-allow-methods": "GET, PUT, OPTIONS",
+    "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     "access-control-allow-headers": "content-type, authorization"
   });
   response.end(JSON.stringify(payload));
+}
+
+function sendText(response, statusCode, body, contentType, filename) {
+  response.writeHead(statusCode, {
+    "content-type": contentType,
+    "cache-control": "no-store",
+    "access-control-allow-origin": corsOrigin,
+    "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "access-control-allow-headers": "content-type, authorization",
+    ...(filename ? { "content-disposition": `attachment; filename="${filename}"` } : {})
+  });
+  response.end(body);
 }
 
 function md5(value) {
@@ -131,6 +143,23 @@ function validateState(payload) {
     && Array.isArray(payload.projectLinks)
     && Array.isArray(payload.users)
     && Array.isArray(payload.trash);
+}
+
+function createId(prefix = "item") {
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function blankState() {
+  return {
+    version: 1,
+    tasks: [],
+    projects: [],
+    members: [],
+    teams: [],
+    projectLinks: [],
+    users: bootstrapUsers,
+    trash: []
+  };
 }
 
 async function ensureSchema() {
@@ -455,11 +484,14 @@ function defaultSettings() {
     ldapEnabled: false,
     ldapUrl: "",
     ldapBaseDn: "",
-    ldapUserFilter: "(uid={username})"
+    ldapUserFilter: "(uid={username})",
+    ldapBindDn: "",
+    ldapBindPassword: "",
+    ldapGroupRoleMap: ""
   };
 }
 
-function publicSettings(settings) {
+function publicSettings(settings, options = {}) {
   const merged = { ...defaultSettings(), ...(settings || {}) };
   return {
     emailEnabled: Boolean(merged.emailEnabled),
@@ -468,18 +500,26 @@ function publicSettings(settings) {
     ldapEnabled: Boolean(merged.ldapEnabled),
     ldapUrl: merged.ldapUrl || "",
     ldapBaseDn: merged.ldapBaseDn || "",
-    ldapUserFilter: merged.ldapUserFilter || "(uid={username})"
+    ldapUserFilter: merged.ldapUserFilter || "(uid={username})",
+    ldapBindDn: merged.ldapBindDn || "",
+    ldapBindPassword: options.includeSecrets ? merged.ldapBindPassword || "" : "",
+    ldapBindPasswordSet: Boolean(merged.ldapBindPassword || process.env.LDAP_BIND_PASSWORD),
+    ldapGroupRoleMap: merged.ldapGroupRoleMap || ""
   };
 }
 
 async function readSettings() {
   const [rows] = await pool.execute("SELECT settings_json FROM app_settings WHERE id = 1");
   if (!rows.length) return defaultSettings();
-  return publicSettings(JSON.parse(rows[0].settings_json));
+  return { ...defaultSettings(), ...JSON.parse(rows[0].settings_json) };
 }
 
 async function writeSettings(settings) {
-  const nextSettings = publicSettings(settings);
+  const current = await readSettings();
+  const nextSettings = {
+    ...publicSettings({ ...current, ...settings }, { includeSecrets: true }),
+    ldapBindPassword: settings.ldapBindPassword ? settings.ldapBindPassword : current.ldapBindPassword || ""
+  };
   await pool.execute(
     `INSERT INTO app_settings (id, settings_json)
      VALUES (1, ?)
@@ -487,6 +527,26 @@ async function writeSettings(settings) {
     [JSON.stringify(nextSettings)]
   );
   return nextSettings;
+}
+
+function parseRoleMap(value) {
+  try {
+    const parsed = JSON.parse(value || "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function roleFromLdapGroups(entry, settings) {
+  const memberOf = Array.isArray(entry.memberOf) ? entry.memberOf : [entry.memberOf].filter(Boolean);
+  const map = parseRoleMap(settings.ldapGroupRoleMap || process.env.LDAP_GROUP_ROLE_MAP || "");
+  for (const [groupNeedle, role] of Object.entries(map)) {
+    if (memberOf.some((group) => String(group).toLowerCase().includes(groupNeedle.toLowerCase()))) {
+      return ["admin", "manager", "user"].includes(role) ? role : "user";
+    }
+  }
+  return "user";
 }
 
 function ldapSearch(client, baseDn, filter) {
@@ -521,6 +581,9 @@ async function authenticateLdap(username, password, settings) {
     connectTimeout: 5000
   });
   try {
+    const bindDn = settings.ldapBindDn || process.env.LDAP_BIND_DN || "";
+    const bindPassword = settings.ldapBindPassword || process.env.LDAP_BIND_PASSWORD || "";
+    if (bindDn && bindPassword) await ldapBind(client, bindDn, bindPassword);
     const escapedUsername = username.replaceAll("\\", "\\5c").replaceAll("*", "\\2a").replaceAll("(", "\\28").replaceAll(")", "\\29");
     const filter = (settings.ldapUserFilter || "(uid={username})").replaceAll("{username}", escapedUsername);
     const entries = await ldapSearch(client, settings.ldapBaseDn, filter);
@@ -529,11 +592,135 @@ async function authenticateLdap(username, password, settings) {
     return {
       username,
       fullName: entries[0].cn || entries[0].displayName || username,
-      email: entries[0].mail || ""
+      email: entries[0].mail || "",
+      role: roleFromLdapGroups(entries[0], settings)
     };
   } finally {
     client.unbind();
   }
+}
+
+function normalizeTaskPayload(payload = {}) {
+  const progress = Math.min(100, Math.max(0, Number.parseInt(payload.progress || "0", 10)));
+  return {
+    id: payload.id || createId("task"),
+    name: String(payload.name || "").trim(),
+    project: String(payload.project || "").trim(),
+    projectResource: payload.projectResource || "",
+    start: payload.start || "",
+    end: payload.end || "",
+    status: payload.status || "Plan",
+    priority: payload.priority || "Normal",
+    owner: payload.owner || "",
+    progress: payload.status === "Bitib" ? 100 : progress,
+    notes: payload.notes || "",
+    parentTaskId: payload.parentTaskId || "",
+    dependencyIds: Array.isArray(payload.dependencyIds) ? payload.dependencyIds : [],
+    comments: Array.isArray(payload.comments) ? payload.comments : [],
+    attachments: Array.isArray(payload.attachments) ? payload.attachments : []
+  };
+}
+
+function normalizeProjectPayload(payload = {}) {
+  const progress = Math.min(100, Math.max(0, Number.parseInt(payload.progress || "0", 10)));
+  return {
+    id: payload.id || createId("project"),
+    name: String(payload.name || "").trim(),
+    managerIds: Array.isArray(payload.managerIds) ? payload.managerIds : (payload.managerId ? [payload.managerId] : []),
+    teamMemberIds: Array.isArray(payload.teamMemberIds) ? payload.teamMemberIds : [],
+    start: payload.start || "",
+    end: payload.end || "",
+    status: payload.status || "Plan",
+    priority: payload.priority || "Normal",
+    progress: payload.status === "Bitib" ? 100 : progress,
+    archived: Boolean(payload.archived)
+  };
+}
+
+function ensureStateShape(state) {
+  return { ...blankState(), ...(state || {}) };
+}
+
+function csvCell(value) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
+function stateToCsv(state) {
+  const taskRows = [
+    ["Type", "ID", "Name", "Project", "Status", "Priority", "Owner", "Start", "End", "Progress", "Parent", "Dependencies", "Notes"],
+    ...(state.tasks || []).map((task) => [
+      "Task",
+      task.id,
+      task.name,
+      task.project,
+      task.status,
+      task.priority,
+      task.owner,
+      task.start,
+      task.end,
+      task.progress,
+      task.parentTaskId || "",
+      (task.dependencyIds || []).join(" | "),
+      task.notes || ""
+    ]),
+    [],
+    ["Type", "ID", "Name", "Status", "Priority", "Start", "End", "Progress", "Archived", "Managers", "Team"],
+    ...(state.projects || []).map((project) => [
+      "Project",
+      project.id,
+      project.name,
+      project.status,
+      project.priority,
+      project.start,
+      project.end,
+      project.progress,
+      project.archived ? "Yes" : "No",
+      (project.managerIds || []).join(" | "),
+      (project.teamMemberIds || []).join(" | ")
+    ])
+  ];
+  return taskRows.map((row) => row.map(csvCell).join(",")).join("\n");
+}
+
+function pdfEscape(value) {
+  return String(value ?? "").replaceAll("\\", "\\\\").replaceAll("(", "\\(").replaceAll(")", "\\)");
+}
+
+function simplePdf(lines) {
+  const pageLines = lines.slice(0, 48);
+  const content = `BT /F1 11 Tf 40 790 Td ${pageLines.map((line, index) => `${index ? "0 -15 Td " : ""}(${pdfEscape(line).slice(0, 105)}) Tj`).join(" ")} ET`;
+  const objects = [
+    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
+    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
+    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj",
+    "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
+    `5 0 obj << /Length ${Buffer.byteLength(content)} >> stream\n${content}\nendstream endobj`
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  for (const object of objects) {
+    offsets.push(Buffer.byteLength(pdf));
+    pdf += `${object}\n`;
+  }
+  const xref = Buffer.byteLength(pdf);
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  });
+  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return pdf;
+}
+
+function stateToPdf(state) {
+  const lines = ["Project Manager report", `Generated: ${new Date().toISOString()}`, "", "Projects"];
+  (state.projects || []).forEach((project) => {
+    lines.push(`${project.name} | ${project.status} | ${project.priority} | ${project.progress || 0}%`);
+  });
+  lines.push("", "Tasks");
+  (state.tasks || []).forEach((task) => {
+    lines.push(`${task.name} | ${task.project || "-"} | ${task.status} | ${task.priority} | ${task.progress || 0}%`);
+  });
+  return simplePdf(lines);
 }
 
 function recipientsFrom(value) {
@@ -612,57 +799,59 @@ async function runDeadlineScheduler() {
 }
 
 async function handleApi(request, response) {
+  const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
+  const pathname = url.pathname;
   if (request.url?.startsWith("/api/") && request.method === "OPTIONS") {
     response.writeHead(204, {
       "access-control-allow-origin": "*",
-      "access-control-allow-methods": "GET, PUT, OPTIONS",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
       "access-control-allow-headers": "content-type, authorization"
     });
     response.end();
     return true;
   }
 
-  if (request.url === "/api/health" && request.method === "GET") {
+  if (pathname === "/api/health" && request.method === "GET") {
     sendJson(response, 200, { ok: true });
     return true;
   }
 
-  if (request.url === "/api/settings" && request.method === "GET") {
+  if (pathname === "/api/settings" && request.method === "GET") {
     if (!requireAuth(request, response)) return true;
     try {
-      sendJson(response, 200, await readSettings());
+      sendJson(response, 200, publicSettings(await readSettings()));
     } catch {
       sendJson(response, 500, { error: "Could not read settings" });
     }
     return true;
   }
 
-  if (request.url === "/api/audit-logs" && request.method === "GET") {
+  if (pathname === "/api/audit-logs" && request.method === "GET") {
     if (!requireAuth(request, response, ["admin"])) return true;
     const [rows] = await pool.execute("SELECT actor, action, entity_type, entity_id, created_at, details_json FROM audit_logs ORDER BY id DESC LIMIT 100");
     sendJson(response, 200, rows);
     return true;
   }
 
-  if (request.url === "/api/notifications" && request.method === "GET") {
+  if (pathname === "/api/notifications" && request.method === "GET") {
     if (!requireAuth(request, response, ["admin", "manager"])) return true;
     const [rows] = await pool.execute("SELECT type, recipient, subject, status, created_at, payload_json FROM notifications ORDER BY id DESC LIMIT 100");
     sendJson(response, 200, rows);
     return true;
   }
 
-  if (request.url === "/api/settings" && request.method === "PUT") {
+  if (pathname === "/api/settings" && request.method === "PUT") {
     if (!requireAuth(request, response, ["admin"])) return true;
     try {
       const payload = JSON.parse(await readBody(request));
-      sendJson(response, 200, { ok: true, settings: await writeSettings(payload) });
+      sendJson(response, 200, { ok: true, settings: publicSettings(await writeSettings(payload)) });
     } catch {
       sendJson(response, 400, { error: "Could not save settings" });
     }
     return true;
   }
 
-  if (request.url === "/api/auth/login" && request.method === "POST") {
+  if (pathname === "/api/auth/login" && request.method === "POST") {
     try {
       const { username, password } = JSON.parse(await readBody(request));
       const cleanUsername = String(username || "").trim();
@@ -685,7 +874,7 @@ async function handleApi(request, response) {
         id: `ldap:${ldapUser.username}`,
         username: ldapUser.username,
         passwordHash: "",
-        role: "user",
+        role: ldapUser.role || "user",
         managerId: "",
         profile: {
           fullName: ldapUser.fullName,
@@ -708,7 +897,7 @@ async function handleApi(request, response) {
     return true;
   }
 
-  if (request.url === "/api/mail/deadline-alerts" && request.method === "POST") {
+  if (pathname === "/api/mail/deadline-alerts" && request.method === "POST") {
     if (!requireAuth(request, response)) return true;
     try {
       const payload = JSON.parse(await readBody(request));
@@ -728,7 +917,7 @@ async function handleApi(request, response) {
     return true;
   }
 
-  if (request.url === "/api/mail/test" && request.method === "POST") {
+  if (pathname === "/api/mail/test" && request.method === "POST") {
     if (!requireAuth(request, response, ["admin"])) return true;
     try {
       const payload = JSON.parse(await readBody(request) || "{}");
@@ -754,7 +943,154 @@ async function handleApi(request, response) {
     return true;
   }
 
-  if (request.url === "/api/state" && request.method === "GET") {
+  if (pathname === "/api/projects" && request.method === "GET") {
+    if (!requireAuth(request, response)) return true;
+    const state = ensureStateShape(await readState());
+    sendJson(response, 200, state.projects || []);
+    return true;
+  }
+
+  if (pathname === "/api/projects" && request.method === "POST") {
+    const actor = requireAuth(request, response, ["admin", "manager"]);
+    if (!actor) return true;
+    try {
+      const state = ensureStateShape(await readState());
+      const project = normalizeProjectPayload(JSON.parse(await readBody(request)));
+      if (!project.name || state.projects.some((item) => item.name.toLowerCase() === project.name.toLowerCase())) {
+        sendJson(response, 400, { error: "Invalid project" });
+        return true;
+      }
+      state.projects.push(project);
+      await writeState({ ...state, savedBy: actor.username });
+      sendJson(response, 201, project);
+    } catch {
+      sendJson(response, 400, { error: "Could not create project" });
+    }
+    return true;
+  }
+
+  const projectMatch = pathname.match(/^\/api\/projects\/([^/]+)$/);
+  if (projectMatch && ["PUT", "PATCH", "DELETE"].includes(request.method || "")) {
+    const actor = requireAuth(request, response, ["admin", "manager"]);
+    if (!actor) return true;
+    const projectId = decodeURIComponent(projectMatch[1]);
+    const state = ensureStateShape(await readState());
+    const projectIndex = state.projects.findIndex((item) => item.id === projectId);
+    if (projectIndex < 0) {
+      sendJson(response, 404, { error: "Project not found" });
+      return true;
+    }
+    if (request.method === "DELETE") {
+      const [project] = state.projects.splice(projectIndex, 1);
+      state.trash.push({ id: createId("trash"), type: "projectRecord", data: project, deletedAt: new Date().toISOString(), deletedBy: actor.username });
+      state.tasks = state.tasks.map((task) => task.project === project.name ? { ...task, project: "" } : task);
+      state.projectLinks = state.projectLinks.filter((link) => link.project !== project.name);
+      await writeState({ ...state, savedBy: actor.username });
+      sendJson(response, 200, { ok: true });
+      return true;
+    }
+    try {
+      const previous = state.projects[projectIndex];
+      const nextProject = normalizeProjectPayload({ ...previous, ...JSON.parse(await readBody(request)), id: previous.id });
+      if (!nextProject.name || state.projects.some((item) => item.id !== previous.id && item.name.toLowerCase() === nextProject.name.toLowerCase())) {
+        sendJson(response, 400, { error: "Invalid project" });
+        return true;
+      }
+      state.projects[projectIndex] = nextProject;
+      if (previous.name !== nextProject.name) {
+        state.tasks = state.tasks.map((task) => task.project === previous.name ? { ...task, project: nextProject.name } : task);
+        state.projectLinks = state.projectLinks.map((link) => link.project === previous.name ? { ...link, project: nextProject.name } : link);
+      }
+      await writeState({ ...state, savedBy: actor.username });
+      sendJson(response, 200, nextProject);
+    } catch {
+      sendJson(response, 400, { error: "Could not update project" });
+    }
+    return true;
+  }
+
+  if (pathname === "/api/tasks" && request.method === "GET") {
+    if (!requireAuth(request, response)) return true;
+    const state = ensureStateShape(await readState());
+    const project = url.searchParams.get("project");
+    const tasks = project ? (state.tasks || []).filter((task) => task.project === project) : state.tasks || [];
+    sendJson(response, 200, tasks);
+    return true;
+  }
+
+  if (pathname === "/api/tasks" && request.method === "POST") {
+    const actor = requireAuth(request, response, ["admin", "manager"]);
+    if (!actor) return true;
+    try {
+      const state = ensureStateShape(await readState());
+      const task = normalizeTaskPayload(JSON.parse(await readBody(request)));
+      if (!task.name || (task.project && !state.projects.some((project) => project.name === task.project))) {
+        sendJson(response, 400, { error: "Invalid task" });
+        return true;
+      }
+      state.tasks.push(task);
+      await writeState({ ...state, savedBy: actor.username });
+      sendJson(response, 201, task);
+    } catch {
+      sendJson(response, 400, { error: "Could not create task" });
+    }
+    return true;
+  }
+
+  const taskMatch = pathname.match(/^\/api\/tasks\/([^/]+)$/);
+  if (taskMatch && ["PUT", "PATCH", "DELETE"].includes(request.method || "")) {
+    const actor = requireAuth(request, response, ["admin", "manager"]);
+    if (!actor) return true;
+    const taskId = decodeURIComponent(taskMatch[1]);
+    const state = ensureStateShape(await readState());
+    const taskIndex = state.tasks.findIndex((item) => item.id === taskId);
+    if (taskIndex < 0) {
+      sendJson(response, 404, { error: "Task not found" });
+      return true;
+    }
+    if (request.method === "DELETE") {
+      const [task] = state.tasks.splice(taskIndex, 1);
+      state.trash.push({ id: createId("trash"), type: "task", data: task, deletedAt: new Date().toISOString(), deletedBy: actor.username });
+      state.tasks = state.tasks.map((item) => ({
+        ...item,
+        parentTaskId: item.parentTaskId === task.id ? "" : item.parentTaskId,
+        dependencyIds: (item.dependencyIds || []).filter((id) => id !== task.id)
+      }));
+      await writeState({ ...state, savedBy: actor.username });
+      sendJson(response, 200, { ok: true });
+      return true;
+    }
+    try {
+      const previous = state.tasks[taskIndex];
+      const task = normalizeTaskPayload({ ...previous, ...JSON.parse(await readBody(request)), id: previous.id });
+      if (!task.name || (task.project && !state.projects.some((project) => project.name === task.project))) {
+        sendJson(response, 400, { error: "Invalid task" });
+        return true;
+      }
+      state.tasks[taskIndex] = task;
+      await writeState({ ...state, savedBy: actor.username });
+      sendJson(response, 200, task);
+    } catch {
+      sendJson(response, 400, { error: "Could not update task" });
+    }
+    return true;
+  }
+
+  if (pathname === "/api/export/excel" && request.method === "GET") {
+    if (!requireAuth(request, response, ["admin", "manager"])) return true;
+    const state = ensureStateShape(await readState());
+    sendText(response, 200, stateToCsv(state), "text/csv; charset=utf-8", "project-manager-export.csv");
+    return true;
+  }
+
+  if (pathname === "/api/export/pdf" && request.method === "GET") {
+    if (!requireAuth(request, response, ["admin", "manager"])) return true;
+    const state = ensureStateShape(await readState());
+    sendText(response, 200, stateToPdf(state), "application/pdf", "project-manager-report.pdf");
+    return true;
+  }
+
+  if (pathname === "/api/state" && request.method === "GET") {
     if (!requireAuth(request, response)) return true;
     try {
       const state = await readState();
@@ -769,7 +1105,7 @@ async function handleApi(request, response) {
     return true;
   }
 
-  if (request.url === "/api/state" && request.method === "PUT") {
+  if (pathname === "/api/state" && request.method === "PUT") {
     const actor = requireAuth(request, response);
     if (!actor) return true;
     try {
@@ -786,7 +1122,7 @@ async function handleApi(request, response) {
     return true;
   }
 
-  if (request.url?.startsWith("/api/")) {
+  if (pathname.startsWith("/api/")) {
     sendJson(response, 404, { error: "Not found" });
     return true;
   }

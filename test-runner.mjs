@@ -52,13 +52,13 @@ function element(selector, value = "") {
 
 const ids = [
   "taskForm", "formTitle", "taskId", "taskName", "project", "startDate", "endDate",
-  "projectResource", "status", "priority", "owner", "progress", "notes", "cancelEdit", "gantt", "reports",
+  "projectResource", "status", "priority", "owner", "progress", "notes", "parentTask", "taskDependencies", "cancelEdit", "gantt", "reports",
   "kanban", "dashboardCalendar", "calendarBoard", "calendarDetails", "dashboardCalendarStart",
   "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusBars", "upcomingList",
   "deadlineAlerts", "projectCards", "archivedProjectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
   "openAdminPanel", "closeAdminPanel", "adminModal", "managerAssignModal", "closeManagerAssign",
   "cancelManagerAssign", "saveProjectManagers", "managerAssignTitle", "managerAssignList", "selectedManagersPreview",
-  "exportData", "importData",
+  "exportData", "exportExcel", "exportPdf", "importData",
   "totalCount", "activeCount", "doneCount", "dateRange", "resetDemo", "clearDone",
   "languageSelect", "loginLanguageSelect", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
@@ -68,7 +68,7 @@ const ids = [
   "focusNewProject", "closeProjectComposer", "cancelProjectCreate", "projectComposerModal", "projectList",
   "projectCount", "themeMode", "backgroundStyle", "accentColor",
   "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
-  "ldapBaseDn", "ldapUserFilter", "saveSettings", "testMail", "settingsStatus",
+  "ldapBaseDn", "ldapUserFilter", "ldapBindDn", "ldapBindPassword", "ldapGroupRoleMap", "saveSettings", "testMail", "settingsStatus",
   "newUserFullName", "newUserPosition", "newUserEmail", "newUserAddress"
   , "loginScreen", "loginForm", "loginUsername", "loginPassword", "loginError",
   "logoutButton", "currentUserBadge", "newUsername", "newUserPassword",
@@ -77,7 +77,7 @@ const ids = [
 
 ids.forEach((id) => element(`#${id}`));
 [
-  "taskId", "taskName", "project", "projectResource", "startDate", "endDate", "status", "priority", "owner", "progress", "notes",
+  "taskId", "taskName", "project", "projectResource", "startDate", "endDate", "status", "priority", "owner", "progress", "notes", "parentTask", "taskDependencies",
   "projectName", "projectLeader", "projectTeamMembers", "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress"
 ].forEach((id) => {
   elements[`#${id}`].formField = true;

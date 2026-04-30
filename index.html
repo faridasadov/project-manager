@@ -140,6 +140,19 @@
             <textarea id="notes" rows="4" placeholder="Qısa qeyd yaz" data-i18n-placeholder="notesPlaceholder"></textarea>
           </label>
 
+          <div class="form-grid">
+            <label>
+              <span data-i18n="parentTask">Ana tapşırıq</span>
+              <select id="parentTask">
+                <option value="" data-i18n="noParentTask">Ana tapşırıq yoxdur</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="taskDependencies">Asılı tapşırıqlar</span>
+              <select id="taskDependencies" multiple size="4"></select>
+            </label>
+          </div>
+
           <div class="form-actions">
             <button class="primary" type="submit" data-i18n="save">Yadda saxla</button>
             <button id="cancelEdit" type="button" data-i18n="cancel">Ləğv et</button>
@@ -241,6 +254,8 @@
 
           <div class="admin-tools admin-only">
             <button id="exportData" type="button" data-i18n="exportData">Backup</button>
+            <button id="exportExcel" type="button" data-i18n="exportExcel">Excel export</button>
+            <button id="exportPdf" type="button" data-i18n="exportPdf">PDF export</button>
             <label class="import-button">
               <span data-i18n="importData">Import</span>
               <input id="importData" type="file" accept="application/json">
@@ -315,6 +330,18 @@
               <label class="admin-only">
                 <span data-i18n="ldapUserFilter">User filter</span>
                 <input id="ldapUserFilter" type="text" placeholder="(uid={username})">
+              </label>
+              <label class="admin-only">
+                <span data-i18n="ldapBindDn">Bind DN</span>
+                <input id="ldapBindDn" type="text" placeholder="cn=reader,dc=example,dc=com">
+              </label>
+              <label class="admin-only">
+                <span data-i18n="ldapBindPassword">Bind şifrəsi</span>
+                <input id="ldapBindPassword" type="password" placeholder="Yeni şifrə yazılmasa dəyişmir">
+              </label>
+              <label class="admin-only">
+                <span data-i18n="ldapGroupRoleMap">Group-role mapping</span>
+                <textarea id="ldapGroupRoleMap" rows="3" placeholder='{"CN=Project Admins":"admin","CN=Project Managers":"manager"}'></textarea>
               </label>
               <button id="saveSettings" class="primary" type="button" data-i18n="saveSettings">Settings saxla</button>
               <button id="testMail" type="button" data-i18n="testMail">Mail test et</button>

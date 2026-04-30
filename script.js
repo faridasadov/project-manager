@@ -46,6 +46,9 @@ const translations = {
     ldapUrl: "LDAP URL",
     ldapBaseDn: "Base DN",
     ldapUserFilter: "User filter",
+    ldapBindDn: "Bind DN",
+    ldapBindPassword: "Bind şifrəsi",
+    ldapGroupRoleMap: "Group-role mapping",
     saveSettings: "Settings saxla",
     settingsSaved: "Settings saxlandı.",
     newTask: "Yeni tapşırıq",
@@ -123,7 +126,11 @@ const translations = {
     selectedDay: "Seçilən gün",
     projectAndTask: "Layihə və tapşırıq",
     selectCalendarDay: "Calendar-da gün seçin.",
-    noTaskOnDay: "Bu gün üçün task yoxdur.",
+    noTaskOnDay: "Bu gün üçün tapşırıq yoxdur.",
+    parentTask: "Ana tapşırıq",
+    noParentTask: "Ana tapşırıq yoxdur",
+    taskDependencies: "Asılı tapşırıqlar",
+    dependsOn: "Asılıdır",
     gantt: "Gantt",
     searchPlaceholder: "Tapşırıq, layihə, məsul şəxs axtar",
     allProjects: "Bütün layihələr",
@@ -211,6 +218,8 @@ const translations = {
     notificationsEnabled: "Bildirişlər aktivdir",
     notificationsBlocked: "Bildiriş icazəsi verilmədi.",
     exportData: "Backup",
+    exportExcel: "Excel export",
+    exportPdf: "PDF export",
     importData: "Import",
     backupError: "Backup faylı oxunmadı.",
     risk: "Risk",
@@ -261,6 +270,9 @@ const translations = {
     ldapUrl: "LDAP URL",
     ldapBaseDn: "Base DN",
     ldapUserFilter: "User filter",
+    ldapBindDn: "Bind DN",
+    ldapBindPassword: "Bind password",
+    ldapGroupRoleMap: "Group-role mapping",
     saveSettings: "Сохранить настройки",
     settingsSaved: "Настройки сохранены.",
     newTask: "Новая задача",
@@ -339,6 +351,10 @@ const translations = {
     projectAndTask: "Проект и задача",
     selectCalendarDay: "Выберите день в календаре.",
     noTaskOnDay: "На этот день задач нет.",
+    parentTask: "Родительская задача",
+    noParentTask: "Нет родительской задачи",
+    taskDependencies: "Зависимости",
+    dependsOn: "Зависит от",
     gantt: "Гантт",
     searchPlaceholder: "Поиск по задаче, проекту, ответственному",
     allProjects: "Все проекты",
@@ -426,6 +442,8 @@ const translations = {
     notificationsEnabled: "Уведомления включены",
     notificationsBlocked: "Разрешение на уведомления не выдано.",
     exportData: "Backup",
+    exportExcel: "Excel export",
+    exportPdf: "PDF export",
     importData: "Import",
     backupError: "Не удалось прочитать backup файл.",
     risk: "Риск",
@@ -470,6 +488,9 @@ const translations = {
     ldapUrl: "LDAP URL",
     ldapBaseDn: "Base DN",
     ldapUserFilter: "User filter",
+    ldapBindDn: "Bind DN",
+    ldapBindPassword: "Bind password",
+    ldapGroupRoleMap: "Group-role mapping",
     saveSettings: "Save settings",
     settingsSaved: "Settings saved.",
     newTask: "New task",
@@ -548,6 +569,10 @@ const translations = {
     projectAndTask: "Project and task",
     selectCalendarDay: "Select a day in the calendar.",
     noTaskOnDay: "No task for this day.",
+    parentTask: "Parent task",
+    noParentTask: "No parent task",
+    taskDependencies: "Dependencies",
+    dependsOn: "Depends on",
     gantt: "Gantt",
     searchPlaceholder: "Search task, project, owner",
     allProjects: "All projects",
@@ -635,6 +660,8 @@ const translations = {
     notificationsEnabled: "Notifications enabled",
     notificationsBlocked: "Notification permission was not granted.",
     exportData: "Backup",
+    exportExcel: "Excel export",
+    exportPdf: "PDF export",
     importData: "Import",
     backupError: "Backup file could not be read.",
     risk: "Risk",
@@ -952,6 +979,8 @@ const priorityInput = document.querySelector("#priority");
 const ownerInput = document.querySelector("#owner");
 const progressInput = document.querySelector("#progress");
 const notesInput = document.querySelector("#notes");
+const parentTaskInput = document.querySelector("#parentTask");
+const taskDependenciesInput = document.querySelector("#taskDependencies");
 const cancelEdit = document.querySelector("#cancelEdit");
 const gantt = document.querySelector("#gantt");
 const reports = document.querySelector("#reports");
@@ -1033,6 +1062,8 @@ const managerAssignTitle = document.querySelector("#managerAssignTitle");
 const managerAssignList = document.querySelector("#managerAssignList");
 const selectedManagersPreview = document.querySelector("#selectedManagersPreview");
 const exportDataButton = document.querySelector("#exportData");
+const exportExcelButton = document.querySelector("#exportExcel");
+const exportPdfButton = document.querySelector("#exportPdf");
 const importDataInput = document.querySelector("#importData");
 const currentUserBadge = document.querySelector("#currentUserBadge");
 const newUsernameInput = document.querySelector("#newUsername");
@@ -1055,6 +1086,9 @@ const ldapEnabledInput = document.querySelector("#ldapEnabled");
 const ldapUrlInput = document.querySelector("#ldapUrl");
 const ldapBaseDnInput = document.querySelector("#ldapBaseDn");
 const ldapUserFilterInput = document.querySelector("#ldapUserFilter");
+const ldapBindDnInput = document.querySelector("#ldapBindDn");
+const ldapBindPasswordInput = document.querySelector("#ldapBindPassword");
+const ldapGroupRoleMapInput = document.querySelector("#ldapGroupRoleMap");
 const saveSettingsButton = document.querySelector("#saveSettings");
 const testMailButton = document.querySelector("#testMail");
 const settingsStatus = document.querySelector("#settingsStatus");
@@ -1136,6 +1170,9 @@ function syncSettingsForm() {
   ldapUrlInput.value = appSettings.ldapUrl;
   ldapBaseDnInput.value = appSettings.ldapBaseDn;
   ldapUserFilterInput.value = appSettings.ldapUserFilter;
+  ldapBindDnInput.value = appSettings.ldapBindDn || "";
+  ldapBindPasswordInput.value = "";
+  ldapGroupRoleMapInput.value = appSettings.ldapGroupRoleMap || "";
 }
 
 function changeLanguage(language) {
@@ -1305,7 +1342,10 @@ function defaultSettings() {
     ldapEnabled: false,
     ldapUrl: "",
     ldapBaseDn: "",
-    ldapUserFilter: "(uid={username})"
+    ldapUserFilter: "(uid={username})",
+    ldapBindDn: "",
+    ldapBindPassword: "",
+    ldapGroupRoleMap: ""
   };
 }
 
@@ -1343,6 +1383,8 @@ function normalizeTask(task) {
     projectResource: "",
     comments: [],
     attachments: [],
+    parentTaskId: "",
+    dependencyIds: [],
     completionRequestedAt: "",
     completionRequestedBy: "",
     completedAt: "",
@@ -1351,7 +1393,8 @@ function normalizeTask(task) {
     approvedBy: "",
     startedAt: task.status === "Davam edir" ? new Date().toISOString() : "",
     progress: task.status === "Bitib" ? 100 : 0,
-    ...task
+    ...task,
+    dependencyIds: Array.isArray(task.dependencyIds) ? task.dependencyIds : []
   };
 }
 
@@ -1674,6 +1717,17 @@ function teamMemberOptions(selectedIds = []) {
   ].map((option) => `<option value="${option.value}" ${selectedIds.includes(option.value) ? "selected" : ""}>${option.type}: ${escapeHtml(option.label)}</option>`).join("");
 }
 
+function taskOptionItems(selectedIds = [], excludedId = "") {
+  return tasks
+    .filter((task) => task.id !== excludedId)
+    .map((task) => `<option value="${task.id}" ${selectedIds.includes(task.id) ? "selected" : ""}>${escapeHtml(task.name)} (${escapeHtml(getProject(task))})</option>`)
+    .join("");
+}
+
+function taskNameById(id) {
+  return tasks.find((task) => task.id === id)?.name || "";
+}
+
 function linkedResourcesForProject(project) {
   const directLinks = projectLinks.filter((link) => link.project === project).map((link) => link.resource);
   const projectMembers = projects.find((item) => item.name === project)?.teamMemberIds || [];
@@ -1920,6 +1974,16 @@ function renderResourceControls() {
     ...projectOptions.map((option) => `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`)
   ].join("");
   projectResourceInput.value = projectOptions.some((option) => option.value === currentProjectResource) ? currentProjectResource : "";
+
+  const editingTaskId = taskId.value;
+  const currentParent = parentTaskInput.value;
+  const currentDependencies = [...taskDependenciesInput.selectedOptions].map((option) => option.value);
+  parentTaskInput.innerHTML = [
+    `<option value="">${text("noParentTask")}</option>`,
+    taskOptionItems([currentParent], editingTaskId)
+  ].join("");
+  parentTaskInput.value = tasks.some((task) => task.id === currentParent && task.id !== editingTaskId) ? currentParent : "";
+  taskDependenciesInput.innerHTML = taskOptionItems(currentDependencies, editingTaskId);
 
   teamMembersInput.innerHTML = teamMemberOptions();
   const currentLeader = projectLeaderInput.value || (currentUser?.role === "manager" ? currentUser.id : "");
@@ -2255,6 +2319,7 @@ function renderTaskList() {
           <span>${shortDate(task.start)} - ${shortDate(task.end)}</span>
           <span>${escapeHtml(resourceLabel(task.owner))}</span>
         </div>
+        ${renderTaskRelations(task)}
         ${task.notes ? `<p>${escapeHtml(task.notes)}</p>` : ""}
         <div class="progress-mini"><span style="width:${Number(task.progress) || 0}%"></span></div>
         ${renderAttachments(task)}
@@ -2289,6 +2354,18 @@ function renderCommentAttachments(comment) {
           <span>${escapeHtml(attachment.name)}</span>
         </a>
       `).join("")}
+    </div>
+  `;
+}
+
+function renderTaskRelations(task) {
+  const parent = task.parentTaskId ? taskNameById(task.parentTaskId) : "";
+  const dependencies = (task.dependencyIds || []).map(taskNameById).filter(Boolean);
+  if (!parent && !dependencies.length) return "";
+  return `
+    <div class="task-relations">
+      ${parent ? `<span>${text("parentTask")}: ${escapeHtml(parent)}</span>` : ""}
+      ${dependencies.length ? `<span>${text("dependsOn")}: ${escapeHtml(dependencies.join(", "))}</span>` : ""}
     </div>
   `;
 }
@@ -2486,6 +2563,8 @@ function resetForm() {
   statusInput.value = "Plan";
   priorityInput.value = "Normal";
   progressInput.value = 0;
+  parentTaskInput.value = "";
+  taskDependenciesInput.innerHTML = taskOptionItems();
 }
 
 function moveForward(task) {
@@ -2518,6 +2597,8 @@ function handleTaskAction(action, id) {
     ownerInput.value = task.owner;
     progressInput.value = Number(task.progress) || 0;
     notesInput.value = task.notes;
+    parentTaskInput.value = task.parentTaskId || "";
+    taskDependenciesInput.innerHTML = taskOptionItems(task.dependencyIds || [], task.id);
     formTitle.textContent = text("editTask");
     openTaskComposer();
   }
@@ -2661,7 +2742,10 @@ async function saveBackendSettings() {
         ldapEnabled: appSettings.ldapEnabled,
         ldapUrl: appSettings.ldapUrl,
         ldapBaseDn: appSettings.ldapBaseDn,
-        ldapUserFilter: appSettings.ldapUserFilter
+        ldapUserFilter: appSettings.ldapUserFilter,
+        ldapBindDn: appSettings.ldapBindDn,
+        ldapBindPassword: appSettings.ldapBindPassword,
+        ldapGroupRoleMap: appSettings.ldapGroupRoleMap
       })
     });
   } catch (error) {
@@ -2683,7 +2767,10 @@ async function syncBackendSettings() {
       ldapEnabled: Boolean(serverSettings.ldapEnabled),
       ldapUrl: serverSettings.ldapUrl || "",
       ldapBaseDn: serverSettings.ldapBaseDn || "",
-      ldapUserFilter: serverSettings.ldapUserFilter || "(uid={username})"
+      ldapUserFilter: serverSettings.ldapUserFilter || "(uid={username})",
+      ldapBindDn: serverSettings.ldapBindDn || "",
+      ldapBindPassword: "",
+      ldapGroupRoleMap: serverSettings.ldapGroupRoleMap || ""
     };
     saveAppSettings();
     render();
@@ -2721,6 +2808,22 @@ function downloadJson(filename, data) {
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+async function downloadBackendFile(path, fallbackFilename) {
+  if (!canUseBackend()) return false;
+  const response = await fetch(backendUrl(path), { headers: authHeaders() });
+  if (!response.ok) return false;
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition") || "";
+  const filename = disposition.match(/filename="([^"]+)"/)?.[1] || fallbackFilename;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+  return true;
 }
 
 function importBackup(payload) {
@@ -2825,6 +2928,8 @@ form.addEventListener("submit", async (event) => {
     owner: ownerInput.value.trim(),
     progress: statusInput.value === "Bitib" ? 100 : progress,
     notes: notesInput.value.trim(),
+    parentTaskId: parentTaskInput.value,
+    dependencyIds: [...taskDependenciesInput.selectedOptions].map((option) => option.value).filter((id) => id !== taskId.value),
     comments: existingTask?.comments || [],
     attachments: existingTask?.attachments || []
   };
@@ -3039,6 +3144,17 @@ exportDataButton.addEventListener("click", () => {
   downloadJson(`project-manager-backup-${isoDate(new Date())}.json`, backupPayload());
 });
 
+exportExcelButton.addEventListener("click", async () => {
+  if (!isAdmin()) return;
+  const ok = await downloadBackendFile("/api/export/excel", `project-manager-export-${isoDate(new Date())}.csv`);
+  if (!ok) downloadJson(`project-manager-export-${isoDate(new Date())}.json`, backupPayload());
+});
+
+exportPdfButton.addEventListener("click", async () => {
+  if (!isAdmin()) return;
+  await downloadBackendFile("/api/export/pdf", `project-manager-report-${isoDate(new Date())}.pdf`);
+});
+
 importDataInput.addEventListener("change", () => {
   if (!isAdmin() || !importDataInput.files?.length) return;
   const reader = new FileReader();
@@ -3080,7 +3196,10 @@ saveSettingsButton.addEventListener("click", () => {
     ldapEnabled: isAdmin() ? ldapEnabledInput.checked : appSettings.ldapEnabled,
     ldapUrl: isAdmin() ? ldapUrlInput.value.trim() : appSettings.ldapUrl,
     ldapBaseDn: isAdmin() ? ldapBaseDnInput.value.trim() : appSettings.ldapBaseDn,
-    ldapUserFilter: isAdmin() ? ldapUserFilterInput.value.trim() || "(uid={username})" : appSettings.ldapUserFilter
+    ldapUserFilter: isAdmin() ? ldapUserFilterInput.value.trim() || "(uid={username})" : appSettings.ldapUserFilter,
+    ldapBindDn: isAdmin() ? ldapBindDnInput.value.trim() : appSettings.ldapBindDn,
+    ldapBindPassword: isAdmin() ? ldapBindPasswordInput.value : appSettings.ldapBindPassword,
+    ldapGroupRoleMap: isAdmin() ? ldapGroupRoleMapInput.value.trim() : appSettings.ldapGroupRoleMap
   };
   saveAppSettings();
   saveBackendSettings();
