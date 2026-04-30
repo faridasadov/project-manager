@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import ldap from "ldapjs";
 import mysql from "mysql2/promise";
 import nodemailer from "nodemailer";
+import PDFDocument from "pdfkit";
 
 const rootDir = dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 3000);
@@ -23,6 +24,7 @@ const dbConfig = {
   charset: "utf8mb4"
 };
 const pool = mysql.createPool(dbConfig);
+const pdfFontPath = process.env.PDF_FONT_PATH || "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf";
 const bootstrapUsers = [
   { id: "user-admin", username: "admin", passwordHash: md5("admin123"), role: "admin", managerId: "", profile: { fullName: "Admin User", email: "", fatherName: "", position: "Admin", phone: "", address: "", company: "" } },
   { id: "user-manager", username: "manager", passwordHash: md5("manager123"), role: "manager", managerId: "", profile: { fullName: "Project Manager", email: "", fatherName: "", position: "Manager", phone: "", address: "", company: "" } },
@@ -682,45 +684,96 @@ function stateToCsv(state) {
   return taskRows.map((row) => row.map(csvCell).join(",")).join("\n");
 }
 
-function pdfEscape(value) {
-  return String(value ?? "").replaceAll("\\", "\\\\").replaceAll("(", "\\(").replaceAll(")", "\\)");
-}
-
-function simplePdf(lines) {
-  const pageLines = lines.slice(0, 48);
-  const content = `BT /F1 11 Tf 40 790 Td ${pageLines.map((line, index) => `${index ? "0 -15 Td " : ""}(${pdfEscape(line).slice(0, 105)}) Tj`).join(" ")} ET`;
-  const objects = [
-    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
-    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
-    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj",
-    "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-    `5 0 obj << /Length ${Buffer.byteLength(content)} >> stream\n${content}\nendstream endobj`
-  ];
-  let pdf = "%PDF-1.4\n";
-  const offsets = [0];
-  for (const object of objects) {
-    offsets.push(Buffer.byteLength(pdf));
-    pdf += `${object}\n`;
+function resourceLabelFromState(state, value) {
+  if (!value) return "-";
+  const [type, id] = String(value).split(":");
+  if (type === "user") {
+    const user = (state.users || []).find((item) => item.id === id);
+    return user?.profile?.fullName || user?.username || value;
   }
-  const xref = Buffer.byteLength(pdf);
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  offsets.slice(1).forEach((offset) => {
-    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  });
-  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return pdf;
+  if (type === "member") {
+    return (state.members || []).find((item) => item.id === id)?.name || value;
+  }
+  if (type === "team") {
+    return (state.teams || []).find((item) => item.id === id)?.name || value;
+  }
+  return value;
 }
 
-function stateToPdf(state) {
-  const lines = ["Project Manager report", `Generated: ${new Date().toISOString()}`, "", "Projects"];
+function pdfBuffer(document) {
+  return new Promise((resolvePdf, rejectPdf) => {
+    const chunks = [];
+    document.on("data", (chunk) => chunks.push(chunk));
+    document.on("end", () => resolvePdf(Buffer.concat(chunks)));
+    document.on("error", rejectPdf);
+  });
+}
+
+function drawPdfSectionTitle(document, title) {
+  document.moveDown(1);
+  document.fontSize(14).fillColor("#111827").text(title, { continued: false });
+  document.moveDown(0.3);
+  document.moveTo(document.x, document.y).lineTo(555, document.y).strokeColor("#d1d5db").stroke();
+  document.moveDown(0.5);
+}
+
+function drawPdfRow(document, columns, widths) {
+  const startX = document.x;
+  const heights = columns.map((column, index) => document.heightOfString(String(column ?? ""), { width: widths[index] - 8 }));
+  const rowHeight = Math.max(22, ...heights) + 8;
+  if (document.y + rowHeight > 780) {
+    document.addPage();
+  }
+  const rowY = document.y;
+  widths.reduce((x, width, index) => {
+    document.rect(x, rowY, width, rowHeight).strokeColor("#e5e7eb").stroke();
+    document.fillColor("#111827").fontSize(8).text(String(columns[index] ?? ""), x + 4, rowY + 4, { width: width - 8 });
+    return x + width;
+  }, startX);
+  document.x = startX;
+  document.y = rowY + rowHeight;
+}
+
+async function stateToPdf(state) {
+  const document = new PDFDocument({ margin: 40, size: "A4", bufferPages: true });
+  const done = pdfBuffer(document);
+  try {
+    document.font(pdfFontPath);
+  } catch {
+    document.font("Helvetica");
+  }
+
+  document.fontSize(18).fillColor("#111827").text("Project Manager hesabatı");
+  document.fontSize(9).fillColor("#6b7280").text(`Generated: ${new Date().toISOString()}`);
+
+  drawPdfSectionTitle(document, "Layihələr");
+  drawPdfRow(document, ["Ad", "Status", "Prioritet", "Başlama", "Bitmə", "Progress"], [160, 80, 70, 70, 70, 65]);
   (state.projects || []).forEach((project) => {
-    lines.push(`${project.name} | ${project.status} | ${project.priority} | ${project.progress || 0}%`);
+    drawPdfRow(document, [
+      project.name,
+      project.status,
+      project.priority,
+      project.start || "-",
+      project.end || "-",
+      `${project.progress || 0}%`
+    ], [160, 80, 70, 70, 70, 65]);
   });
-  lines.push("", "Tasks");
+
+  drawPdfSectionTitle(document, "Tapşırıqlar");
+  drawPdfRow(document, ["Ad", "Layihə", "Status", "Prioritet", "İcraçı", "Progress"], [140, 105, 70, 60, 75, 65]);
   (state.tasks || []).forEach((task) => {
-    lines.push(`${task.name} | ${task.project || "-"} | ${task.status} | ${task.priority} | ${task.progress || 0}%`);
+    drawPdfRow(document, [
+      task.name,
+      task.project || "-",
+      task.status,
+      task.priority,
+      resourceLabelFromState(state, task.owner),
+      `${task.progress || 0}%`
+    ], [140, 105, 70, 60, 75, 65]);
   });
-  return simplePdf(lines);
+
+  document.end();
+  return done;
 }
 
 function recipientsFrom(value) {
@@ -1086,7 +1139,7 @@ async function handleApi(request, response) {
   if (pathname === "/api/export/pdf" && request.method === "GET") {
     if (!requireAuth(request, response, ["admin", "manager"])) return true;
     const state = ensureStateShape(await readState());
-    sendText(response, 200, stateToPdf(state), "application/pdf", "project-manager-report.pdf");
+    sendText(response, 200, await stateToPdf(state), "application/pdf", "project-manager-report.pdf");
     return true;
   }
 
