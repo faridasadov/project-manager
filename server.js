@@ -621,6 +621,8 @@ function normalizeTaskPayload(payload = {}) {
     owner: payload.owner || "",
     progress: payload.status === "Bitib" ? 100 : progress,
     notes: payload.notes || "",
+    plannedHours: Number(payload.plannedHours) || 0,
+    actualHours: Number(payload.actualHours) || 0,
     parentTaskId: payload.parentTaskId || "",
     dependencyIds: Array.isArray(payload.dependencyIds) ? payload.dependencyIds : [],
     comments: Array.isArray(payload.comments) ? payload.comments : [],
@@ -654,7 +656,7 @@ function csvCell(value) {
 
 function stateToCsv(state) {
   const taskRows = [
-    ["Type", "ID", "Name", "Project", "Status", "Priority", "Owner", "Start", "End", "Progress", "Parent", "Dependencies", "Notes"],
+    ["Type", "ID", "Name", "Project", "Status", "Priority", "Owner", "Start", "End", "Progress", "Planned Hours", "Actual Hours", "Parent", "Dependencies", "Notes"],
     ...(state.tasks || []).map((task) => [
       "Task",
       task.id,
@@ -666,6 +668,8 @@ function stateToCsv(state) {
       task.start,
       task.end,
       task.progress,
+      task.plannedHours || 0,
+      task.actualHours || 0,
       task.parentTaskId || "",
       (task.dependencyIds || []).join(" | "),
       task.notes || ""
@@ -779,16 +783,16 @@ async function stateToPdf(state) {
   });
 
   drawPdfSectionTitle(document, "Tasklar");
-  drawPdfRow(document, ["Ad", "Layihə", "Status", "Prioritet", "İcraçı", "Progress"], [140, 105, 70, 60, 75, 65]);
+  drawPdfRow(document, ["Ad", "Layihə", "Status", "İcraçı", "Saat P/F", "Progress"], [125, 95, 65, 75, 80, 75]);
   (state.tasks || []).forEach((task) => {
     drawPdfRow(document, [
       task.name,
       task.project || "-",
       task.status,
-      task.priority,
       resourceLabelFromState(state, task.owner),
+      `${task.plannedHours || 0}/${task.actualHours || 0}`,
       `${task.progress || 0}%`
-    ], [140, 105, 70, 60, 75, 65]);
+    ], [125, 95, 65, 75, 80, 75]);
   });
 
   drawPdfSectionTitle(document, "Registerlər");

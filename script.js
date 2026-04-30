@@ -117,6 +117,12 @@ const translations = {
     noOwnerSelect: "Seçilməyib",
     ownerPlaceholder: "Ad və ya komanda",
     progress: "Progress %",
+    plannedHours: "Plan saat",
+    actualHours: "Fakt saat",
+    hoursSummary: "Saat plan/fakt",
+    workload: "Workload",
+    teamCapacity: "Komanda yüklənməsi",
+    capacityHours: "Capacity saat",
     notes: "Qeyd",
     notesPlaceholder: "Qısa qeyd yaz",
     save: "Yadda saxla",
@@ -363,6 +369,12 @@ const translations = {
     noOwnerSelect: "Не выбрано",
     ownerPlaceholder: "Имя или команда",
     progress: "Прогресс %",
+    plannedHours: "План часов",
+    actualHours: "Факт часов",
+    hoursSummary: "Часы план/факт",
+    workload: "Workload",
+    teamCapacity: "Загрузка команды",
+    capacityHours: "Capacity часов",
     notes: "Заметка",
     notesPlaceholder: "Короткая заметка",
     save: "Сохранить",
@@ -603,6 +615,12 @@ const translations = {
     noOwnerSelect: "Not selected",
     ownerPlaceholder: "Name or team",
     progress: "Progress %",
+    plannedHours: "Planned hours",
+    actualHours: "Actual hours",
+    hoursSummary: "Hours plan/actual",
+    workload: "Workload",
+    teamCapacity: "Team capacity",
+    capacityHours: "Capacity hours",
     notes: "Notes",
     notesPlaceholder: "Write a short note",
     save: "Save",
@@ -1047,6 +1065,8 @@ const statusInput = document.querySelector("#status");
 const priorityInput = document.querySelector("#priority");
 const ownerInput = document.querySelector("#owner");
 const progressInput = document.querySelector("#progress");
+const plannedHoursInput = document.querySelector("#plannedHours");
+const actualHoursInput = document.querySelector("#actualHours");
 const notesInput = document.querySelector("#notes");
 const parentTaskInput = document.querySelector("#parentTask");
 const taskDependenciesInput = document.querySelector("#taskDependencies");
@@ -1073,10 +1093,12 @@ const archivedProjectCards = document.querySelector("#archivedProjectCards");
 const statusBars = document.querySelector("#statusBars");
 const upcomingList = document.querySelector("#upcomingList");
 const deadlineAlerts = document.querySelector("#deadlineAlerts");
+const workloadList = document.querySelector("#workloadList");
 const totalCount = document.querySelector("#totalCount");
 const activeCount = document.querySelector("#activeCount");
 const doneCount = document.querySelector("#doneCount");
 const dateRange = document.querySelector("#dateRange");
+const hoursSummary = document.querySelector("#hoursSummary");
 const resetDemo = document.querySelector("#resetDemo");
 const clearDone = document.querySelector("#clearDone");
 const languageSelect = document.querySelector("#languageSelect");
@@ -1503,6 +1525,7 @@ function defaultSettings() {
     backgroundStyle: "calm",
     accentColor: "teal",
     workflowStatuses: [...defaultWorkflowStatuses],
+    capacityHours: 40,
     emailEnabled: false,
     emailRecipients: "",
     emailProvider: "",
@@ -1552,6 +1575,8 @@ function normalizeTask(task) {
     attachments: [],
     parentTaskId: "",
     dependencyIds: [],
+    plannedHours: 0,
+    actualHours: 0,
     completionRequestedAt: "",
     completionRequestedBy: "",
     completedAt: "",
@@ -1561,6 +1586,8 @@ function normalizeTask(task) {
     startedAt: task.status === "Davam edir" ? new Date().toISOString() : "",
     progress: task.status === "Bitib" ? 100 : 0,
     ...task,
+    plannedHours: Number(task.plannedHours) || 0,
+    actualHours: Number(task.actualHours) || 0,
     dependencyIds: Array.isArray(task.dependencyIds) ? task.dependencyIds : []
   };
 }
@@ -1959,6 +1986,24 @@ function registerCounts(projectName = "") {
   };
 }
 
+function workloadRows() {
+  const activeTasks = accessibleTasks().filter((task) => task.status !== "Bitib");
+  const capacity = Number(appSettings.capacityHours) || 40;
+  const rows = new Map();
+  activeTasks.forEach((task) => {
+    const owner = task.owner || task.projectResource || "";
+    if (!owner) return;
+    const current = rows.get(owner) || { owner, planned: 0, actual: 0, count: 0 };
+    current.planned += Number(task.plannedHours) || 0;
+    current.actual += Number(task.actualHours) || 0;
+    current.count += 1;
+    rows.set(owner, current);
+  });
+  return [...rows.values()]
+    .map((row) => ({ ...row, capacity, load: capacity ? Math.round((row.planned / capacity) * 100) : 0 }))
+    .sort((a, b) => b.load - a.load);
+}
+
 function isAdmin() {
   return currentUser?.role === "admin";
 }
@@ -2308,6 +2353,9 @@ function renderSummary() {
   totalCount.textContent = shownTasks.length;
   activeCount.textContent = shownTasks.filter((task) => task.status !== "Bitib").length;
   doneCount.textContent = shownTasks.filter((task) => task.status === "Bitib").length;
+  const planned = shownTasks.reduce((sum, task) => sum + (Number(task.plannedHours) || 0), 0);
+  const actual = shownTasks.reduce((sum, task) => sum + (Number(task.actualHours) || 0), 0);
+  hoursSummary.textContent = `${planned} / ${actual}`;
 
   if (!shownTasks.length) {
     dateRange.textContent = "-";
@@ -2363,6 +2411,20 @@ function renderDashboard() {
       </div>
     </div>
   `).join("") : `<div class="empty">${text("noUpcoming")}</div>`;
+
+  const rows = workloadRows().slice(0, 6);
+  workloadList.innerHTML = rows.length ? rows.map((row) => `
+    <div class="compact-item">
+      <strong>${escapeHtml(resourceLabel(row.owner))}</strong>
+      <div class="task-meta">
+        <span>${row.count} ${text("tasks")}</span>
+        <span>${text("plannedHours")}: ${row.planned}</span>
+        <span>${text("actualHours")}: ${row.actual}</span>
+        <span>${row.load}%</span>
+      </div>
+      <div class="progress-mini"><span style="width:${Math.min(100, row.load)}%"></span></div>
+    </div>
+  `).join("") : `<div class="empty">${text("empty")}</div>`;
 
   renderDeadlineAlerts();
 }
@@ -2547,6 +2609,8 @@ function renderTaskList() {
           <span>${escapeHtml(getProject(task))}</span>
           <span>${shortDate(task.start)} - ${shortDate(task.end)}</span>
           <span>${escapeHtml(resourceLabel(task.owner))}</span>
+          <span>${text("plannedHours")}: ${Number(task.plannedHours) || 0}</span>
+          <span>${text("actualHours")}: ${Number(task.actualHours) || 0}</span>
         </div>
         ${renderTaskRelations(task)}
         ${task.notes ? `<p>${escapeHtml(task.notes)}</p>` : ""}
@@ -2749,6 +2813,8 @@ function renderReports() {
         <span>${statusLabel(task.status)}</span>
         <span>${text("start")}: ${escapeHtml(shortDate(task.start))}</span>
         <span>${text("executedBy")}: ${escapeHtml(resourceLabel(task.owner))}</span>
+        <span>${text("plannedHours")}: ${Number(task.plannedHours) || 0}</span>
+        <span>${text("actualHours")}: ${Number(task.actualHours) || 0}</span>
         <span>${text("requestedAt")}: ${escapeHtml(formatDateTime(task.completionRequestedAt) || "-")}</span>
         <span>${text("approvedAt")}: ${escapeHtml(formatDateTime(task.approvedAt) || "-")}</span>
       </div>
@@ -2803,6 +2869,8 @@ function resetForm() {
   statusInput.value = "Plan";
   priorityInput.value = "Normal";
   progressInput.value = 0;
+  plannedHoursInput.value = 0;
+  actualHoursInput.value = 0;
   parentTaskInput.value = "";
   taskDependenciesInput.innerHTML = taskOptionItems();
 }
@@ -2837,6 +2905,8 @@ function handleTaskAction(action, id) {
     priorityInput.value = task.priority;
     ownerInput.value = task.owner;
     progressInput.value = Number(task.progress) || 0;
+    plannedHoursInput.value = Number(task.plannedHours) || 0;
+    actualHoursInput.value = Number(task.actualHours) || 0;
     notesInput.value = task.notes;
     parentTaskInput.value = task.parentTaskId || "";
     taskDependenciesInput.innerHTML = taskOptionItems(task.dependencyIds || [], task.id);
@@ -3174,6 +3244,8 @@ form.addEventListener("submit", async (event) => {
     priority: priorityInput.value,
     owner: ownerInput.value.trim(),
     progress: statusInput.value === "Bitib" ? 100 : progress,
+    plannedHours: Number(plannedHoursInput.value) || 0,
+    actualHours: Number(actualHoursInput.value) || 0,
     notes: notesInput.value.trim(),
     parentTaskId: parentTaskInput.value,
     dependencyIds: [...taskDependenciesInput.selectedOptions].map((option) => option.value).filter((id) => id !== taskId.value),

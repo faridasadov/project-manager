@@ -135,6 +135,17 @@
             </label>
           </div>
 
+          <div class="form-grid">
+            <label>
+              <span data-i18n="plannedHours">Plan saat</span>
+              <input id="plannedHours" type="number" min="0" step="0.5" value="0">
+            </label>
+            <label>
+              <span data-i18n="actualHours">Fakt saat</span>
+              <input id="actualHours" type="number" min="0" step="0.5" value="0">
+            </label>
+          </div>
+
           <label>
             <span data-i18n="notes">Qeyd</span>
             <textarea id="notes" rows="4" placeholder="Qısa qeyd yaz" data-i18n-placeholder="notesPlaceholder"></textarea>
@@ -577,11 +588,15 @@
             <span id="doneCount">0</span>
             <p data-i18n="doneTasks">Bitmiş task</p>
           </article>
-          <article>
-            <span id="dateRange">-</span>
-            <p data-i18n="projectDuration">Layihə müddəti</p>
-          </article>
-        </section>
+            <article>
+              <span id="dateRange">-</span>
+              <p data-i18n="projectDuration">Layihə müddəti</p>
+            </article>
+            <article>
+              <span id="hoursSummary">0 / 0</span>
+              <p data-i18n="hoursSummary">Saat plan/fakt</p>
+            </article>
+          </section>
 
         <section id="dashboardView" class="view active-view">
           <div class="insight-grid">
@@ -611,6 +626,15 @@
                 </div>
               </div>
               <div id="deadlineAlerts" class="compact-list"></div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <div>
+                  <p class="kicker" data-i18n="workload">Workload</p>
+                  <h2 data-i18n="teamCapacity">Komanda yüklənməsi</h2>
+                </div>
+              </div>
+              <div id="workloadList" class="compact-list"></div>
             </article>
           </div>
           <div class="dashboard-calendar-grid">

@@ -52,14 +52,14 @@ function element(selector, value = "") {
 
 const ids = [
   "taskForm", "formTitle", "taskId", "taskName", "project", "startDate", "endDate",
-  "projectResource", "status", "priority", "owner", "progress", "notes", "parentTask", "taskDependencies", "cancelEdit", "gantt", "reports",
+  "projectResource", "status", "priority", "owner", "progress", "plannedHours", "actualHours", "notes", "parentTask", "taskDependencies", "cancelEdit", "gantt", "reports",
   "kanban", "dashboardCalendar", "calendarBoard", "calendarDetails", "dashboardCalendarStart",
   "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusFilters", "statusBars", "upcomingList",
-  "deadlineAlerts", "projectCards", "archivedProjectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
+  "deadlineAlerts", "workloadList", "projectCards", "archivedProjectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
   "openAdminPanel", "closeAdminPanel", "adminModal", "managerAssignModal", "closeManagerAssign",
   "cancelManagerAssign", "saveProjectManagers", "managerAssignTitle", "managerAssignList", "selectedManagersPreview",
   "exportData", "exportExcel", "exportPdf", "importData",
-  "totalCount", "activeCount", "doneCount", "dateRange", "resetDemo", "clearDone",
+  "totalCount", "activeCount", "doneCount", "dateRange", "hoursSummary", "resetDemo", "clearDone",
   "languageSelect", "loginLanguageSelect", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
   "teamCount", "linkCount", "projectForm", "projectName", "projectLeader", "projectTeamMembers",
@@ -78,7 +78,7 @@ const ids = [
 
 ids.forEach((id) => element(`#${id}`));
 [
-  "taskId", "taskName", "project", "projectResource", "startDate", "endDate", "status", "priority", "owner", "progress", "notes", "parentTask", "taskDependencies",
+  "taskId", "taskName", "project", "projectResource", "startDate", "endDate", "status", "priority", "owner", "progress", "plannedHours", "actualHours", "notes", "parentTask", "taskDependencies",
   "projectName", "projectLeader", "projectTeamMembers", "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress",
   "registerProject", "registerType", "registerTitle", "registerOwner", "registerStatus", "registerImpact", "registerDueDate", "registerMitigation"
 ].forEach((id) => {
@@ -90,6 +90,8 @@ elements["#status"].options = [{ value: "Plan" }, { value: "Davam edir" }, { val
 elements["#priority"].value = "Normal";
 elements["#priority"].options = [{ value: "Normal" }, { value: "Yüksək" }, { value: "Aşağı" }];
 elements["#progress"].value = "0";
+elements["#plannedHours"].value = "0";
+elements["#actualHours"].value = "0";
 elements["#projectStatus"].value = "Plan";
 elements["#projectStatus"].options = [{ value: "Plan" }, { value: "Davam edir" }, { value: "Bitib" }];
 elements["#projectPriority"].value = "Normal";
