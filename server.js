@@ -143,6 +143,7 @@ function validateState(payload) {
     && Array.isArray(payload.members)
     && Array.isArray(payload.teams)
     && Array.isArray(payload.projectLinks)
+    && (!payload.registers || Array.isArray(payload.registers))
     && Array.isArray(payload.users)
     && Array.isArray(payload.trash);
 }
@@ -683,6 +684,20 @@ function stateToCsv(state) {
       project.archived ? "Yes" : "No",
       (project.managerIds || []).join(" | "),
       (project.teamMemberIds || []).join(" | ")
+    ]),
+    [],
+    ["Type", "ID", "Project", "Register Type", "Title", "Status", "Impact", "Owner", "Due Date", "Mitigation"],
+    ...(state.registers || []).map((item) => [
+      "Register",
+      item.id,
+      item.project,
+      item.type,
+      item.title,
+      item.status,
+      item.impact,
+      item.owner,
+      item.dueDate,
+      item.mitigation
     ])
   ];
   return taskRows.map((row) => row.map(csvCell).join(",")).join("\n");
@@ -774,6 +789,19 @@ async function stateToPdf(state) {
       resourceLabelFromState(state, task.owner),
       `${task.progress || 0}%`
     ], [140, 105, 70, 60, 75, 65]);
+  });
+
+  drawPdfSectionTitle(document, "Registerlər");
+  drawPdfRow(document, ["Layihə", "Tip", "Başlıq", "Status", "Impact", "Due"], [105, 65, 150, 70, 60, 65]);
+  (state.registers || []).forEach((item) => {
+    drawPdfRow(document, [
+      item.project || "-",
+      item.type || "-",
+      item.title || "-",
+      item.status || "-",
+      item.impact || "-",
+      item.dueDate || "-"
+    ], [105, 65, 150, 70, 60, 65]);
   });
 
   document.end();

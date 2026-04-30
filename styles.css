@@ -621,6 +621,25 @@ form {
   gap: 8px;
 }
 
+.register-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.register-grid textarea,
+.register-grid .register-list,
+.register-grid button {
+  grid-column: 1 / -1;
+}
+
+.register-item small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .toggle-row input {
   width: auto;
 }

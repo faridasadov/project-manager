@@ -66,6 +66,7 @@ const ids = [
   "addProjectTeamMembers", "selectedProjectTeamMembers",
   "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress",
   "focusNewProject", "closeProjectComposer", "cancelProjectCreate", "projectComposerModal", "projectList",
+  "registerProject", "registerType", "registerTitle", "registerOwner", "registerStatus", "registerImpact", "registerDueDate", "registerMitigation", "addRegisterItem", "registerList", "registerCount",
   "projectCount", "themeMode", "backgroundStyle", "accentColor", "workflowStatusName", "addWorkflowStatus", "workflowStatusList",
   "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
   "ldapBaseDn", "ldapUserFilter", "ldapBindDn", "ldapBindPassword", "ldapGroupRoleMap", "saveSettings", "testMail", "settingsStatus",
@@ -78,7 +79,8 @@ const ids = [
 ids.forEach((id) => element(`#${id}`));
 [
   "taskId", "taskName", "project", "projectResource", "startDate", "endDate", "status", "priority", "owner", "progress", "notes", "parentTask", "taskDependencies",
-  "projectName", "projectLeader", "projectTeamMembers", "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress"
+  "projectName", "projectLeader", "projectTeamMembers", "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress",
+  "registerProject", "registerType", "registerTitle", "registerOwner", "registerStatus", "registerImpact", "registerDueDate", "registerMitigation"
 ].forEach((id) => {
   elements[`#${id}`].formField = true;
 });
@@ -103,6 +105,9 @@ elements["#backgroundStyle"].value = "calm";
 elements["#backgroundStyle"].options = [{ value: "calm" }, { value: "grid" }, { value: "plain" }, { value: "focus" }, { value: "paper" }, { value: "steel" }, { value: "sunrise" }];
 elements["#accentColor"].value = "teal";
 elements["#accentColor"].options = [{ value: "teal" }, { value: "blue" }, { value: "green" }, { value: "amber" }, { value: "red" }, { value: "violet" }, { value: "slate" }];
+elements["#registerType"].value = "risk";
+elements["#registerStatus"].value = "Open";
+elements["#registerImpact"].value = "Medium";
 
 const filters = ["Hamısı", "Plan", "Davam edir", "Bitib"].map((filter) => {
   const button = new Element(`filter-${filter}`);

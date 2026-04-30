@@ -9,6 +9,7 @@ const sessionKey = "project-manager-session-v1";
 const authTokenKey = "project-manager-auth-token-v1";
 const trashKey = "project-manager-trash-v1";
 const settingsKey = "project-manager-settings-v1";
+const registersKey = "project-manager-registers-v1";
 const backupVersion = 1;
 const defaultWorkflowStatuses = ["Plan", "Davam edir", "Bitib"];
 const protectedWorkflowStatuses = new Set(defaultWorkflowStatuses);
@@ -229,6 +230,24 @@ const translations = {
     importData: "Import",
     backupError: "Backup faylı oxunmadı.",
     risk: "Risk",
+    projectRegisters: "Layihə registerləri",
+    registerType: "Tip",
+    riskRegister: "Risk",
+    issueRegister: "Issue",
+    milestoneRegister: "Milestone",
+    registerTitle: "Başlıq",
+    registerTitlePlaceholder: "Məsələn: Go-live riski",
+    impact: "Impact",
+    impactLow: "Aşağı",
+    impactMedium: "Orta",
+    impactHigh: "Yüksək",
+    dueDate: "Due date",
+    mitigation: "Mitigation / qeyd",
+    registerOpen: "Open",
+    registerMonitoring: "Monitoring",
+    registerResolved: "Resolved",
+    addRegisterItem: "Registerə əlavə et",
+    registerSummary: "Register xülasəsi",
     deadlineAlerts: "Deadline xəbərdarlıqları",
     overdue: "Gecikir",
     dueSoon: "Yaxın deadline",
@@ -455,8 +474,26 @@ const translations = {
     exportExcel: "Excel export",
     exportPdf: "PDF export",
     importData: "Import",
-    backupError: "Не удалось прочитать backup файл.",
+    backupError: "Backup файл не прочитан.",
     risk: "Риск",
+    projectRegisters: "Реестры проекта",
+    registerType: "Тип",
+    riskRegister: "Риск",
+    issueRegister: "Issue",
+    milestoneRegister: "Milestone",
+    registerTitle: "Заголовок",
+    registerTitlePlaceholder: "Например: риск go-live",
+    impact: "Impact",
+    impactLow: "Низкий",
+    impactMedium: "Средний",
+    impactHigh: "Высокий",
+    dueDate: "Due date",
+    mitigation: "Mitigation / заметка",
+    registerOpen: "Open",
+    registerMonitoring: "Monitoring",
+    registerResolved: "Resolved",
+    addRegisterItem: "Добавить в реестр",
+    registerSummary: "Сводка реестров",
     deadlineAlerts: "Предупреждения по срокам",
     overdue: "Просрочено",
     dueSoon: "Скоро срок",
@@ -679,6 +716,24 @@ const translations = {
     importData: "Import",
     backupError: "Backup file could not be read.",
     risk: "Risk",
+    projectRegisters: "Project registers",
+    registerType: "Type",
+    riskRegister: "Risk",
+    issueRegister: "Issue",
+    milestoneRegister: "Milestone",
+    registerTitle: "Title",
+    registerTitlePlaceholder: "Example: Go-live risk",
+    impact: "Impact",
+    impactLow: "Low",
+    impactMedium: "Medium",
+    impactHigh: "High",
+    dueDate: "Due date",
+    mitigation: "Mitigation / note",
+    registerOpen: "Open",
+    registerMonitoring: "Monitoring",
+    registerResolved: "Resolved",
+    addRegisterItem: "Add to register",
+    registerSummary: "Register summary",
     deadlineAlerts: "Deadline alerts",
     overdue: "Overdue",
     dueSoon: "Due soon",
@@ -1050,6 +1105,17 @@ const projectProgressInput = document.querySelector("#projectProgress");
 const focusNewProjectButton = document.querySelector("#focusNewProject");
 const projectList = document.querySelector("#projectList");
 const projectCount = document.querySelector("#projectCount");
+const registerProjectInput = document.querySelector("#registerProject");
+const registerTypeInput = document.querySelector("#registerType");
+const registerTitleInput = document.querySelector("#registerTitle");
+const registerOwnerInput = document.querySelector("#registerOwner");
+const registerStatusInput = document.querySelector("#registerStatus");
+const registerImpactInput = document.querySelector("#registerImpact");
+const registerDueDateInput = document.querySelector("#registerDueDate");
+const registerMitigationInput = document.querySelector("#registerMitigation");
+const addRegisterItemButton = document.querySelector("#addRegisterItem");
+const registerList = document.querySelector("#registerList");
+const registerCount = document.querySelector("#registerCount");
 const trashList = document.querySelector("#trashList");
 const trashCount = document.querySelector("#trashCount");
 const loginScreen = document.querySelector("#loginScreen");
@@ -1116,6 +1182,7 @@ let members = loadMembers();
 let teams = loadTeams();
 let projects = loadProjects();
 let projectLinks = loadProjectLinks();
+let registers = loadRegisters();
 let users = loadUsers();
 let trash = loadTrash();
 let currentUser = loadSession();
@@ -1158,6 +1225,24 @@ function syncWorkflowStatuses() {
 
 function priorityLabel(priority) {
   return translations[currentLanguage].priorities[priority] || priority;
+}
+
+function registerTypeLabel(type) {
+  if (type === "issue") return text("issueRegister");
+  if (type === "milestone") return text("milestoneRegister");
+  return text("riskRegister");
+}
+
+function impactLabel(impact) {
+  if (impact === "High") return text("impactHigh");
+  if (impact === "Low") return text("impactLow");
+  return text("impactMedium");
+}
+
+function registerStatusLabel(status) {
+  if (status === "Resolved") return text("registerResolved");
+  if (status === "Monitoring") return text("registerMonitoring");
+  return text("registerOpen");
 }
 
 function applyTranslations() {
@@ -1393,6 +1478,25 @@ function loadTrash() {
   return loadJson(trashKey, () => []);
 }
 
+function normalizeRegisterItem(item) {
+  return {
+    id: item.id || createId(),
+    project: item.project || "",
+    type: item.type || "risk",
+    title: item.title || "",
+    owner: item.owner || "",
+    status: item.status || "Open",
+    impact: item.impact || "Medium",
+    dueDate: item.dueDate || "",
+    mitigation: item.mitigation || "",
+    createdAt: item.createdAt || new Date().toISOString()
+  };
+}
+
+function loadRegisters() {
+  return loadJson(registersKey, () => []).map(normalizeRegisterItem);
+}
+
 function defaultSettings() {
   return {
     themeMode: "light",
@@ -1498,6 +1602,11 @@ function saveUsers() {
 
 function saveTrash() {
   localStorage.setItem(trashKey, JSON.stringify(trash));
+  scheduleBackendSave();
+}
+
+function saveRegisters() {
+  localStorage.setItem(registersKey, JSON.stringify(registers));
   scheduleBackendSave();
 }
 
@@ -1833,6 +1942,23 @@ function projectHasResourceAccess(projectName) {
   return linkedResourcesForProject(projectName).some(resourceInCurrentScope);
 }
 
+function visibleRegisters(projectName = "") {
+  return registers.filter((item) => {
+    if (projectName && item.project !== projectName) return false;
+    const project = projects.find((candidate) => candidate.name === item.project);
+    return !project || canSeeProject(project);
+  });
+}
+
+function registerCounts(projectName = "") {
+  const items = visibleRegisters(projectName).filter((item) => item.status !== "Resolved");
+  return {
+    risks: items.filter((item) => item.type === "risk").length,
+    issues: items.filter((item) => item.type === "issue").length,
+    milestones: items.filter((item) => item.type === "milestone").length
+  };
+}
+
 function isAdmin() {
   return currentUser?.role === "admin";
 }
@@ -2059,6 +2185,18 @@ function renderResourceControls() {
     `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`
   )).join("");
 
+  const currentRegisterProject = registerProjectInput.value;
+  registerProjectInput.innerHTML = visibleProjects().map((project) => `<option value="${escapeHtml(project.name)}">${escapeHtml(project.name)}</option>`).join("");
+  registerProjectInput.value = projects.some((project) => project.name === currentRegisterProject) ? currentRegisterProject : visibleProjects()[0]?.name || "";
+
+  const currentRegisterOwner = registerOwnerInput.value;
+  registerOwnerInput.innerHTML = [
+    `<option value="">${text("noOwnerSelect")}</option>`,
+    ...options.map((option) => `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`)
+  ].join("");
+  registerOwnerInput.value = options.some((option) => option.value === currentRegisterOwner) ? currentRegisterOwner : "";
+  registerCount.textContent = registers.length;
+
   projectList.innerHTML = projects.length ? projects.map((project) => {
     const taskCount = tasks.filter((task) => task.project === project.name).length;
     const managerNames = projectManagers(project).map((user) => user.username);
@@ -2105,6 +2243,18 @@ function renderResourceControls() {
     <div class="resource-item">
       <span><strong>${escapeHtml(link.project)}</strong>${resourceTypeLabel(link.resource)}: ${escapeHtml(resourceLabel(link.resource))}</span>
       <button type="button" data-resource-action="delete-link" data-id="${link.id}">${text("remove")}</button>
+    </div>
+  `).join("") : `<div class="empty">${text("empty")}</div>`;
+
+  registerList.innerHTML = registers.length ? registers.map((item) => `
+    <div class="resource-item register-item ${escapeHtml(item.type)}">
+      <span>
+        <strong>${escapeHtml(item.title)}</strong>
+        ${escapeHtml(item.project)} · ${registerTypeLabel(item.type)} · ${escapeHtml(registerStatusLabel(item.status))} · ${impactLabel(item.impact)} · ${shortDate(item.dueDate)}
+        ${item.owner ? ` · ${escapeHtml(resourceLabel(item.owner))}` : ""}
+        ${item.mitigation ? `<small>${escapeHtml(item.mitigation)}</small>` : ""}
+      </span>
+      <button type="button" data-register-action="delete" data-id="${item.id}">${text("remove")}</button>
     </div>
   `).join("") : `<div class="empty">${text("empty")}</div>`;
 
@@ -2184,7 +2334,19 @@ function renderDashboard() {
         <div class="meter"><span class="${statusClass(status)}" style="width:${width}%"></span></div>
       </div>
     `;
-  }).join("");
+  }).join("") + (() => {
+    const counts = registerCounts();
+    return `
+      <div class="status-line register-summary-line">
+        <div><span>${text("registerSummary")}</span><strong>${counts.risks + counts.issues + counts.milestones}</strong></div>
+        <div class="task-meta">
+          <span>${text("riskRegister")}: ${counts.risks}</span>
+          <span>${text("issueRegister")}: ${counts.issues}</span>
+          <span>${text("milestoneRegister")}: ${counts.milestones}</span>
+        </div>
+      </div>
+    `;
+  })();
 
   const upcoming = shownTasks
     .filter((task) => task.status !== "Bitib")
@@ -2315,6 +2477,7 @@ function renderProjectsView() {
     const percent = Number.isFinite(Number(project.progress)) ? Number(project.progress) : fallbackPercent;
     const managerNames = projectManagers(project).map((user) => user.profile?.fullName || user.username);
     const memberNames = (project.teamMemberIds || []).map(resourceLabel).filter(Boolean);
+    const counts = registerCounts(project.name);
     return `
       <article class="project-card">
         <div>
@@ -2328,6 +2491,9 @@ function renderProjectsView() {
             <span>${percent}%</span>
             <span>${projectTasks.length} ${text("tasks")}</span>
             <span>${active} ${text("activeTasks")}</span>
+            <span>${text("riskRegister")}: ${counts.risks}</span>
+            <span>${text("issueRegister")}: ${counts.issues}</span>
+            <span>${text("milestoneRegister")}: ${counts.milestones}</span>
           </div>
           <div class="progress-mini"><span style="width:${percent}%"></span></div>
         </div>
@@ -2587,10 +2753,21 @@ function renderReports() {
         <span>${text("approvedAt")}: ${escapeHtml(formatDateTime(task.approvedAt) || "-")}</span>
       </div>
     `).join("") : `<div class="empty">${text("empty")}</div>`;
+    const registerRows = visibleRegisters(project.name).length ? visibleRegisters(project.name).map((item) => `
+      <div class="report-row">
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${registerTypeLabel(item.type)}</span>
+        <span>${registerStatusLabel(item.status)}</span>
+        <span>${impactLabel(item.impact)}</span>
+        <span>${shortDate(item.dueDate)}</span>
+      </div>
+    `).join("") : `<div class="empty">${text("empty")}</div>`;
     return `
       <article class="report-project">
         <h3>${escapeHtml(project.name)}</h3>
         <div class="report-rows">${rows}</div>
+        <h3>${text("projectRegisters")}</h3>
+        <div class="report-rows">${registerRows}</div>
       </article>
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
@@ -2732,6 +2909,7 @@ function backupPayload() {
     members,
     teams,
     projectLinks,
+    registers,
     users,
     trash
   };
@@ -2900,10 +3078,12 @@ function importBackup(payload) {
   members = Array.isArray(payload.members) ? payload.members : members;
   teams = Array.isArray(payload.teams) ? payload.teams : teams;
   projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
+  registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : registers;
   users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
   trash = Array.isArray(payload.trash) ? payload.trash : trash;
   saveTasks();
   saveResources();
+  saveRegisters();
   saveUsers();
   saveTrash();
   render();
@@ -3513,9 +3693,11 @@ projectCards.addEventListener("click", (event) => {
       projects = projects.filter((item) => item.id !== project.id);
       tasks = tasks.map((task) => task.project === projectName ? { ...task, project: "" } : task);
       projectLinks = projectLinks.filter((link) => link.project !== projectName);
+      registers = registers.filter((item) => item.project !== projectName);
       saveTrash();
       saveTasks();
       saveResources();
+      saveRegisters();
       render();
     }
     return;
@@ -3539,8 +3721,10 @@ archivedProjectCards.addEventListener("click", (event) => {
     trash.push({ id: createId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
     projects = projects.filter((item) => item.id !== project.id);
     projectLinks = projectLinks.filter((link) => link.project !== projectName);
+    registers = registers.filter((item) => item.project !== projectName);
     saveTrash();
     saveResources();
+    saveRegisters();
     render();
   }
 });
@@ -3567,6 +3751,40 @@ addProjectLinkButton.addEventListener("click", () => {
   linkProjectInput.value = "";
   saveResources();
   render();
+});
+
+addRegisterItemButton.addEventListener("click", () => {
+  if (!canManageTasks()) return;
+  const item = normalizeRegisterItem({
+    project: registerProjectInput.value,
+    type: registerTypeInput.value,
+    title: registerTitleInput.value.trim(),
+    owner: registerOwnerInput.value,
+    status: registerStatusInput.value,
+    impact: registerImpactInput.value,
+    dueDate: registerDueDateInput.value,
+    mitigation: registerMitigationInput.value.trim()
+  });
+  if (!item.project || !item.title) return;
+  registers.push(item);
+  registerTitleInput.value = "";
+  registerMitigationInput.value = "";
+  registerDueDateInput.value = "";
+  registerStatusInput.value = "Open";
+  registerImpactInput.value = "Medium";
+  saveRegisters();
+  render();
+});
+
+registerList.addEventListener("click", (event) => {
+  if (!canManageTasks()) return;
+  const button = event.target.closest("button[data-register-action]");
+  if (!button) return;
+  if (button.dataset.registerAction === "delete") {
+    registers = registers.filter((item) => item.id !== button.dataset.id);
+    saveRegisters();
+    render();
+  }
 });
 
 [projectList, teamList, projectLinksList].forEach((container) => {
@@ -3647,6 +3865,7 @@ resetDemo.addEventListener("click", () => {
   teams = demoTeamTemplates.map((team) => ({ ...team, memberIds: [...team.memberIds] }));
   projects = demoProjects.map((project) => ({ ...project }));
   projectLinks = demoProjectLinks.map((link) => ({ ...link }));
+  registers = [];
   trash = [];
   users = demoUsers.map((user) => ({ ...user }));
   currentUser = users.find((user) => user.role === "admin") || null;
@@ -3655,6 +3874,7 @@ resetDemo.addEventListener("click", () => {
   saveResources();
   saveUsers();
   saveTrash();
+  saveRegisters();
   resetForm();
   render();
 });

@@ -452,6 +452,61 @@
 
           <details class="resource-block">
             <summary>
+              <span data-i18n="projectRegisters">Layihə registerləri</span>
+              <small id="registerCount">0</small>
+            </summary>
+            <div class="resource-body register-grid">
+              <label>
+                <span data-i18n="project">Layihə</span>
+                <select id="registerProject"></select>
+              </label>
+              <label>
+                <span data-i18n="registerType">Tip</span>
+                <select id="registerType">
+                  <option value="risk" data-i18n="riskRegister">Risk</option>
+                  <option value="issue" data-i18n="issueRegister">Issue</option>
+                  <option value="milestone" data-i18n="milestoneRegister">Milestone</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="registerTitle">Başlıq</span>
+                <input id="registerTitle" type="text" placeholder="Go-live risk" data-i18n-placeholder="registerTitlePlaceholder">
+              </label>
+              <label>
+                <span data-i18n="owner">Məsul şəxs</span>
+                <select id="registerOwner"></select>
+              </label>
+              <label>
+                <span data-i18n="status">Status</span>
+                <select id="registerStatus">
+                  <option value="Open" data-i18n="registerOpen">Open</option>
+                  <option value="Monitoring" data-i18n="registerMonitoring">Monitoring</option>
+                  <option value="Resolved" data-i18n="registerResolved">Resolved</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="impact">Impact</span>
+                <select id="registerImpact">
+                  <option value="Low" data-i18n="impactLow">Low</option>
+                  <option value="Medium" data-i18n="impactMedium">Medium</option>
+                  <option value="High" data-i18n="impactHigh">High</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="dueDate">Due date</span>
+                <input id="registerDueDate" type="date">
+              </label>
+              <label>
+                <span data-i18n="mitigation">Mitigation / qeyd</span>
+                <textarea id="registerMitigation" rows="3"></textarea>
+              </label>
+              <button id="addRegisterItem" type="button" data-i18n="addRegisterItem">Registerə əlavə et</button>
+              <div id="registerList" class="resource-list register-list"></div>
+            </div>
+          </details>
+
+          <details class="resource-block">
+            <summary>
               <span data-i18n="trash">Zibil qutusu</span>
               <small id="trashCount">0</small>
             </summary>
