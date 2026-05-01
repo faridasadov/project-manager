@@ -62,14 +62,15 @@ const ids = [
   "totalCount", "activeCount", "doneCount", "dateRange", "hoursSummary", "resetDemo", "clearDone",
   "languageSelect", "loginLanguageSelect", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
-  "teamCount", "linkCount", "projectForm", "projectName", "projectLeader", "projectTeamMembers",
+  "teamCount", "linkCount", "projectForm", "projectName", "projectCustomer", "projectLeader", "projectTeamMembers",
   "addProjectTeamMembers", "selectedProjectTeamMembers",
   "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress",
   "focusNewProject", "closeProjectComposer", "cancelProjectCreate", "projectComposerModal", "projectList",
   "registerProject", "registerType", "registerTitle", "registerOwner", "registerStatus", "registerImpact", "registerDueDate", "registerMitigation", "addRegisterItem", "registerList", "registerCount",
-  "projectCount", "themeMode", "backgroundStyle", "accentColor", "workflowStatusName", "addWorkflowStatus", "workflowStatusList",
+  "projectCount", "customerName", "customerContact", "customerEmail", "addCustomer", "customerList", "customerCount", "managedFileInput", "managedFileStatus", "addManagedFiles", "managedFileList", "fileCount",
+  "themeMode", "backgroundStyle", "accentColor", "workflowStatusName", "addWorkflowStatus", "workflowStatusList",
   "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
-  "capacityHours", "ldapBaseDn", "ldapUserFilter", "ldapBindDn", "ldapBindPassword", "ldapGroupRoleMap", "saveSettings", "testMail", "settingsStatus",
+  "capacityHours", "ldapBaseDn", "ldapUserFilter", "ldapBindDn", "ldapBindPassword", "ldapGroupRoleMap", "saveSettings", "testMail", "testLdap", "settingsStatus",
   "newUserFullName", "newUserPosition", "newUserEmail", "newUserAddress"
   , "loginScreen", "loginForm", "loginUsername", "loginPassword", "loginError",
   "logoutButton", "currentUserBadge", "newUsername", "newUserPassword",
@@ -79,7 +80,7 @@ const ids = [
 ids.forEach((id) => element(`#${id}`));
 [
   "taskId", "taskName", "project", "projectResource", "startDate", "endDate", "status", "priority", "owner", "progress", "plannedHours", "actualHours", "notes", "parentTask", "taskDependencies",
-  "projectName", "projectLeader", "projectTeamMembers", "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress",
+  "projectName", "projectCustomer", "projectLeader", "projectTeamMembers", "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress",
   "registerProject", "registerType", "registerTitle", "registerOwner", "registerStatus", "registerImpact", "registerDueDate", "registerMitigation"
 ].forEach((id) => {
   elements[`#${id}`].formField = true;

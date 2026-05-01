@@ -222,6 +222,11 @@
           </label>
 
           <label>
+            <span data-i18n="customer">Sifarişçi</span>
+            <select id="projectCustomer"></select>
+          </label>
+
+          <label>
             <span data-i18n="projectLeader">Layihə rəhbəri</span>
             <select id="projectLeader"></select>
           </label>
@@ -370,6 +375,7 @@
                   <span data-i18n="emailProvider">Mail provider/API</span>
                   <input id="emailProvider" type="text" placeholder="Backend API URL" data-i18n-placeholder="emailProviderPlaceholder">
                 </label>
+                <button id="testMail" type="button" data-i18n="testMail">Mail test et</button>
               </div>
               <div class="settings-card admin-only">
                 <h3 data-i18n="ldapSettings">LDAP</h3>
@@ -401,10 +407,10 @@
                   <span data-i18n="ldapGroupRoleMap">Group-role mapping</span>
                   <textarea id="ldapGroupRoleMap" rows="3" placeholder='{"CN=Project Admins":"admin","CN=Project Managers":"manager"}'></textarea>
                 </label>
+                <button id="testLdap" type="button" data-i18n="testLdap">LDAP test et</button>
               </div>
               <div class="settings-actions">
                 <button id="saveSettings" class="primary" type="button" data-i18n="saveSettings">Settings saxla</button>
-                <button id="testMail" type="button" data-i18n="testMail">Mail test et</button>
                 <p id="settingsStatus" class="settings-status"></p>
               </div>
             </div>
@@ -462,6 +468,45 @@
               </div>
               <button id="addUser" type="button" data-i18n="addUser">User əlavə et</button>
               <div id="userList" class="resource-list"></div>
+            </div>
+          </details>
+
+          <details class="resource-block">
+            <summary>
+              <span data-i18n="customers">Sifarişçilər</span>
+              <small id="customerCount">0</small>
+            </summary>
+            <div class="resource-body">
+              <label>
+                <span data-i18n="customerName">Sifarişçi adı</span>
+                <input id="customerName" type="text" placeholder="Şirkət adı" data-i18n-placeholder="customerNamePlaceholder">
+              </label>
+              <label>
+                <span data-i18n="contactPerson">Əlaqədar şəxs</span>
+                <input id="customerContact" type="text" placeholder="Ad soyad">
+              </label>
+              <label>
+                <span data-i18n="email">Mail</span>
+                <input id="customerEmail" type="email" placeholder="client@example.com">
+              </label>
+              <button id="addCustomer" type="button" data-i18n="addCustomer">Sifarişçi əlavə et</button>
+              <div id="customerList" class="resource-list"></div>
+            </div>
+          </details>
+
+          <details class="resource-block">
+            <summary>
+              <span data-i18n="fileManager">File manager</span>
+              <small id="fileCount">0</small>
+            </summary>
+            <div class="resource-body">
+              <label class="file-picker">
+                <span data-i18n="chooseFiles">Fayl seç</span>
+                <input id="managedFileInput" type="file" multiple>
+              </label>
+              <small id="managedFileStatus" class="file-picker-status" data-i18n="noFilesSelected">Fayl seçilməyib</small>
+              <button id="addManagedFiles" type="button" data-i18n="addFiles">Fayl əlavə et</button>
+              <div id="managedFileList" class="resource-list"></div>
             </div>
           </details>
 

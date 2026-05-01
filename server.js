@@ -140,6 +140,8 @@ function validateState(payload) {
   return payload
     && Array.isArray(payload.tasks)
     && Array.isArray(payload.projects)
+    && (!payload.customers || Array.isArray(payload.customers))
+    && (!payload.managedFiles || Array.isArray(payload.managedFiles))
     && Array.isArray(payload.members)
     && Array.isArray(payload.teams)
     && Array.isArray(payload.projectLinks)
@@ -157,6 +159,8 @@ function blankState() {
     version: 1,
     tasks: [],
     projects: [],
+    customers: [],
+    managedFiles: [],
     members: [],
     teams: [],
     projectLinks: [],
@@ -609,6 +613,26 @@ async function authenticateLdap(username, password, settings) {
   }
 }
 
+async function testLdapSettings(settings) {
+  if (!settings.ldapEnabled || !settings.ldapUrl || !settings.ldapBaseDn) {
+    return { ok: false, skipped: true, reason: "LDAP disabled or incomplete settings" };
+  }
+  const client = ldap.createClient({
+    url: settings.ldapUrl,
+    timeout: 5000,
+    connectTimeout: 5000
+  });
+  try {
+    const bindDn = settings.ldapBindDn || process.env.LDAP_BIND_DN || "";
+    const bindPassword = settings.ldapBindPassword || process.env.LDAP_BIND_PASSWORD || "";
+    if (bindDn && bindPassword) await ldapBind(client, bindDn, bindPassword);
+    const entries = await ldapSearch(client, settings.ldapBaseDn, "(objectClass=*)");
+    return { ok: true, entries: entries.length };
+  } finally {
+    client.unbind();
+  }
+}
+
 function normalizeTaskPayload(payload = {}) {
   const progress = Math.min(100, Math.max(0, Number.parseInt(payload.progress || "0", 10)));
   const timeEntries = Array.isArray(payload.timeEntries)
@@ -660,6 +684,7 @@ function normalizeProjectPayload(payload = {}) {
   return {
     id: payload.id || createId("project"),
     name: String(payload.name || "").trim(),
+    customerId: payload.customerId || "",
     managerIds: Array.isArray(payload.managerIds) ? payload.managerIds : (payload.managerId ? [payload.managerId] : []),
     teamMemberIds: Array.isArray(payload.teamMemberIds) ? payload.teamMemberIds : [],
     start: payload.start || "",
@@ -700,11 +725,12 @@ function stateToCsv(state) {
       task.notes || ""
     ]),
     [],
-    ["Type", "ID", "Name", "Status", "Priority", "Start", "End", "Progress", "Archived", "Managers", "Team"],
+    ["Type", "ID", "Name", "Customer", "Status", "Priority", "Start", "End", "Progress", "Archived", "Managers", "Team"],
     ...(state.projects || []).map((project) => [
       "Project",
       project.id,
       project.name,
+      customerLabelFromState(state, project.customerId),
       project.status,
       project.priority,
       project.start,
@@ -746,6 +772,11 @@ function resourceLabelFromState(state, value) {
     return (state.teams || []).find((item) => item.id === id)?.name || value;
   }
   return value;
+}
+
+function customerLabelFromState(state, customerId) {
+  if (!customerId) return "-";
+  return (state.customers || []).find((item) => item.id === customerId)?.name || "-";
 }
 
 function pdfBuffer(document) {
@@ -795,16 +826,17 @@ async function stateToPdf(state) {
   document.fontSize(9).fillColor("#6b7280").text(`Generated: ${new Date().toISOString()}`);
 
   drawPdfSectionTitle(document, "Layihələr");
-  drawPdfRow(document, ["Ad", "Status", "Prioritet", "Başlama", "Bitmə", "Progress"], [160, 80, 70, 70, 70, 65]);
+  drawPdfRow(document, ["Ad", "Sifarişçi", "Status", "Prioritet", "Başlama", "Bitmə", "Progress"], [115, 95, 70, 60, 60, 60, 55]);
   (state.projects || []).forEach((project) => {
     drawPdfRow(document, [
       project.name,
+      customerLabelFromState(state, project.customerId),
       project.status,
       project.priority,
       project.start || "-",
       project.end || "-",
       `${project.progress || 0}%`
-    ], [160, 80, 70, 70, 70, 65]);
+    ], [115, 95, 70, 60, 60, 60, 55]);
   });
 
   drawPdfSectionTitle(document, "Tasklar");
@@ -1053,6 +1085,27 @@ async function handleApi(request, response) {
       sendJson(response, 200, result);
     } catch {
       sendJson(response, 500, { error: "Could not send test email" });
+    }
+    return true;
+  }
+
+  if (pathname === "/api/ldap/test" && request.method === "POST") {
+    if (!requireAuth(request, response, ["admin"])) return true;
+    try {
+      const settings = await readSettings();
+      const result = await testLdapSettings(settings);
+      await pool.execute(
+        "INSERT INTO notifications (type, recipient, subject, body, status, payload_json) VALUES ('ldap_test', ?, 'LDAP test', ?, ?, ?)",
+        [
+          settings.ldapUrl || "",
+          result.ok ? "LDAP settings test succeeded." : result.reason || "LDAP settings test failed.",
+          result.ok ? "ok" : "failed",
+          JSON.stringify(result)
+        ]
+      );
+      sendJson(response, result.ok ? 200 : 400, result);
+    } catch (error) {
+      sendJson(response, 500, { ok: false, error: "Could not test LDAP" });
     }
     return true;
   }

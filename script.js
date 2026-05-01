@@ -4,6 +4,8 @@ const membersKey = "project-manager-members-v1";
 const teamsKey = "project-manager-teams-v1";
 const projectLinksKey = "project-manager-project-links-v1";
 const projectsKey = "project-manager-projects-v1";
+const customersKey = "project-manager-customers-v1";
+const managedFilesKey = "project-manager-files-v1";
 const usersKey = "project-manager-users-v1";
 const sessionKey = "project-manager-session-v1";
 const authTokenKey = "project-manager-auth-token-v1";
@@ -29,6 +31,18 @@ const translations = {
     workflowSettings: "Workflow",
     mailSettings: "Mail",
     ldapSettings: "LDAP",
+    customer: "Sifarişçi",
+    customers: "Sifarişçilər",
+    customerName: "Sifarişçi adı",
+    customerNamePlaceholder: "Şirkət adı",
+    contactPerson: "Əlaqədar şəxs",
+    addCustomer: "Sifarişçi əlavə et",
+    fileManager: "File manager",
+    addFiles: "Fayl əlavə et",
+    download: "Yüklə",
+    testLdap: "LDAP test et",
+    ldapTestOk: "LDAP testi uğurludur.",
+    ldapTestFailed: "LDAP testi alınmadı. Ayarları yoxlayın.",
     themeMode: "Görünüş modu",
     lightMode: "Light",
     darkMode: "Dark",
@@ -287,6 +301,18 @@ const translations = {
     workflowSettings: "Workflow",
     mailSettings: "Почта",
     ldapSettings: "LDAP",
+    customer: "Заказчик",
+    customers: "Заказчики",
+    customerName: "Название заказчика",
+    customerNamePlaceholder: "Название компании",
+    contactPerson: "Контактное лицо",
+    addCustomer: "Добавить заказчика",
+    fileManager: "File manager",
+    addFiles: "Добавить файлы",
+    download: "Скачать",
+    testLdap: "Проверить LDAP",
+    ldapTestOk: "LDAP test successful.",
+    ldapTestFailed: "LDAP test failed. Check settings.",
     themeMode: "Режим интерфейса",
     lightMode: "Светлый",
     darkMode: "Темный",
@@ -548,6 +574,18 @@ const translations = {
     workflowSettings: "Workflow",
     mailSettings: "Mail",
     ldapSettings: "LDAP",
+    customer: "Customer",
+    customers: "Customers",
+    customerName: "Customer name",
+    customerNamePlaceholder: "Company name",
+    contactPerson: "Contact person",
+    addCustomer: "Add customer",
+    fileManager: "File manager",
+    addFiles: "Add files",
+    download: "Download",
+    testLdap: "Test LDAP",
+    ldapTestOk: "LDAP test successful.",
+    ldapTestFailed: "LDAP test failed. Check settings.",
     themeMode: "Theme mode",
     lightMode: "Light",
     darkMode: "Dark",
@@ -569,6 +607,9 @@ const translations = {
     newWorkflowStatus: "New status",
     addWorkflowStatus: "Add status",
     requiredWorkflowStatus: "System status",
+    testMail: "Test email",
+    mailTestSent: "Test email was sent.",
+    mailTestSkipped: "Test email was not sent. Check email settings.",
     ldapEnabled: "LDAP enabled",
     ldapUrl: "LDAP URL",
     ldapBaseDn: "Base DN",
@@ -1061,11 +1102,18 @@ const demoProjectLinks = [
 ];
 
 const demoProjects = [
-  { id: "project-internal", name: "Internal portal", managerIds: ["user-manager"], teamMemberIds: ["user:user-aysel", "user:user-rashad"], start: "2026-05-01", end: "2026-05-16", status: "Davam edir", priority: "Yüksək", progress: 55 },
-  { id: "project-customer", name: "Customer rollout", managerIds: ["user-manager"], teamMemberIds: ["member:member-farid", "member:member-nicat"], start: "2026-05-03", end: "2026-05-18", status: "Plan", priority: "Normal", progress: 0 },
-  { id: "project-mobile", name: "Mobile banking", managerIds: ["user-manager", "user-manager-2"], teamMemberIds: ["user:user-aysel", "user:user-rashad"], start: "2026-05-06", end: "2026-05-24", status: "Davam edir", priority: "Yüksək", progress: 40 },
-  { id: "project-erp", name: "Warehouse ERP", managerIds: ["user-manager-2"], teamMemberIds: ["user:user-rashad", "user:user-nigar"], start: "2026-05-09", end: "2026-05-25", status: "Davam edir", priority: "Yüksək", progress: 35 },
-  { id: "project-analytics", name: "Analytics portal", managerIds: ["user-manager"], teamMemberIds: ["user:user-aysel", "member:member-leyla"], start: "2026-05-12", end: "2026-05-27", status: "Plan", priority: "Normal", progress: 0 }
+  { id: "project-internal", name: "Internal portal", customerId: "customer-internal", managerIds: ["user-manager"], teamMemberIds: ["user:user-aysel", "user:user-rashad"], start: "2026-05-01", end: "2026-05-16", status: "Davam edir", priority: "Yüksək", progress: 55 },
+  { id: "project-customer", name: "Customer rollout", customerId: "customer-azercell", managerIds: ["user-manager"], teamMemberIds: ["member:member-farid", "member:member-nicat"], start: "2026-05-03", end: "2026-05-18", status: "Plan", priority: "Normal", progress: 0 },
+  { id: "project-mobile", name: "Mobile banking", customerId: "customer-bank", managerIds: ["user-manager", "user-manager-2"], teamMemberIds: ["user:user-aysel", "user:user-rashad"], start: "2026-05-06", end: "2026-05-24", status: "Davam edir", priority: "Yüksək", progress: 40 },
+  { id: "project-erp", name: "Warehouse ERP", customerId: "customer-logistics", managerIds: ["user-manager-2"], teamMemberIds: ["user:user-rashad", "user:user-nigar"], start: "2026-05-09", end: "2026-05-25", status: "Davam edir", priority: "Yüksək", progress: 35 },
+  { id: "project-analytics", name: "Analytics portal", customerId: "customer-internal", managerIds: ["user-manager"], teamMemberIds: ["user:user-aysel", "member:member-leyla"], start: "2026-05-12", end: "2026-05-27", status: "Plan", priority: "Normal", progress: 0 }
+];
+
+const demoCustomers = [
+  { id: "customer-internal", name: "Internal", contact: "PMO", email: "pmo@example.com" },
+  { id: "customer-azercell", name: "Azercell", contact: "Customer Office", email: "customer@example.com" },
+  { id: "customer-bank", name: "Bank Client", contact: "Digital Banking", email: "bank@example.com" },
+  { id: "customer-logistics", name: "Logistics Client", contact: "Operations", email: "ops@example.com" }
 ];
 
 const demoUsers = [
@@ -1143,6 +1191,7 @@ const linkCount = document.querySelector("#linkCount");
 const projectForm = document.querySelector("#projectForm");
 const projectFormTitle = document.querySelector("#projectFormTitle");
 const projectNameInput = document.querySelector("#projectName");
+const projectCustomerInput = document.querySelector("#projectCustomer");
 const projectLeaderInput = document.querySelector("#projectLeader");
 const projectTeamMembersInput = document.querySelector("#projectTeamMembers");
 const addProjectTeamMembersButton = document.querySelector("#addProjectTeamMembers");
@@ -1155,6 +1204,17 @@ const projectProgressInput = document.querySelector("#projectProgress");
 const focusNewProjectButton = document.querySelector("#focusNewProject");
 const projectList = document.querySelector("#projectList");
 const projectCount = document.querySelector("#projectCount");
+const customerNameInput = document.querySelector("#customerName");
+const customerContactInput = document.querySelector("#customerContact");
+const customerEmailInput = document.querySelector("#customerEmail");
+const addCustomerButton = document.querySelector("#addCustomer");
+const customerList = document.querySelector("#customerList");
+const customerCount = document.querySelector("#customerCount");
+const managedFileInput = document.querySelector("#managedFileInput");
+const managedFileStatus = document.querySelector("#managedFileStatus");
+const addManagedFilesButton = document.querySelector("#addManagedFiles");
+const managedFileList = document.querySelector("#managedFileList");
+const fileCount = document.querySelector("#fileCount");
 const registerProjectInput = document.querySelector("#registerProject");
 const registerTypeInput = document.querySelector("#registerType");
 const registerTitleInput = document.querySelector("#registerTitle");
@@ -1226,6 +1286,7 @@ const ldapBindPasswordInput = document.querySelector("#ldapBindPassword");
 const ldapGroupRoleMapInput = document.querySelector("#ldapGroupRoleMap");
 const saveSettingsButton = document.querySelector("#saveSettings");
 const testMailButton = document.querySelector("#testMail");
+const testLdapButton = document.querySelector("#testLdap");
 const settingsStatus = document.querySelector("#settingsStatus");
 
 let tasks = loadTasks();
@@ -1233,6 +1294,8 @@ let members = loadMembers();
 let teams = loadTeams();
 let projects = loadProjects();
 let projectLinks = loadProjectLinks();
+let customers = loadCustomers();
+let managedFiles = loadManagedFiles();
 let registers = loadRegisters();
 let users = loadUsers();
 let trash = loadTrash();
@@ -1436,6 +1499,13 @@ function ensureDemoData() {
     }
   });
 
+  demoCustomers.forEach((customer) => {
+    if (!customers.some((item) => item.id === customer.id || item.name === customer.name)) {
+      customers.push(normalizeCustomer({ ...customer }));
+      changedResources = true;
+    }
+  });
+
   demoTeamTemplates.forEach((team) => {
     if (!teams.some((item) => item.id === team.id)) {
       teams.push({ ...team, memberIds: [...team.memberIds] });
@@ -1498,6 +1568,14 @@ function loadProjectLinks() {
   return loadJson(projectLinksKey, () => demoProjectLinks.map((link) => ({ ...link })));
 }
 
+function loadCustomers() {
+  return loadJson(customersKey, () => demoCustomers.map((customer) => ({ ...customer }))).map(normalizeCustomer);
+}
+
+function loadManagedFiles() {
+  return loadJson(managedFilesKey, () => []);
+}
+
 function loadUsers() {
   return loadJson(usersKey, () => demoUsers.map((user) => ({ ...user }))).map(normalizeUser);
 }
@@ -1524,6 +1602,15 @@ function normalizeUser(user) {
     return normalized;
   }
   return normalized;
+}
+
+function normalizeCustomer(customer = {}) {
+  return {
+    id: customer.id || createId(),
+    name: String(customer.name || "").trim(),
+    contact: String(customer.contact || "").trim(),
+    email: String(customer.email || "").trim()
+  };
 }
 
 function loadTrash() {
@@ -1645,6 +1732,7 @@ function normalizeProject(project) {
     teamMemberIds: [],
     start: "",
     end: "",
+    customerId: "",
     archived: false,
     status: "Plan",
     priority: "Normal",
@@ -1664,6 +1752,8 @@ function saveResources() {
   localStorage.setItem(teamsKey, JSON.stringify(teams));
   localStorage.setItem(projectsKey, JSON.stringify(projects));
   localStorage.setItem(projectLinksKey, JSON.stringify(projectLinks));
+  localStorage.setItem(customersKey, JSON.stringify(customers));
+  localStorage.setItem(managedFilesKey, JSON.stringify(managedFiles));
   scheduleBackendSave();
 }
 
@@ -1800,6 +1890,7 @@ function createProject(name, details = {}) {
   const project = normalizeProject({
     id: createId(),
     name: cleanName,
+    customerId: details.customerId || "",
     managerIds,
     teamMemberIds: details.teamMemberIds || [],
     start: details.start || "",
@@ -1825,6 +1916,7 @@ function updateProject(projectId, details = {}) {
   if (!cleanName || projects.some((item) => item.id !== projectId && item.name.toLowerCase() === cleanName.toLowerCase())) return null;
   const previousName = project.name;
   project.name = cleanName;
+  project.customerId = details.customerId || "";
   project.managerIds = details.managerId ? [details.managerId] : [];
   project.teamMemberIds = details.teamMemberIds || [];
   project.start = details.start || "";
@@ -1853,6 +1945,12 @@ function managerUsers(managerId) {
 
 function projectManagers(project) {
   return users.filter((user) => (project.managerIds || []).includes(user.id));
+}
+
+function customerLabel(customerId) {
+  if (!customerId) return text("empty");
+  const customer = customers.find((item) => item.id === customerId);
+  return customer?.name || text("empty");
 }
 
 function canSeeProject(project) {
@@ -2165,6 +2263,7 @@ function resetProjectForm() {
   projectStatusInput.value = "Plan";
   projectPriorityInput.value = "Normal";
   projectProgressInput.value = 0;
+  projectCustomerInput.value = "";
   projectLeaderInput.value = currentUser?.role === "manager" ? currentUser.id : "";
   renderSelectedProjectTeamMembers();
 }
@@ -2186,6 +2285,7 @@ function openProjectEditor(projectName) {
   renderResourceControls();
   projectFormTitle.textContent = text("editProject");
   projectNameInput.value = project.name;
+  projectCustomerInput.value = project.customerId || "";
   projectLeaderInput.value = project.managerIds?.[0] || "";
   projectStartDateInput.value = project.start || "";
   projectEndDateInput.value = project.end || "";
@@ -2242,6 +2342,8 @@ function renderResourceControls() {
   const options = allResourceOptions();
   userCount.textContent = users.length;
   projectCount.textContent = projects.length;
+  customerCount.textContent = customers.length;
+  fileCount.textContent = managedFiles.length;
   teamCount.textContent = teams.length;
   linkCount.textContent = projectLinks.length;
   trashCount.textContent = trash.length;
@@ -2281,6 +2383,12 @@ function renderResourceControls() {
 
   teamMembersInput.innerHTML = teamMemberOptions();
   const currentLeader = projectLeaderInput.value || (currentUser?.role === "manager" ? currentUser.id : "");
+  const currentCustomer = projectCustomerInput.value;
+  projectCustomerInput.innerHTML = [
+    `<option value="">${text("empty")}</option>`,
+    ...customers.map((customer) => `<option value="${escapeHtml(customer.id)}">${escapeHtml(customer.name)}</option>`)
+  ].join("");
+  projectCustomerInput.value = customers.some((customer) => customer.id === currentCustomer) ? currentCustomer : "";
   projectLeaderInput.innerHTML = managerOptions(currentLeader);
   projectLeaderInput.value = users.some((user) => user.id === currentLeader && user.role === "manager") ? currentLeader : "";
   projectTeamMembersInput.innerHTML = teamMemberOptions();
@@ -2308,7 +2416,7 @@ function renderResourceControls() {
     const memberNames = (project.teamMemberIds || []).map(resourceLabel).filter(Boolean);
     return `
       <div class="resource-item">
-        <span><strong>${escapeHtml(project.name)}</strong>${taskCount} ${text("tasks")} · ${shortDate(project.start)} - ${shortDate(project.end)} · ${statusLabel(project.status)} · ${priorityLabel(project.priority)} · ${Number(project.progress) || 0}%</span>
+        <span><strong>${escapeHtml(project.name)}</strong>${text("customer")}: ${escapeHtml(customerLabel(project.customerId))} · ${taskCount} ${text("tasks")} · ${shortDate(project.start)} - ${shortDate(project.end)} · ${statusLabel(project.status)} · ${priorityLabel(project.priority)} · ${Number(project.progress) || 0}%</span>
         <div class="user-actions">
           <span class="manager-summary"><strong>${text("responsibleManagers")}</strong>${escapeHtml(managerNames.join(", ") || text("noManagersSelected"))}</span>
           <span class="manager-summary"><strong>${text("projectTeamMembers")}</strong>${escapeHtml(memberNames.join(", ") || text("empty"))}</span>
@@ -2406,6 +2514,31 @@ function renderResourceControls() {
       </div>
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
+  renderCustomerList();
+  renderManagedFileList();
+}
+
+function renderCustomerList() {
+  customerList.innerHTML = customers.length ? customers.map((customer) => `
+    <div class="resource-item">
+      <span><strong>${escapeHtml(customer.name)}</strong>${escapeHtml([customer.contact, customer.email].filter(Boolean).join(" · "))}</span>
+      <div class="mini-actions">
+        <button type="button" data-customer-action="delete" data-id="${escapeHtml(customer.id)}">${text("delete")}</button>
+      </div>
+    </div>
+  `).join("") : `<div class="empty">${text("empty")}</div>`;
+}
+
+function renderManagedFileList() {
+  managedFileList.innerHTML = managedFiles.length ? managedFiles.map((file) => `
+    <div class="resource-item">
+      <span><strong>${escapeHtml(file.name)}</strong>${fileSizeLabel(Number(file.size) || 0)} · ${escapeHtml(formatDateTime(file.createdAt))}</span>
+      <div class="mini-actions">
+        <a class="attachment-chip" href="${escapeHtml(file.dataUrl)}" download="${escapeHtml(file.name)}">${text("download")}</a>
+        <button type="button" data-file-action="delete" data-id="${escapeHtml(file.id)}">${text("delete")}</button>
+      </div>
+    </div>
+  `).join("") : `<div class="empty">${text("empty")}</div>`;
 }
 
 function renderSummary() {
@@ -2607,6 +2740,7 @@ function renderProjectsView() {
           <h3>${escapeHtml(project.name)}</h3>
           <div class="task-meta">
             <span>${text("projectLeader")}: ${escapeHtml(managerNames.join(", ") || text("noOwner"))}</span>
+            <span>${text("customer")}: ${escapeHtml(customerLabel(project.customerId))}</span>
             <span>${text("projectTeamMembers")}: ${escapeHtml(memberNames.join(", ") || text("empty"))}</span>
             <span>${shortDate(project.start)} - ${shortDate(project.end)}</span>
             <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
@@ -3073,6 +3207,8 @@ function backupPayload() {
     projects,
     members,
     teams,
+    customers,
+    managedFiles,
     projectLinks,
     registers,
     users,
@@ -3241,9 +3377,11 @@ async function downloadBackendFile(path, fallbackFilename) {
 function importBackup(payload) {
   if (!payload || !Array.isArray(payload.tasks)) throw new Error(text("backupError"));
   tasks = payload.tasks.map(normalizeTask);
-  projects = Array.isArray(payload.projects) ? payload.projects : projects;
+  projects = Array.isArray(payload.projects) ? payload.projects.map(normalizeProject) : projects;
   members = Array.isArray(payload.members) ? payload.members : members;
   teams = Array.isArray(payload.teams) ? payload.teams : teams;
+  customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : customers;
+  managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : managedFiles;
   projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
   registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : registers;
   users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
@@ -3298,6 +3436,17 @@ async function sendBackendTestMail() {
     body: JSON.stringify({ subject: "Project Manager test email" })
   });
   if (!response.ok) throw new Error("Mail test failed");
+  return response.json();
+}
+
+async function sendBackendTestLdap() {
+  if (!canUseBackend()) return { skipped: true };
+  const response = await fetch(backendUrl("/api/ldap/test"), {
+    method: "POST",
+    headers: authHeaders({ "content-type": "application/json" }),
+    body: JSON.stringify({})
+  });
+  if (!response.ok) throw new Error("LDAP test failed");
   return response.json();
 }
 
@@ -3661,6 +3810,17 @@ testMailButton.addEventListener("click", async () => {
   }
 });
 
+testLdapButton.addEventListener("click", async () => {
+  if (!isAdmin()) return;
+  settingsStatus.textContent = "";
+  try {
+    const result = await sendBackendTestLdap();
+    settingsStatus.textContent = result.ok ? text("ldapTestOk") : text("ldapTestFailed");
+  } catch {
+    settingsStatus.textContent = text("ldapTestFailed");
+  }
+});
+
 addWorkflowStatusButton.addEventListener("click", () => {
   if (!isAdmin()) return;
   const nextStatus = workflowStatusNameInput.value.trim();
@@ -3785,6 +3945,64 @@ userList.addEventListener("submit", (event) => {
   render();
 });
 
+addCustomerButton.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  const customer = normalizeCustomer({
+    name: customerNameInput.value,
+    contact: customerContactInput.value,
+    email: customerEmailInput.value
+  });
+  if (!customer.name || customers.some((item) => item.name.toLowerCase() === customer.name.toLowerCase())) return;
+  customers.push(customer);
+  customerNameInput.value = "";
+  customerContactInput.value = "";
+  customerEmailInput.value = "";
+  saveResources();
+  render();
+});
+
+customerList.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-customer-action]");
+  if (!button || !isAdmin()) return;
+  customers = customers.filter((customer) => customer.id !== button.dataset.id);
+  projects = projects.map((project) => project.customerId === button.dataset.id ? { ...project, customerId: "" } : project);
+  saveResources();
+  render();
+});
+
+managedFileInput.addEventListener("change", () => {
+  managedFileStatus.textContent = managedFileInput.files?.length
+    ? `${managedFileInput.files.length} ${text("filesSelected")}`
+    : text("noFilesSelected");
+});
+
+addManagedFilesButton.addEventListener("click", async () => {
+  if (!isAdmin() || !managedFileInput.files?.length) return;
+  try {
+    const files = await readSelectedAttachments(managedFileInput);
+    managedFiles.push(...files.map((file) => ({
+      ...file,
+      id: createId(),
+      uploadedBy: currentUser?.username || "",
+      createdAt: new Date().toISOString()
+    })));
+    managedFileInput.value = "";
+    managedFileStatus.textContent = text("noFilesSelected");
+    saveResources();
+    render();
+  } catch (error) {
+    alert(error.message || text("fileTooLarge"));
+  }
+});
+
+managedFileList.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-file-action]");
+  if (!button || !isAdmin()) return;
+  managedFiles = managedFiles.filter((file) => file.id !== button.dataset.id);
+  saveResources();
+  render();
+});
+
 projectInput.addEventListener("change", renderResourceControls);
 projectResourceInput.addEventListener("change", () => {
   if (projectResourceInput.value) {
@@ -3811,6 +4029,7 @@ projectForm.addEventListener("submit", (event) => {
   const progress = Math.min(100, Math.max(0, Number.parseInt(projectProgressInput.value || "0", 10)));
   const payload = {
     name: projectNameInput.value,
+    customerId: projectCustomerInput.value,
     managerId: projectLeaderInput.value,
     teamMemberIds: selectedProjectTeamMemberIds,
     start: projectStartDateInput.value,
@@ -4059,6 +4278,8 @@ resetDemo.addEventListener("click", () => {
   teams = demoTeamTemplates.map((team) => ({ ...team, memberIds: [...team.memberIds] }));
   projects = demoProjects.map((project) => ({ ...project }));
   projectLinks = demoProjectLinks.map((link) => ({ ...link }));
+  customers = demoCustomers.map((customer) => ({ ...customer }));
+  managedFiles = [];
   registers = [];
   trash = [];
   users = demoUsers.map((user) => ({ ...user }));
