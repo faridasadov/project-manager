@@ -298,7 +298,7 @@
           </div>
 
           <section class="resource-panel">
-          <details class="resource-block" open>
+          <details class="resource-block admin-wide settings-block" open>
             <summary>
               <span data-i18n="settings">Settings</span>
               <small data-i18n="new">Yeni</small>
@@ -388,13 +388,15 @@
                 <span data-i18n="ldapGroupRoleMap">Group-role mapping</span>
                 <textarea id="ldapGroupRoleMap" rows="3" placeholder='{"CN=Project Admins":"admin","CN=Project Managers":"manager"}'></textarea>
               </label>
-              <button id="saveSettings" class="primary" type="button" data-i18n="saveSettings">Settings saxla</button>
-              <button id="testMail" type="button" data-i18n="testMail">Mail test et</button>
-              <p id="settingsStatus" class="settings-status"></p>
+              <div class="settings-actions">
+                <button id="saveSettings" class="primary" type="button" data-i18n="saveSettings">Settings saxla</button>
+                <button id="testMail" type="button" data-i18n="testMail">Mail test et</button>
+                <p id="settingsStatus" class="settings-status"></p>
+              </div>
             </div>
           </details>
 
-          <details class="resource-block admin-only" open>
+          <details class="resource-block admin-wide admin-only">
             <summary>
               <span data-i18n="projects">Layihələr</span>
               <small id="projectCount">0</small>
@@ -404,7 +406,7 @@
             </div>
           </details>
 
-          <details class="resource-block">
+          <details class="resource-block admin-wide">
             <summary>
               <span data-i18n="manageUsers">Userlər</span>
               <small id="userCount">0</small>
@@ -487,7 +489,7 @@
             </div>
           </details>
 
-          <details class="resource-block">
+          <details class="resource-block admin-wide">
             <summary>
               <span data-i18n="projectRegisters">Layihə registerləri</span>
               <small id="registerCount">0</small>
@@ -542,7 +544,7 @@
             </div>
           </details>
 
-          <details class="resource-block">
+          <details class="resource-block admin-wide">
             <summary>
               <span data-i18n="trash">Zibil qutusu</span>
               <small id="trashCount">0</small>
