@@ -491,7 +491,8 @@ function defaultSettings() {
     ldapBindDn: "",
     ldapBindPassword: "",
     ldapGroupRoleMap: "",
-    workflowStatuses: ["Plan", "Davam edir", "Bitib"]
+    workflowStatuses: ["Plan", "Davam edir", "Bitib"],
+    capacityHours: 40
   };
 }
 
@@ -509,6 +510,7 @@ function publicSettings(settings, options = {}) {
     ldapBindPassword: options.includeSecrets ? merged.ldapBindPassword || "" : "",
     ldapBindPasswordSet: Boolean(merged.ldapBindPassword || process.env.LDAP_BIND_PASSWORD),
     ldapGroupRoleMap: merged.ldapGroupRoleMap || "",
+    capacityHours: Number(merged.capacityHours) || 40,
     workflowStatuses: Array.isArray(merged.workflowStatuses) && merged.workflowStatuses.length
       ? merged.workflowStatuses.map((status) => String(status || "").trim()).filter(Boolean)
       : ["Plan", "Davam edir", "Bitib"]
@@ -609,6 +611,9 @@ async function authenticateLdap(username, password, settings) {
 
 function normalizeTaskPayload(payload = {}) {
   const progress = Math.min(100, Math.max(0, Number.parseInt(payload.progress || "0", 10)));
+  const timeEntries = Array.isArray(payload.timeEntries)
+    ? payload.timeEntries.map(normalizeTimeEntry).filter(Boolean)
+    : [];
   return {
     id: payload.id || createId("task"),
     name: String(payload.name || "").trim(),
@@ -623,11 +628,31 @@ function normalizeTaskPayload(payload = {}) {
     notes: payload.notes || "",
     plannedHours: Number(payload.plannedHours) || 0,
     actualHours: Number(payload.actualHours) || 0,
+    timeEntries,
     parentTaskId: payload.parentTaskId || "",
     dependencyIds: Array.isArray(payload.dependencyIds) ? payload.dependencyIds : [],
     comments: Array.isArray(payload.comments) ? payload.comments : [],
     attachments: Array.isArray(payload.attachments) ? payload.attachments : []
   };
+}
+
+function normalizeTimeEntry(entry = {}) {
+  const hours = Number(entry.hours) || 0;
+  if (!hours) return null;
+  return {
+    id: entry.id || createId("time"),
+    user: entry.user || "",
+    hours,
+    date: entry.date || new Date().toISOString().slice(0, 10),
+    note: entry.note || "",
+    createdAt: entry.createdAt || new Date().toISOString()
+  };
+}
+
+function actualHoursFromTask(task = {}) {
+  const entries = Array.isArray(task.timeEntries) ? task.timeEntries : [];
+  if (!entries.length) return Number(task.actualHours) || 0;
+  return Math.round(entries.reduce((sum, entry) => sum + (Number(entry.hours) || 0), 0) * 100) / 100;
 }
 
 function normalizeProjectPayload(payload = {}) {
@@ -669,7 +694,7 @@ function stateToCsv(state) {
       task.end,
       task.progress,
       task.plannedHours || 0,
-      task.actualHours || 0,
+      actualHoursFromTask(task),
       task.parentTaskId || "",
       (task.dependencyIds || []).join(" | "),
       task.notes || ""
@@ -790,7 +815,7 @@ async function stateToPdf(state) {
       task.project || "-",
       task.status,
       resourceLabelFromState(state, task.owner),
-      `${task.plannedHours || 0}/${task.actualHours || 0}`,
+      `${task.plannedHours || 0}/${actualHoursFromTask(task)}`,
       `${task.progress || 0}%`
     ], [125, 95, 65, 75, 80, 75]);
   });

@@ -69,7 +69,7 @@ const ids = [
   "registerProject", "registerType", "registerTitle", "registerOwner", "registerStatus", "registerImpact", "registerDueDate", "registerMitigation", "addRegisterItem", "registerList", "registerCount",
   "projectCount", "themeMode", "backgroundStyle", "accentColor", "workflowStatusName", "addWorkflowStatus", "workflowStatusList",
   "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
-  "ldapBaseDn", "ldapUserFilter", "ldapBindDn", "ldapBindPassword", "ldapGroupRoleMap", "saveSettings", "testMail", "settingsStatus",
+  "capacityHours", "ldapBaseDn", "ldapUserFilter", "ldapBindDn", "ldapBindPassword", "ldapGroupRoleMap", "saveSettings", "testMail", "settingsStatus",
   "newUserFullName", "newUserPosition", "newUserEmail", "newUserAddress"
   , "loginScreen", "loginForm", "loginUsername", "loginPassword", "loginError",
   "logoutButton", "currentUserBadge", "newUsername", "newUserPassword",
@@ -92,6 +92,7 @@ elements["#priority"].options = [{ value: "Normal" }, { value: "Yüksək" }, { v
 elements["#progress"].value = "0";
 elements["#plannedHours"].value = "0";
 elements["#actualHours"].value = "0";
+elements["#capacityHours"].value = "40";
 elements["#projectStatus"].value = "Plan";
 elements["#projectStatus"].options = [{ value: "Plan" }, { value: "Davam edir" }, { value: "Bitib" }];
 elements["#projectPriority"].value = "Normal";

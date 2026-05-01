@@ -123,6 +123,11 @@ const translations = {
     workload: "Workload",
     teamCapacity: "Komanda yüklənməsi",
     capacityHours: "Capacity saat",
+    timeEntries: "Vaxt logları",
+    addTimeEntry: "Vaxt əlavə et",
+    timeEntryNote: "Qeyd",
+    loggedBy: "Qeyd edən",
+    hours: "Saat",
     notes: "Qeyd",
     notesPlaceholder: "Qısa qeyd yaz",
     save: "Yadda saxla",
@@ -375,6 +380,11 @@ const translations = {
     workload: "Workload",
     teamCapacity: "Загрузка команды",
     capacityHours: "Capacity часов",
+    timeEntries: "Логи времени",
+    addTimeEntry: "Добавить время",
+    timeEntryNote: "Заметка",
+    loggedBy: "Автор",
+    hours: "Часы",
     notes: "Заметка",
     notesPlaceholder: "Короткая заметка",
     save: "Сохранить",
@@ -621,6 +631,11 @@ const translations = {
     workload: "Workload",
     teamCapacity: "Team capacity",
     capacityHours: "Capacity hours",
+    timeEntries: "Time entries",
+    addTimeEntry: "Add time",
+    timeEntryNote: "Note",
+    loggedBy: "Logged by",
+    hours: "Hours",
     notes: "Notes",
     notesPlaceholder: "Write a short note",
     save: "Save",
@@ -1094,6 +1109,7 @@ const statusBars = document.querySelector("#statusBars");
 const upcomingList = document.querySelector("#upcomingList");
 const deadlineAlerts = document.querySelector("#deadlineAlerts");
 const workloadList = document.querySelector("#workloadList");
+const sidebarCapacityLabel = document.querySelector("#sidebarCapacityLabel");
 const totalCount = document.querySelector("#totalCount");
 const activeCount = document.querySelector("#activeCount");
 const doneCount = document.querySelector("#doneCount");
@@ -1185,6 +1201,7 @@ const accentColorInput = document.querySelector("#accentColor");
 const workflowStatusNameInput = document.querySelector("#workflowStatusName");
 const addWorkflowStatusButton = document.querySelector("#addWorkflowStatus");
 const workflowStatusList = document.querySelector("#workflowStatusList");
+const capacityHoursInput = document.querySelector("#capacityHours");
 const emailEnabledInput = document.querySelector("#emailEnabled");
 const emailRecipientsInput = document.querySelector("#emailRecipients");
 const emailProviderInput = document.querySelector("#emailProvider");
@@ -1315,6 +1332,7 @@ function syncSettingsForm() {
   ldapBindDnInput.value = appSettings.ldapBindDn || "";
   ldapBindPasswordInput.value = "";
   ldapGroupRoleMapInput.value = appSettings.ldapGroupRoleMap || "";
+  capacityHoursInput.value = Number(appSettings.capacityHours) || 40;
 }
 
 function changeLanguage(language) {
@@ -1577,6 +1595,7 @@ function normalizeTask(task) {
     dependencyIds: [],
     plannedHours: 0,
     actualHours: 0,
+    timeEntries: [],
     completionRequestedAt: "",
     completionRequestedBy: "",
     completedAt: "",
@@ -1588,7 +1607,21 @@ function normalizeTask(task) {
     ...task,
     plannedHours: Number(task.plannedHours) || 0,
     actualHours: Number(task.actualHours) || 0,
+    timeEntries: Array.isArray(task.timeEntries) ? task.timeEntries.map(normalizeTimeEntry).filter(Boolean) : [],
     dependencyIds: Array.isArray(task.dependencyIds) ? task.dependencyIds : []
+  };
+}
+
+function normalizeTimeEntry(entry) {
+  const hours = Number(entry?.hours) || 0;
+  if (!hours) return null;
+  return {
+    id: entry.id || createId(),
+    user: entry.user || "",
+    hours,
+    date: entry.date || isoDate(new Date()),
+    note: entry.note || "",
+    createdAt: entry.createdAt || new Date().toISOString()
   };
 }
 
@@ -1876,6 +1909,11 @@ function resourceLabel(value) {
   return value;
 }
 
+function userDisplayLabel(username) {
+  const user = users.find((item) => item.username === username || item.id === username);
+  return user ? user.profile?.fullName || user.username : username || "";
+}
+
 function resourceTypeLabel(value) {
   if (value.startsWith("user:")) return text("userRole");
   return value.startsWith("team:") ? text("team") : text("member");
@@ -1986,6 +2024,16 @@ function registerCounts(projectName = "") {
   };
 }
 
+function plannedHoursForTask(task) {
+  return Number(task.plannedHours) || 0;
+}
+
+function actualHoursForTask(task) {
+  const entries = Array.isArray(task.timeEntries) ? task.timeEntries : [];
+  if (!entries.length) return Number(task.actualHours) || 0;
+  return Math.round(entries.reduce((sum, entry) => sum + (Number(entry.hours) || 0), 0) * 100) / 100;
+}
+
 function workloadRows() {
   const activeTasks = accessibleTasks().filter((task) => task.status !== "Bitib");
   const capacity = Number(appSettings.capacityHours) || 40;
@@ -1994,8 +2042,8 @@ function workloadRows() {
     const owner = task.owner || task.projectResource || "";
     if (!owner) return;
     const current = rows.get(owner) || { owner, planned: 0, actual: 0, count: 0 };
-    current.planned += Number(task.plannedHours) || 0;
-    current.actual += Number(task.actualHours) || 0;
+    current.planned += plannedHoursForTask(task);
+    current.actual += actualHoursForTask(task);
     current.count += 1;
     rows.set(owner, current);
   });
@@ -2350,11 +2398,12 @@ function renderResourceControls() {
 
 function renderSummary() {
   const shownTasks = accessibleTasks();
+  if (sidebarCapacityLabel) sidebarCapacityLabel.textContent = `${Number(appSettings.capacityHours) || 40}h`;
   totalCount.textContent = shownTasks.length;
   activeCount.textContent = shownTasks.filter((task) => task.status !== "Bitib").length;
   doneCount.textContent = shownTasks.filter((task) => task.status === "Bitib").length;
-  const planned = shownTasks.reduce((sum, task) => sum + (Number(task.plannedHours) || 0), 0);
-  const actual = shownTasks.reduce((sum, task) => sum + (Number(task.actualHours) || 0), 0);
+  const planned = shownTasks.reduce((sum, task) => sum + plannedHoursForTask(task), 0);
+  const actual = shownTasks.reduce((sum, task) => sum + actualHoursForTask(task), 0);
   hoursSummary.textContent = `${planned} / ${actual}`;
 
   if (!shownTasks.length) {
@@ -2609,13 +2658,14 @@ function renderTaskList() {
           <span>${escapeHtml(getProject(task))}</span>
           <span>${shortDate(task.start)} - ${shortDate(task.end)}</span>
           <span>${escapeHtml(resourceLabel(task.owner))}</span>
-          <span>${text("plannedHours")}: ${Number(task.plannedHours) || 0}</span>
-          <span>${text("actualHours")}: ${Number(task.actualHours) || 0}</span>
+          <span>${text("plannedHours")}: ${plannedHoursForTask(task)}</span>
+          <span>${text("actualHours")}: ${actualHoursForTask(task)}</span>
         </div>
         ${renderTaskRelations(task)}
         ${task.notes ? `<p>${escapeHtml(task.notes)}</p>` : ""}
         <div class="progress-mini"><span style="width:${Number(task.progress) || 0}%"></span></div>
         ${renderAttachments(task)}
+        ${renderTimeEntries(task)}
         ${renderComments(task)}
       </div>
       ${renderTaskActions(task)}
@@ -2682,6 +2732,39 @@ function renderTaskActions(task) {
       `;
   }
   return `<div class="task-actions">${actions}</div>`;
+}
+
+function renderTimeEntries(task) {
+  const entries = Array.isArray(task.timeEntries) ? task.timeEntries : [];
+  const items = entries.length ? entries.map((entry) => `
+    <div class="comment-item time-entry-item">
+      <div class="comment-head">
+        <strong>${escapeHtml(entry.hours)} ${text("hours")}</strong>
+        <time datetime="${escapeHtml(entry.date || "")}">${escapeHtml(shortDate(entry.date))}</time>
+      </div>
+      <span>${text("loggedBy")}: ${escapeHtml(userDisplayLabel(entry.user) || "-")}</span>
+      ${entry.note ? `<span>${escapeHtml(entry.note)}</span>` : ""}
+    </div>
+  `).join("") : `<div class="comment-empty">${text("empty")}</div>`;
+
+  const formHtml = task.status === "Bitib" ? "" : `
+      <form class="time-entry-form" data-task-id="${task.id}">
+        <div class="time-entry-grid">
+          <input name="hours" type="number" min="0.25" step="0.25" placeholder="${text("hours")}" required>
+          <input name="date" type="date" value="${isoDate(new Date())}" required>
+        </div>
+        <input name="note" type="text" placeholder="${text("timeEntryNote")}">
+        <button type="submit">${text("addTimeEntry")}</button>
+      </form>
+  `;
+
+  return `
+    <div class="comments time-entries">
+      <h4>${text("timeEntries")}</h4>
+      ${items}
+      ${formHtml}
+    </div>
+  `;
 }
 
 function renderComments(task) {
@@ -2813,8 +2896,8 @@ function renderReports() {
         <span>${statusLabel(task.status)}</span>
         <span>${text("start")}: ${escapeHtml(shortDate(task.start))}</span>
         <span>${text("executedBy")}: ${escapeHtml(resourceLabel(task.owner))}</span>
-        <span>${text("plannedHours")}: ${Number(task.plannedHours) || 0}</span>
-        <span>${text("actualHours")}: ${Number(task.actualHours) || 0}</span>
+        <span>${text("plannedHours")}: ${plannedHoursForTask(task)}</span>
+        <span>${text("actualHours")}: ${actualHoursForTask(task)}</span>
         <span>${text("requestedAt")}: ${escapeHtml(formatDateTime(task.completionRequestedAt) || "-")}</span>
         <span>${text("approvedAt")}: ${escapeHtml(formatDateTime(task.approvedAt) || "-")}</span>
       </div>
@@ -3058,7 +3141,8 @@ async function saveBackendSettings() {
         ldapBindDn: appSettings.ldapBindDn,
         ldapBindPassword: appSettings.ldapBindPassword,
         ldapGroupRoleMap: appSettings.ldapGroupRoleMap,
-        workflowStatuses: appSettings.workflowStatuses
+        workflowStatuses: appSettings.workflowStatuses,
+        capacityHours: appSettings.capacityHours
       })
     });
   } catch (error) {
@@ -3084,7 +3168,8 @@ async function syncBackendSettings() {
       ldapBindDn: serverSettings.ldapBindDn || "",
       ldapBindPassword: "",
       ldapGroupRoleMap: serverSettings.ldapGroupRoleMap || "",
-      workflowStatuses: normalizeWorkflowStatuses(serverSettings.workflowStatuses || appSettings.workflowStatuses)
+      workflowStatuses: normalizeWorkflowStatuses(serverSettings.workflowStatuses || appSettings.workflowStatuses),
+      capacityHours: Number(serverSettings.capacityHours) || appSettings.capacityHours || 40
     };
     syncWorkflowStatuses();
     saveAppSettings();
@@ -3249,6 +3334,7 @@ form.addEventListener("submit", async (event) => {
     notes: notesInput.value.trim(),
     parentTaskId: parentTaskInput.value,
     dependencyIds: [...taskDependenciesInput.selectedOptions].map((option) => option.value).filter((id) => id !== taskId.value),
+    timeEntries: existingTask?.timeEntries || [],
     comments: existingTask?.comments || [],
     attachments: existingTask?.attachments || []
   };
@@ -3280,6 +3366,29 @@ form.addEventListener("submit", async (event) => {
   });
 
   container.addEventListener("submit", async (event) => {
+    const timeEntryForm = event.target.closest(".time-entry-form");
+    if (timeEntryForm?.elements?.hours && currentUser) {
+      event.preventDefault();
+      const task = tasks.find((item) => item.id === timeEntryForm.dataset.taskId);
+      const hours = Number(timeEntryForm.elements.hours.value) || 0;
+      const date = timeEntryForm.elements.date?.value || isoDate(new Date());
+      const note = timeEntryForm.elements.note?.value?.trim() || "";
+      if (!task || hours <= 0) return;
+      task.timeEntries = Array.isArray(task.timeEntries) ? task.timeEntries : [];
+      task.timeEntries.push({
+        id: createId(),
+        user: currentUser.username,
+        hours,
+        date,
+        note,
+        createdAt: new Date().toISOString()
+      });
+      task.actualHours = actualHoursForTask(task);
+      saveTasks();
+      render();
+      return;
+    }
+
     const commentForm = event.target.closest(".comment-form");
     if (!commentForm || !currentUser) return;
     event.preventDefault();
@@ -3334,7 +3443,7 @@ statusFilters.addEventListener("click", (event) => {
 viewTabs.forEach((button) => {
   button.addEventListener("click", () => {
     currentView = button.dataset.view;
-    viewTabs.forEach((item) => item.classList.toggle("active", item === button));
+    viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === currentView));
     renderViews();
   });
 });
@@ -3519,6 +3628,7 @@ saveSettingsButton.addEventListener("click", () => {
     ldapBindDn: isAdmin() ? ldapBindDnInput.value.trim() : appSettings.ldapBindDn,
     ldapBindPassword: isAdmin() ? ldapBindPasswordInput.value : appSettings.ldapBindPassword,
     ldapGroupRoleMap: isAdmin() ? ldapGroupRoleMapInput.value.trim() : appSettings.ldapGroupRoleMap,
+    capacityHours: isAdmin() ? Number(capacityHoursInput.value) || 40 : appSettings.capacityHours,
     workflowStatuses: normalizeWorkflowStatuses(appSettings.workflowStatuses)
   };
   syncWorkflowStatuses();

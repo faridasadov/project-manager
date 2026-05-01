@@ -32,6 +32,28 @@
     </section>
 
     <div id="appShell">
+    <aside class="novo-sidebar" aria-label="Əsas naviqasiya">
+      <div class="novo-brand">
+        <span>PM</span>
+        <div>
+          <strong>Project Manager</strong>
+          <small data-i18n="appKicker">Project workspace</small>
+        </div>
+      </div>
+      <nav class="sidebar-menu">
+        <button class="view-tab active" data-view="dashboard" type="button">Dashboard</button>
+        <button class="view-tab" data-view="projects" type="button" data-i18n="projects">Layihələr</button>
+        <button class="view-tab" data-view="list" type="button" data-i18n="list">Tasklar</button>
+        <button class="view-tab" data-view="kanban" type="button">Kanban</button>
+        <button class="view-tab" data-view="calendar" type="button" data-i18n="calendar">Calendar</button>
+        <button class="view-tab" data-view="gantt" type="button">Gantt</button>
+        <button class="view-tab" data-view="reports" type="button" data-i18n="reports">Hesabat</button>
+      </nav>
+      <div class="sidebar-footer">
+        <span data-i18n="teamCapacity">Komanda yüklənməsi</span>
+        <strong id="sidebarCapacityLabel">40h</strong>
+      </div>
+    </aside>
     <header class="top-shell">
       <div>
         <p class="kicker" data-i18n="appKicker">Project workspace</p>
@@ -322,6 +344,10 @@
                   <button id="addWorkflowStatus" type="button" data-i18n="addWorkflowStatus">Status əlavə et</button>
                 </div>
               </div>
+              <label class="admin-only">
+                <span data-i18n="capacityHours">Capacity saat</span>
+                <input id="capacityHours" type="number" min="1" step="1" value="40">
+              </label>
               <label class="toggle-row admin-only">
                 <input id="emailEnabled" type="checkbox">
                 <span data-i18n="emailNotifications">Mail bildirişləri</span>
