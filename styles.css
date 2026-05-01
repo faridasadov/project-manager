@@ -243,10 +243,11 @@ button:hover {
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 18px;
-  padding: 22px 18px;
-  background: var(--sidebar);
-  color: #fff;
-  box-shadow: 10px 0 30px rgba(15, 23, 42, 0.18);
+  padding: 18px 14px;
+  background: var(--panel);
+  color: var(--ink);
+  border-right: 1px solid var(--line);
+  box-shadow: 8px 0 28px rgba(15, 23, 42, 0.08);
 }
 
 .novo-brand {
@@ -254,17 +255,18 @@ button:hover {
   grid-template-columns: 46px 1fr;
   gap: 12px;
   align-items: center;
-  padding-bottom: 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  padding: 4px 8px 18px;
+  border-bottom: 1px solid var(--line);
 }
 
-.novo-brand > span {
+.brand-mark {
   width: 46px;
   height: 46px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
-  background: #4656e8;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4656e8, #00b894);
+  color: #fff;
   font-weight: 900;
 }
 
@@ -275,7 +277,7 @@ button:hover {
 
 .novo-brand small,
 .sidebar-footer span {
-  color: var(--sidebar-muted);
+  color: var(--muted);
   font-size: 0.74rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -284,24 +286,56 @@ button:hover {
 .sidebar-menu {
   display: grid;
   align-content: start;
-  gap: 7px;
+  gap: 6px;
+}
+
+.sidebar-section-label {
+  display: block;
+  margin: 12px 10px 4px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .sidebar-menu .view-tab {
   width: 100%;
-  min-height: 42px;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  align-items: center;
+  gap: 10px;
   justify-content: flex-start;
   border-color: transparent;
   background: transparent;
-  color: var(--sidebar-muted);
+  color: var(--muted);
   font-weight: 800;
   text-align: left;
+  padding: 0 10px;
 }
 
 .sidebar-menu .view-tab:hover,
 .sidebar-menu .view-tab.active {
-  background: rgba(255, 255, 255, 0.10);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: color-mix(in srgb, var(--teal) 10%, var(--panel));
+  border-color: color-mix(in srgb, var(--teal) 22%, var(--line));
+  color: var(--teal);
+}
+
+.menu-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.sidebar-menu .view-tab.active .menu-icon,
+.sidebar-menu .view-tab:hover .menu-icon {
+  background: var(--teal);
   color: #fff;
 }
 
@@ -311,9 +345,9 @@ button:hover {
   gap: 10px;
   align-items: center;
   padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft);
 }
 
 .top-shell {
@@ -673,9 +707,27 @@ form {
 
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(190px, 1fr));
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
   align-items: start;
   gap: 12px;
+}
+
+.settings-card {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-height: 100%;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 88%, var(--soft));
+}
+
+.settings-card h3 {
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 1rem;
 }
 
 .settings-grid .toggle-row {
@@ -690,11 +742,6 @@ form {
 .workflow-settings {
   display: grid;
   gap: 8px;
-  grid-column: 1 / -1;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--soft);
 }
 
 .workflow-status-list {
