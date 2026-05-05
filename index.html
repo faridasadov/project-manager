@@ -47,7 +47,7 @@
         <button class="view-tab" data-view="list" type="button"><span class="menu-icon">T</span><span data-i18n="list">Tasklar</span></button>
         <span class="sidebar-section-label">Work</span>
         <button class="view-tab" data-view="kanban" type="button"><span class="menu-icon">K</span><span>Kanban</span></button>
-        <button class="view-tab" data-view="calendar" type="button"><span class="menu-icon">C</span><span data-i18n="calendar">Calendar</span></button>
+        <button class="view-tab no-menu-icon" data-view="calendar" type="button"><span data-i18n="calendar">Təqvim</span></button>
         <button class="view-tab" data-view="gantt" type="button"><span class="menu-icon">G</span><span>Gantt</span></button>
         <button class="view-tab" data-view="reports" type="button"><span class="menu-icon">R</span><span data-i18n="reports">Hesabat</span></button>
       </nav>
@@ -331,6 +331,11 @@
                     <option value="paper" data-i18n="backgroundPaper">Kağız</option>
                     <option value="steel" data-i18n="backgroundSteel">Steel</option>
                     <option value="sunrise" data-i18n="backgroundSunrise">Sunrise</option>
+                    <option value="aurora" data-i18n="backgroundAurora">Aurora</option>
+                    <option value="circuit" data-i18n="backgroundCircuit">Circuit</option>
+                    <option value="mist" data-i18n="backgroundMist">Mist</option>
+                    <option value="carbon" data-i18n="backgroundCarbon">Carbon</option>
+                    <option value="canopy" data-i18n="backgroundCanopy">Canopy</option>
                   </select>
                 </label>
                 <label>
@@ -650,7 +655,7 @@
             <button class="view-tab" data-view="projects" type="button" data-i18n="projects">Layihələr</button>
             <button class="view-tab" data-view="list" type="button" data-i18n="list">Tasklar</button>
             <button class="view-tab" data-view="kanban" type="button">Kanban</button>
-            <button class="view-tab" data-view="calendar" type="button" data-i18n="calendar">Calendar</button>
+            <button class="view-tab" data-view="calendar" type="button" data-i18n="calendar">Təqvim</button>
             <button class="view-tab" data-view="gantt" type="button">Gantt</button>
             <button class="view-tab" data-view="reports" type="button" data-i18n="reports">Hesabat</button>
           </div>
@@ -728,8 +733,8 @@
             <article class="panel">
               <div class="section-head">
                 <div>
-                  <p class="kicker" data-i18n="calendar">Calendar</p>
-                  <h2 data-i18n="deadlineCalendar">Deadline calendar</h2>
+                  <p class="kicker" data-i18n="calendar">Təqvim</p>
+                  <h2 data-i18n="deadlineCalendar">Deadline təqvimi</h2>
                 </div>
               </div>
               <div class="calendar-controls">
@@ -805,8 +810,8 @@
           <div class="panel">
             <div class="section-head">
               <div>
-                <p class="kicker" data-i18n="calendar">Calendar</p>
-                <h2 data-i18n="deadlineCalendar">Deadline calendar</h2>
+                <p class="kicker" data-i18n="calendar">Təqvim</p>
+                <h2 data-i18n="deadlineCalendar">Deadline təqvimi</h2>
               </div>
             </div>
             <div class="calendar-controls">

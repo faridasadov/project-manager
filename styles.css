@@ -4,6 +4,7 @@
   --muted: #647184;
   --panel: #ffffff;
   --line: #e4e9f2;
+  --field: #ffffff;
   --teal: #4656e8;
   --blue: #2563eb;
   --amber: #f59e0b;
@@ -28,12 +29,13 @@ body {
 }
 
 body.dark-mode {
-  --bg: #111827;
-  --ink: #e5edf4;
-  --muted: #a7b2c0;
-  --panel: #16202d;
-  --line: #334155;
-  --soft: #1f2937;
+  --bg: #0f1724;
+  --ink: #f3f7fb;
+  --muted: #c4cfdd;
+  --panel: #182235;
+  --line: #3c4a61;
+  --field: #111b2d;
+  --soft: #223047;
   --sidebar: #0f172a;
   --sidebar-muted: #94a3b8;
   --shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
@@ -78,6 +80,58 @@ body[data-background="sunrise"] {
     linear-gradient(135deg, rgba(217, 119, 6, 0.18), transparent 34%),
     linear-gradient(225deg, rgba(220, 38, 38, 0.10), transparent 30%),
     var(--bg);
+}
+
+body[data-background="aurora"] {
+  background:
+    linear-gradient(125deg, rgba(20, 184, 166, 0.17), transparent 35%),
+    linear-gradient(245deg, rgba(99, 102, 241, 0.14), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), transparent),
+    var(--bg);
+}
+
+body[data-background="circuit"] {
+  background:
+    linear-gradient(rgba(70, 86, 232, 0.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(22, 163, 74, 0.10) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.04), transparent 42%),
+    var(--bg);
+  background-size: 42px 42px, 42px 42px, auto;
+}
+
+body[data-background="mist"] {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.80), transparent 42%),
+    linear-gradient(120deg, rgba(14, 165, 233, 0.12), transparent 32%),
+    linear-gradient(260deg, rgba(22, 163, 74, 0.10), transparent 34%),
+    var(--bg);
+}
+
+body[data-background="carbon"] {
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.12) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(15, 23, 42, 0.10) 25%, transparent 25%),
+    var(--bg);
+  background-size: 22px 22px;
+}
+
+body[data-background="canopy"] {
+  background:
+    linear-gradient(120deg, rgba(22, 163, 74, 0.15), transparent 34%),
+    linear-gradient(250deg, rgba(245, 158, 11, 0.10), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.52), transparent),
+    var(--bg);
+}
+
+body.dark-mode[data-background="aurora"],
+body.dark-mode[data-background="mist"],
+body.dark-mode[data-background="canopy"] {
+  background-blend-mode: screen, normal, normal, normal;
+}
+
+body.dark-mode[data-background="carbon"],
+body.dark-mode[data-background="circuit"] {
+  background-color: var(--bg);
 }
 
 body[data-accent="blue"] {
@@ -312,6 +366,11 @@ button:hover {
   font-weight: 800;
   text-align: left;
   padding: 0 10px;
+}
+
+.sidebar-menu .view-tab.no-menu-icon {
+  grid-template-columns: 1fr;
+  padding-left: 54px;
 }
 
 .sidebar-menu .view-tab:hover,
@@ -977,9 +1036,14 @@ textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: var(--panel);
+  background: var(--field);
   color: var(--ink);
   padding: 10px 11px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, var(--muted) 82%, transparent);
 }
 
 textarea {
@@ -1176,7 +1240,7 @@ textarea:focus {
 .calendar-day.selected {
   border-color: var(--teal);
   background: color-mix(in srgb, var(--panel) 80%, var(--teal) 10%);
-  outline: 3px solid rgba(15, 118, 110, 0.16);
+  outline: 3px solid color-mix(in srgb, var(--teal) 24%, transparent);
 }
 
 .calendar-day strong {
@@ -1289,13 +1353,13 @@ textarea:focus {
 }
 
 .compact-item.danger {
-  border-color: #fecaca;
-  background: #fff7f7;
+  border-color: color-mix(in srgb, var(--red) 34%, var(--line));
+  background: color-mix(in srgb, var(--panel) 88%, var(--red) 7%);
 }
 
 .compact-item.warning {
-  border-color: #fde68a;
-  background: #fffbeb;
+  border-color: color-mix(in srgb, var(--amber) 36%, var(--line));
+  background: color-mix(in srgb, var(--panel) 88%, var(--amber) 9%);
 }
 
 .task-card {
@@ -1337,8 +1401,8 @@ textarea:focus {
   justify-content: center;
   min-height: 34px;
   border-radius: 7px;
-  background: #fff7ed;
-  color: #c2410c;
+  background: color-mix(in srgb, var(--panel) 82%, var(--amber) 14%);
+  color: color-mix(in srgb, var(--amber) 72%, var(--ink));
   padding: 0 10px;
   font-size: 0.82rem;
   font-weight: 900;
@@ -1381,17 +1445,17 @@ textarea:focus {
 .badge {
   border-radius: 999px;
   padding: 3px 9px;
-  background: #edf2f4;
+  background: var(--soft);
 }
 
 .badge.high {
   color: var(--red);
-  background: #fee2e2;
+  background: color-mix(in srgb, var(--panel) 80%, var(--red) 13%);
 }
 
 .badge.done {
   color: var(--green);
-  background: #dcfce7;
+  background: color-mix(in srgb, var(--panel) 78%, var(--green) 16%);
 }
 
 .badge.active {
@@ -1430,9 +1494,9 @@ textarea:focus {
   align-items: center;
   max-width: 240px;
   min-height: 30px;
-  border: 1px solid #d6e0e3;
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: #fff;
+  background: var(--field);
   color: var(--muted);
   padding: 0 10px;
   font-size: 0.82rem;
@@ -1465,8 +1529,8 @@ textarea:focus {
   gap: 5px;
   padding: 8px 10px;
   border-radius: 7px;
-  background: #fff;
-  border: 1px solid #e5ecef;
+  background: var(--field);
+  border: 1px solid var(--line);
 }
 
 .comment-head {
@@ -1514,9 +1578,9 @@ textarea:focus {
   min-height: 34px;
   display: inline-flex;
   align-items: center;
-  border: 1px solid #c9d7da;
+  border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fff;
+  background: var(--field);
   color: var(--ink);
   padding: 0 12px;
   font-size: 0.88rem;
@@ -1560,10 +1624,10 @@ textarea:focus {
 
 .kanban-column {
   min-height: 320px;
-  border: 1px dashed #b8c7ca;
+  border: 1px dashed color-mix(in srgb, var(--muted) 48%, var(--line));
   border-radius: 8px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.65);
+  background: color-mix(in srgb, var(--panel) 78%, transparent);
 }
 
 .kanban-column h2 {
@@ -1599,7 +1663,7 @@ textarea:focus {
 }
 
 .gantt-header {
-  background: #f7fbfb;
+  background: var(--soft);
   border-bottom: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.84rem;
