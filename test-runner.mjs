@@ -57,6 +57,7 @@ function element(selector, value = "") {
 const ids = [
   "taskForm", "formTitle", "taskId", "taskName", "project", "startDate", "endDate",
   "projectResource", "status", "priority", "owner", "progress", "plannedHours", "actualHours", "notes", "parentTask", "taskDependencies", "cancelEdit", "gantt", "reports",
+  "ganttZoomOut", "ganttZoomIn",
   "kanban", "dashboardCalendar", "calendarBoard", "calendarDetails", "dashboardCalendarStart",
   "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusFilters", "statusBars", "upcomingList",
   "deadlineAlerts", "workloadList", "projectCards", "archivedProjectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
@@ -74,7 +75,8 @@ const ids = [
   "registerProject", "registerType", "registerTitle", "registerOwner", "registerStatus", "registerImpact", "registerDueDate", "registerMitigation", "addRegisterItem", "registerList", "registerCount",
   "projectCount", "customerName", "customerContact", "customerEmail", "addCustomer", "customerList", "customerCount", "managedFileInput", "managedFileStatus", "addManagedFiles", "managedFileList", "fileCount",
   "themeMode", "backgroundStyle", "accentColor", "workflowStatusName", "addWorkflowStatus", "workflowStatusList",
-  "emailEnabled", "emailRecipients", "emailProvider", "ldapEnabled", "ldapUrl",
+  "emailEnabled", "emailRecipients", "emailProvider", "mailSubjectTemplate", "mailBodyTemplate", "testMailBody", "ldapEnabled", "ldapUrl",
+  "refreshAuditLogs", "refreshMailHistory", "auditLogList", "mailHistoryList",
   "capacityHours", "ldapBaseDn", "ldapUserFilter", "ldapBindDn", "ldapBindPassword", "ldapGroupRoleMap", "saveSettings", "testMail", "testLdap", "settingsStatus",
   "newUserFullName", "newUserPosition", "newUserEmail", "newUserAddress"
   , "loginScreen", "loginForm", "loginUsername", "loginPassword", "loginError",
@@ -178,11 +180,15 @@ vm.runInContext(readFileSync(join(rootDir, "script.js"), "utf8"), context);
 
 assert.equal(elements["#totalCount"].textContent, 19, "clinic count renders");
 assert.match(elements["#gantt"].innerHTML, /Klinika İT Portfeli/, "gantt renders project row first");
-assert.doesNotMatch(elements["#gantt"].innerHTML, /Əsas server otağı/, "gantt hides task rows before project expand");
+assert.doesNotMatch(elements["#gantt"].innerHTML, /gantt-detail-row/, "gantt hides task rows before project expand");
 elements["#gantt"].dispatch("click", {
   target: { closest: () => ({ dataset: { ganttProject: "Klinika İT Portfeli" } }) }
 });
 assert.match(elements["#gantt"].innerHTML, /Əsas server otağı/, "gantt opens project task rows on click");
+assert.match(elements["#gantt"].innerHTML, /gantt-task-track/, "gantt renders task tracks for every expanded row");
+assert.match(elements["#gantt"].innerHTML, /gantt-milestone/, "gantt renders milestone markers");
+assert.match(elements["#gantt"].innerHTML, /gantt-dependency-arrow/, "gantt renders dependency arrows");
+assert.match(elements["#gantt"].innerHTML, /data-gantt-bar/, "gantt bars are draggable");
 assert.match(elements["#kanban"].innerHTML, /Plan/, "kanban renders");
 assert.match(elements["#calendarBoard"].innerHTML, /Klinika İT Portfeli|Radiologiya|Server avadanlıqları/, "calendar renders clinic project tasks");
 assert.match(elements["#dashboardCalendar"].innerHTML, /data-calendar-day/, "dashboard calendar renders clickable days");

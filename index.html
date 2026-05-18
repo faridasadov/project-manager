@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-  <link rel="stylesheet" href="styles.css?v=20260429-calendar-range">
+  <link rel="stylesheet" href="styles.css?v=20260518-admin-import-dashboard">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
@@ -298,11 +298,11 @@
             <button id="exportPdf" type="button" data-i18n="exportPdf">PDF export</button>
             <label class="import-button">
               <span data-i18n="importData">Import</span>
-              <input id="importData" type="file" accept="application/json">
+              <input id="importData" type="file" accept="application/json,.json,.csv,.xml,.mpp">
             </label>
             <button id="clearDone" type="button" data-i18n="clearDone">Bitənləri təmizlə</button>
-            <button id="loadClinicPortfolio" type="button" data-i18n="loadClinicPortfolio">Klinika yüklə</button>
-            <button id="resetDemo" type="button" data-i18n="resetDemo">Klinika resetlə</button>
+            <button id="loadClinicPortfolio" type="button" data-i18n="loadClinicPortfolio">Proyekt yüklə</button>
+            <button id="resetDemo" type="button" data-i18n="resetDemo">Proyekti resetlə</button>
           </div>
 
           <section class="resource-panel">
@@ -378,8 +378,21 @@
                   <input id="emailRecipients" type="email" multiple placeholder="admin@example.com" data-i18n-placeholder="emailRecipientsPlaceholder">
                 </label>
                 <label>
-                  <span data-i18n="emailProvider">Mail provider/API</span>
-                  <input id="emailProvider" type="text" placeholder="Backend API URL" data-i18n-placeholder="emailProviderPlaceholder">
+                  <span data-i18n="emailProvider">SMTP və ya API endpoint</span>
+                  <input id="emailProvider" type="text" placeholder="smtps://user:app-password@smtp.gmail.com:465" data-i18n-placeholder="emailProviderPlaceholder">
+                </label>
+                <small class="field-hint" data-i18n="emailProviderHint">Gmail üçün App Password yaradın və smtps://user:app-password@smtp.gmail.com:465 formatında yazın.</small>
+                <label>
+                  <span data-i18n="mailSubjectTemplate">Deadline mövzusu</span>
+                  <input id="mailSubjectTemplate" type="text" placeholder="Project Manager deadline alerts">
+                </label>
+                <label>
+                  <span data-i18n="mailBodyTemplate">Deadline şablonu</span>
+                  <textarea id="mailBodyTemplate" rows="4" placeholder="{{alerts}}"></textarea>
+                </label>
+                <label>
+                  <span data-i18n="testMailBody">Test mail mətni</span>
+                  <textarea id="testMailBody" rows="3" placeholder="Project Manager mail ayarları test edildi."></textarea>
                 </label>
                 <button id="testMail" type="button" data-i18n="testMail">Mail test et</button>
               </div>
@@ -418,6 +431,39 @@
               <div class="settings-actions">
                 <button id="saveSettings" class="primary" type="button" data-i18n="saveSettings">Settings saxla</button>
                 <p id="settingsStatus" class="settings-status"></p>
+              </div>
+            </div>
+          </details>
+
+          <details class="resource-block admin-wide admin-only">
+            <summary>
+              <span data-i18n="projectImport">Proyekt import</span>
+              <small>CSV / XML</small>
+            </summary>
+            <div class="resource-body">
+              <p class="field-hint" data-i18n="projectImportHint">Import düyməsi JSON backup, Excel CSV və MS Project XML fayllarını qəbul edir. CSV başlıqları: Project, Task, Start, End, Status, Priority, Progress, Owner, Dependencies, Milestone.</p>
+            </div>
+          </details>
+
+          <details class="resource-block admin-wide admin-only" open>
+            <summary>
+              <span data-i18n="adminActivity">Admin aktivliyi</span>
+              <small data-i18n="new">Yeni</small>
+            </summary>
+            <div class="resource-body">
+              <div class="inline-editor">
+                <button id="refreshAuditLogs" type="button" data-i18n="refresh">Yenilə</button>
+                <button id="refreshMailHistory" type="button" data-i18n="mailHistory">Mail history</button>
+              </div>
+              <div class="activity-grid">
+                <div>
+                  <h3 data-i18n="auditLogs">Audit logs</h3>
+                  <div id="auditLogList" class="resource-list activity-list"></div>
+                </div>
+                <div>
+                  <h3 data-i18n="mailHistory">Mail history</h3>
+                  <div id="mailHistoryList" class="resource-list activity-list"></div>
+                </div>
               </div>
             </div>
           </details>
@@ -711,38 +757,54 @@
 
         <section id="dashboardView" class="view active-view">
           <div class="insight-grid">
-            <article class="panel">
+            <article class="panel dashboard-panel" data-dashboard-panel="status" draggable="true">
               <div class="section-head">
                 <div>
                   <p class="kicker" data-i18n="status">Status</p>
                   <h2 data-i18n="executionStatus">İcra vəziyyəti</h2>
                 </div>
+                <div class="panel-size-controls" aria-label="Panel ölçüsü">
+                  <button type="button" data-panel-size="compact" title="Kiçilt">−</button>
+                  <button type="button" data-panel-size="wide" title="Böyüt">+</button>
+                </div>
               </div>
               <div id="statusBars" class="status-bars"></div>
             </article>
-            <article class="panel">
+            <article class="panel dashboard-panel" data-dashboard-panel="upcoming" draggable="true">
               <div class="section-head">
                 <div>
                   <p class="kicker">Deadline</p>
                   <h2 data-i18n="upcomingTasks">Yaxın tasklar</h2>
                 </div>
+                <div class="panel-size-controls" aria-label="Panel ölçüsü">
+                  <button type="button" data-panel-size="compact" title="Kiçilt">−</button>
+                  <button type="button" data-panel-size="wide" title="Böyüt">+</button>
+                </div>
               </div>
               <div id="upcomingList" class="compact-list"></div>
             </article>
-            <article class="panel">
+            <article class="panel dashboard-panel" data-dashboard-panel="alerts" draggable="true">
               <div class="section-head">
                 <div>
                   <p class="kicker" data-i18n="risk">Risk</p>
                   <h2 data-i18n="deadlineAlerts">Deadline xəbərdarlıqları</h2>
                 </div>
+                <div class="panel-size-controls" aria-label="Panel ölçüsü">
+                  <button type="button" data-panel-size="compact" title="Kiçilt">−</button>
+                  <button type="button" data-panel-size="wide" title="Böyüt">+</button>
+                </div>
               </div>
               <div id="deadlineAlerts" class="compact-list"></div>
             </article>
-            <article class="panel">
+            <article class="panel dashboard-panel" data-dashboard-panel="workload" draggable="true">
               <div class="section-head">
                 <div>
                   <p class="kicker" data-i18n="workload">Workload</p>
                   <h2 data-i18n="teamCapacity">Komanda yüklənməsi</h2>
+                </div>
+                <div class="panel-size-controls" aria-label="Panel ölçüsü">
+                  <button type="button" data-panel-size="compact" title="Kiçilt">−</button>
+                  <button type="button" data-panel-size="wide" title="Böyüt">+</button>
                 </div>
               </div>
               <div id="workloadList" class="compact-list"></div>
@@ -848,6 +910,10 @@
                 <p class="kicker">Timeline</p>
                 <h2 data-i18n="ganttChart">Gantt cədvəli</h2>
               </div>
+              <div class="gantt-controls" aria-label="Gantt controls">
+                <button id="ganttZoomOut" type="button" title="Kiçilt">−</button>
+                <button id="ganttZoomIn" type="button" title="Böyüt">+</button>
+              </div>
             </div>
             <div id="gantt" class="gantt" aria-live="polite"></div>
           </div>
@@ -868,6 +934,6 @@
     </main>
     </div>
 
-  <script src="script.js?v=20260429-calendar-range"></script>
+  <script src="script.js?v=20260518-admin-import-dashboard"></script>
 </body>
 </html>

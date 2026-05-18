@@ -22,8 +22,8 @@ const translations = {
     appKicker: "Project workspace",
     appTitle: "Plan, task və icra paneli",
     clearDone: "Bitənləri təmizlə",
-    resetDemo: "Klinika resetlə",
-    loadClinicPortfolio: "Klinika yüklə",
+    resetDemo: "Proyekti resetlə",
+    loadClinicPortfolio: "Proyekt yüklə",
     adminPanel: "Admin panel",
     close: "Bağla",
     settings: "Settings",
@@ -61,8 +61,21 @@ const translations = {
     emailNotifications: "Mail bildirişləri",
     emailRecipients: "Mail alanlar",
     emailRecipientsPlaceholder: "admin@example.com",
-    emailProvider: "Mail provider/API",
-    emailProviderPlaceholder: "Backend API URL",
+    emailProvider: "SMTP və ya API endpoint",
+    emailProviderPlaceholder: "smtps://user:app-password@smtp.gmail.com:465",
+    emailProviderHint: "Gmail üçün App Password yaradın və smtps://user:app-password@smtp.gmail.com:465 formatında yazın.",
+    mailSubjectTemplate: "Deadline mövzusu",
+    mailBodyTemplate: "Deadline şablonu",
+    testMailBody: "Test mail mətni",
+    projectImport: "Proyekt import",
+    projectImportHint: "Import düyməsi JSON backup, Excel CSV və MS Project XML fayllarını qəbul edir. CSV başlıqları: Project, Task, Start, End, Status, Priority, Progress, Owner, Dependencies, Milestone.",
+    adminActivity: "Admin aktivliyi",
+    auditLogs: "Audit logs",
+    mailHistory: "Mail history",
+    refresh: "Yenilə",
+    importDone: "Import tamamlandı.",
+    panelCompact: "Kiçilt",
+    panelWide: "Böyüt",
     workflowStatuses: "Workflow statusları",
     newWorkflowStatus: "Yeni status",
     addWorkflowStatus: "Status əlavə et",
@@ -307,8 +320,8 @@ const translations = {
     appKicker: "Рабочее пространство",
     appTitle: "План, таски и панель контроля",
     clearDone: "Очистить выполненные",
-    resetDemo: "Сбросить клинику",
-    loadClinicPortfolio: "Загрузить клинику",
+    resetDemo: "Сбросить проект",
+    loadClinicPortfolio: "Загрузить проект",
     adminPanel: "Админ панель",
     close: "Закрыть",
     settings: "Настройки",
@@ -346,8 +359,21 @@ const translations = {
     emailNotifications: "Email уведомления",
     emailRecipients: "Получатели",
     emailRecipientsPlaceholder: "admin@example.com",
-    emailProvider: "Email provider/API",
-    emailProviderPlaceholder: "Backend API URL",
+    emailProvider: "SMTP или API endpoint",
+    emailProviderPlaceholder: "smtps://user:app-password@smtp.gmail.com:465",
+    emailProviderHint: "Для Gmail создайте App Password и укажите smtps://user:app-password@smtp.gmail.com:465.",
+    mailSubjectTemplate: "Тема deadline",
+    mailBodyTemplate: "Шаблон deadline",
+    testMailBody: "Текст тестового письма",
+    projectImport: "Импорт проекта",
+    projectImportHint: "Import принимает JSON backup, Excel CSV и MS Project XML. CSV headers: Project, Task, Start, End, Status, Priority, Progress, Owner, Dependencies, Milestone.",
+    adminActivity: "Активность admin",
+    auditLogs: "Audit logs",
+    mailHistory: "Mail history",
+    refresh: "Обновить",
+    importDone: "Import completed.",
+    panelCompact: "Уменьшить",
+    panelWide: "Увеличить",
     workflowStatuses: "Статусы workflow",
     newWorkflowStatus: "Новый статус",
     addWorkflowStatus: "Добавить статус",
@@ -595,8 +621,8 @@ const translations = {
     appKicker: "Project workspace",
     appTitle: "Plan, tasks and execution board",
     clearDone: "Clear done",
-    resetDemo: "Reset clinic",
-    loadClinicPortfolio: "Load clinic",
+    resetDemo: "Reset project",
+    loadClinicPortfolio: "Load project",
     adminPanel: "Admin panel",
     close: "Close",
     settings: "Settings",
@@ -634,8 +660,21 @@ const translations = {
     emailNotifications: "Email notifications",
     emailRecipients: "Recipients",
     emailRecipientsPlaceholder: "admin@example.com",
-    emailProvider: "Email provider/API",
-    emailProviderPlaceholder: "Backend API URL",
+    emailProvider: "SMTP or API endpoint",
+    emailProviderPlaceholder: "smtps://user:app-password@smtp.gmail.com:465",
+    emailProviderHint: "For Gmail, create an App Password and use smtps://user:app-password@smtp.gmail.com:465.",
+    mailSubjectTemplate: "Deadline subject",
+    mailBodyTemplate: "Deadline template",
+    testMailBody: "Test mail body",
+    projectImport: "Project import",
+    projectImportHint: "Import accepts JSON backup, Excel CSV and MS Project XML files. CSV headers: Project, Task, Start, End, Status, Priority, Progress, Owner, Dependencies, Milestone.",
+    adminActivity: "Admin activity",
+    auditLogs: "Audit logs",
+    mailHistory: "Mail history",
+    refresh: "Refresh",
+    importDone: "Import completed.",
+    panelCompact: "Compact",
+    panelWide: "Wide",
     workflowStatuses: "Workflow statuses",
     newWorkflowStatus: "New status",
     addWorkflowStatus: "Add status",
@@ -1189,6 +1228,24 @@ const clinicPortfolioTasks = [
   { name: "Layihə İdarəetməsi və Kommunikasiya", owner: "Klinika İT Şöbə Müdiri", start: "2026-01-01", end: "2026-12-31", progress: 48, priority: "Normal", notes: "Excel statusu: SARI. Başlama qeydi: Davamlı. Deadline qeydi: Davamlı. Daimi vendorlar və təchizatlarla (Azedunet, SH-İnşaat, AzVolt, Glassdoor, VİVA, Spectrum, ProAudio, MUK, Pusula və s.) görüşlər keçirilir. Xəstəxanalar və Universitetlə görüşlər keçirilir. Podratçıların gündəlik işlərinə nəzarət olunur və səhvlər aradan qaldırılır. Gündəlik tasklar vaxtında yerinə yetirilir." }
 ];
 
+const clinicDependencyMap = {
+  "Server avadanlıqları": ["Əsas server otağı", "Şəbəkə və Təhlükəsizlik avadanlıqları"],
+  "Pusula + PACS server": ["Server avadanlıqları"],
+  "1C": ["Server avadanlıqları"],
+  "Klinik Avadanlıqların inteqrasiyası": ["Pusula + PACS server", "Şəbəkə və Təhlükəsizlik avadanlıqları"],
+  "Smart Anons": ["İnternet", "Şəbəkə və Təhlükəsizlik avadanlıqları"],
+  "Receptionlar üçün növbə": ["İnternet", "Şəbəkə və Təhlükəsizlik avadanlıqları"],
+  "RFİD invertar və izləmə": ["Şəbəkə və Təhlükəsizlik avadanlıqları"]
+};
+
+const clinicMilestones = [
+  { title: "Şəbəkə avadanlıqları ilkin çatdırılma", dueDate: "2026-04-30", impact: "High" },
+  { title: "Server avadanlıqları çatdırılması", dueDate: "2026-05-30", impact: "Medium" },
+  { title: "Pusula + PACS hazır mühit", dueDate: "2026-07-15", impact: "High" },
+  { title: "Əsas server otağı yekun plan", dueDate: "2026-08-30", impact: "High" },
+  { title: "Klinika İT portfeli yekun", dueDate: "2026-12-31", impact: "High" }
+];
+
 const demoCustomers = [
   { id: "customer-internal", name: "Internal", contact: "PMO", email: "pmo@example.com" },
   { id: "customer-azercell", name: "Azercell", contact: "Customer Office", email: "customer@example.com" },
@@ -1228,6 +1285,8 @@ const parentTaskInput = document.querySelector("#parentTask");
 const taskDependenciesInput = document.querySelector("#taskDependencies");
 const cancelEdit = document.querySelector("#cancelEdit");
 const gantt = document.querySelector("#gantt");
+const ganttZoomOutButton = document.querySelector("#ganttZoomOut");
+const ganttZoomInButton = document.querySelector("#ganttZoomIn");
 const reports = document.querySelector("#reports");
 const kanban = document.querySelector("#kanban");
 const summaryCards = document.querySelectorAll(".summary-card");
@@ -1238,6 +1297,7 @@ const dashboardCalendarStart = document.querySelector("#dashboardCalendarStart")
 const dashboardCalendarEnd = document.querySelector("#dashboardCalendarEnd");
 const calendarStart = document.querySelector("#calendarStart");
 const calendarEnd = document.querySelector("#calendarEnd");
+const dashboardPanels = document.querySelectorAll("[data-dashboard-panel]");
 const taskList = document.querySelector("#taskList");
 const statusFilters = document.querySelector("#statusFilters");
 const priorityFilters = document.querySelector("#priorityFilters");
@@ -1362,6 +1422,9 @@ const capacityHoursInput = document.querySelector("#capacityHours");
 const emailEnabledInput = document.querySelector("#emailEnabled");
 const emailRecipientsInput = document.querySelector("#emailRecipients");
 const emailProviderInput = document.querySelector("#emailProvider");
+const mailSubjectTemplateInput = document.querySelector("#mailSubjectTemplate");
+const mailBodyTemplateInput = document.querySelector("#mailBodyTemplate");
+const testMailBodyInput = document.querySelector("#testMailBody");
 const ldapEnabledInput = document.querySelector("#ldapEnabled");
 const ldapUrlInput = document.querySelector("#ldapUrl");
 const ldapBaseDnInput = document.querySelector("#ldapBaseDn");
@@ -1373,6 +1436,10 @@ const saveSettingsButton = document.querySelector("#saveSettings");
 const testMailButton = document.querySelector("#testMail");
 const testLdapButton = document.querySelector("#testLdap");
 const settingsStatus = document.querySelector("#settingsStatus");
+const refreshAuditLogsButton = document.querySelector("#refreshAuditLogs");
+const refreshMailHistoryButton = document.querySelector("#refreshMailHistory");
+const auditLogList = document.querySelector("#auditLogList");
+const mailHistoryList = document.querySelector("#mailHistoryList");
 
 let tasks = loadTasks();
 let members = loadMembers();
@@ -1400,6 +1467,11 @@ let calendarRange = { start: "2026-05-01", end: "2026-05-31" };
 let backendSyncReady = false;
 let backendSaveTimer = 0;
 let authToken = localStorage.getItem(authTokenKey) || "";
+let auditLogs = [];
+let mailHistory = [];
+let draggedDashboardPanel = "";
+let ganttDayWidth = Number(localStorage.getItem("project-manager-gantt-day-width") || 44);
+let ganttDragState = null;
 enforceClinicOnlyState();
 saveUsers();
 
@@ -1417,6 +1489,42 @@ function normalizeWorkflowStatuses(values = defaultWorkflowStatuses) {
     .filter(Boolean);
   const unique = [...new Set([...cleaned, ...defaultWorkflowStatuses])];
   return unique.filter((status) => status !== "Bitib").concat("Bitib");
+}
+
+function normalizeDashboardPanelSizes(value = {}) {
+  const allowed = new Set(["compact", "normal", "wide"]);
+  return Object.fromEntries(
+    Object.entries(value || {}).filter(([key, size]) => key && allowed.has(size))
+  );
+}
+
+function applyDashboardPanelSizes() {
+  const sizes = normalizeDashboardPanelSizes(appSettings.dashboardPanelSizes);
+  dashboardPanels.forEach((panel) => {
+    const size = sizes[panel.dataset.dashboardPanel] || "normal";
+    panel.classList.toggle("panel-compact", size === "compact");
+    panel.classList.toggle("panel-wide", size === "wide");
+    panel.querySelectorAll("[data-panel-size]").forEach((button) => {
+      const active = button.dataset.panelSize === size;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+      button.title = text(button.dataset.panelSize === "compact" ? "panelCompact" : "panelWide");
+    });
+  });
+}
+
+function normalizeDashboardPanelOrder(value = []) {
+  const available = [...dashboardPanels].map((panel) => panel.dataset.dashboardPanel);
+  const order = Array.isArray(value) ? value.filter((item) => available.includes(item)) : [];
+  return [...new Set([...order, ...available])];
+}
+
+function applyDashboardPanelOrder() {
+  const order = normalizeDashboardPanelOrder(appSettings.dashboardPanelOrder);
+  dashboardPanels.forEach((panel) => {
+    const index = order.indexOf(panel.dataset.dashboardPanel);
+    panel.style.order = index >= 0 ? index : 0;
+  });
 }
 
 function syncWorkflowStatuses() {
@@ -1487,6 +1595,9 @@ function syncSettingsForm() {
   emailEnabledInput.checked = Boolean(appSettings.emailEnabled);
   emailRecipientsInput.value = appSettings.emailRecipients;
   emailProviderInput.value = appSettings.emailProvider;
+  mailSubjectTemplateInput.value = appSettings.mailSubjectTemplate || "Project Manager deadline alerts";
+  mailBodyTemplateInput.value = appSettings.mailBodyTemplate || "{{alerts}}";
+  testMailBodyInput.value = appSettings.testMailBody || "Project Manager mail ayarları test edildi.";
   ldapEnabledInput.checked = Boolean(appSettings.ldapEnabled);
   ldapUrlInput.value = appSettings.ldapUrl;
   ldapBaseDnInput.value = appSettings.ldapBaseDn;
@@ -1599,13 +1710,23 @@ function createDemoTasks() {
 }
 
 function createClinicPortfolioTasks() {
-  return clinicPortfolioTasks.map((task, index) => normalizeTask({
+  const normalized = clinicPortfolioTasks.map((task, index) => normalizeTask({
     id: `clinic-task-${String(index + 1).padStart(2, "0")}`,
     project: clinicPortfolioProject.name,
     status: Number(task.progress) >= 100 ? "Bitib" : (Number(task.progress) > 0 ? "Davam edir" : "Plan"),
     plannedHours: 0,
     actualHours: 0,
     ...task
+  }));
+  const taskByName = new Map(normalized.map((task) => [task.name, task.id]));
+  return normalized.map((task) => ({
+    ...task,
+    dependencyIds: [
+      ...new Set([
+        ...(task.dependencyIds || []),
+        ...(clinicDependencyMap[task.name] || []).map((name) => taskByName.get(name)).filter(Boolean)
+      ])
+    ]
   }));
 }
 
@@ -1626,9 +1747,21 @@ function loadClinicPortfolioState() {
   projectLinks = [];
   customers = [{ id: "customer-clinic", name: "Klinika", contact: "Klinika İT Şöbəsi", email: "" }];
   managedFiles = [];
-  registers = registers
-    .filter((item) => item.project === clinicPortfolioProject.name)
-    .map(normalizeRegisterItem);
+  registers = [
+    ...registers
+      .filter((item) => item.project === clinicPortfolioProject.name && item.type !== "milestone")
+      .map(normalizeRegisterItem),
+    ...clinicMilestones.map((item, index) => normalizeRegisterItem({
+      id: `clinic-milestone-${String(index + 1).padStart(2, "0")}`,
+      project: clinicPortfolioProject.name,
+      type: "milestone",
+      title: item.title,
+      status: "Open",
+      impact: item.impact,
+      dueDate: item.dueDate,
+      mitigation: ""
+    }))
+  ];
   trash = [];
   saveTasks();
   saveResources();
@@ -1800,6 +1933,11 @@ function defaultSettings() {
     emailEnabled: false,
     emailRecipients: "",
     emailProvider: "",
+    mailSubjectTemplate: "Project Manager deadline alerts",
+    mailBodyTemplate: "{{alerts}}",
+    testMailBody: "Project Manager mail ayarları test edildi.",
+    dashboardPanelSizes: {},
+    dashboardPanelOrder: [],
     ldapEnabled: false,
     ldapUrl: "",
     ldapBaseDn: "",
@@ -2361,6 +2499,8 @@ function openAdminPanel() {
   adminModal.classList.add("open");
   adminModal.setAttribute("aria-hidden", "false");
   closeAdminPanelButton.focus();
+  fetchAuditLogs();
+  fetchMailHistory();
 }
 
 function closeAdminPanel() {
@@ -2833,6 +2973,31 @@ function renderDeadlineAlerts() {
   `).join("") : `<div class="empty">${text("noDeadlineAlerts")}</div>`;
 }
 
+function renderActivityLists() {
+  if (auditLogList) {
+    auditLogList.innerHTML = auditLogs.length ? auditLogs.map((item) => `
+      <div class="resource-item activity-item">
+        <span>
+          <strong>${escapeHtml(item.action || "-")}</strong>
+          ${escapeHtml([item.actor, item.entity_type, item.entity_id].filter(Boolean).join(" · "))}
+        </span>
+        <small>${escapeHtml(formatDateTime(item.created_at))}</small>
+      </div>
+    `).join("") : `<div class="empty">${text("empty")}</div>`;
+  }
+  if (mailHistoryList) {
+    mailHistoryList.innerHTML = mailHistory.length ? mailHistory.map((item) => `
+      <div class="resource-item activity-item">
+        <span>
+          <strong>${escapeHtml(item.subject || "-")}</strong>
+          ${escapeHtml([item.type, item.recipient, item.status].filter(Boolean).join(" · "))}
+        </span>
+        <small>${escapeHtml(formatDateTime(item.created_at))}</small>
+      </div>
+    `).join("") : `<div class="empty">${text("empty")}</div>`;
+  }
+}
+
 function isoDateFromParts(year, month, day) {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
@@ -3181,6 +3346,47 @@ function renderKanbanActions(task) {
   return `<div class="kanban-actions">${actions}</div>`;
 }
 
+function milestoneMarkers(project, minStart, days) {
+  const projectMilestones = registers
+    .filter((item) => item.type === "milestone" && item.project === project.name && item.dueDate);
+  const markers = projectMilestones.length ? projectMilestones : [{ title: project.name, dueDate: project.end }];
+  return markers
+    .map((item) => {
+      const offset = Math.max(0, Math.min(days - 1, daysBetween(isoDate(minStart), item.dueDate)));
+      return `<div class="gantt-milestone" style="grid-column:${offset + 1};" title="${escapeHtml(item.title)}"></div>`;
+    })
+    .join("");
+}
+
+function dependencyArrows(task, projectTasks, minStart, days) {
+  const dependencies = (task.dependencyIds || [])
+    .map((id) => projectTasks.find((item) => item.id === id))
+    .filter((item) => item?.end || item?.start);
+  return dependencies.map((dependency) => {
+    const fromDate = dependency.end || dependency.start;
+    const toDate = task.start || task.end || fromDate;
+    const from = Math.max(0, Math.min(days - 1, daysBetween(isoDate(minStart), fromDate)));
+    const to = Math.max(0, Math.min(days - 1, daysBetween(isoDate(minStart), toDate)));
+    const start = Math.min(from, to);
+    const span = Math.max(1, Math.abs(to - from) + 1);
+    return `<div class="gantt-dependency-arrow" style="grid-column:${start + 1} / span ${span};" title="${escapeHtml(dependency.name)} → ${escapeHtml(task.name)}"></div>`;
+  }).join("");
+}
+
+function ganttColumns(days) {
+  return `repeat(${days}, minmax(${ganttDayWidth}px, 1fr))`;
+}
+
+function draggableGanttBar(type, item, className, offset, span, label) {
+  return `
+    <div class="bar ${className}" data-gantt-bar="${escapeHtml(type)}" data-id="${escapeHtml(item.id)}" style="grid-column: ${offset + 1} / span ${span};">
+      <span class="gantt-resize-handle left" data-gantt-resize="start"></span>
+      <span class="gantt-bar-label">${label}</span>
+      <span class="gantt-resize-handle right" data-gantt-resize="end"></span>
+    </div>
+  `;
+}
+
 function renderGantt() {
   const selectedProject = projectFilter.value;
   const shownProjects = visibleProjects()
@@ -3199,7 +3405,15 @@ function renderGantt() {
     : [];
   const timelineItems = [
     ...shownProjects.map((project) => ({ type: "project", item: project, start: project.start, end: project.end })),
-    ...detailTasks.map((task) => ({ type: "task", item: task, start: task.start, end: task.end }))
+    ...detailTasks.map((task) => {
+      const parentProject = shownProjects.find((project) => project.name === task.project);
+      return {
+        type: "task",
+        item: task,
+        start: task.start || parentProject?.start,
+        end: task.end || parentProject?.end
+      };
+    })
   ].filter((entry) => entry.start && entry.end);
 
   if (!timelineItems.length) {
@@ -3227,29 +3441,36 @@ function renderGantt() {
           <span>${expanded ? "−" : "+"}</span>
           ${escapeHtml(project.name)}
         </button>
-        <div class="gantt-lane" style="--days:${days}; grid-template-columns: repeat(${days}, minmax(44px, 1fr));">
-          <div class="bar project-bar ${statusClass(project.status)}" style="grid-column: ${offset + 1} / span ${span};">
-            ${span} ${text("day")} - ${Number(project.progress) || 0}%
-          </div>
+        <div class="gantt-lane" style="--days:${days}; grid-template-columns: ${ganttColumns(days)};">
+          ${milestoneMarkers(project, minStart, days)}
+          ${draggableGanttBar("project", project, `project-bar ${statusClass(project.status)}`, offset, span, `${span} ${text("day")} - ${Number(project.progress) || 0}%`)}
         </div>
       </div>
     `;
   }).join("");
 
   const taskRows = expandedGanttProject ? (detailTasks.length ? detailTasks.map((task) => {
-    const offset = daysBetween(isoDate(minStart), task.start);
-    const span = Math.max(1, daysBetween(task.start, task.end) + 1);
+    const parentProject = shownProjects.find((project) => project.name === task.project);
+    const start = task.start || parentProject?.start || isoDate(minStart);
+    const end = task.end || parentProject?.end || start;
+    const offset = Math.max(0, daysBetween(isoDate(minStart), start));
+    const span = Math.max(1, daysBetween(start, end) + 1);
+    const trackStart = parentProject?.start || start;
+    const trackEnd = parentProject?.end || end;
+    const trackOffset = Math.max(0, daysBetween(isoDate(minStart), trackStart));
+    const trackSpan = Math.max(1, daysBetween(trackStart, trackEnd) + 1);
     const blocked = isTaskBlocked(task);
+    const inferredTimeline = !task.start || !task.end;
     return `
       <div class="gantt-row gantt-detail-row">
         <div class="gantt-task-name" title="${escapeHtml(task.name)}">
           ${blocked ? `<span class="badge blocked">${text("blocked")}</span>` : ""}
           ${escapeHtml(task.name)}
         </div>
-        <div class="gantt-lane" style="--days:${days}; grid-template-columns: repeat(${days}, minmax(44px, 1fr));">
-          <div class="bar ${statusClass(task.status)}" style="grid-column: ${offset + 1} / span ${span};">
-            ${span} ${text("day")} - ${Number(task.progress) || 0}%
-          </div>
+        <div class="gantt-lane" style="--days:${days}; grid-template-columns: ${ganttColumns(days)};">
+          <div class="gantt-task-track" style="grid-column: ${trackOffset + 1} / span ${trackSpan};"></div>
+          ${dependencyArrows(task, detailTasks, minStart, days)}
+          ${draggableGanttBar("task", task, `${statusClass(task.status)} ${inferredTimeline ? "inferred-bar" : ""}`, offset, span, `${inferredTimeline ? text("projectDuration") : `${span} ${text("day")}`} - ${Number(task.progress) || 0}%`)}
         </div>
       </div>
     `;
@@ -3259,12 +3480,47 @@ function renderGantt() {
     <div class="gantt-grid">
       <div class="gantt-header">
         <div class="gantt-label">Task</div>
-        <div class="gantt-days" style="grid-template-columns: repeat(${days}, minmax(44px, 1fr));">${dayHeaders}</div>
+        <div class="gantt-days" style="grid-template-columns: ${ganttColumns(days)};">${dayHeaders}</div>
       </div>
       ${projectRows}
       ${taskRows}
     </div>
   `;
+}
+
+function ganttItem(type, id) {
+  return type === "project"
+    ? projects.find((project) => project.id === id)
+    : tasks.find((task) => task.id === id);
+}
+
+function shiftIsoDate(value, delta) {
+  return isoDate(addDays(parseDate(value), delta));
+}
+
+function applyGanttDateChange(state, deltaDays) {
+  const item = ganttItem(state.type, state.id);
+  if (!item || !state.start || !state.end || !deltaDays) return false;
+  if (state.mode === "move") {
+    item.start = shiftIsoDate(state.start, deltaDays);
+    item.end = shiftIsoDate(state.end, deltaDays);
+  } else if (state.mode === "start") {
+    const nextStart = shiftIsoDate(state.start, deltaDays);
+    item.start = nextStart <= state.end ? nextStart : state.end;
+  } else if (state.mode === "end") {
+    const nextEnd = shiftIsoDate(state.end, deltaDays);
+    item.end = nextEnd >= state.start ? nextEnd : state.start;
+  }
+  if (state.type === "project") saveResources();
+  else saveTasks();
+  return true;
+}
+
+function ganttDeltaDays(event, state) {
+  const lane = state.lane;
+  const rect = lane?.getBoundingClientRect?.();
+  const cellWidth = rect?.width ? rect.width / Math.max(1, Number(lane.style.getPropertyValue("--days")) || 1) : ganttDayWidth;
+  return Math.round((event.clientX - state.startX) / Math.max(12, cellWidth));
 }
 
 function renderReports() {
@@ -3350,6 +3606,8 @@ function activateSummaryCard(card) {
 function render() {
   applyAppSettings();
   applyTranslations();
+  applyDashboardPanelSizes();
+  applyDashboardPanelOrder();
   syncAuthView();
   renderProjectFilter();
   renderResourceControls();
@@ -3361,6 +3619,7 @@ function render() {
   renderCalendar();
   renderGantt();
   renderReports();
+  renderActivityLists();
   renderViews();
 }
 
@@ -3579,6 +3838,9 @@ async function saveBackendSettings() {
         emailEnabled: appSettings.emailEnabled,
         emailRecipients: appSettings.emailRecipients,
         emailProvider: appSettings.emailProvider,
+        mailSubjectTemplate: appSettings.mailSubjectTemplate,
+        mailBodyTemplate: appSettings.mailBodyTemplate,
+        testMailBody: appSettings.testMailBody,
         ldapEnabled: appSettings.ldapEnabled,
         ldapUrl: appSettings.ldapUrl,
         ldapBaseDn: appSettings.ldapBaseDn,
@@ -3606,6 +3868,9 @@ async function syncBackendSettings() {
       emailEnabled: Boolean(serverSettings.emailEnabled),
       emailRecipients: serverSettings.emailRecipients || "",
       emailProvider: serverSettings.emailProvider || "",
+      mailSubjectTemplate: serverSettings.mailSubjectTemplate || appSettings.mailSubjectTemplate || "Project Manager deadline alerts",
+      mailBodyTemplate: serverSettings.mailBodyTemplate || appSettings.mailBodyTemplate || "{{alerts}}",
+      testMailBody: serverSettings.testMailBody || appSettings.testMailBody || "Project Manager mail ayarları test edildi.",
       ldapEnabled: Boolean(serverSettings.ldapEnabled),
       ldapUrl: serverSettings.ldapUrl || "",
       ldapBaseDn: serverSettings.ldapBaseDn || "",
@@ -3663,6 +3928,30 @@ function downloadText(filename, body, type = "text/plain;charset=utf-8") {
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+async function fetchAuditLogs() {
+  if (!canUseBackend() || !isAdmin()) return;
+  try {
+    const response = await fetch(backendUrl("/api/audit-logs"), { cache: "no-store", headers: authHeaders() });
+    auditLogs = response.ok ? await response.json() : [];
+    renderActivityLists();
+  } catch {
+    auditLogs = [];
+    renderActivityLists();
+  }
+}
+
+async function fetchMailHistory() {
+  if (!canUseBackend() || !isAdmin()) return;
+  try {
+    const response = await fetch(backendUrl("/api/notifications"), { cache: "no-store", headers: authHeaders() });
+    mailHistory = response.ok ? await response.json() : [];
+    renderActivityLists();
+  } catch {
+    mailHistory = [];
+    renderActivityLists();
+  }
 }
 
 function csvCell(value) {
@@ -3739,6 +4028,179 @@ function importBackup(payload) {
   render();
 }
 
+function parseDelimitedRows(textBody) {
+  const delimiter = textBody.includes("\t") ? "\t" : ",";
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let quoted = false;
+  for (let index = 0; index < textBody.length; index += 1) {
+    const char = textBody[index];
+    const next = textBody[index + 1];
+    if (char === '"' && quoted && next === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === delimiter && !quoted) {
+      row.push(cell.trim());
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && next === "\n") index += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+}
+
+function valueFromRow(row, headers, names) {
+  const keys = Array.isArray(names) ? names : [names];
+  const normalized = headers.map((header) => header.toLowerCase().replaceAll(/\s+/g, ""));
+  const index = keys
+    .map((name) => normalized.indexOf(String(name).toLowerCase().replaceAll(/\s+/g, "")))
+    .find((item) => item >= 0);
+  return index >= 0 ? row[index] || "" : "";
+}
+
+function importTabularProject(textBody) {
+  const rows = parseDelimitedRows(textBody);
+  if (rows.length < 2) throw new Error(text("backupError"));
+  const headers = rows[0];
+  const createdProjects = new Map(projects.map((project) => [project.name.toLowerCase(), project]));
+  const createdTasks = [];
+  rows.slice(1).forEach((row, index) => {
+    const projectName = valueFromRow(row, headers, ["Project", "Project Name", "Layihə"]) || "Imported Project";
+    const taskName = valueFromRow(row, headers, ["Task", "Task Name", "Name", "Task adı"]);
+    if (!taskName) return;
+    if (!createdProjects.has(projectName.toLowerCase())) {
+      const project = normalizeProject({
+        id: createId("project"),
+        name: projectName,
+        start: valueFromRow(row, headers, ["Start", "Start Date", "Başlama"]) || isoDate(new Date()),
+        end: valueFromRow(row, headers, ["End", "Finish", "End Date", "Bitmə"]) || isoDate(addDays(new Date(), 7)),
+        status: valueFromRow(row, headers, "Status") || "Plan",
+        priority: valueFromRow(row, headers, "Priority") || "Normal",
+        progress: valueFromRow(row, headers, "Progress") || 0
+      });
+      projects.push(project);
+      createdProjects.set(projectName.toLowerCase(), project);
+    }
+    const isMilestone = ["1", "yes", "true", "milestone"].includes(valueFromRow(row, headers, ["Milestone", "Type"]).toLowerCase());
+    const task = normalizeTask({
+      id: createId("task"),
+      name: taskName,
+      project: projectName,
+      owner: valueFromRow(row, headers, ["Owner", "Resource", "Məsul şəxs"]),
+      start: valueFromRow(row, headers, ["Start", "Start Date", "Başlama"]),
+      end: valueFromRow(row, headers, ["End", "Finish", "End Date", "Bitmə"]),
+      status: valueFromRow(row, headers, "Status") || "Plan",
+      priority: valueFromRow(row, headers, "Priority") || "Normal",
+      progress: valueFromRow(row, headers, "Progress") || 0,
+      notes: valueFromRow(row, headers, ["Notes", "Qeyd"]),
+      importDependencyNames: valueFromRow(row, headers, ["Dependencies", "Depends On", "Predecessors"])
+    });
+    tasks.push(task);
+    createdTasks.push(task);
+    if (isMilestone) {
+      registers.push(normalizeRegisterItem({
+        id: createId("register"),
+        project: projectName,
+        type: "milestone",
+        title: taskName,
+        owner: task.owner,
+        status: "Open",
+        impact: "Medium",
+        dueDate: task.end || task.start
+      }));
+    }
+    if (index === rows.length - 2) {
+      projects = projects.map((project) => {
+        const projectTasks = tasks.filter((taskItem) => taskItem.project === project.name && taskItem.start && taskItem.end);
+        if (!projectTasks.length) return project;
+        return normalizeProject({
+          ...project,
+          start: project.start || projectTasks.map((taskItem) => taskItem.start).sort()[0],
+          end: project.end || projectTasks.map((taskItem) => taskItem.end).sort().at(-1)
+        });
+      });
+    }
+  });
+  const taskByName = new Map(tasks.map((task) => [task.name.toLowerCase(), task.id]));
+  createdTasks.forEach((task) => {
+    if (!task.importDependencyNames) return;
+    task.dependencyIds = String(task.importDependencyNames)
+      .split(/[;|,]/)
+      .map((name) => taskByName.get(name.trim().toLowerCase()))
+      .filter(Boolean);
+    delete task.importDependencyNames;
+  });
+  saveTasks();
+  saveResources();
+  saveRegisters();
+  render();
+}
+
+function tagValue(block, tag) {
+  return block.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "i"))?.[1]?.replaceAll(/<!\[CDATA\[|\]\]>/g, "").trim() || "";
+}
+
+function importMsProjectXml(textBody) {
+  const projectName = tagValue(textBody, "Title") || "MS Project import";
+  if (!projects.some((project) => project.name.toLowerCase() === projectName.toLowerCase())) {
+    projects.push(normalizeProject({ id: createId("project"), name: projectName, start: isoDate(new Date()), end: isoDate(addDays(new Date(), 7)), status: "Plan", priority: "Normal", progress: 0 }));
+  }
+  const taskBlocks = [...textBody.matchAll(/<Task>([\s\S]*?)<\/Task>/gi)].map((match) => match[1]);
+  const idByUid = new Map();
+  taskBlocks.forEach((block) => {
+    const name = tagValue(block, "Name");
+    if (!name || tagValue(block, "Summary") === "1") return;
+    const uid = tagValue(block, "UID") || createId("ms");
+    const start = tagValue(block, "Start").slice(0, 10);
+    const finish = tagValue(block, "Finish").slice(0, 10);
+    const percent = Number(tagValue(block, "PercentComplete")) || 0;
+    const milestone = tagValue(block, "Milestone") === "1";
+    const task = normalizeTask({
+      id: createId("task"),
+      name,
+      project: projectName,
+      start,
+      end: finish || start,
+      status: percent >= 100 ? "Bitib" : (percent > 0 ? "Davam edir" : "Plan"),
+      progress: percent,
+      priority: "Normal",
+      importPredecessors: [...block.matchAll(/<PredecessorUID>(.*?)<\/PredecessorUID>/gi)].map((match) => match[1])
+    });
+    tasks.push(task);
+    idByUid.set(uid, task.id);
+    if (milestone) {
+      registers.push(normalizeRegisterItem({ id: createId("register"), project: projectName, type: "milestone", title: name, dueDate: task.end || task.start }));
+    }
+  });
+  tasks.forEach((task) => {
+    if (!task.importPredecessors) return;
+    task.dependencyIds = task.importPredecessors.map((uid) => idByUid.get(uid)).filter(Boolean);
+    delete task.importPredecessors;
+  });
+  saveTasks();
+  saveResources();
+  saveRegisters();
+  render();
+}
+
+function importProjectFile(filename, body) {
+  const lower = filename.toLowerCase();
+  if (lower.endsWith(".json")) return importBackup(JSON.parse(body));
+  if (lower.endsWith(".xml") || body.trim().startsWith("<")) return importMsProjectXml(body);
+  return importTabularProject(body);
+}
+
 function sendDeadlineNotifications() {
   const alerts = riskyTasks();
   if (!alerts.length) return;
@@ -3755,17 +4217,20 @@ function sendDeadlineNotifications() {
 async function sendBackendDeadlineEmail(alerts) {
   if (!canUseBackend() || !appSettings.emailEnabled) return;
   try {
+    const alertLines = alerts.slice(0, 10).map(({ task, alert }) => `${alert.label}: ${task.name} (${getProject(task)}, ${task.end})`).join("\n");
     await fetch(backendUrl("/api/mail/deadline-alerts"), {
       method: "POST",
       headers: authHeaders({ "content-type": "application/json" }),
       body: JSON.stringify({
-        subject: "Project Manager deadline alerts",
+        subject: appSettings.mailSubjectTemplate || "Project Manager deadline alerts",
+        template: appSettings.mailBodyTemplate || "{{alerts}}",
         alerts: alerts.slice(0, 10).map(({ task, alert }) => ({
           label: alert.label,
           taskName: task.name,
           project: getProject(task),
           end: task.end
-        }))
+        })),
+        alertLines
       })
     });
   } catch (error) {
@@ -3778,7 +4243,10 @@ async function sendBackendTestMail() {
   const response = await fetch(backendUrl("/api/mail/test"), {
     method: "POST",
     headers: authHeaders({ "content-type": "application/json" }),
-    body: JSON.stringify({ subject: "Project Manager test email" })
+    body: JSON.stringify({
+      subject: mailSubjectTemplateInput.value.trim() || "Project Manager test email",
+      text: testMailBodyInput.value.trim() || "Project Manager mail ayarları test edildi."
+    })
   });
   if (!response.ok) throw new Error("Mail test failed");
   return response.json();
@@ -3949,6 +4417,102 @@ gantt.addEventListener("click", (event) => {
   renderGantt();
 });
 
+gantt.addEventListener("pointerdown", (event) => {
+  const bar = event.target.closest("[data-gantt-bar]");
+  if (!bar || event.target.closest("button")) return;
+  const item = ganttItem(bar.dataset.ganttBar, bar.dataset.id);
+  if (!item?.start || !item?.end) return;
+  event.preventDefault();
+  bar.setPointerCapture?.(event.pointerId);
+  ganttDragState = {
+    type: bar.dataset.ganttBar,
+    id: bar.dataset.id,
+    mode: event.target.dataset.ganttResize || "move",
+    startX: event.clientX,
+    start: item.start,
+    end: item.end,
+    lane: bar.closest(".gantt-lane"),
+    delta: 0,
+    bar
+  };
+  bar.classList.add("dragging");
+});
+
+gantt.addEventListener("pointermove", (event) => {
+  if (!ganttDragState) return;
+  ganttDragState.delta = ganttDeltaDays(event, ganttDragState);
+  ganttDragState.bar.style.transform = `translateX(${ganttDragState.delta * ganttDayWidth}px)`;
+});
+
+gantt.addEventListener("pointerup", (event) => {
+  if (!ganttDragState) return;
+  const state = ganttDragState;
+  state.bar.classList.remove("dragging");
+  state.bar.style.transform = "";
+  ganttDragState = null;
+  if (applyGanttDateChange(state, state.delta)) render();
+});
+
+gantt.addEventListener("pointercancel", () => {
+  if (!ganttDragState) return;
+  ganttDragState.bar.classList.remove("dragging");
+  ganttDragState.bar.style.transform = "";
+  ganttDragState = null;
+});
+
+ganttZoomOutButton?.addEventListener("click", () => {
+  ganttDayWidth = Math.max(18, ganttDayWidth - 8);
+  localStorage.setItem("project-manager-gantt-day-width", String(ganttDayWidth));
+  renderGantt();
+});
+
+ganttZoomInButton?.addEventListener("click", () => {
+  ganttDayWidth = Math.min(96, ganttDayWidth + 8);
+  localStorage.setItem("project-manager-gantt-day-width", String(ganttDayWidth));
+  renderGantt();
+});
+
+dashboardPanels.forEach((panel) => {
+  panel.addEventListener("dragstart", (event) => {
+    draggedDashboardPanel = panel.dataset.dashboardPanel;
+    event.dataTransfer?.setData("text/plain", draggedDashboardPanel);
+    panel.classList.add("dragging");
+  });
+  panel.addEventListener("dragend", () => {
+    draggedDashboardPanel = "";
+    panel.classList.remove("dragging");
+  });
+  panel.addEventListener("dragover", (event) => {
+    if (!draggedDashboardPanel || draggedDashboardPanel === panel.dataset.dashboardPanel) return;
+    event.preventDefault();
+  });
+  panel.addEventListener("drop", (event) => {
+    event.preventDefault();
+    const source = draggedDashboardPanel || event.dataTransfer?.getData("text/plain");
+    const target = panel.dataset.dashboardPanel;
+    if (!source || source === target) return;
+    const order = normalizeDashboardPanelOrder(appSettings.dashboardPanelOrder);
+    const sourceIndex = order.indexOf(source);
+    const targetIndex = order.indexOf(target);
+    order.splice(sourceIndex, 1);
+    order.splice(targetIndex, 0, source);
+    appSettings = { ...appSettings, dashboardPanelOrder: order };
+    saveAppSettings();
+    applyDashboardPanelOrder();
+  });
+  panel.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-panel-size]");
+    if (!button) return;
+    const panelKey = panel.dataset.dashboardPanel;
+    const currentSizes = normalizeDashboardPanelSizes(appSettings.dashboardPanelSizes);
+    const requestedSize = button.dataset.panelSize;
+    currentSizes[panelKey] = currentSizes[panelKey] === requestedSize ? "normal" : requestedSize;
+    appSettings = { ...appSettings, dashboardPanelSizes: currentSizes };
+    saveAppSettings();
+    applyDashboardPanelSizes();
+  });
+});
+
 statusFilters.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-filter]");
   if (!button) return;
@@ -3964,6 +4528,9 @@ priorityFilters?.addEventListener("click", (event) => {
   priorityFilterButtons.forEach((item) => item.classList.toggle("active", item === button));
   render();
 });
+
+refreshAuditLogsButton?.addEventListener("click", fetchAuditLogs);
+refreshMailHistoryButton?.addEventListener("click", fetchMailHistory);
 
 viewTabs.forEach((button) => {
   button.addEventListener("click", () => {
@@ -4120,10 +4687,11 @@ importDataInput.addEventListener("change", () => {
   const reader = new FileReader();
   reader.addEventListener("load", () => {
     try {
-      importBackup(JSON.parse(reader.result));
+      importProjectFile(importDataInput.files[0].name || "import.csv", String(reader.result || ""));
+      alert(text("importDone"));
       importDataInput.value = "";
-    } catch {
-      alert(text("backupError"));
+    } catch (error) {
+      alert(error.message || text("backupError"));
     }
   });
   reader.addEventListener("error", () => alert(text("backupError")));
@@ -4153,6 +4721,9 @@ saveSettingsButton.addEventListener("click", () => {
     emailEnabled: isAdmin() ? emailEnabledInput.checked : appSettings.emailEnabled,
     emailRecipients: isAdmin() ? emailRecipientsInput.value.trim() : appSettings.emailRecipients,
     emailProvider: isAdmin() ? emailProviderInput.value.trim() : appSettings.emailProvider,
+    mailSubjectTemplate: isAdmin() ? mailSubjectTemplateInput.value.trim() || "Project Manager deadline alerts" : appSettings.mailSubjectTemplate,
+    mailBodyTemplate: isAdmin() ? mailBodyTemplateInput.value.trim() || "{{alerts}}" : appSettings.mailBodyTemplate,
+    testMailBody: isAdmin() ? testMailBodyInput.value.trim() || "Project Manager mail ayarları test edildi." : appSettings.testMailBody,
     ldapEnabled: isAdmin() ? ldapEnabledInput.checked : appSettings.ldapEnabled,
     ldapUrl: isAdmin() ? ldapUrlInput.value.trim() : appSettings.ldapUrl,
     ldapBaseDn: isAdmin() ? ldapBaseDnInput.value.trim() : appSettings.ldapBaseDn,
@@ -4173,9 +4744,20 @@ saveSettingsButton.addEventListener("click", () => {
 testMailButton.addEventListener("click", async () => {
   if (!isAdmin()) return;
   settingsStatus.textContent = "";
+  appSettings = {
+    ...appSettings,
+    emailEnabled: emailEnabledInput.checked,
+    emailRecipients: emailRecipientsInput.value.trim(),
+    emailProvider: emailProviderInput.value.trim(),
+    mailSubjectTemplate: mailSubjectTemplateInput.value.trim() || "Project Manager deadline alerts",
+    mailBodyTemplate: mailBodyTemplateInput.value.trim() || "{{alerts}}",
+    testMailBody: testMailBodyInput.value.trim() || "Project Manager mail ayarları test edildi."
+  };
+  saveAppSettings();
+  await saveBackendSettings();
   try {
     const result = await sendBackendTestMail();
-    settingsStatus.textContent = result.skipped ? text("mailTestSkipped") : text("mailTestSent");
+    settingsStatus.textContent = result.skipped || result.ok === false ? text("mailTestSkipped") : text("mailTestSent");
   } catch {
     settingsStatus.textContent = text("mailTestSkipped");
   }

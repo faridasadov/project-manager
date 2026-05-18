@@ -1230,6 +1230,83 @@ textarea:focus {
   border-top: 3px solid color-mix(in srgb, var(--teal) 72%, #fff);
 }
 
+.dashboard-panel {
+  min-height: 220px;
+  transition: grid-column 160ms ease, min-height 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  cursor: grab;
+}
+
+.dashboard-panel.dragging {
+  opacity: 0.62;
+  transform: scale(0.985);
+}
+
+.dashboard-panel.panel-wide {
+  grid-column: span 2;
+  min-height: 260px;
+}
+
+.dashboard-panel.panel-compact {
+  min-height: 160px;
+}
+
+.dashboard-panel.panel-compact .compact-list {
+  max-height: 142px;
+  overflow: auto;
+}
+
+.panel-size-controls {
+  display: inline-flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.panel-size-controls button {
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 7px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.panel-size-controls button.active {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+}
+
+.field-hint {
+  display: block;
+  margin-top: -8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.activity-list {
+  max-height: 260px;
+  overflow: auto;
+}
+
+.activity-item {
+  align-items: flex-start;
+}
+
+.activity-item small {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .section-head {
   display: flex;
   justify-content: space-between;
@@ -1796,6 +1873,19 @@ button:disabled {
   border-radius: 8px;
 }
 
+.gantt-controls {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.gantt-controls button {
+  width: 34px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 7px;
+  font-weight: 900;
+}
+
 .gantt-grid {
   min-width: 820px;
 }
@@ -1917,8 +2007,80 @@ button:disabled {
   font-weight: 900;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   overflow: hidden;
   white-space: nowrap;
+  cursor: grab;
+  user-select: none;
+  position: relative;
+  touch-action: none;
+}
+
+.bar.dragging {
+  cursor: grabbing;
+  opacity: 0.82;
+  z-index: 8;
+}
+
+.gantt-bar-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gantt-resize-handle {
+  width: 8px;
+  align-self: stretch;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  flex: 0 0 auto;
+  cursor: ew-resize;
+}
+
+.gantt-task-track {
+  align-self: center;
+  min-height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--teal) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--teal) 22%, transparent);
+  z-index: 0;
+}
+
+.gantt-dependency-arrow {
+  align-self: start;
+  height: 16px;
+  margin-top: 4px;
+  border-top: 3px solid var(--red);
+  position: relative;
+  z-index: 5;
+  opacity: 0.92;
+}
+
+.gantt-dependency-arrow::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: -6px;
+  border-left: 9px solid var(--red);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+.gantt-milestone {
+  width: 14px;
+  height: 14px;
+  align-self: center;
+  justify-self: center;
+  transform: rotate(45deg);
+  background: var(--amber);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--amber) 45%, transparent);
+  z-index: 6;
+}
+
+.gantt-lane .bar {
+  z-index: 1;
 }
 
 .bar.plan {
@@ -1979,6 +2141,14 @@ button:disabled {
 
   .composer {
     position: static;
+  }
+
+  .dashboard-panel.panel-wide {
+    grid-column: span 1;
+  }
+
+  .activity-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -2384,6 +2554,12 @@ textarea:focus {
 
 .gantt-lane .bar.plan {
   background: linear-gradient(135deg, var(--amber), #f59e0b);
+}
+
+.gantt-lane .inferred-bar {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--teal) 72%, #ffffff), color-mix(in srgb, var(--blue) 72%, #ffffff));
+  border: 1px dashed color-mix(in srgb, #ffffff 72%, var(--teal));
+  color: #ffffff;
 }
 
 .modal-backdrop {

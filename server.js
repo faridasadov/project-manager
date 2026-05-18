@@ -488,6 +488,9 @@ function defaultSettings() {
     emailEnabled: false,
     emailRecipients: "",
     emailProvider: "",
+    mailSubjectTemplate: "Project Manager deadline alerts",
+    mailBodyTemplate: "{{alerts}}",
+    testMailBody: "Project Manager mail ayarlari test edildi.",
     ldapEnabled: false,
     ldapUrl: "",
     ldapBaseDn: "",
@@ -506,6 +509,9 @@ function publicSettings(settings, options = {}) {
     emailEnabled: Boolean(merged.emailEnabled),
     emailRecipients: merged.emailRecipients || "",
     emailProvider: merged.emailProvider || "",
+    mailSubjectTemplate: merged.mailSubjectTemplate || "Project Manager deadline alerts",
+    mailBodyTemplate: merged.mailBodyTemplate || "{{alerts}}",
+    testMailBody: merged.testMailBody || "Project Manager mail ayarlari test edildi.",
     ldapEnabled: Boolean(merged.ldapEnabled),
     ldapUrl: merged.ldapUrl || "",
     ldapBaseDn: merged.ldapBaseDn || "",
@@ -876,11 +882,15 @@ function recipientsFrom(value) {
     .filter(Boolean);
 }
 
+function applyMailTemplate(template, values) {
+  return String(template || "{{alerts}}").replaceAll(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => String(values[key] ?? ""));
+}
+
 async function sendMailWithSettings(settings, message) {
   if (!settings.emailEnabled) return { skipped: true, reason: "Email disabled" };
   const to = recipientsFrom(settings.emailRecipients);
   if (!to.length) return { skipped: true, reason: "No recipients" };
-  const provider = settings.emailProvider || process.env.SMTP_URL || "";
+  const provider = String(settings.emailProvider || process.env.SMTP_URL || "").trim();
   if (!provider) return { skipped: true, reason: "No email provider configured" };
 
   if (provider.startsWith("http://") || provider.startsWith("https://")) {
@@ -889,7 +899,7 @@ async function sendMailWithSettings(settings, message) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ ...message, to })
     });
-    return { ok: response.ok, status: response.status };
+    return { ok: response.ok, skipped: !response.ok, status: response.status };
   }
 
   const transport = nodemailer.createTransport(provider);
@@ -1052,10 +1062,27 @@ async function handleApi(request, response) {
       const lines = alerts.map((alert) => (
         `- ${alert.label}: ${alert.taskName} (${alert.project}, ${alert.end})`
       ));
-      const result = await sendMailWithSettings(settings, {
-        subject: payload.subject || "Project Manager deadline alerts",
-        text: lines.length ? lines.join("\n") : "Deadline alert yoxdur."
+      const alertText = lines.length ? lines.join("\n") : "Deadline alert yoxdur.";
+      const subject = payload.subject || settings.mailSubjectTemplate || "Project Manager deadline alerts";
+      const body = applyMailTemplate(payload.template || settings.mailBodyTemplate || "{{alerts}}", {
+        alerts: alertText,
+        count: alerts.length,
+        date: new Date().toISOString().slice(0, 10)
       });
+      const result = await sendMailWithSettings(settings, {
+        subject,
+        text: body
+      });
+      await pool.execute(
+        "INSERT INTO notifications (type, recipient, subject, body, status, payload_json) VALUES ('deadline_email', ?, ?, ?, ?, ?)",
+        [
+          settings.emailRecipients || "",
+          subject,
+          body,
+          result.skipped ? "skipped" : (result.ok === false ? "failed" : "sent"),
+          JSON.stringify({ result, count: alerts.length })
+        ]
+      );
       sendJson(response, 200, result);
     } catch {
       sendJson(response, 500, { error: "Could not send email" });
@@ -1068,17 +1095,19 @@ async function handleApi(request, response) {
     try {
       const payload = JSON.parse(await readBody(request) || "{}");
       const settings = await readSettings();
+      const subject = payload.subject || "Project Manager test email";
+      const body = payload.text || settings.testMailBody || "Project Manager mail ayarlari test edildi.";
       const result = await sendMailWithSettings(settings, {
-        subject: payload.subject || "Project Manager test email",
-        text: "Project Manager mail ayarlari test edildi."
+        subject,
+        text: body
       });
       await pool.execute(
         "INSERT INTO notifications (type, recipient, subject, body, status, payload_json) VALUES ('test_email', ?, ?, ?, ?, ?)",
         [
           settings.emailRecipients || "",
-          payload.subject || "Project Manager test email",
-          "Project Manager mail ayarlari test edildi.",
-          result.skipped ? "skipped" : "sent",
+          subject,
+          body,
+          result.skipped ? "skipped" : (result.ok === false ? "failed" : "sent"),
           JSON.stringify(result)
         ]
       );
