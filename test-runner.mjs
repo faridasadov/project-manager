@@ -57,7 +57,7 @@ function element(selector, value = "") {
 const ids = [
   "taskForm", "formTitle", "taskId", "taskName", "project", "startDate", "endDate",
   "projectResource", "status", "priority", "owner", "progress", "plannedHours", "actualHours", "notes", "parentTask", "taskDependencies", "cancelEdit", "gantt", "reports",
-  "ganttZoomOut", "ganttZoomIn",
+  "ganttControls", "ganttFit", "ganttZoomOut", "ganttZoomLabel", "ganttZoomIn",
   "kanban", "dashboardCalendar", "calendarBoard", "calendarDetails", "dashboardCalendarStart",
   "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusFilters", "statusBars", "upcomingList",
   "deadlineAlerts", "workloadList", "projectCards", "archivedProjectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
@@ -81,7 +81,8 @@ const ids = [
   "newUserFullName", "newUserPosition", "newUserEmail", "newUserAddress"
   , "loginScreen", "loginForm", "loginUsername", "loginPassword", "loginError",
   "logoutButton", "currentUserBadge", "newUsername", "newUserPassword",
-  "newUserRole", "addUser", "userList", "userCount", "trashList", "trashCount"
+  "newUserRole", "addUser", "userList", "userCount", "trashList", "trashCount",
+  "dateRequestList", "dateRequestCount"
 ];
 
 ids.forEach((id) => element(`#${id}`));
@@ -180,7 +181,11 @@ vm.runInContext(readFileSync(join(rootDir, "script.js"), "utf8"), context);
 
 assert.equal(elements["#totalCount"].textContent, 19, "clinic count renders");
 assert.match(elements["#gantt"].innerHTML, /Klinika İT Portfeli/, "gantt renders project row first");
-assert.doesNotMatch(elements["#gantt"].innerHTML, /gantt-detail-row/, "gantt hides task rows before project expand");
+assert.match(elements["#gantt"].innerHTML, /gantt-detail-row/, "single project gantt opens task rows by default");
+elements["#gantt"].dispatch("click", {
+  target: { closest: () => ({ dataset: { ganttProject: "Klinika İT Portfeli" } }) }
+});
+assert.doesNotMatch(elements["#gantt"].innerHTML, /gantt-detail-row/, "gantt can collapse project task rows on click");
 elements["#gantt"].dispatch("click", {
   target: { closest: () => ({ dataset: { ganttProject: "Klinika İT Portfeli" } }) }
 });
@@ -189,6 +194,15 @@ assert.match(elements["#gantt"].innerHTML, /gantt-task-track/, "gantt renders ta
 assert.match(elements["#gantt"].innerHTML, /gantt-milestone/, "gantt renders milestone markers");
 assert.match(elements["#gantt"].innerHTML, /gantt-dependency-arrow/, "gantt renders dependency arrows");
 assert.match(elements["#gantt"].innerHTML, /data-gantt-bar/, "gantt bars are draggable");
+elements["#ganttControls"].dispatch("click", { target: { closest: () => ({ dataset: { ganttZoom: "in" } }) } });
+assert.equal(elements["#ganttZoomLabel"].textContent, "Compact", "gantt zoom in updates label");
+assert.match(elements["#gantt"].innerHTML, /minmax\(5px, 1fr\)/, "gantt zoom in updates day width");
+elements["#ganttControls"].dispatch("click", { target: { closest: () => ({ dataset: { ganttZoom: "fit" } }) } });
+assert.equal(elements["#ganttZoomLabel"].textContent, "Fit", "gantt fit updates label");
+assert.match(elements["#gantt"].innerHTML, /minmax\(3px, 1fr\)/, "gantt fit resets day width");
+elements["#ganttControls"].dispatch("click", { target: { closest: () => ({ dataset: { ganttZoom: "day" } }) } });
+assert.equal(elements["#ganttZoomLabel"].textContent, "Day", "gantt day preset updates label");
+assert.match(elements["#gantt"].innerHTML, /minmax\(24px, 1fr\)/, "gantt day preset updates day width");
 assert.match(elements["#kanban"].innerHTML, /Plan/, "kanban renders");
 assert.match(elements["#calendarBoard"].innerHTML, /Klinika İT Portfeli|Radiologiya|Server avadanlıqları/, "calendar renders clinic project tasks");
 assert.match(elements["#dashboardCalendar"].innerHTML, /data-calendar-day/, "dashboard calendar renders clickable days");
@@ -320,12 +334,25 @@ elements["#taskList"].dispatch("submit", {
   }
 });
 assert.match(elements["#taskList"].innerHTML, /Second user comment/, "same user can add multiple comments");
+const userTask = JSON.parse(store.get("project-manager-tasks-v2")).find((task) => task.id === editedId);
+context.applyGanttDateChange({ type: "task", id: editedId, mode: "move", start: userTask.start, end: userTask.end }, 2);
+const requestedTask = JSON.parse(store.get("project-manager-tasks-v2")).find((task) => task.id === editedId);
+assert.equal(requestedTask.start, userTask.start, "user gantt drag does not directly change dates");
+assert.equal(requestedTask.dateChangeRequests?.[0]?.status, "pending", "user gantt drag creates date request");
 
 elements["#logoutButton"].dispatch("click");
 elements["#loginUsername"].value = "manager";
 elements["#loginPassword"].value = "manager123";
 elements["#loginForm"].dispatch("submit", { preventDefault: () => {} });
 assert.match(elements["#taskList"].innerHTML, /Redaktə olunmuş task/, "manager sees tasks from assigned projects");
+assert.match(elements["#dateRequestList"].innerHTML, /Redaktə olunmuş task/, "manager sees date change request");
+const requestId = JSON.parse(store.get("project-manager-tasks-v2")).find((task) => task.id === editedId).dateChangeRequests[0].id;
+elements["#dateRequestList"].dispatch("click", {
+  target: { closest: () => ({ dataset: { dateRequestAction: "approve", taskId: editedId, requestId } }) }
+});
+const approvedTask = JSON.parse(store.get("project-manager-tasks-v2")).find((task) => task.id === editedId);
+assert.equal(approvedTask.dateChangeRequests[0].status, "approved", "manager approves date request");
+assert.notEqual(approvedTask.start, userTask.start, "approved date request changes task start");
 
 elements["#logoutButton"].dispatch("click");
 elements["#loginUsername"].value = "admin";

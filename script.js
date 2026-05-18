@@ -310,6 +310,12 @@ const translations = {
     dueSoon: "Yaxın deadline",
     dueToday: "Bu gün bitir",
     noDeadlineAlerts: "Riskli deadline yoxdur.",
+    dateChangeRequests: "Tarix dəyişiklik sorğuları",
+    dateChangeRequested: "Tarix dəyişikliyi manager təsdiqinə göndərildi.",
+    approveDateChange: "Təsdiq et",
+    rejectDateChange: "Rədd et",
+    noDateRequests: "Açıq tarix sorğusu yoxdur.",
+    roleMatrix: "Rol icazələri",
     fileTooLarge: "Fayl çox böyükdür. Hər fayl maksimum 800 KB ola bilər.",
     all: "Hamısı",
     statuses: { "Plan": "Plan", "Davam edir": "Davam edir", "Bitib": "Bitib" },
@@ -611,6 +617,12 @@ const translations = {
     dueSoon: "Скоро срок",
     dueToday: "Срок сегодня",
     noDeadlineAlerts: "Рискованных сроков нет.",
+    dateChangeRequests: "Запросы изменения дат",
+    dateChangeRequested: "Изменение дат отправлено менеджеру на подтверждение.",
+    approveDateChange: "Подтвердить",
+    rejectDateChange: "Отклонить",
+    noDateRequests: "Нет открытых запросов дат.",
+    roleMatrix: "Права ролей",
     fileTooLarge: "Файл слишком большой. Максимум 800 KB на файл.",
     all: "Все",
     statuses: { "Plan": "План", "Davam edir": "В работе", "Bitib": "Выполнено" },
@@ -909,6 +921,12 @@ const translations = {
     dueSoon: "Due soon",
     dueToday: "Due today",
     noDeadlineAlerts: "No risky deadlines.",
+    dateChangeRequests: "Date change requests",
+    dateChangeRequested: "Date change was sent for manager approval.",
+    approveDateChange: "Approve",
+    rejectDateChange: "Reject",
+    noDateRequests: "No open date requests.",
+    roleMatrix: "Role permissions",
     fileTooLarge: "File is too large. Each file can be up to 800 KB.",
     all: "All",
     statuses: { "Plan": "Plan", "Davam edir": "In progress", "Bitib": "Done" },
@@ -1285,8 +1303,11 @@ const parentTaskInput = document.querySelector("#parentTask");
 const taskDependenciesInput = document.querySelector("#taskDependencies");
 const cancelEdit = document.querySelector("#cancelEdit");
 const gantt = document.querySelector("#gantt");
+const ganttControls = document.querySelector("#ganttControls");
+const ganttFitButton = document.querySelector("#ganttFit");
 const ganttZoomOutButton = document.querySelector("#ganttZoomOut");
 const ganttZoomInButton = document.querySelector("#ganttZoomIn");
+const ganttZoomLabel = document.querySelector("#ganttZoomLabel");
 const reports = document.querySelector("#reports");
 const kanban = document.querySelector("#kanban");
 const summaryCards = document.querySelectorAll(".summary-card");
@@ -1373,6 +1394,8 @@ const registerList = document.querySelector("#registerList");
 const registerCount = document.querySelector("#registerCount");
 const trashList = document.querySelector("#trashList");
 const trashCount = document.querySelector("#trashCount");
+const dateRequestList = document.querySelector("#dateRequestList");
+const dateRequestCount = document.querySelector("#dateRequestCount");
 const loginScreen = document.querySelector("#loginScreen");
 const loginForm = document.querySelector("#loginForm");
 const loginUsername = document.querySelector("#loginUsername");
@@ -1470,8 +1493,9 @@ let authToken = localStorage.getItem(authTokenKey) || "";
 let auditLogs = [];
 let mailHistory = [];
 let draggedDashboardPanel = "";
-let ganttDayWidth = Number(localStorage.getItem("project-manager-gantt-day-width") || 44);
+let ganttDayWidth = Math.min(28, Math.max(2, Number(localStorage.getItem("project-manager-gantt-day-width") || 3)));
 let ganttDragState = null;
+let ganttManuallyCollapsed = false;
 enforceClinicOnlyState();
 saveUsers();
 
@@ -1989,6 +2013,7 @@ function normalizeTask(task) {
     timeEntries: [],
     completionRequestedAt: "",
     completionRequestedBy: "",
+    dateChangeRequests: [],
     completedAt: "",
     completedBy: "",
     approvedAt: "",
@@ -1999,6 +2024,7 @@ function normalizeTask(task) {
     plannedHours: Number(task.plannedHours) || 0,
     actualHours: Number(task.actualHours) || 0,
     timeEntries: Array.isArray(task.timeEntries) ? task.timeEntries.map(normalizeTimeEntry).filter(Boolean) : [],
+    dateChangeRequests: Array.isArray(task.dateChangeRequests) ? task.dateChangeRequests : [],
     dependencyIds: Array.isArray(task.dependencyIds) ? task.dependencyIds : []
   };
 }
@@ -2487,6 +2513,13 @@ function canManageTasks() {
   return ["admin", "manager"].includes(currentUser?.role);
 }
 
+function canApproveDateRequest(task) {
+  if (isAdmin()) return true;
+  if (currentUser?.role !== "manager") return false;
+  const project = projects.find((item) => item.name === task.project);
+  return Boolean(project?.managerIds?.includes(currentUser.id));
+}
+
 function canApproveTask(task) {
   if (isAdmin()) return true;
   if (currentUser?.role !== "manager") return false;
@@ -2834,8 +2867,36 @@ function renderResourceControls() {
       </div>
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
+  renderDateRequests();
   renderCustomerList();
   renderManagedFileList();
+}
+
+function pendingDateRequests() {
+  return tasks.flatMap((task) => (task.dateChangeRequests || [])
+    .filter((request) => request.status === "pending")
+    .map((request) => ({ task, request })))
+    .filter(({ task }) => canApproveDateRequest(task));
+}
+
+function renderDateRequests() {
+  if (!dateRequestList || !dateRequestCount) return;
+  const requests = pendingDateRequests();
+  dateRequestCount.textContent = requests.length;
+  dateRequestList.innerHTML = requests.length ? requests.map(({ task, request }) => `
+    <div class="resource-item date-request-item">
+      <span>
+        <strong>${escapeHtml(task.name)}</strong>
+        ${escapeHtml(task.project || "")}
+        <small>${escapeHtml(request.oldStart)} - ${escapeHtml(request.oldEnd)} -> ${escapeHtml(request.newStart)} - ${escapeHtml(request.newEnd)}</small>
+        <small>${escapeHtml(request.requestedBy || "")} · ${escapeHtml(formatDateTime(request.requestedAt))}</small>
+      </span>
+      <div class="mini-actions">
+        <button type="button" data-date-request-action="approve" data-task-id="${escapeHtml(task.id)}" data-request-id="${escapeHtml(request.id)}">${text("approveDateChange")}</button>
+        <button type="button" data-date-request-action="reject" data-task-id="${escapeHtml(task.id)}" data-request-id="${escapeHtml(request.id)}">${text("rejectDateChange")}</button>
+      </div>
+    </div>
+  `).join("") : `<div class="empty">${text("noDateRequests")}</div>`;
 }
 
 function renderCustomerList() {
@@ -3373,8 +3434,38 @@ function dependencyArrows(task, projectTasks, minStart, days) {
   }).join("");
 }
 
+function todayMarker(minStart, days) {
+  const today = isoDate(new Date());
+  const offset = daysBetween(isoDate(minStart), today);
+  if (offset < 0 || offset >= days) return "";
+  return `<div class="gantt-today-line" style="grid-column:${offset + 1};" title="Today"></div>`;
+}
+
 function ganttColumns(days) {
   return `repeat(${days}, minmax(${ganttDayWidth}px, 1fr))`;
+}
+
+function ganttZoomText() {
+  if (ganttDayWidth <= 3) return "Fit";
+  if (ganttDayWidth <= 9) return "Compact";
+  if (ganttDayWidth <= 17) return "Week";
+  return "Day";
+}
+
+function setGanttZoom(width) {
+  ganttDayWidth = Math.min(28, Math.max(2, Number(width) || 3));
+  localStorage.setItem("project-manager-gantt-day-width", String(ganttDayWidth));
+  if (ganttZoomLabel) ganttZoomLabel.textContent = ganttZoomText();
+  renderGantt();
+}
+
+function ganttDayHeader(date, index) {
+  const day = date.getDate();
+  const show = index === 0 || day === 1 || day === 15;
+  const label = day === 1
+    ? date.toLocaleDateString(translations[currentLanguage].locale, { month: "short", year: "2-digit" })
+    : shortDate(isoDate(date));
+  return `<div class="gantt-day ${show ? "major" : "minor"}">${show ? label : ""}</div>`;
 }
 
 function draggableGanttBar(type, item, className, offset, span, label) {
@@ -3388,6 +3479,7 @@ function draggableGanttBar(type, item, className, offset, span, label) {
 }
 
 function renderGantt() {
+  if (ganttZoomLabel) ganttZoomLabel.textContent = ganttZoomText();
   const selectedProject = projectFilter.value;
   const shownProjects = visibleProjects()
     .filter((project) => selectedProject === "Hamısı" || project.name === selectedProject)
@@ -3399,6 +3491,7 @@ function renderGantt() {
 
   const visibleProjectNames = new Set(shownProjects.map((project) => project.name));
   if (expandedGanttProject && !visibleProjectNames.has(expandedGanttProject)) expandedGanttProject = "";
+  if (!expandedGanttProject && shownProjects.length === 1 && !ganttManuallyCollapsed) expandedGanttProject = shownProjects[0].name;
 
   const detailTasks = expandedGanttProject
     ? visibleTasks().filter((task) => task.project === expandedGanttProject)
@@ -3428,7 +3521,7 @@ function renderGantt() {
   const days = Math.max(1, Math.round((maxEnd - minStart) / 86400000) + 1);
   const dayHeaders = Array.from({ length: days }, (_, index) => {
     const date = addDays(minStart, index);
-    return `<div class="gantt-day">${shortDate(isoDate(date))}</div>`;
+    return ganttDayHeader(date, index);
   }).join("");
 
   const projectRows = shownProjects.map((project) => {
@@ -3442,6 +3535,7 @@ function renderGantt() {
           ${escapeHtml(project.name)}
         </button>
         <div class="gantt-lane" style="--days:${days}; grid-template-columns: ${ganttColumns(days)};">
+          ${todayMarker(minStart, days)}
           ${milestoneMarkers(project, minStart, days)}
           ${draggableGanttBar("project", project, `project-bar ${statusClass(project.status)}`, offset, span, `${span} ${text("day")} - ${Number(project.progress) || 0}%`)}
         </div>
@@ -3468,6 +3562,7 @@ function renderGantt() {
           ${escapeHtml(task.name)}
         </div>
         <div class="gantt-lane" style="--days:${days}; grid-template-columns: ${ganttColumns(days)};">
+          ${todayMarker(minStart, days)}
           <div class="gantt-task-track" style="grid-column: ${trackOffset + 1} / span ${trackSpan};"></div>
           ${dependencyArrows(task, detailTasks, minStart, days)}
           ${draggableGanttBar("task", task, `${statusClass(task.status)} ${inferredTimeline ? "inferred-bar" : ""}`, offset, span, `${inferredTimeline ? text("projectDuration") : `${span} ${text("day")}`} - ${Number(task.progress) || 0}%`)}
@@ -3477,7 +3572,7 @@ function renderGantt() {
   }).join("") : `<div class="empty gantt-detail-empty">${text("noTaskFilter")}</div>`) : "";
 
   gantt.innerHTML = `
-    <div class="gantt-grid">
+    <div class="gantt-grid" style="--gantt-day-width:${ganttDayWidth}px;">
       <div class="gantt-header">
         <div class="gantt-label">Task</div>
         <div class="gantt-days" style="grid-template-columns: ${ganttColumns(days)};">${dayHeaders}</div>
@@ -3501,19 +3596,55 @@ function shiftIsoDate(value, delta) {
 function applyGanttDateChange(state, deltaDays) {
   const item = ganttItem(state.type, state.id);
   if (!item || !state.start || !state.end || !deltaDays) return false;
+  const next = { start: state.start, end: state.end };
   if (state.mode === "move") {
-    item.start = shiftIsoDate(state.start, deltaDays);
-    item.end = shiftIsoDate(state.end, deltaDays);
+    next.start = shiftIsoDate(state.start, deltaDays);
+    next.end = shiftIsoDate(state.end, deltaDays);
   } else if (state.mode === "start") {
     const nextStart = shiftIsoDate(state.start, deltaDays);
-    item.start = nextStart <= state.end ? nextStart : state.end;
+    next.start = nextStart <= state.end ? nextStart : state.end;
   } else if (state.mode === "end") {
     const nextEnd = shiftIsoDate(state.end, deltaDays);
-    item.end = nextEnd >= state.start ? nextEnd : state.start;
+    next.end = nextEnd >= state.start ? nextEnd : state.start;
   }
+  if (state.type === "task" && currentUser?.role === "user") {
+    item.dateChangeRequests = item.dateChangeRequests || [];
+    item.dateChangeRequests.push({
+      id: createId("date-request"),
+      oldStart: state.start,
+      oldEnd: state.end,
+      newStart: next.start,
+      newEnd: next.end,
+      mode: state.mode,
+      status: "pending",
+      requestedBy: currentUser.username,
+      requestedAt: new Date().toISOString()
+    });
+    saveTasks();
+    alert(text("dateChangeRequested"));
+    return true;
+  }
+  item.start = next.start;
+  item.end = next.end;
   if (state.type === "project") saveResources();
   else saveTasks();
   return true;
+}
+
+function openGanttItem(type, id) {
+  const item = ganttItem(type, id);
+  if (!item) return;
+  if (type === "task") {
+    editTask(item.id);
+    return;
+  }
+  if (!canManageTasks()) {
+    setView("projects");
+    projectFilter.value = item.name;
+    render();
+    return;
+  }
+  editProject(item.id);
 }
 
 function ganttDeltaDays(event, state) {
@@ -4413,7 +4544,9 @@ form.addEventListener("submit", async (event) => {
 gantt.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-gantt-project]");
   if (!button) return;
-  expandedGanttProject = expandedGanttProject === button.dataset.ganttProject ? "" : button.dataset.ganttProject;
+  const willCollapse = expandedGanttProject === button.dataset.ganttProject;
+  expandedGanttProject = willCollapse ? "" : button.dataset.ganttProject;
+  ganttManuallyCollapsed = willCollapse;
   renderGantt();
 });
 
@@ -4433,6 +4566,7 @@ gantt.addEventListener("pointerdown", (event) => {
     end: item.end,
     lane: bar.closest(".gantt-lane"),
     delta: 0,
+    moved: false,
     bar
   };
   bar.classList.add("dragging");
@@ -4441,6 +4575,7 @@ gantt.addEventListener("pointerdown", (event) => {
 gantt.addEventListener("pointermove", (event) => {
   if (!ganttDragState) return;
   ganttDragState.delta = ganttDeltaDays(event, ganttDragState);
+  ganttDragState.moved = Math.abs(ganttDragState.delta) > 0;
   ganttDragState.bar.style.transform = `translateX(${ganttDragState.delta * ganttDayWidth}px)`;
 });
 
@@ -4450,6 +4585,10 @@ gantt.addEventListener("pointerup", (event) => {
   state.bar.classList.remove("dragging");
   state.bar.style.transform = "";
   ganttDragState = null;
+  if (!state.moved) {
+    openGanttItem(state.type, state.id);
+    return;
+  }
   if (applyGanttDateChange(state, state.delta)) render();
 });
 
@@ -4460,16 +4599,16 @@ gantt.addEventListener("pointercancel", () => {
   ganttDragState = null;
 });
 
-ganttZoomOutButton?.addEventListener("click", () => {
-  ganttDayWidth = Math.max(18, ganttDayWidth - 8);
-  localStorage.setItem("project-manager-gantt-day-width", String(ganttDayWidth));
-  renderGantt();
-});
-
-ganttZoomInButton?.addEventListener("click", () => {
-  ganttDayWidth = Math.min(96, ganttDayWidth + 8);
-  localStorage.setItem("project-manager-gantt-day-width", String(ganttDayWidth));
-  renderGantt();
+ganttControls?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-gantt-zoom]");
+  if (!button) return;
+  const action = button.dataset.ganttZoom;
+  if (action === "fit") setGanttZoom(3);
+  if (action === "month") setGanttZoom(5);
+  if (action === "week") setGanttZoom(12);
+  if (action === "day") setGanttZoom(24);
+  if (action === "out") setGanttZoom(ganttDayWidth - 2);
+  if (action === "in") setGanttZoom(ganttDayWidth + 2);
 });
 
 dashboardPanels.forEach((panel) => {
@@ -4531,6 +4670,23 @@ priorityFilters?.addEventListener("click", (event) => {
 
 refreshAuditLogsButton?.addEventListener("click", fetchAuditLogs);
 refreshMailHistoryButton?.addEventListener("click", fetchMailHistory);
+
+dateRequestList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-date-request-action]");
+  if (!button) return;
+  const task = tasks.find((item) => item.id === button.dataset.taskId);
+  const request = task?.dateChangeRequests?.find((item) => item.id === button.dataset.requestId);
+  if (!task || !request || !canApproveDateRequest(task)) return;
+  request.status = button.dataset.dateRequestAction === "approve" ? "approved" : "rejected";
+  request.reviewedBy = currentUser.username;
+  request.reviewedAt = new Date().toISOString();
+  if (request.status === "approved") {
+    task.start = request.newStart;
+    task.end = request.newEnd;
+  }
+  saveTasks();
+  render();
+});
 
 viewTabs.forEach((button) => {
   button.addEventListener("click", () => {

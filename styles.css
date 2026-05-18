@@ -1,17 +1,17 @@
 :root {
-  --bg: #f4f6fb;
-  --ink: #17212b;
-  --muted: #647184;
+  --bg: #f6f8fc;
+  --ink: #111827;
+  --muted: #667085;
   --panel: #ffffff;
   --line: #e4e9f2;
   --field: #ffffff;
-  --teal: #4656e8;
+  --teal: #2563eb;
   --blue: #2563eb;
   --amber: #f59e0b;
   --green: #16a34a;
   --red: #dc2626;
   --soft: #f7faf9;
-  --sidebar: #16213e;
+  --sidebar: #111827;
   --sidebar-muted: #9aa7c7;
   --shadow: 0 16px 42px rgba(31, 41, 55, 0.11);
   --shadow-soft: 0 8px 26px rgba(31, 41, 55, 0.075);
@@ -167,6 +167,7 @@ body.logged-in #loginScreen {
 }
 
 body.user-role .admin-only,
+body.user-role .manager-only,
 body.user-role .task-actions .edit-action,
 body.user-role .task-actions .next-action,
 body.user-role .task-actions .danger-action,
@@ -178,6 +179,10 @@ body.user-role #openTaskComposer {
 
 body.manager-role .admin-only {
   display: none;
+}
+
+body.admin-role .manager-only {
+  display: block;
 }
 
 .login-screen {
@@ -1307,6 +1312,31 @@ textarea:focus {
   white-space: nowrap;
 }
 
+.role-matrix {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.role-matrix > div {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 88%, var(--soft));
+  display: grid;
+  gap: 8px;
+}
+
+.role-matrix strong {
+  color: var(--teal);
+}
+
+.role-matrix span,
+.date-request-item small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .section-head {
   display: flex;
   justify-content: space-between;
@@ -1869,25 +1899,55 @@ button:disabled {
 
 .gantt {
   overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--teal));
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, #ffffff), color-mix(in srgb, var(--soft) 86%, #ffffff));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 .gantt-controls {
   display: inline-flex;
-  gap: 6px;
+  gap: 8px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 86%, var(--soft));
+  align-items: center;
 }
 
 .gantt-controls button {
-  width: 34px;
+  min-width: 38px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-weight: 900;
+  background: var(--panel);
+  box-shadow: none;
+}
+
+.gantt-controls button:hover {
+  background: var(--teal);
+  color: #fff;
+  transform: none;
+}
+
+.gantt-zoom-label {
+  min-width: 72px;
   min-height: 32px;
-  padding: 0;
-  border-radius: 7px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--teal) 10%, var(--panel));
+  color: var(--teal);
+  font-size: 0.78rem;
   font-weight: 900;
 }
 
 .gantt-grid {
-  min-width: 820px;
+  min-width: max(100%, calc(230px + (var(--gantt-day-width) * var(--days))));
 }
 
 .gantt-header,
@@ -1897,10 +1957,13 @@ button:disabled {
 }
 
 .gantt-header {
-  background: var(--soft);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--panel) 88%, var(--soft));
   border-bottom: 1px solid var(--line);
   color: var(--muted);
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   font-weight: 800;
 }
 
@@ -1970,37 +2033,50 @@ button:disabled {
 
 .gantt-days {
   display: grid;
-  min-height: 42px;
+  min-height: 38px;
 }
 
 .gantt-day {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-right: 1px solid #e7eef0;
-  padding: 0 4px;
+  justify-content: flex-start;
+  border-right: 1px solid color-mix(in srgb, var(--line) 58%, transparent);
+  padding: 0 2px;
   white-space: nowrap;
+  overflow: hidden;
+  color: transparent;
+}
+
+.gantt-day.major {
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 900;
+  background: color-mix(in srgb, var(--teal) 7%, transparent);
+}
+
+.gantt-day.minor {
+  border-right-color: color-mix(in srgb, var(--line) 30%, transparent);
 }
 
 .gantt-lane {
   position: relative;
   display: grid;
-  min-height: 42px;
+  min-height: 46px;
   border-bottom: 1px solid var(--line);
   background:
     repeating-linear-gradient(
       90deg,
-      #fff 0,
-      #fff calc(100% / var(--days) - 1px),
-      #e9eff1 calc(100% / var(--days) - 1px),
-      #e9eff1 calc(100% / var(--days))
+      color-mix(in srgb, var(--panel) 96%, transparent) 0,
+      color-mix(in srgb, var(--panel) 96%, transparent) calc(100% / var(--days) - 1px),
+      color-mix(in srgb, var(--line) 45%, transparent) calc(100% / var(--days) - 1px),
+      color-mix(in srgb, var(--line) 45%, transparent) calc(100% / var(--days))
     );
 }
 
 .bar {
   align-self: center;
-  min-height: 24px;
-  border-radius: 6px;
+  min-height: 28px;
+  border-radius: 999px;
   padding: 2px 8px;
   color: #fff;
   font-size: 0.82rem;
@@ -2015,6 +2091,7 @@ button:disabled {
   user-select: none;
   position: relative;
   touch-action: none;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
 }
 
 .bar.dragging {
@@ -2027,6 +2104,7 @@ button:disabled {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.16);
 }
 
 .gantt-resize-handle {
@@ -2040,10 +2118,10 @@ button:disabled {
 
 .gantt-task-track {
   align-self: center;
-  min-height: 8px;
+  min-height: 10px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--teal) 18%, transparent);
-  border: 1px solid color-mix(in srgb, var(--teal) 22%, transparent);
+  background: color-mix(in srgb, var(--teal) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--teal) 20%, transparent);
   z-index: 0;
 }
 
@@ -2055,6 +2133,15 @@ button:disabled {
   position: relative;
   z-index: 5;
   opacity: 0.92;
+}
+
+.gantt-today-line {
+  align-self: stretch;
+  justify-self: center;
+  width: 3px;
+  background: var(--red);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 14%, transparent);
+  z-index: 7;
 }
 
 .gantt-dependency-arrow::after {
@@ -2148,6 +2235,10 @@ button:disabled {
   }
 
   .activity-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .role-matrix {
     grid-template-columns: 1fr;
   }
 }

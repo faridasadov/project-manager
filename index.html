@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-  <link rel="stylesheet" href="styles.css?v=20260518-admin-import-dashboard">
+  <link rel="stylesheet" href="styles.css?v=20260518-gantt-fit-polish">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
@@ -468,6 +468,28 @@
             </div>
           </details>
 
+          <details class="resource-block admin-wide manager-only" open>
+            <summary>
+              <span data-i18n="dateChangeRequests">Tarix dəyişiklik sorğuları</span>
+              <small id="dateRequestCount">0</small>
+            </summary>
+            <div class="resource-body">
+              <div id="dateRequestList" class="resource-list activity-list"></div>
+            </div>
+          </details>
+
+          <details class="resource-block admin-wide admin-only">
+            <summary>
+              <span data-i18n="roleMatrix">Rol icazələri</span>
+              <small>Admin / Manager / User</small>
+            </summary>
+            <div class="resource-body role-matrix">
+              <div><strong>Admin</strong><span>Hamısını idarə edir, istifadəçi və ayarları dəyişir, tarix sorğularını təsdiqləyir.</span></div>
+              <div><strong>Manager</strong><span>Öz layihələrini və tasklarını idarə edir, user tarix sorğularını təsdiqləyir.</span></div>
+              <div><strong>User</strong><span>Layihə və tasklara baxır, komment yazır, Gantt tarix dəyişikliyi üçün sorğu göndərir.</span></div>
+            </div>
+          </details>
+
           <details class="resource-block admin-wide admin-only">
             <summary>
               <span data-i18n="projects">Layihələr</span>
@@ -910,9 +932,14 @@
                 <p class="kicker">Timeline</p>
                 <h2 data-i18n="ganttChart">Gantt cədvəli</h2>
               </div>
-              <div class="gantt-controls" aria-label="Gantt controls">
-                <button id="ganttZoomOut" type="button" title="Kiçilt">−</button>
-                <button id="ganttZoomIn" type="button" title="Böyüt">+</button>
+              <div id="ganttControls" class="gantt-controls" aria-label="Gantt controls">
+                <button id="ganttFit" type="button" data-gantt-zoom="fit">Fit</button>
+                <button type="button" data-gantt-zoom="month">Ay</button>
+                <button type="button" data-gantt-zoom="week">Həftə</button>
+                <button type="button" data-gantt-zoom="day">Gün</button>
+                <button id="ganttZoomOut" type="button" data-gantt-zoom="out">−</button>
+                <span id="ganttZoomLabel" class="gantt-zoom-label">Fit</span>
+                <button id="ganttZoomIn" type="button" data-gantt-zoom="in">+</button>
               </div>
             </div>
             <div id="gantt" class="gantt" aria-live="polite"></div>
@@ -934,6 +961,6 @@
     </main>
     </div>
 
-  <script src="script.js?v=20260518-admin-import-dashboard"></script>
+  <script src="script.js?v=20260518-gantt-fit-polish"></script>
 </body>
 </html>
