@@ -2584,8 +2584,15 @@ function closeManagerAssign() {
   managerAssignModal.setAttribute("aria-hidden", "true");
 }
 
+function raiseModal(modal) {
+  if (modal?.parentElement !== document.body && typeof document.body?.appendChild === "function") {
+    document.body.appendChild(modal);
+  }
+}
+
 function openTaskComposer() {
-  if (!currentUser || !canManageTasks()) return;
+  if (!currentUser) return;
+  raiseModal(taskComposerModal);
   taskComposerModal.classList.add("open");
   taskComposerModal.setAttribute("aria-hidden", "false");
   taskName.focus();
@@ -2624,6 +2631,7 @@ function openProjectComposer() {
   if (!currentUser || !canManageTasks()) return;
   resetProjectForm();
   renderResourceControls();
+  raiseModal(projectComposerModal);
   projectComposerModal.classList.add("open");
   projectComposerModal.setAttribute("aria-hidden", "false");
   projectNameInput.focus();
@@ -2645,6 +2653,7 @@ function openProjectEditor(projectName) {
   projectPriorityInput.value = project.priority || "Normal";
   projectProgressInput.value = Number(project.progress) || 0;
   renderSelectedProjectTeamMembers();
+  raiseModal(projectComposerModal);
   projectComposerModal.classList.add("open");
   projectComposerModal.setAttribute("aria-hidden", "false");
   projectNameInput.focus();
@@ -3459,13 +3468,22 @@ function setGanttZoom(width) {
   renderGantt();
 }
 
-function ganttDayHeader(date, index) {
-  const day = date.getDate();
-  const show = index === 0 || day === 1 || day === 15;
-  const label = day === 1
-    ? date.toLocaleDateString(translations[currentLanguage].locale, { month: "short", year: "2-digit" })
-    : shortDate(isoDate(date));
-  return `<div class="gantt-day ${show ? "major" : "minor"}">${show ? label : ""}</div>`;
+function ganttMonthHeaders(minStart, days) {
+  const headers = [];
+  let cursor = new Date(minStart);
+  cursor.setDate(1);
+  const endDate = addDays(minStart, days - 1);
+  while (cursor <= endDate) {
+    const monthStart = new Date(cursor);
+    const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
+    const startOffset = Math.max(0, daysBetween(isoDate(minStart), isoDate(monthStart)));
+    const endOffset = Math.min(days - 1, daysBetween(isoDate(minStart), isoDate(monthEnd)));
+    const span = Math.max(1, endOffset - startOffset + 1);
+    const label = cursor.toLocaleDateString(translations[currentLanguage].locale, { month: "short", year: "2-digit" });
+    headers.push(`<div class="gantt-month" style="grid-column:${startOffset + 1} / span ${span};">${escapeHtml(label)}</div>`);
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+  }
+  return headers.join("");
 }
 
 function draggableGanttBar(type, item, className, offset, span, label) {
@@ -3519,10 +3537,7 @@ function renderGantt() {
   const minStart = new Date(Math.min(...starts));
   const maxEnd = new Date(Math.max(...ends));
   const days = Math.max(1, Math.round((maxEnd - minStart) / 86400000) + 1);
-  const dayHeaders = Array.from({ length: days }, (_, index) => {
-    const date = addDays(minStart, index);
-    return ganttDayHeader(date, index);
-  }).join("");
+  const monthHeaders = ganttMonthHeaders(minStart, days);
 
   const projectRows = shownProjects.map((project) => {
     const offset = daysBetween(isoDate(minStart), project.start);
@@ -3575,7 +3590,7 @@ function renderGantt() {
     <div class="gantt-grid" style="--gantt-day-width:${ganttDayWidth}px;">
       <div class="gantt-header">
         <div class="gantt-label">Task</div>
-        <div class="gantt-days" style="grid-template-columns: ${ganttColumns(days)};">${dayHeaders}</div>
+        <div class="gantt-months" style="grid-template-columns: ${ganttColumns(days)};">${monthHeaders}</div>
       </div>
       ${projectRows}
       ${taskRows}
@@ -3635,7 +3650,7 @@ function openGanttItem(type, id) {
   const item = ganttItem(type, id);
   if (!item) return;
   if (type === "task") {
-    editTask(item.id);
+    editTask(item.id, { readonly: !canManageTasks() });
     return;
   }
   if (!canManageTasks()) {
@@ -3754,8 +3769,17 @@ function render() {
   renderViews();
 }
 
+function taskFormFields() {
+  return [
+    taskName, projectInput, projectResourceInput, startDate, endDate, statusInput, priorityInput,
+    ownerInput, progressInput, plannedHoursInput, actualHoursInput, notesInput, parentTaskInput,
+    taskDependenciesInput
+  ].filter(Boolean);
+}
+
 function resetForm() {
   form.reset();
+  taskFormFields().forEach((field) => { field.disabled = false; });
   taskId.value = "";
   formTitle.textContent = text("newTask");
   projectResourceInput.value = "";
@@ -3879,6 +3903,32 @@ function handleTaskAction(action, id) {
     saveTasks();
     render();
   }
+}
+
+function editTask(id, options = {}) {
+  const task = tasks.find((item) => item.id === id);
+  if (!task) return;
+  const readonly = Boolean(options.readonly || !canManageTasks());
+  taskId.value = task.id;
+  taskName.value = task.name;
+  projectInput.value = task.project || "";
+  renderResourceControls();
+  projectInput.value = task.project || "";
+  projectResourceInput.value = task.projectResource || "";
+  startDate.value = task.start;
+  endDate.value = task.end;
+  statusInput.value = task.status;
+  priorityInput.value = task.priority;
+  ownerInput.value = task.owner;
+  progressInput.value = Number(task.progress) || 0;
+  plannedHoursInput.value = Number(task.plannedHours) || 0;
+  actualHoursInput.value = Number(task.actualHours) || 0;
+  notesInput.value = task.notes;
+  parentTaskInput.value = task.parentTaskId || "";
+  taskDependenciesInput.innerHTML = taskOptionItems(task.dependencyIds || [], task.id);
+  formTitle.textContent = readonly ? task.name : text("editTask");
+  taskFormFields().forEach((field) => { field.disabled = readonly; });
+  openTaskComposer();
 }
 
 function backupPayload() {

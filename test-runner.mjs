@@ -194,6 +194,11 @@ assert.match(elements["#gantt"].innerHTML, /gantt-task-track/, "gantt renders ta
 assert.match(elements["#gantt"].innerHTML, /gantt-milestone/, "gantt renders milestone markers");
 assert.match(elements["#gantt"].innerHTML, /gantt-dependency-arrow/, "gantt renders dependency arrows");
 assert.match(elements["#gantt"].innerHTML, /data-gantt-bar/, "gantt bars are draggable");
+assert.match(elements["#gantt"].innerHTML, /gantt-month/, "gantt renders month timeline headers");
+context.openGanttItem("task", "clinic-task-01");
+assert.equal(elements["#taskComposerModal"].classList.contains?.("open") ?? elements["#taskComposerModal"].className === "open", false, "mock classList remains no-op");
+assert.equal(elements["#taskId"].value, "clinic-task-01", "gantt task click opens task editor data");
+context.resetForm();
 elements["#ganttControls"].dispatch("click", { target: { closest: () => ({ dataset: { ganttZoom: "in" } }) } });
 assert.equal(elements["#ganttZoomLabel"].textContent, "Compact", "gantt zoom in updates label");
 assert.match(elements["#gantt"].innerHTML, /minmax\(5px, 1fr\)/, "gantt zoom in updates day width");
