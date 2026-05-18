@@ -47,7 +47,7 @@
         <button class="view-tab" data-view="list" type="button"><span class="menu-icon">T</span><span data-i18n="list">Tasklar</span></button>
         <span class="sidebar-section-label">Work</span>
         <button class="view-tab" data-view="kanban" type="button"><span class="menu-icon">K</span><span>Kanban</span></button>
-        <button class="view-tab no-menu-icon" data-view="calendar" type="button"><span data-i18n="calendar">Təqvim</span></button>
+        <button class="view-tab" data-view="calendar" type="button"><span class="menu-icon">Tə</span><span data-i18n="calendar">Təqvim</span></button>
         <button class="view-tab" data-view="gantt" type="button"><span class="menu-icon">G</span><span>Gantt</span></button>
         <button class="view-tab" data-view="reports" type="button"><span class="menu-icon">R</span><span data-i18n="reports">Hesabat</span></button>
       </nav>
@@ -301,7 +301,8 @@
               <input id="importData" type="file" accept="application/json">
             </label>
             <button id="clearDone" type="button" data-i18n="clearDone">Bitənləri təmizlə</button>
-            <button id="resetDemo" type="button" data-i18n="resetDemo">Demo yüklə</button>
+            <button id="loadClinicPortfolio" type="button" data-i18n="loadClinicPortfolio">Klinika yüklə</button>
+            <button id="resetDemo" type="button" data-i18n="resetDemo">Klinika resetlə</button>
           </div>
 
           <section class="resource-panel">
@@ -660,31 +661,47 @@
             <button class="view-tab" data-view="reports" type="button" data-i18n="reports">Hesabat</button>
           </div>
           <div class="tools">
+            <div class="filter-heading">
+              <strong data-i18n="filters">Filterlər</strong>
+              <span data-i18n="filtersScope">Task, Kanban, Gantt və Hesabat üçün tətbiq olunur</span>
+            </div>
             <input id="searchInput" type="search" placeholder="Task, layihə, məsul şəxs axtar" data-i18n-placeholder="searchPlaceholder">
             <select id="projectFilter">
               <option value="Hamısı">Bütün layihələr</option>
             </select>
+            <div id="statusFilters" class="filters" aria-label="Status filteri" data-i18n-aria="statusFilterAria">
+              <button class="filter active" data-filter="Hamısı" type="button">Hamısı</button>
+              <button class="filter" data-filter="Plan" type="button">Plan</button>
+              <button class="filter" data-filter="Davam edir" type="button">Davam edir</button>
+              <button class="filter" data-filter="Bitib" type="button">Bitib</button>
+            </div>
+            <div id="priorityFilters" class="filters priority-filters" aria-label="Prioritet filteri" data-i18n-aria="priorityFilterAria">
+              <button class="filter active" data-priority-filter="Hamısı" type="button">Hamısı</button>
+              <button class="filter" data-priority-filter="Yüksək" type="button">Yüksək</button>
+              <button class="filter" data-priority-filter="Normal" type="button">Normal</button>
+              <button class="filter" data-priority-filter="Aşağı" type="button">Aşağı</button>
+            </div>
           </div>
         </section>
 
         <section class="summary" aria-label="Layihə statistikası">
-          <article>
+          <article class="summary-card" data-summary-target="list" data-summary-status="Hamısı" tabindex="0" role="button">
             <span id="totalCount">0</span>
             <p data-i18n="totalTasks">Cəmi task</p>
           </article>
-          <article>
+          <article class="summary-card" data-summary-target="list" data-summary-status="Davam edir" tabindex="0" role="button">
             <span id="activeCount">0</span>
             <p data-i18n="activeTasks">Aktiv task</p>
           </article>
-          <article>
+          <article class="summary-card" data-summary-target="list" data-summary-status="Bitib" tabindex="0" role="button">
             <span id="doneCount">0</span>
             <p data-i18n="doneTasks">Bitmiş task</p>
           </article>
-            <article>
+            <article class="summary-card" data-summary-target="gantt" tabindex="0" role="button">
               <span id="dateRange">-</span>
               <p data-i18n="projectDuration">Layihə müddəti</p>
             </article>
-            <article>
+            <article class="summary-card" data-summary-target="reports" tabindex="0" role="button">
               <span id="hoursSummary">0 / 0</span>
               <p data-i18n="hoursSummary">Saat plan/fakt</p>
             </article>
@@ -791,12 +808,6 @@
                 <h2 data-i18n="taskListTitle">Tasklar siyahısı</h2>
               </div>
               <button id="openTaskComposer" class="primary" type="button" data-i18n="addTaskToProject">Task əlavə et</button>
-              <div id="statusFilters" class="filters" aria-label="Status filteri" data-i18n-aria="statusFilterAria">
-                <button class="filter active" data-filter="Hamısı" type="button">Hamısı</button>
-                <button class="filter" data-filter="Plan" type="button">Plan</button>
-                <button class="filter" data-filter="Davam edir" type="button">Davam edir</button>
-                <button class="filter" data-filter="Bitib" type="button">Bitib</button>
-              </div>
             </div>
             <div id="taskList" class="task-list"></div>
           </div>

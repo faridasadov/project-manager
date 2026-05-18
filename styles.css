@@ -340,7 +340,7 @@ button:hover {
 .sidebar-menu {
   display: grid;
   align-content: start;
-  gap: 6px;
+  gap: 8px;
 }
 
 .sidebar-section-label {
@@ -354,23 +354,23 @@ button:hover {
 
 .sidebar-menu .view-tab {
   width: 100%;
-  min-height: 44px;
+  min-height: 46px;
   display: grid;
-  grid-template-columns: 34px 1fr;
+  grid-template-columns: 36px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   justify-content: flex-start;
   border-color: transparent;
   background: transparent;
   color: var(--muted);
   font-weight: 800;
   text-align: left;
-  padding: 0 10px;
+  padding: 0 12px;
 }
 
-.sidebar-menu .view-tab.no-menu-icon {
+.sidebar-menu .view-tab.text-only {
   grid-template-columns: 1fr;
-  padding-left: 54px;
+  padding-left: 59px;
 }
 
 .sidebar-menu .view-tab:hover,
@@ -381,11 +381,11 @@ button:hover {
 }
 
 .menu-icon {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 11px;
   background: var(--soft);
   color: var(--muted);
   font-size: 0.78rem;
@@ -407,6 +407,26 @@ button:hover {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--soft);
+}
+
+.novo-sidebar .sidebar-footer {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.novo-sidebar .sidebar-footer span {
+  color: #a9b7cc;
+}
+
+.novo-sidebar .sidebar-footer strong {
+  display: inline-grid;
+  min-width: 52px;
+  min-height: 34px;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(20, 184, 166, 0.16);
+  color: #dffcf7;
 }
 
 .top-shell {
@@ -1070,8 +1090,8 @@ textarea:focus {
 
 .control-strip {
   padding: 14px;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 620px);
   gap: 14px;
   align-items: center;
 }
@@ -1084,11 +1104,42 @@ textarea:focus {
   font-weight: 900;
 }
 
+.priority-filters .filter.active {
+  background: color-mix(in srgb, var(--amber) 13%, #fff);
+  border-color: color-mix(in srgb, var(--amber) 42%, var(--line));
+  color: color-mix(in srgb, var(--amber) 80%, var(--ink));
+}
+
 .tools {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) 180px;
   gap: 8px;
-  width: min(520px, 100%);
+  width: 100%;
+}
+
+.filter-heading {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  padding: 2px 2px 4px;
+}
+
+.filter-heading strong {
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.filter-heading span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.tools .filters {
+  grid-column: 1 / -1;
 }
 
 .summary {
@@ -1102,6 +1153,19 @@ textarea:focus {
   padding: 16px;
   min-height: 96px;
   overflow: hidden;
+}
+
+.summary-card {
+  cursor: pointer;
+  transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
+}
+
+.summary-card:hover,
+.summary-card:focus-visible {
+  border-color: color-mix(in srgb, var(--teal) 35%, var(--line));
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+  outline: none;
 }
 
 .summary article::before {
@@ -1308,6 +1372,32 @@ textarea:focus {
   gap: 14px;
 }
 
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.report-summary article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--panel) 90%, var(--soft));
+}
+
+.report-summary span {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.report-summary p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .report-project {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1442,6 +1532,11 @@ textarea:focus {
   font-size: 0.82rem;
 }
 
+.blocked-relation {
+  color: var(--red);
+  font-weight: 800;
+}
+
 .badge {
   border-radius: 999px;
   padding: 3px 9px;
@@ -1461,6 +1556,26 @@ textarea:focus {
 .badge.active {
   color: var(--blue);
   background: #dbeafe;
+}
+
+.badge.blocked {
+  color: #9f1239;
+  background: #ffe4e6;
+}
+
+.blocked-task {
+  border-color: color-mix(in srgb, var(--red) 34%, var(--line));
+}
+
+.blocked-task::before {
+  background: linear-gradient(180deg, var(--red), var(--amber));
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+  box-shadow: none;
+  transform: none;
 }
 
 .progress-mini {
@@ -1685,6 +1800,55 @@ textarea:focus {
   font-weight: 800;
 }
 
+.gantt-project-row .gantt-task-name {
+  background: color-mix(in srgb, var(--teal) 8%, var(--panel));
+}
+
+.gantt-project-name {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  justify-content: flex-start;
+  gap: 8px;
+  background: color-mix(in srgb, var(--teal) 8%, var(--panel));
+  color: var(--ink);
+  box-shadow: none;
+  text-align: left;
+}
+
+.gantt-project-name:hover {
+  border-color: var(--line);
+  background: color-mix(in srgb, var(--teal) 13%, var(--panel));
+  box-shadow: none;
+  transform: none;
+}
+
+.gantt-project-name > span {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--teal);
+  color: #fff;
+  flex: 0 0 auto;
+}
+
+.gantt-detail-row .gantt-task-name {
+  padding-left: 34px;
+  gap: 8px;
+  background: color-mix(in srgb, var(--panel) 92%, var(--soft));
+  font-weight: 700;
+}
+
+.gantt-detail-empty {
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
 .gantt-days {
   display: grid;
   min-height: 42px;
@@ -1764,6 +1928,10 @@ textarea:focus {
     display: grid;
   }
 
+  .control-strip {
+    grid-template-columns: 1fr;
+  }
+
   .top-shell,
   .layout {
     margin-left: 12px;
@@ -1772,6 +1940,7 @@ textarea:focus {
 
   .layout,
   .summary,
+  .report-summary,
   .insight-grid,
   .dashboard-calendar-grid,
   .resource-panel,
@@ -1810,13 +1979,15 @@ textarea:focus {
   }
 
   .header-actions,
-  .view-tabs {
+  .view-tabs,
+  .tools {
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
 
   .header-actions > *,
-  .view-tabs > * {
+  .view-tabs > *,
+  .tools > * {
     min-width: 0;
   }
 
@@ -1874,5 +2045,360 @@ textarea:focus {
   .kanban-actions,
   .mini-actions {
     justify-content: start;
+  }
+}
+
+/* 2026 visual refresh */
+:root {
+  --bg: #f5f7fa;
+  --ink: #172033;
+  --muted: #697386;
+  --panel: #ffffff;
+  --line: #dce3ed;
+  --field: #f9fbfd;
+  --teal: #136f63;
+  --blue: #2554a6;
+  --amber: #b45309;
+  --green: #15803d;
+  --red: #dc2626;
+  --soft: #f4f8fb;
+  --sidebar: #101827;
+  --sidebar-muted: #a9b7cc;
+  --shadow: 0 18px 50px rgba(15, 23, 42, 0.13);
+  --shadow-soft: 0 10px 28px rgba(15, 23, 42, 0.09);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 18% -8%, rgba(19, 111, 99, 0.16), transparent 34%),
+    radial-gradient(circle at 88% 2%, rgba(37, 84, 166, 0.16), transparent 30%),
+    linear-gradient(180deg, #edf7f5 0, #f5f7fa 285px),
+    var(--bg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+
+body.dark-mode {
+  --bg: #0d1420;
+  --ink: #f5f8fb;
+  --muted: #b8c4d2;
+  --panel: #162132;
+  --line: #304158;
+  --field: #0f1928;
+  --soft: #1d2b3f;
+  --sidebar: #0a101b;
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.14), transparent 34%),
+    linear-gradient(225deg, rgba(37, 99, 235, 0.16), transparent 32%),
+    var(--bg);
+}
+
+.login-card,
+.top-shell,
+.composer,
+.admin-modal,
+.manager-assign-modal,
+.resource-block,
+.settings-card,
+.user-profile-card,
+.task-card,
+.kanban-card,
+.project-card,
+.calendar-day,
+.gantt,
+.report-row,
+.metric,
+.insight-card,
+.control-strip,
+.section-head {
+  border-color: color-mix(in srgb, var(--line) 82%, white);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+}
+
+.novo-sidebar {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(13, 22, 36, 0.98), rgba(15, 23, 42, 0.96)),
+    var(--sidebar);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+}
+
+.brand-mark,
+.menu-icon {
+  background: linear-gradient(135deg, #14b8a6, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(20, 184, 166, 0.22);
+}
+
+.sidebar-menu .view-tab {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: #c8d2e2;
+  overflow: hidden;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+.sidebar-menu .view-tab:hover,
+.sidebar-menu .view-tab.active {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.14), rgba(37, 99, 235, 0.12));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 22px rgba(0, 0, 0, 0.14);
+  color: #ffffff;
+}
+
+.sidebar-menu .view-tab span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-menu .view-tab.active {
+  position: relative;
+}
+
+.sidebar-menu .view-tab.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: #14b8a6;
+}
+
+.top-shell {
+  position: sticky;
+  top: 12px;
+  z-index: 20;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+}
+
+.top-shell h1,
+.login-card h1,
+.section-head h2 {
+  letter-spacing: 0;
+}
+
+button,
+.import-button,
+input,
+select,
+textarea {
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease, background 150ms ease;
+}
+
+button:hover,
+.import-button:hover {
+  border-color: color-mix(in srgb, var(--teal) 45%, var(--line));
+  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.12);
+  transform: translateY(-1px);
+}
+
+button:active,
+.import-button:active {
+  transform: translateY(0);
+}
+
+.primary,
+button.primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--teal), var(--blue));
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22);
+}
+
+.primary:hover,
+button.primary:hover {
+  box-shadow: 0 16px 36px rgba(15, 118, 110, 0.26);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--teal) 16%, transparent);
+  outline: none;
+}
+
+.admin-tools button,
+.header-actions button,
+.header-actions select {
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+}
+
+#loadClinicPortfolio {
+  border-color: color-mix(in srgb, var(--green) 38%, var(--line));
+  background: color-mix(in srgb, var(--green) 10%, var(--panel));
+  color: color-mix(in srgb, var(--green) 82%, var(--ink));
+  font-weight: 800;
+}
+
+.summary,
+.insight-grid,
+.project-cards,
+.kanban,
+.calendar-grid,
+.resource-panel {
+  gap: 14px;
+}
+
+.metric,
+.insight-card,
+.project-card,
+.task-card,
+.kanban-card,
+.calendar-day,
+.resource-item,
+.report-row {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+}
+
+.metric::before,
+.project-card::before,
+.task-card::before,
+.kanban-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--teal), var(--blue));
+}
+
+.task-card:hover,
+.kanban-card:hover,
+.project-card:hover,
+.calendar-day:hover,
+.resource-item:hover,
+.report-row:hover {
+  border-color: color-mix(in srgb, var(--teal) 34%, var(--line));
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.task-card,
+.kanban-card,
+.project-card,
+.calendar-day,
+.resource-item,
+.report-row {
+  transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
+}
+
+.project-card h3,
+.task-card h3,
+.kanban-card strong {
+  color: var(--ink);
+}
+
+.kanban-column {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, transparent), color-mix(in srgb, var(--soft) 90%, transparent));
+  border-color: var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.kanban-column h2 {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.calendar-day.selected {
+  border-color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 12%, var(--panel));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--teal) 12%, transparent);
+}
+
+.gantt {
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+}
+
+.gantt-header {
+  background: color-mix(in srgb, var(--soft) 92%, var(--panel));
+}
+
+.gantt-lane .bar {
+  background: linear-gradient(135deg, var(--teal), var(--blue));
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.20);
+}
+
+.gantt-lane .project-bar {
+  min-height: 30px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #0f766e, #2563eb);
+}
+
+.gantt-lane .bar.done {
+  background: linear-gradient(135deg, var(--green), #22c55e);
+}
+
+.gantt-lane .bar.plan {
+  background: linear-gradient(135deg, var(--amber), #f59e0b);
+}
+
+.modal-backdrop {
+  background: rgba(8, 13, 22, 0.52);
+  backdrop-filter: blur(8px);
+}
+
+.modal-shell.open .admin-modal,
+.modal-shell.open .manager-assign-modal,
+.modal-shell.open .task-composer-modal {
+  animation: modalEnter 180ms ease-out;
+}
+
+.view.active {
+  animation: viewEnter 220ms ease-out;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes viewEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 920px) {
+  .top-shell {
+    position: static;
+  }
+
+  .sidebar-menu .view-tab:hover,
+  .sidebar-menu .view-tab.active {
+    transform: none;
   }
 }

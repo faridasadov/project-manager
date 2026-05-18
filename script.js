@@ -22,7 +22,8 @@ const translations = {
     appKicker: "Project workspace",
     appTitle: "Plan, task və icra paneli",
     clearDone: "Bitənləri təmizlə",
-    resetDemo: "Demo yüklə",
+    resetDemo: "Klinika resetlə",
+    loadClinicPortfolio: "Klinika yüklə",
     adminPanel: "Admin panel",
     close: "Bağla",
     settings: "Settings",
@@ -38,6 +39,8 @@ const translations = {
     contactPerson: "Əlaqədar şəxs",
     addCustomer: "Sifarişçi əlavə et",
     fileManager: "File manager",
+    filters: "Filterlər",
+    filtersScope: "Task, Kanban, Gantt və Hesabat üçün tətbiq olunur",
     addFiles: "Fayl əlavə et",
     download: "Yüklə",
     testLdap: "LDAP test et",
@@ -136,6 +139,7 @@ const translations = {
     end: "Bitmə",
     status: "Status",
     priority: "Prioritet",
+    priorityFilterAria: "Prioritet filteri",
     owner: "Məsul şəxs",
     noOwnerSelect: "Seçilməyib",
     ownerPlaceholder: "Ad və ya komanda",
@@ -172,6 +176,9 @@ const translations = {
     noParentTask: "Ana task yoxdur",
     taskDependencies: "Asılı tasklar",
     dependsOn: "Asılıdır",
+    blocked: "Bloklanıb",
+    blockedBy: "Bloklayan",
+    dependencyStartBlocked: "Bu task başlamazdan əvvəl asılı tasklar bitməlidir.",
     gantt: "Gantt",
     searchPlaceholder: "Task, layihə, məsul şəxs axtar",
     allProjects: "Bütün layihələr",
@@ -198,6 +205,9 @@ const translations = {
     confirmDone: "Taskın bitdiyinə əminsiniz?",
     reports: "Hesabat",
     projectReports: "Layihə hesabatları",
+    reportSummary: "Hesabat xülasəsi",
+    filteredTasks: "Filterlənmiş task",
+    blockedTasks: "Bloklanmış task",
     requestedAt: "Bitmə sorğusu",
     approvedAt: "Təsdiq tarixi",
     executedBy: "İcraçı",
@@ -297,7 +307,8 @@ const translations = {
     appKicker: "Рабочее пространство",
     appTitle: "План, таски и панель контроля",
     clearDone: "Очистить выполненные",
-    resetDemo: "Загрузить демо",
+    resetDemo: "Сбросить клинику",
+    loadClinicPortfolio: "Загрузить клинику",
     adminPanel: "Админ панель",
     close: "Закрыть",
     settings: "Настройки",
@@ -313,6 +324,8 @@ const translations = {
     contactPerson: "Контактное лицо",
     addCustomer: "Добавить заказчика",
     fileManager: "File manager",
+    filters: "Фильтры",
+    filtersScope: "Применяется к задачам, Kanban, Gantt и отчетам",
     addFiles: "Добавить файлы",
     download: "Скачать",
     testLdap: "Проверить LDAP",
@@ -414,6 +427,7 @@ const translations = {
     end: "Окончание",
     status: "Статус",
     priority: "Приоритет",
+    priorityFilterAria: "Фильтр приоритета",
     owner: "Ответственный",
     noOwnerSelect: "Не выбрано",
     ownerPlaceholder: "Имя или команда",
@@ -450,6 +464,9 @@ const translations = {
     noParentTask: "Нет родительского таска",
     taskDependencies: "Зависимости таска",
     dependsOn: "Зависит от",
+    blocked: "Заблокировано",
+    blockedBy: "Блокирует",
+    dependencyStartBlocked: "Перед стартом этой задачи зависимые задачи должны быть выполнены.",
     gantt: "Гантт",
     searchPlaceholder: "Поиск по таску, проекту, ответственному",
     allProjects: "Все проекты",
@@ -476,6 +493,9 @@ const translations = {
     confirmDone: "Вы уверены, что таск завершен?",
     reports: "Отчет",
     projectReports: "Отчеты по проектам",
+    reportSummary: "Сводка отчета",
+    filteredTasks: "Отфильтрованные задачи",
+    blockedTasks: "Заблокированные задачи",
     requestedAt: "Запрос завершения",
     approvedAt: "Дата подтверждения",
     executedBy: "Исполнитель",
@@ -575,7 +595,8 @@ const translations = {
     appKicker: "Project workspace",
     appTitle: "Plan, tasks and execution board",
     clearDone: "Clear done",
-    resetDemo: "Load demo",
+    resetDemo: "Reset clinic",
+    loadClinicPortfolio: "Load clinic",
     adminPanel: "Admin panel",
     close: "Close",
     settings: "Settings",
@@ -591,6 +612,8 @@ const translations = {
     contactPerson: "Contact person",
     addCustomer: "Add customer",
     fileManager: "File manager",
+    filters: "Filters",
+    filtersScope: "Applies to Tasks, Kanban, Gantt and Reports",
     addFiles: "Add files",
     download: "Download",
     testLdap: "Test LDAP",
@@ -689,6 +712,7 @@ const translations = {
     end: "End",
     status: "Status",
     priority: "Priority",
+    priorityFilterAria: "Priority filter",
     owner: "Owner",
     noOwnerSelect: "Not selected",
     ownerPlaceholder: "Name or team",
@@ -725,6 +749,9 @@ const translations = {
     noParentTask: "No parent task",
     taskDependencies: "Task dependencies",
     dependsOn: "Depends on",
+    blocked: "Blocked",
+    blockedBy: "Blocked by",
+    dependencyStartBlocked: "This task cannot start until its dependency tasks are done.",
     gantt: "Gantt",
     searchPlaceholder: "Search task, project, owner",
     allProjects: "All projects",
@@ -751,6 +778,9 @@ const translations = {
     confirmDone: "Are you sure this task is done?",
     reports: "Reports",
     projectReports: "Project reports",
+    reportSummary: "Report summary",
+    filteredTasks: "Filtered tasks",
+    blockedTasks: "Blocked tasks",
     requestedAt: "Done requested",
     approvedAt: "Approved at",
     executedBy: "Executor",
@@ -1124,11 +1154,47 @@ const demoProjects = [
   { id: "project-analytics", name: "Analytics portal", customerId: "customer-internal", managerIds: ["user-manager"], teamMemberIds: ["user:user-aysel", "member:member-leyla"], start: "2026-05-12", end: "2026-05-27", status: "Plan", priority: "Normal", progress: 0 }
 ];
 
+const clinicPortfolioProject = {
+  id: "project-clinic-it-portfolio",
+  name: "Klinika İT Portfeli",
+  customerId: "customer-clinic",
+  managerIds: ["user-manager"],
+  teamMemberIds: [],
+  start: "2025-10-15",
+  end: "2026-12-31",
+  status: "Davam edir",
+  priority: "Yüksək",
+  progress: 52
+};
+
+const clinicPortfolioTasks = [
+  { name: "Əsas server otağı", owner: "SH-İnşaat", start: "2026-03-15", end: "2026-08-30", progress: 10, priority: "Yüksək", notes: "Excel statusu: QIRMIZI. Divarların hörgüsü tamamlanmışdır. Soyutma sisteminin və yanğınsöndürmə planlanması mərhələsi gedir. Soyutma sistemlərin çatdırılması sifariş verildikdən sonra 10-12 həftə ərzində olacağı deyilir. Əlavə təklif alınıb.\n\nElektrik və zəif axın xətləri yoxdur. Oda davamlı və standartlara cavab verən qapı yoxdur.\n\n15.05.2026 Valeh müəllim Vüsal müəllimlə tamamlanmanı danışacaq." },
+  { name: "Digər server və kommunikasiya otaqları, Kabelləşmə və qurulum", owner: "SH-İnşaat", start: "2025-10-15", end: "2026-12-31", progress: 60, priority: "Yüksək", notes: "Excel statusu: QIRMIZI. Deadline qeydi: Davam edir. Planlaşdırılmış sahələrin cəmi 13 mərkəz, 5 əsas mərkəzi vardır. Mərkəzlərin problemləri qeyd olunaraq ƏTTİ -ə e-mail vasitəsi ilə bildirilib. Optik xətlərinin çəkilməsi gecikir. Bütün mərkəzlər mərtəbə elektrik açarlarına qoşulub. İş görülərkən mərkəzlər sönür. Mərkəzlər üçün nəzərdə tutulmuş UPS-lər rack kabinə yerləşmədiyindən dəyişdirilməsi gözlənilir.\n\n15.05.2026 Valeh müəllim Vüsal müəllimlə tamamlanmanı danışacaq." },
+  { name: "Kabelləşmə və testlər qurulum", owner: "AZVOLT", start: "2026-03-23", end: "2026-12-31", progress: 80, priority: "Aşağı", notes: "Excel statusu: YAŞIL. Excel deadline serialı: 46028. Klinika və Tədris binası yekunlaşmaq üzrədir. Restoran binası test olundu. Smeta hazırlanır. Təcili yardım və Radiologiya testi sonlandırılıb. Binalar arası fiber optik kabellərin çəkilməsi gecikir.\n\n15.05.2026 Valeh müəllim Vüsal müəllimlə tamamlanmanı danışacaq." },
+  { name: "Enerji və UPS", owner: "Azedunet + Klinika İT dept", start: "2026-03-23", end: "2026-12-31", progress: 55, priority: "Normal", notes: "Excel statusu: SARI. Excel deadline serialı: 46028. Kiçik UPS-lər mərkəzlərə quraşdırılır. Əsas server otağının UPS gözləmədə. Server otaqlarının enerjisinə dəstək üçün günəş paneli layihəsinə enerji sərfiyyatı ölçüldükdən sonra start veriləcək.\n\n05.05.2026 Kiçik UPS-lər (3Kva) dəyişilməlidir." },
+  { name: "Şəbəkə və Təhlükəsizlik avadanlıqları", owner: "Klinika İT Şöbəsi + Azedunet", start: "2026-01-02", end: "2026-04-30", progress: 70, priority: "Yüksək", notes: "Excel statusu: QIRMIZI. Şəbəkə avadanlıqları qismən Bakıdadır.\n\nGecikir. Hissə-hissə göndərilməyə başlanılıb." },
+  { name: "İnternet", owner: "Klinika İT dept", start: "2026-04-20", end: "2026-12-31", progress: 50, priority: "Normal", notes: "Excel statusu: SARI. Hal-hazırda Qarabağ Universitetinin müqaviləsinə əsasən fəaliyyət göstərir. 700 Mbps\n\nAylıq qiymətlər aşağıdakı kimidir:\n1. Əsas internet:\n  a. Azedunet: 8000 AZN\\Ay (1Gbps)\n  b. Aztelekom 5600 AZN\\Ay (1Gbps)\n  c. Azintelnet: 7000 AZN\\Ay (1Gbps) + Xəttin çəkilməsi 7500 AZN\n2. Backup İnternet:\n  a. Azedunet (Starlink 500 GB): 499,90 AZN\\Ay + Quraşdırılma və avadanlıq 1500 AZN\n  b. Azintelnet (Starlink 500 GB): 425 AZN\\Ay + Quraşdırılma və avadanlıq 1700 AZN\n  c. Starlink 500 GB: 204 AZN\\Ay + Quraşdırılma və avadanlıq 1110 AZN\n\nSamir Müəllimdən seçim gözlənilir." },
+  { name: "Server avadanlıqları", owner: "Klinika İT Şöbəsi + Azedunet", start: "2026-01-02", end: "2026-05-30", progress: 75, priority: "Normal", notes: "Excel statusu: SARI. Server avadanlıqları May ayının sonu çatdırılması planlaşdırılıb." },
+  { name: "Pusula + PACS server", owner: "Klinika İT Dept + Pusula", start: "2026-06-15", end: "2026-07-15", progress: 30, priority: "Normal", notes: "Excel statusu: SARI. Server otağı hazır olmasa belə avadanlıqlar təyin olunduğu zamanda çatdırılarsa, müvəqqəti digər server otaqlarında quraşdırılma ediləcək və Pusulanın quraşdırılması üçün şərait yaradılacaq. Pusuladan minimum tələb gözlənilir. Server planlaması aparılıb, lazımi server lisenziyaları alınıb lakin MS365 tenant gözləməsindədir. Əlavə otaqların hazırlanması üçün mövcud kondisionerlərin quraşdırılması lazımdır." },
+  { name: "1C", owner: "Klinika İT dept + Təchizatçı", start: "2026-06-15", end: "2026-12-31", progress: 0, priority: "Normal", notes: "Excel statusu: SARI. İnfrastruktura tam qurulmasını gözləməlidir. Serverlər gəldikdə müəyyən güclə razılaşsalar tez başlatmaq olar.\n\nUpdate: Təchizatçı şirkət öz serveri üzərində hazırlamağa başlayacaq. NDA müqaviləsi hazırlanır." },
+  { name: "Klinik Avadanlıqların inteqrasiyası", owner: "Klinika İT dept + Biomedikal + Pusula", start: "2026-06-15", end: "2026-07-15", progress: 30, priority: "Yüksək", notes: "Excel statusu: QIRMIZI. Klinikada olan tibbi avadanlıqların son durumu (sayı, adı), lisenziya durumu, avadanlıq tərəfinin sazlanması üçün biomedikal məlumatları işləməlidir. Şəbəkəyə qoşulma İT şöbəsi tərəfindən təmin olunacaqdır.\n\n13.05.2026 Təchizatçıya yeni tibbi avadanlıqlar inteqrasiyanın analizi göndərildi." },
+  { name: "Radiologiya", owner: "Azedunet", start: "2026-01-05", end: "2026-05-15", progress: 15, priority: "Normal", notes: "Excel statusu: SARI. Şəbəkə testi yekunlaşmaq üzrədir." },
+  { name: "Təcili Yardım", owner: "Azedunet + SH-İnşaat", start: "2026-01-03", end: "2026-12-31", progress: 45, priority: "Yüksək", notes: "Excel statusu: QIRMIZI. Deadline qeydi: Təmir davam edir. Təmirin bitməsi gözlənilir. Təmir prosesi gecikir (False floor, elektrik, havalandırma, qapı işləri yekunlaşmayıb). Kabellərin testi yekunlaşıb. Anons sistemi, növbə avadanlığı və RFİD izləmə sistemlərinin təklifləri hazırdır təqdim olunub." },
+  { name: "Simulyasiya", owner: "Klinika İT dept + EMS", start: "2026-02-23", end: "2026-06-30", progress: 85, priority: "Normal", notes: "Excel statusu: SARI. İnfrastruktura tam qurulmasını gözləməlidir. Serverlərin son tənzimləmələri qalıb tam fəaliyyət üçün." },
+  { name: "Zəng mərkəzi", owner: "Azedunet", start: "2026-01-08", end: "2026-10-08", progress: 50, priority: "Aşağı", notes: "Excel statusu: YAŞIL. Zənglərin qəbulu, seçimlər, zənglərin qeydiyyatı. Lisenziyaların qiymətləri deyilməlidir. Azedunetdən təklif gözlənilir." },
+  { name: "Smart Anons", owner: "Klinika İT dept + ƏTTİ", start: "2026-12-03", end: "2026-12-31", progress: 75, priority: "Normal", notes: "Excel statusu: SARI. Deadline qeydi: Təsdiq gözlənilir. Mərkəzi paging sistemi planlanması hazırlanıb və Əşrəf bəyə təqdim olunub. Təcili yardım və Tədris binası ilk mərkəzə qoşulacaq. Avadanlıqlar sifarişdən 10 həftə ərzində çatdırılıb quraşdırılacaqdır." },
+  { name: "Receptionlar üçün növbə", owner: "Klinika İT dept + ƏTTİ", start: "2026-03-28", end: "2026-12-31", progress: 60, priority: "Normal", notes: "Excel statusu: SARI. Deadline qeydi: Təsdiq gözlənilir. Mərkəzi sistem planı və təklifi hazırlanmışdır. Klinka giriş və təcili yardım üçün təklif göndərilib. Əşrəf bəyə təqdim olunub." },
+  { name: "Restoran - Otel", owner: "Azedunet", start: "2026-04-24", end: "2026-12-31", progress: 30, priority: "Aşağı", notes: "Excel statusu: YAŞIL. Deadline qeydi: Smeta hazırlanıb. Otel-Restoran binasının İT infrastrukturu tam testə girdikdən sonra görüləcək işlər planlanacaqdır və smeta hazırlanacaqdır. Restoran idarəetmə sistemi seçilib (İİKOO). İP telefoniya və VİFİ şəbəkəsi təyin olunub. Smeta hazırdır." },
+  { name: "RFİD invertar və izləmə", owner: "Klinika İT dept + ƏTTİ", start: "2026-02-19", end: "2026-12-31", progress: 40, priority: "Yüksək", notes: "Excel statusu: QIRMIZI. Deadline qeydi: Təsdiq gözlənilir. Mərkəzi sistem planı və təklifi hazırlanmışdır. Təcili yardım üçün təklif göndərilib. Əşrəf bəyə təqdim olunub. ƏTTİ komandasına yönləndirilib." },
+  { name: "Layihə İdarəetməsi və Kommunikasiya", owner: "Klinika İT Şöbə Müdiri", start: "2026-01-01", end: "2026-12-31", progress: 48, priority: "Normal", notes: "Excel statusu: SARI. Başlama qeydi: Davamlı. Deadline qeydi: Davamlı. Daimi vendorlar və təchizatlarla (Azedunet, SH-İnşaat, AzVolt, Glassdoor, VİVA, Spectrum, ProAudio, MUK, Pusula və s.) görüşlər keçirilir. Xəstəxanalar və Universitetlə görüşlər keçirilir. Podratçıların gündəlik işlərinə nəzarət olunur və səhvlər aradan qaldırılır. Gündəlik tasklar vaxtında yerinə yetirilir." }
+];
+
 const demoCustomers = [
   { id: "customer-internal", name: "Internal", contact: "PMO", email: "pmo@example.com" },
   { id: "customer-azercell", name: "Azercell", contact: "Customer Office", email: "customer@example.com" },
   { id: "customer-bank", name: "Bank Client", contact: "Digital Banking", email: "bank@example.com" },
-  { id: "customer-logistics", name: "Logistics Client", contact: "Operations", email: "ops@example.com" }
+  { id: "customer-logistics", name: "Logistics Client", contact: "Operations", email: "ops@example.com" },
+  { id: "customer-clinic", name: "Klinika", contact: "Klinika İT Şöbəsi", email: "" }
 ];
 
 const demoUsers = [
@@ -1164,6 +1230,7 @@ const cancelEdit = document.querySelector("#cancelEdit");
 const gantt = document.querySelector("#gantt");
 const reports = document.querySelector("#reports");
 const kanban = document.querySelector("#kanban");
+const summaryCards = document.querySelectorAll(".summary-card");
 const dashboardCalendar = document.querySelector("#dashboardCalendar");
 const calendarBoard = document.querySelector("#calendarBoard");
 const calendarDetails = document.querySelector("#calendarDetails");
@@ -1173,7 +1240,9 @@ const calendarStart = document.querySelector("#calendarStart");
 const calendarEnd = document.querySelector("#calendarEnd");
 const taskList = document.querySelector("#taskList");
 const statusFilters = document.querySelector("#statusFilters");
+const priorityFilters = document.querySelector("#priorityFilters");
 let filters = document.querySelectorAll(".filter");
+let priorityFilterButtons = document.querySelectorAll("[data-priority-filter]");
 const viewTabs = document.querySelectorAll(".view-tab");
 const views = document.querySelectorAll(".view");
 const searchInput = document.querySelector("#searchInput");
@@ -1191,6 +1260,7 @@ const doneCount = document.querySelector("#doneCount");
 const dateRange = document.querySelector("#dateRange");
 const hoursSummary = document.querySelector("#hoursSummary");
 const resetDemo = document.querySelector("#resetDemo");
+const loadClinicPortfolioButton = document.querySelector("#loadClinicPortfolio");
 const clearDone = document.querySelector("#clearDone");
 const languageSelect = document.querySelector("#languageSelect");
 const teamNameInput = document.querySelector("#teamName");
@@ -1318,17 +1388,19 @@ let currentUser = loadSession();
 let appSettings = loadSettings();
 statuses = normalizeWorkflowStatuses(appSettings.workflowStatuses);
 let currentFilter = "Hamısı";
+let currentPriorityFilter = "Hamısı";
 let currentView = "dashboard";
 let currentLanguage = localStorage.getItem(languageKey) || "az";
 let activeManagerProjectId = "";
 let selectedProjectTeamMemberIds = [];
 let activeProjectEditId = "";
 let selectedCalendarDay = "";
+let expandedGanttProject = "";
 let calendarRange = { start: "2026-05-01", end: "2026-05-31" };
 let backendSyncReady = false;
 let backendSaveTimer = 0;
 let authToken = localStorage.getItem(authTokenKey) || "";
-ensureDemoData();
+enforceClinicOnlyState();
 saveUsers();
 
 function text(key) {
@@ -1458,23 +1530,45 @@ function renderStatusControls() {
     `<button class="filter ${currentFilter === "Hamısı" ? "active" : ""}" data-filter="Hamısı" type="button">${text("all")}</button>`,
     ...statuses.map((status) => `<button class="filter ${currentFilter === status ? "active" : ""}" data-filter="${escapeHtml(status)}" type="button">${escapeHtml(statusLabel(status))}</button>`)
   ].join("");
+  if (priorityFilters) {
+    const priorities = ["Yüksək", "Normal", "Aşağı"];
+    priorityFilters.innerHTML = [
+      `<button class="filter ${currentPriorityFilter === "Hamısı" ? "active" : ""}" data-priority-filter="Hamısı" type="button">${text("all")}</button>`,
+      ...priorities.map((priority) => `<button class="filter ${currentPriorityFilter === priority ? "active" : ""}" data-priority-filter="${escapeHtml(priority)}" type="button">${escapeHtml(priorityLabel(priority))}</button>`)
+    ].join("");
+  }
   filters = document.querySelectorAll(".filter");
+  priorityFilterButtons = document.querySelectorAll("[data-priority-filter]");
 }
 
 function updateFilterLabels() {
-  filters.forEach((button) => {
+  document.querySelectorAll("[data-filter]").forEach((button) => {
     button.textContent = button.dataset.filter === "Hamısı" ? text("all") : statusLabel(button.dataset.filter);
+  });
+  document.querySelectorAll("[data-priority-filter]").forEach((button) => {
+    button.textContent = button.dataset.priorityFilter === "Hamısı" ? text("all") : priorityLabel(button.dataset.priorityFilter);
   });
 }
 
 function updateViewLabels() {
+  const labels = {
+    dashboard: text("dashboard"),
+    projects: text("projects"),
+    list: text("list"),
+    kanban: text("kanban"),
+    calendar: text("calendar"),
+    gantt: text("gantt"),
+    reports: text("reports")
+  };
   viewTabs.forEach((button) => {
-    if (button.dataset.view === "dashboard") button.textContent = text("dashboard");
-    if (button.dataset.view === "projects") button.textContent = text("projects");
-    if (button.dataset.view === "list") button.textContent = text("list");
-    if (button.dataset.view === "kanban") button.textContent = text("kanban");
-    if (button.dataset.view === "gantt") button.textContent = text("gantt");
-    if (button.dataset.view === "reports") button.textContent = text("reports");
+    const label = labels[button.dataset.view];
+    if (!label) return;
+    const labelNode = button.querySelector?.("span:last-child");
+    if (labelNode) {
+      labelNode.textContent = label;
+    } else {
+      button.textContent = label;
+    }
   });
 }
 
@@ -1500,6 +1594,50 @@ function renderWorkflowStatusList() {
 
 function createDemoTasks() {
   return demoTaskTemplates.map((task) => ({ ...task, id: createId() }));
+}
+
+function createClinicPortfolioTasks() {
+  return clinicPortfolioTasks.map((task, index) => normalizeTask({
+    id: `clinic-task-${String(index + 1).padStart(2, "0")}`,
+    project: clinicPortfolioProject.name,
+    status: Number(task.progress) >= 100 ? "Bitib" : (Number(task.progress) > 0 ? "Davam edir" : "Plan"),
+    plannedHours: 0,
+    actualHours: 0,
+    ...task
+  }));
+}
+
+function loadClinicPortfolioState() {
+  const clinicTaskNames = new Set(clinicPortfolioTasks.map((task) => task.name));
+  const currentClinicTasks = tasks
+    .filter((task) => task.project === clinicPortfolioProject.name && clinicTaskNames.has(task.name))
+    .map((task) => [task.name, task]);
+  const currentClinicTaskMap = new Map(currentClinicTasks);
+
+  tasks = createClinicPortfolioTasks().map((task) => {
+    const existing = currentClinicTaskMap.get(task.name);
+    return existing ? normalizeTask({ ...task, id: existing.id || task.id, comments: existing.comments || [], attachments: existing.attachments || [] }) : task;
+  });
+  members = [];
+  teams = [];
+  projects = [normalizeProject({ ...clinicPortfolioProject })];
+  projectLinks = [];
+  customers = [{ id: "customer-clinic", name: "Klinika", contact: "Klinika İT Şöbəsi", email: "" }];
+  managedFiles = [];
+  registers = registers
+    .filter((item) => item.project === clinicPortfolioProject.name)
+    .map(normalizeRegisterItem);
+  trash = [];
+  saveTasks();
+  saveResources();
+  saveTrash();
+  saveRegisters();
+}
+
+function enforceClinicOnlyState() {
+  const before = JSON.stringify({ tasks, projects, members, teams, projectLinks, customers, managedFiles, registers, trash });
+  loadClinicPortfolioState();
+  return before !== JSON.stringify({ tasks, projects, members, teams, projectLinks, customers, managedFiles, registers, trash });
 }
 
 function ensureDemoData() {
@@ -1565,26 +1703,25 @@ function loadJson(key, fallback) {
 }
 
 function loadMembers() {
-  return loadJson(membersKey, () => demoMemberTemplates.map((member) => ({ ...member })));
+  return loadJson(membersKey, () => []);
 }
 
 function loadTeams() {
-  return loadJson(teamsKey, () => demoTeamTemplates.map((team) => ({ ...team, memberIds: [...team.memberIds] })));
+  return loadJson(teamsKey, () => []);
 }
 
 function loadProjects() {
   const stored = loadJson(projectsKey, () => []);
   if (stored.length) return stored.map(normalizeProject);
-  const names = [...new Set([...demoProjects.map((project) => project.name), ...loadTasks().map((task) => task.project).filter(Boolean)])];
-  return names.map((name) => normalizeProject(demoProjects.find((project) => project.name === name) || { id: createId(), name }));
+  return [normalizeProject({ ...clinicPortfolioProject })];
 }
 
 function loadProjectLinks() {
-  return loadJson(projectLinksKey, () => demoProjectLinks.map((link) => ({ ...link })));
+  return loadJson(projectLinksKey, () => []);
 }
 
 function loadCustomers() {
-  return loadJson(customersKey, () => demoCustomers.map((customer) => ({ ...customer }))).map(normalizeCustomer);
+  return loadJson(customersKey, () => [{ id: "customer-clinic", name: "Klinika", contact: "Klinika İT Şöbəsi", email: "" }]).map(normalizeCustomer);
 }
 
 function loadManagedFiles() {
@@ -1689,13 +1826,13 @@ function loadSession() {
 function loadTasks() {
   const stored = localStorage.getItem(storageKey);
   if (!stored) {
-    return createDemoTasks();
+    return createClinicPortfolioTasks();
   }
 
   try {
     return JSON.parse(stored).map(normalizeTask);
   } catch {
-    return createDemoTasks();
+    return createClinicPortfolioTasks();
   }
 }
 
@@ -2090,6 +2227,31 @@ function taskNameById(id) {
   return tasks.find((task) => task.id === id)?.name || "";
 }
 
+function incompleteDependencies(task) {
+  return (task.dependencyIds || [])
+    .map((id) => tasks.find((item) => item.id === id))
+    .filter((item) => item && item.status !== "Bitib");
+}
+
+function isTaskBlocked(task) {
+  return task.status === "Plan" && incompleteDependencies(task).length > 0;
+}
+
+function canStartTask(task) {
+  return incompleteDependencies(task).length === 0;
+}
+
+function shouldValidateDependencies(status) {
+  return status && status !== "Plan";
+}
+
+function dependencyBlockedMessage(task) {
+  const names = incompleteDependencies(task).map((item) => item.name).filter(Boolean);
+  return names.length
+    ? `${text("dependencyStartBlocked")} ${text("blockedBy")}: ${names.join(", ")}`
+    : text("dependencyStartBlocked");
+}
+
 function linkedResourcesForProject(project) {
   const directLinks = projectLinks.filter((link) => link.project === project).map((link) => link.resource);
   const projectMembers = projects.find((item) => item.name === project)?.teamMemberIds || [];
@@ -2334,6 +2496,7 @@ function visibleTasks() {
 
   return accessibleTasks()
     .filter((task) => currentFilter === "Hamısı" || task.status === currentFilter)
+    .filter((task) => currentPriorityFilter === "Hamısı" || task.priority === currentPriorityFilter)
     .filter((task) => selectedProject === "Hamısı" || getProject(task) === selectedProject)
     .filter((task) => {
       if (!query) return true;
@@ -2809,13 +2972,16 @@ function renderTaskList() {
     return;
   }
 
-  taskList.innerHTML = shown.map((task) => `
-    <article class="task-card">
+  taskList.innerHTML = shown.map((task) => {
+    const blocked = isTaskBlocked(task);
+    return `
+    <article class="task-card ${blocked ? "blocked-task" : ""}">
       <div>
         <h3>${escapeHtml(task.name)}</h3>
         <div class="task-meta">
           <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
           <span class="badge ${priorityClass(task.priority)}">${priorityLabel(task.priority)}</span>
+          ${blocked ? `<span class="badge blocked">${text("blocked")}</span>` : ""}
           <span>${escapeHtml(getProject(task))}</span>
           <span>${shortDate(task.start)} - ${shortDate(task.end)}</span>
           <span>${escapeHtml(resourceLabel(task.owner))}</span>
@@ -2831,7 +2997,8 @@ function renderTaskList() {
       </div>
       ${renderTaskActions(task)}
     </article>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function renderAttachments(task) {
@@ -2865,11 +3032,13 @@ function renderCommentAttachments(comment) {
 function renderTaskRelations(task) {
   const parent = task.parentTaskId ? taskNameById(task.parentTaskId) : "";
   const dependencies = (task.dependencyIds || []).map(taskNameById).filter(Boolean);
+  const blockers = incompleteDependencies(task).map((item) => item.name).filter(Boolean);
   if (!parent && !dependencies.length) return "";
   return `
     <div class="task-relations">
       ${parent ? `<span>${text("parentTask")}: ${escapeHtml(parent)}</span>` : ""}
       ${dependencies.length ? `<span>${text("dependsOn")}: ${escapeHtml(dependencies.join(", "))}</span>` : ""}
+      ${blockers.length ? `<span class="blocked-relation">${text("blockedBy")}: ${escapeHtml(blockers.join(", "))}</span>` : ""}
     </div>
   `;
 }
@@ -2882,12 +3051,13 @@ function renderTaskActions(task) {
         <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
       `;
   } else {
+    const blocked = isTaskBlocked(task);
     const completionAction = task.completionRequestedAt
       ? `${canApproveTask(task) ? `<button class="action-button next-action" type="button" data-action="approve-done" data-id="${task.id}">${text("approveDone")}</button>` : `<span class="pending-label">${text("pendingDone")}</span>`}`
-      : `<button class="action-button next-action" type="button" data-action="request-done" data-id="${task.id}">${text("doneRequest")}</button>`;
+      : `<button class="action-button next-action" type="button" data-action="request-done" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("doneRequest")}</button>`;
     actions = `
         <button class="action-button edit-action" type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
-        <button class="action-button next-action" type="button" data-action="next" data-id="${task.id}">${text("next")}</button>
+        <button class="action-button next-action" type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}</button>
         ${completionAction}
         <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
       `;
@@ -2966,19 +3136,24 @@ function renderKanban() {
   const shown = visibleTasks();
   kanban.innerHTML = statuses.map((status) => {
     const columnTasks = shown.filter((task) => task.status === status);
-    const cards = columnTasks.map((task) => `
-      <article class="kanban-card">
+    const cards = columnTasks.map((task) => {
+      const blocked = isTaskBlocked(task);
+      return `
+      <article class="kanban-card ${blocked ? "blocked-task" : ""}">
         <strong>${escapeHtml(task.name)}</strong>
         <div class="task-meta">
+          ${blocked ? `<span class="badge blocked">${text("blocked")}</span>` : ""}
           <span>${escapeHtml(getProject(task))}</span>
           <span>${shortDate(task.end)}</span>
           <span>${Number(task.progress) || 0}%</span>
         </div>
+        ${renderTaskRelations(task)}
         ${renderComments(task)}
         ${renderAttachments(task)}
         ${renderKanbanActions(task)}
       </article>
-    `).join("");
+    `;
+    }).join("");
 
     return `
       <section class="kanban-column">
@@ -2990,6 +3165,7 @@ function renderKanban() {
 }
 
 function renderKanbanActions(task) {
+  const blocked = isTaskBlocked(task);
   const actions = task.status === "Bitib"
     ? `
         <button type="button" data-action="reopen" data-id="${task.id}">${text("reopen")}</button>
@@ -2997,21 +3173,40 @@ function renderKanbanActions(task) {
       `
     : `
         <button type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
-        <button type="button" data-action="next" data-id="${task.id}">${text("next")}</button>
+        <button type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}</button>
         <button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
       `;
   return `<div class="kanban-actions">${actions}</div>`;
 }
 
 function renderGantt() {
-  const shown = visibleTasks();
-  if (!shown.length) {
+  const selectedProject = projectFilter.value;
+  const shownProjects = visibleProjects()
+    .filter((project) => selectedProject === "Hamısı" || project.name === selectedProject)
+    .sort((a, b) => parseDate(a.start) - parseDate(b.start));
+  if (!shownProjects.length) {
     gantt.innerHTML = `<div class="empty">${text("noTaskFilter")}</div>`;
     return;
   }
 
-  const starts = shown.map((task) => parseDate(task.start));
-  const ends = shown.map((task) => parseDate(task.end));
+  const visibleProjectNames = new Set(shownProjects.map((project) => project.name));
+  if (expandedGanttProject && !visibleProjectNames.has(expandedGanttProject)) expandedGanttProject = "";
+
+  const detailTasks = expandedGanttProject
+    ? visibleTasks().filter((task) => task.project === expandedGanttProject)
+    : [];
+  const timelineItems = [
+    ...shownProjects.map((project) => ({ type: "project", item: project, start: project.start, end: project.end })),
+    ...detailTasks.map((task) => ({ type: "task", item: task, start: task.start, end: task.end }))
+  ].filter((entry) => entry.start && entry.end);
+
+  if (!timelineItems.length) {
+    gantt.innerHTML = `<div class="empty">${text("noTaskFilter")}</div>`;
+    return;
+  }
+
+  const starts = timelineItems.map((entry) => parseDate(entry.start));
+  const ends = timelineItems.map((entry) => parseDate(entry.end));
   const minStart = new Date(Math.min(...starts));
   const maxEnd = new Date(Math.max(...ends));
   const days = Math.max(1, Math.round((maxEnd - minStart) / 86400000) + 1);
@@ -3020,12 +3215,35 @@ function renderGantt() {
     return `<div class="gantt-day">${shortDate(isoDate(date))}</div>`;
   }).join("");
 
-  const rows = shown.map((task) => {
+  const projectRows = shownProjects.map((project) => {
+    const offset = daysBetween(isoDate(minStart), project.start);
+    const span = Math.max(1, daysBetween(project.start, project.end) + 1);
+    const expanded = expandedGanttProject === project.name;
+    return `
+      <div class="gantt-row gantt-project-row">
+        <button class="gantt-task-name gantt-project-name" type="button" data-gantt-project="${escapeHtml(project.name)}" aria-expanded="${expanded ? "true" : "false"}" title="${escapeHtml(project.name)}">
+          <span>${expanded ? "−" : "+"}</span>
+          ${escapeHtml(project.name)}
+        </button>
+        <div class="gantt-lane" style="--days:${days}; grid-template-columns: repeat(${days}, minmax(44px, 1fr));">
+          <div class="bar project-bar ${statusClass(project.status)}" style="grid-column: ${offset + 1} / span ${span};">
+            ${span} ${text("day")} - ${Number(project.progress) || 0}%
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  const taskRows = expandedGanttProject ? (detailTasks.length ? detailTasks.map((task) => {
     const offset = daysBetween(isoDate(minStart), task.start);
     const span = Math.max(1, daysBetween(task.start, task.end) + 1);
+    const blocked = isTaskBlocked(task);
     return `
-      <div class="gantt-row">
-        <div class="gantt-task-name" title="${escapeHtml(task.name)}">${escapeHtml(task.name)}</div>
+      <div class="gantt-row gantt-detail-row">
+        <div class="gantt-task-name" title="${escapeHtml(task.name)}">
+          ${blocked ? `<span class="badge blocked">${text("blocked")}</span>` : ""}
+          ${escapeHtml(task.name)}
+        </div>
         <div class="gantt-lane" style="--days:${days}; grid-template-columns: repeat(${days}, minmax(44px, 1fr));">
           <div class="bar ${statusClass(task.status)}" style="grid-column: ${offset + 1} / span ${span};">
             ${span} ${text("day")} - ${Number(task.progress) || 0}%
@@ -3033,7 +3251,7 @@ function renderGantt() {
         </div>
       </div>
     `;
-  }).join("");
+  }).join("") : `<div class="empty gantt-detail-empty">${text("noTaskFilter")}</div>`) : "";
 
   gantt.innerHTML = `
     <div class="gantt-grid">
@@ -3041,21 +3259,41 @@ function renderGantt() {
         <div class="gantt-label">Task</div>
         <div class="gantt-days" style="grid-template-columns: repeat(${days}, minmax(44px, 1fr));">${dayHeaders}</div>
       </div>
-      ${rows}
+      ${projectRows}
+      ${taskRows}
     </div>
   `;
 }
 
 function renderReports() {
-  const shownProjects = visibleProjects();
+  const selectedProject = projectFilter.value;
+  const reportTasks = visibleTasks();
+  const shownProjects = visibleProjects()
+    .filter((project) => selectedProject === "Hamısı" || project.name === selectedProject)
+    .filter((project) => selectedProject !== "Hamısı" || reportTasks.some((task) => task.project === project.name));
+  const totalPlanned = reportTasks.reduce((sum, task) => sum + plannedHoursForTask(task), 0);
+  const totalActual = reportTasks.reduce((sum, task) => sum + actualHoursForTask(task), 0);
+  const blockedCount = reportTasks.filter(isTaskBlocked).length;
+  const summary = `
+    <section class="report-summary">
+      <article><span>${reportTasks.length}</span><p>${text("filteredTasks")}</p></article>
+      <article><span>${reportTasks.filter((task) => task.status !== "Bitib").length}</span><p>${text("activeTasks")}</p></article>
+      <article><span>${reportTasks.filter((task) => task.status === "Bitib").length}</span><p>${text("doneTasks")}</p></article>
+      <article><span>${blockedCount}</span><p>${text("blockedTasks")}</p></article>
+      <article><span>${totalPlanned} / ${totalActual}</span><p>${text("hoursSummary")}</p></article>
+    </section>
+  `;
   reports.innerHTML = shownProjects.length ? shownProjects.map((project) => {
-    const projectTasks = accessibleTasks().filter((task) => task.project === project.name)
+    const projectTasks = reportTasks.filter((task) => task.project === project.name)
       .sort((a, b) => parseDate(a.start) - parseDate(b.start));
     const rows = projectTasks.length ? projectTasks.map((task) => `
       <div class="report-row">
         <strong>${escapeHtml(task.name)}</strong>
         <span>${statusLabel(task.status)}</span>
+        <span>${priorityLabel(task.priority)}</span>
+        <span>${isTaskBlocked(task) ? text("blocked") : "-"}</span>
         <span>${text("start")}: ${escapeHtml(shortDate(task.start))}</span>
+        <span>${text("end")}: ${escapeHtml(shortDate(task.end))}</span>
         <span>${text("executedBy")}: ${escapeHtml(resourceLabel(task.owner))}</span>
         <span>${text("plannedHours")}: ${plannedHoursForTask(task)}</span>
         <span>${text("actualHours")}: ${actualHoursForTask(task)}</span>
@@ -3081,10 +3319,30 @@ function renderReports() {
       </article>
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
+  reports.innerHTML = summary + reports.innerHTML;
 }
 
 function renderViews() {
   views.forEach((view) => view.classList.toggle("active-view", view.id === `${currentView}View`));
+}
+
+function setView(view) {
+  currentView = view;
+  viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === currentView));
+  render();
+}
+
+function applyStatusFilter(status) {
+  currentFilter = status || "Hamısı";
+  renderStatusControls();
+}
+
+function activateSummaryCard(card) {
+  const target = card.dataset.summaryTarget;
+  if (!target) return;
+  if (target === "list") applyStatusFilter(card.dataset.summaryStatus || "Hamısı");
+  setView(target);
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function render() {
@@ -3122,12 +3380,17 @@ function resetForm() {
 function moveForward(task) {
   const currentIndex = statuses.indexOf(task.status);
   const nextStatus = statuses[Math.min(statuses.length - 1, Math.max(0, currentIndex) + 1)];
+  if (shouldValidateDependencies(nextStatus) && !canStartTask(task)) {
+    alert(dependencyBlockedMessage(task));
+    return false;
+  }
   if (nextStatus && nextStatus !== "Bitib") {
     task.status = nextStatus;
     const stepProgress = Math.round(((statuses.indexOf(nextStatus) + 1) / statuses.length) * 90);
     task.progress = Math.max(Number(task.progress) || 0, stepProgress);
     task.startedAt = task.startedAt || new Date().toISOString();
   }
+  return true;
 }
 
 function handleTaskAction(action, id) {
@@ -3160,13 +3423,17 @@ function handleTaskAction(action, id) {
 
   if (action === "next") {
     if (!canManageTasks()) return;
-    moveForward(task);
+    if (!moveForward(task)) return;
     saveTasks();
     render();
   }
 
   if (action === "reopen") {
     if (!canManageTasks()) return;
+    if (!canStartTask(task)) {
+      alert(dependencyBlockedMessage(task));
+      return;
+    }
     task.status = "Davam edir";
     task.progress = Math.min(Number(task.progress) || 65, 95);
     task.completedAt = "";
@@ -3180,6 +3447,10 @@ function handleTaskAction(action, id) {
   }
 
   if (action === "request-done") {
+    if (!canStartTask(task)) {
+      alert(dependencyBlockedMessage(task));
+      return;
+    }
     if (!confirm(text("confirmDone"))) return;
     const now = new Date().toISOString();
     task.status = task.status === "Plan" ? "Davam edir" : task.status;
@@ -3193,6 +3464,10 @@ function handleTaskAction(action, id) {
 
   if (action === "approve-done") {
     if (!canApproveTask(task)) return;
+    if (!canStartTask(task)) {
+      alert(dependencyBlockedMessage(task));
+      return;
+    }
     const now = new Date().toISOString();
     task.status = "Bitib";
     task.progress = 100;
@@ -3276,6 +3551,11 @@ async function syncBackendState() {
     const response = await fetch(backendUrl("/api/state"), { cache: "no-store", headers: authHeaders() });
     if (response.ok) {
       importBackup(await response.json());
+      const changed = enforceClinicOnlyState();
+      backendSyncReady = true;
+      if (changed) await saveBackendState();
+      render();
+      return;
     } else if (response.status === 404) {
       backendSyncReady = true;
       await saveBackendState();
@@ -3371,6 +3651,54 @@ function downloadJson(filename, data) {
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function downloadText(filename, body, type = "text/plain;charset=utf-8") {
+  const blob = new Blob([body], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(value) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
+function filteredReportCsv() {
+  const header = [
+    "Project",
+    "Task",
+    "Status",
+    "Priority",
+    "Blocked",
+    "Owner",
+    "Start",
+    "End",
+    "Progress",
+    "Planned hours",
+    "Actual hours",
+    "Dependencies",
+    "Notes"
+  ];
+  const rows = visibleTasks().map((task) => [
+    task.project,
+    task.name,
+    statusLabel(task.status),
+    priorityLabel(task.priority),
+    isTaskBlocked(task) ? text("blocked") : "",
+    resourceLabel(task.owner),
+    task.start,
+    task.end,
+    Number(task.progress) || 0,
+    plannedHoursForTask(task),
+    actualHoursForTask(task),
+    (task.dependencyIds || []).map(taskNameById).filter(Boolean).join("; "),
+    task.notes || ""
+  ]);
+  return [header, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");
 }
 
 async function downloadBackendFile(path, fallbackFilename) {
@@ -3515,6 +3843,10 @@ form.addEventListener("submit", async (event) => {
     attachments: existingTask?.attachments || []
   };
   if (!projectExists(task.project)) return;
+  if (shouldValidateDependencies(task.status) && !canStartTask(task)) {
+    alert(dependencyBlockedMessage(task));
+    return;
+  }
 
   const existingIndex = tasks.findIndex((item) => item.id === task.id);
   if (existingIndex >= 0) {
@@ -3608,19 +3940,41 @@ form.addEventListener("submit", async (event) => {
   });
 });
 
+gantt.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-gantt-project]");
+  if (!button) return;
+  expandedGanttProject = expandedGanttProject === button.dataset.ganttProject ? "" : button.dataset.ganttProject;
+  renderGantt();
+});
+
 statusFilters.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-filter]");
   if (!button) return;
   currentFilter = button.dataset.filter;
-  filters.forEach((item) => item.classList.toggle("active", item === button));
+  document.querySelectorAll("[data-filter]").forEach((item) => item.classList.toggle("active", item === button));
+  render();
+});
+
+priorityFilters?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-priority-filter]");
+  if (!button) return;
+  currentPriorityFilter = button.dataset.priorityFilter;
+  priorityFilterButtons.forEach((item) => item.classList.toggle("active", item === button));
   render();
 });
 
 viewTabs.forEach((button) => {
   button.addEventListener("click", () => {
-    currentView = button.dataset.view;
-    viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === currentView));
-    renderViews();
+    setView(button.dataset.view);
+  });
+});
+
+summaryCards.forEach((card) => {
+  card.addEventListener("click", () => activateSummaryCard(card));
+  card.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    activateSummaryCard(card);
   });
 });
 
@@ -3750,13 +4104,13 @@ exportDataButton.addEventListener("click", () => {
 
 exportExcelButton.addEventListener("click", async () => {
   if (!isAdmin()) return;
-  const ok = await downloadBackendFile("/api/export/excel", `project-manager-export-${isoDate(new Date())}.csv`);
-  if (!ok) downloadJson(`project-manager-export-${isoDate(new Date())}.json`, backupPayload());
+  downloadText(`project-manager-report-${isoDate(new Date())}.csv`, filteredReportCsv(), "text/csv;charset=utf-8");
 });
 
 exportPdfButton.addEventListener("click", async () => {
   if (!isAdmin()) return;
-  await downloadBackendFile("/api/export/pdf", `project-manager-report-${isoDate(new Date())}.pdf`);
+  const ok = await downloadBackendFile("/api/export/pdf", `project-manager-report-${isoDate(new Date())}.pdf`);
+  if (!ok) downloadText(`project-manager-report-${isoDate(new Date())}.html`, reports.innerHTML, "text/html;charset=utf-8");
 });
 
 importDataInput.addEventListener("change", () => {
@@ -4286,25 +4640,20 @@ trashList.addEventListener("click", (event) => {
   render();
 });
 
+loadClinicPortfolioButton?.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  loadClinicPortfolioState();
+  resetForm();
+  render();
+});
+
 resetDemo.addEventListener("click", () => {
   if (!isAdmin()) return;
-  tasks = createDemoTasks();
-  members = demoMemberTemplates.map((member) => ({ ...member }));
-  teams = demoTeamTemplates.map((team) => ({ ...team, memberIds: [...team.memberIds] }));
-  projects = demoProjects.map((project) => ({ ...project }));
-  projectLinks = demoProjectLinks.map((link) => ({ ...link }));
-  customers = demoCustomers.map((customer) => ({ ...customer }));
-  managedFiles = [];
-  registers = [];
-  trash = [];
+  loadClinicPortfolioState();
   users = demoUsers.map((user) => ({ ...user }));
   currentUser = users.find((user) => user.role === "admin") || null;
   if (currentUser) localStorage.setItem(sessionKey, currentUser.id);
-  saveTasks();
-  saveResources();
   saveUsers();
-  saveTrash();
-  saveRegisters();
   resetForm();
   render();
 });

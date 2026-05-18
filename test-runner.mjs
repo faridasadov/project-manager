@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import vm from "node:vm";
+
+const rootDir = dirname(fileURLToPath(import.meta.url));
 
 class Element {
   constructor(selector) {
@@ -60,6 +64,7 @@ const ids = [
   "cancelManagerAssign", "saveProjectManagers", "managerAssignTitle", "managerAssignList", "selectedManagersPreview",
   "exportData", "exportExcel", "exportPdf", "importData",
   "totalCount", "activeCount", "doneCount", "dateRange", "hoursSummary", "resetDemo", "clearDone",
+  "loadClinicPortfolio", "priorityFilters",
   "languageSelect", "loginLanguageSelect", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
   "teamCount", "linkCount", "projectForm", "projectName", "projectCustomer", "projectLeader", "projectTeamMembers",
@@ -169,21 +174,27 @@ context.document.documentElement = { lang: "az" };
 context.globalThis = context;
 
 vm.createContext(context);
-vm.runInContext(readFileSync("/root/project-manager/script.js", "utf8"), context);
+vm.runInContext(readFileSync(join(rootDir, "script.js"), "utf8"), context);
 
-assert.equal(elements["#totalCount"].textContent, 9, "demo count renders");
-assert.match(elements["#gantt"].innerHTML, /Interface dizaynı/, "gantt renders");
+assert.equal(elements["#totalCount"].textContent, 19, "clinic count renders");
+assert.match(elements["#gantt"].innerHTML, /Klinika İT Portfeli/, "gantt renders project row first");
+assert.doesNotMatch(elements["#gantt"].innerHTML, /Əsas server otağı/, "gantt hides task rows before project expand");
+elements["#gantt"].dispatch("click", {
+  target: { closest: () => ({ dataset: { ganttProject: "Klinika İT Portfeli" } }) }
+});
+assert.match(elements["#gantt"].innerHTML, /Əsas server otağı/, "gantt opens project task rows on click");
 assert.match(elements["#kanban"].innerHTML, /Plan/, "kanban renders");
-assert.match(elements["#calendarBoard"].innerHTML, /Mobile banking|Warehouse ERP|Analytics portal/, "calendar renders seeded project tasks");
+assert.match(elements["#calendarBoard"].innerHTML, /Klinika İT Portfeli|Radiologiya|Server avadanlıqları/, "calendar renders clinic project tasks");
 assert.match(elements["#dashboardCalendar"].innerHTML, /data-calendar-day/, "dashboard calendar renders clickable days");
-elements["#calendarStart"].value = "2026-05-10";
-elements["#calendarEnd"].value = "2026-05-14";
+elements["#calendarStart"].value = "2026-05-15";
+elements["#calendarEnd"].value = "2026-05-30";
 elements["#calendarStart"].dispatch("change");
-assert.match(elements["#calendarBoard"].innerHTML, /Warehouse ERP|Analytics portal/, "calendar range filters tasks");
-assert.doesNotMatch(elements["#calendarBoard"].innerHTML, /Mobile banking/, "calendar range excludes tasks outside selected period");
+assert.match(elements["#calendarBoard"].innerHTML, /Klinika İT Portfeli/, "calendar range filters clinic tasks");
+assert.doesNotMatch(elements["#calendarBoard"].innerHTML, /Smart Anons/, "calendar range excludes tasks outside selected period");
 assert.match(elements["#statusBars"].innerHTML, /Davam edir/, "dashboard renders");
-assert.match(elements["#teamList"].innerHTML, /Core Team/, "team list renders");
-assert.match(elements["#projectLinks"].innerHTML, /Internal portal/, "project links render");
+assert.doesNotMatch(elements["#teamList"].innerHTML, /Core Team/, "old demo teams are removed");
+assert.doesNotMatch(elements["#projectLinks"].innerHTML, /Internal portal/, "old demo project links are removed");
+assert.match(elements["#projectList"].innerHTML, /Klinika İT Portfeli/, "clinic project renders");
 assert.match(elements["#projectList"].innerHTML, /open-project-managers/, "project manager picker button renders");
 assert.doesNotMatch(elements["#projectList"].innerHTML, /delete-project|project-manager-select/, "project list does not expose delete or inline manager select");
 
@@ -260,7 +271,7 @@ elements["#owner"].value = "QA";
 elements["#progress"].value = "10";
 elements["#notes"].value = "Əlavə etmə testi";
 elements["#taskForm"].dispatch("submit", { preventDefault: () => {} });
-assert.equal(elements["#totalCount"].textContent, 10, "new task can be added");
+assert.equal(elements["#totalCount"].textContent, 20, "new task can be added");
 assert.match(elements["#taskList"].innerHTML, /Yeni yoxlama taskı/, "new task appears");
 
 const addedId = elements["#taskList"].innerHTML.match(/data-id="([^"]+)">Redaktə<\/button>/)?.[1];
@@ -321,7 +332,7 @@ assert.match(elements["#taskList"].innerHTML, /Təsdiq et/, "done request waits 
 elements["#taskList"].dispatch("click", {
   target: { closest: () => ({ dataset: { action: "approve-done", id: editedId } }) }
 });
-const doneTaskCard = elements["#taskList"].innerHTML.match(/<article class="task-card">[\s\S]*?Redaktə olunmuş task[\s\S]*?<\/article>/)?.[0] || "";
+const doneTaskCard = elements["#taskList"].innerHTML.match(/<article class="task-card[^"]*">[\s\S]*?Redaktə olunmuş task[\s\S]*?<\/article>/)?.[0] || "";
 assert.doesNotMatch(doneTaskCard, /<textarea name="comment"/, "done tasks do not show comment form");
 assert.doesNotMatch(doneTaskCard, />İrəli</, "done tasks do not show next button");
 assert.match(doneTaskCard, />Sil</, "done tasks keep delete button");
@@ -339,9 +350,30 @@ elements["#trashList"].dispatch("click", {
 });
 assert.match(elements["#taskList"].innerHTML, /Redaktə olunmuş task/, "trash restore returns task");
 
-elements["#searchInput"].value = "Customer";
+elements["#taskName"].value = "Bloklanan task";
+elements["#project"].value = "QA project";
+elements["#startDate"].value = "2026-05-13";
+elements["#endDate"].value = "2026-05-14";
+elements["#status"].value = "Plan";
+elements["#priority"].value = "Yüksək";
+elements["#owner"].value = "QA";
+elements["#progress"].value = "0";
+elements["#notes"].value = "Dependency testi";
+elements["#taskDependencies"].selectedOptions = [{ value: "clinic-task-01" }];
+elements["#taskForm"].dispatch("submit", { preventDefault: () => {} });
+assert.match(elements["#taskList"].innerHTML, /Bloklanan task/, "dependent task can be saved as planned");
+assert.match(elements["#taskList"].innerHTML, /Bloklanıb/, "dependent task renders blocked badge");
+const blockedId = JSON.parse(store.get("project-manager-tasks-v2")).find((task) => task.name === "Bloklanan task")?.id;
+assert.ok(blockedId, "blocked task action id is rendered");
+lastAlert = "";
+elements["#taskList"].dispatch("click", {
+  target: { closest: () => ({ dataset: { action: "next", id: blockedId } }) }
+});
+assert.match(lastAlert, /asılı tasklar bitməlidir/, "blocked task cannot start before dependency is done");
+
+elements["#searchInput"].value = "Klinika";
 elements["#searchInput"].dispatch("input");
-assert.match(elements["#taskList"].innerHTML, /Customer rollout|Task yoxdur/, "search runs");
+assert.match(elements["#taskList"].innerHTML, /Klinika İT Portfeli|Task yoxdur/, "search runs");
 
 elements["#taskName"].value = "Yanlış tarix";
 elements["#startDate"].value = "2026-05-20";
@@ -353,6 +385,6 @@ elements["#clearDone"].dispatch("click");
 assert.equal(elements["#doneCount"].textContent, 0, "clear done works");
 
 elements["#resetDemo"].dispatch("click");
-assert.equal(elements["#totalCount"].textContent, 9, "demo reset works");
+assert.equal(elements["#totalCount"].textContent, 19, "clinic reset works");
 
 console.log("All project manager tests passed.");
