@@ -1089,11 +1089,15 @@ textarea:focus {
 }
 
 .control-strip {
-  padding: 14px;
+  padding: 16px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 620px);
-  gap: 14px;
+  grid-template-columns: 1fr;
+  gap: 0;
   align-items: center;
+}
+
+.control-strip .view-tabs {
+  display: none;
 }
 
 .view-tab.active,
@@ -1113,7 +1117,7 @@ textarea:focus {
 .tools {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) 180px;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
 }
 
@@ -1123,7 +1127,9 @@ textarea:focus {
   justify-content: space-between;
   gap: 12px;
   align-items: baseline;
-  padding: 2px 2px 4px;
+  padding: 0 2px 4px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 2px;
 }
 
 .filter-heading strong {
@@ -1140,6 +1146,29 @@ textarea:focus {
 
 .tools .filters {
   grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 86%, var(--field));
+}
+
+.filter-group-label {
+  min-width: 78px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tools .filter {
+  min-height: 34px;
+  min-width: 82px;
+  border-radius: 7px;
+  background: #fff;
 }
 
 .summary {
@@ -1988,6 +2017,19 @@ button:disabled {
   .header-actions > *,
   .view-tabs > *,
   .tools > * {
+    min-width: 0;
+  }
+
+  .tools {
+    grid-template-columns: 1fr;
+  }
+
+  .tools .filters {
+    align-items: stretch;
+  }
+
+  .filter-group-label {
+    width: 100%;
     min-width: 0;
   }
 

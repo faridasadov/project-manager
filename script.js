@@ -1527,12 +1527,14 @@ function renderStatusControls() {
   projectStatusInput.value = statuses.includes(projectStatus) ? projectStatus : "Plan";
 
   statusFilters.innerHTML = [
+    `<span class="filter-group-label">${text("status")}</span>`,
     `<button class="filter ${currentFilter === "Hamısı" ? "active" : ""}" data-filter="Hamısı" type="button">${text("all")}</button>`,
     ...statuses.map((status) => `<button class="filter ${currentFilter === status ? "active" : ""}" data-filter="${escapeHtml(status)}" type="button">${escapeHtml(statusLabel(status))}</button>`)
   ].join("");
   if (priorityFilters) {
     const priorities = ["Yüksək", "Normal", "Aşağı"];
     priorityFilters.innerHTML = [
+      `<span class="filter-group-label">${text("priority")}</span>`,
       `<button class="filter ${currentPriorityFilter === "Hamısı" ? "active" : ""}" data-priority-filter="Hamısı" type="button">${text("all")}</button>`,
       ...priorities.map((priority) => `<button class="filter ${currentPriorityFilter === priority ? "active" : ""}" data-priority-filter="${escapeHtml(priority)}" type="button">${escapeHtml(priorityLabel(priority))}</button>`)
     ].join("");
