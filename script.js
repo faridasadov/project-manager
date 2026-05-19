@@ -2655,6 +2655,7 @@ function canApproveTask(task) {
 
 function openAdminPanel() {
   if (!currentUser) return;
+  raiseModal(adminModal);
   adminModal.classList.add("open");
   adminModal.setAttribute("aria-hidden", "false");
   closeAdminPanelButton.focus();
@@ -4138,9 +4139,8 @@ function canUseBackend() {
 
 function backendUrl(path) {
   const location = window.location;
-  const sameOriginBackend = location?.port && location.port !== "80";
-  const base = sameOriginBackend ? "" : `${location.protocol}//${location.hostname}:3000`;
-  return `${base}${path}`;
+  if (location?.protocol === "http:" || location?.protocol === "https:") return path;
+  return `http://localhost:3003${path}`;
 }
 
 function authHeaders(extraHeaders = {}) {
@@ -4995,10 +4995,8 @@ loginForm.addEventListener("submit", async (event) => {
   const username = loginUsername.value.trim();
   const password = loginPassword.value;
   const localUser = users.find((item) => item.username === username && item.passwordHash === md5(password));
-  let user = localUser;
-  if (!user) {
-    user = await backendLogin(username, password);
-  }
+  let user = canUseBackend() ? await backendLogin(username, password) : null;
+  if (!user) user = localUser;
   if (user && !users.some((item) => item.id === user.id || item.username === user.username)) {
     users.push(user);
     saveUsers();

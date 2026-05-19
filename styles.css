@@ -681,11 +681,12 @@ form {
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(5px);
-  z-index: 1;
+  z-index: 0;
 }
 
 .admin-modal {
   position: relative;
+  z-index: 2;
   width: min(1180px, 100%);
   max-height: min(760px, calc(100vh - 48px));
   display: grid;
@@ -773,6 +774,9 @@ form {
 }
 
 .modal-shell.open .admin-modal {
+  z-index: 5;
+  opacity: 1;
+  visibility: visible;
   transform: translateY(0) scale(1);
 }
 
@@ -2824,6 +2828,14 @@ textarea:focus {
 .modal-shell.open .manager-assign-modal,
 .modal-shell.open .task-composer-modal {
   animation: modalEnter 180ms ease-out;
+}
+
+.modal-shell.open .admin-modal,
+.modal-shell.open .manager-assign-modal {
+  animation: none;
+  opacity: 1 !important;
+  visibility: visible;
+  transform: translateY(0) scale(1);
 }
 
 .modal-shell.open .task-composer-modal {
