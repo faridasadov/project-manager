@@ -88,6 +88,8 @@ const ids = [
   "teamCount", "linkCount", "projectForm", "projectName", "projectCustomer", "projectLeader", "projectTeamMembers",
   "addProjectTeamMembers", "selectedProjectTeamMembers",
   "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress",
+  "projectLifecycle", "projectGoal", "projectScope", "projectSuccessCriteria", "projectGateChecklist", "projectClosureNotes",
+  "projectStakeholders", "projectCommunicationPlan", "projectDecisionLog", "projectChangeControl", "projectRiskOpportunity", "projectQualityChecklist", "projectCompetenceMatrix",
   "focusNewProject", "closeProjectComposer", "cancelProjectCreate", "projectComposerModal", "projectList",
   "registerProject", "registerType", "registerTitle", "registerOwner", "registerStatus", "registerImpact", "registerDueDate", "registerMitigation", "addRegisterItem", "registerList", "registerCount",
   "projectCount", "customerName", "customerContact", "customerEmail", "addCustomer", "customerList", "customerCount", "managedFileInput", "managedFileStatus", "addManagedFiles", "managedFileList", "fileCount",
@@ -96,16 +98,20 @@ const ids = [
   "refreshAuditLogs", "refreshMailHistory", "auditLogList", "mailHistoryList",
   "capacityHours", "ldapBaseDn", "ldapUserFilter", "ldapBindDn", "ldapBindPassword", "ldapGroupRoleMap", "saveSettings", "testMail", "testLdap", "settingsStatus",
   "newUserFullName", "newUserPosition", "newUserEmail", "newUserAddress"
-  , "loginScreen", "loginForm", "loginUsername", "loginPassword", "loginError",
+  , "loginScreen", "authPanel", "showLoginTab", "showRegisterTab", "loginForm", "loginUsername", "loginPassword", "loginError",
+  "registerForm", "registerCompany", "registerFullName", "registerUsername", "registerEmail", "registerPassword", "registerError",
   "logoutButton", "currentUserBadge", "newUsername", "newUserPassword",
   "newUserRole", "addUser", "userList", "userCount", "trashList", "trashCount",
-  "dateRequestList", "dateRequestCount"
+  "dateRequestList", "dateRequestCount", "taskDetailModal", "taskDetailTitle", "taskDetailBody", "closeTaskDetail"
 ];
 
 ids.forEach((id) => element(`#${id}`));
 [
   "taskId", "taskName", "project", "projectResource", "startDate", "endDate", "status", "priority", "owner", "progress", "plannedHours", "actualHours", "notes", "parentTask", "taskDependencies",
   "projectName", "projectCustomer", "projectLeader", "projectTeamMembers", "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress",
+  "projectLifecycle", "projectGoal", "projectScope", "projectSuccessCriteria", "projectGateChecklist", "projectClosureNotes",
+  "projectStakeholders", "projectCommunicationPlan", "projectDecisionLog", "projectChangeControl", "projectRiskOpportunity", "projectQualityChecklist", "projectCompetenceMatrix",
+  "registerCompany", "registerFullName", "registerUsername", "registerEmail", "registerPassword",
   "registerProject", "registerType", "registerTitle", "registerOwner", "registerStatus", "registerImpact", "registerDueDate", "registerMitigation"
 ].forEach((id) => {
   elements[`#${id}`].formField = true;
@@ -124,10 +130,12 @@ elements["#projectStatus"].options = [{ value: "Plan" }, { value: "Davam edir" }
 elements["#projectPriority"].value = "Normal";
 elements["#projectPriority"].options = [{ value: "Normal" }, { value: "Yüksək" }, { value: "Aşağı" }];
 elements["#projectProgress"].value = "0";
+elements["#projectLifecycle"].value = "Initiation";
+elements["#projectLifecycle"].options = [{ value: "Initiation" }, { value: "Planning" }, { value: "Execution" }, { value: "Monitoring" }, { value: "Closing" }, { value: "Closed" }];
 elements["#languageSelect"].value = "az";
 elements["#loginLanguageSelect"].value = "az";
 elements["#newUserRole"].value = "user";
-elements["#newUserRole"].options = [{ value: "user" }, { value: "admin" }];
+elements["#newUserRole"].options = [{ value: "user" }, { value: "contributor" }, { value: "viewer" }, { value: "sponsor" }, { value: "manager" }, { value: "admin" }];
 elements["#themeMode"].value = "light";
 elements["#themeMode"].options = [{ value: "light" }, { value: "dark" }, { value: "system" }];
 elements["#backgroundStyle"].value = "calm";
@@ -160,6 +168,12 @@ const views = ["dashboardView", "projectsView", "listView", "kanbanView", "calen
   const view = new Element(`#${id}`);
   view.id = id;
   return view;
+});
+
+const authTabs = ["login", "register"].map((mode) => {
+  const button = new Element(`auth-${mode}`);
+  button.dataset.authTab = mode;
+  return button;
 });
 
 const store = new Map();
@@ -197,6 +211,7 @@ const context = {
       if (selector === ".filter") return filters;
       if (selector === "[data-smart-filter]") return smartFilterButtons;
       if (selector === "[data-admin-section]") return adminSections;
+      if (selector === "[data-auth-tab]") return authTabs;
       if (selector === ".view-tab") return viewTabs;
       if (selector === ".view") return views;
       return [];
@@ -308,9 +323,37 @@ elements["#projectEndDate"].value = "2026-05-20";
 elements["#projectStatus"].value = "Plan";
 elements["#projectPriority"].value = "Yüksək";
 elements["#projectProgress"].value = "15";
+elements["#projectLifecycle"].value = "Planning";
+elements["#projectGoal"].value = "IPMA charter goal";
+elements["#projectScope"].value = "Scope boundary";
+elements["#projectSuccessCriteria"].value = "Sponsor sign-off";
+elements["#projectGateChecklist"].value = "WBS hazırdır\nRisk register var";
+elements["#projectStakeholders"].value = "Sponsor | high | weekly";
+elements["#projectCommunicationPlan"].value = "Weekly report | Friday";
+elements["#projectDecisionLog"].value = "2026-05-19 | Start approved";
+elements["#projectChangeControl"].value = "Scope change | pending";
+elements["#projectRiskOpportunity"].value = "Opportunity | reuse template";
+elements["#projectQualityChecklist"].value = "Acceptance | sign-off";
+elements["#projectCompetenceMatrix"].value = "Manager | leadership | strong";
 elements["#projectForm"].dispatch("submit", { preventDefault: () => {} });
 assert.match(elements["#projectList"].innerHTML, /QA project/, "project can be created");
 assert.match(elements["#projectCards"].innerHTML, /15%/, "project metadata renders");
+assert.match(elements["#projectCards"].innerHTML, /Planning/, "project lifecycle renders");
+assert.match(elements["#projectCards"].innerHTML, /IPMA charter goal/, "project charter renders");
+assert.match(elements["#projectCards"].innerHTML, /Maraqlı tərəflər/, "project stakeholder register renders");
+assert.match(elements["#projectCards"].innerHTML, /Gate təsdiqləri/, "project gate approvals render");
+elements["#newUserRole"].value = "viewer";
+elements["#newUsername"].value = "viewer1";
+elements["#newUserPassword"].value = "viewer123";
+elements["#addUser"].dispatch("click");
+let viewer = JSON.parse(store.get("project-manager-users-v1")).find((user) => user.username === "viewer1");
+assert.equal(viewer.role, "viewer", "viewer role can be created");
+elements["#newUserRole"].value = "contributor";
+elements["#newUsername"].value = "contributor1";
+elements["#newUserPassword"].value = "contributor123";
+elements["#addUser"].dispatch("click");
+let contributor = JSON.parse(store.get("project-manager-users-v1")).find((user) => user.username === "contributor1");
+assert.equal(contributor.role, "contributor", "contributor role can be created");
 elements["#projectCards"].dispatch("click", {
   target: { closest: () => ({ dataset: { projectAction: "archive", project: "QA project" } }) }
 });

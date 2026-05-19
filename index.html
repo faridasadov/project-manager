@@ -4,10 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-  <link rel="stylesheet" href="styles.css?v=20260519-admin-windows">
+  <link rel="stylesheet" href="styles.css?v=20260519-ipma-governance-icons">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
+      <div id="authPanel" class="auth-panel" data-auth-mode="login">
+      <div class="auth-tabs" role="tablist" aria-label="Auth">
+        <button id="showLoginTab" class="auth-tab active" type="button" data-auth-tab="login">Daxil ol</button>
+        <button id="showRegisterTab" class="auth-tab" type="button" data-auth-tab="register">Qeydiyyat</button>
+      </div>
       <form id="loginForm" class="login-card">
         <div class="login-language">
           <select id="loginLanguageSelect" aria-label="Dil seçimi">
@@ -29,6 +34,33 @@
         <p id="loginError" class="login-error"></p>
         <button class="primary" type="submit" data-i18n="loginButton">Daxil ol</button>
       </form>
+      <form id="registerForm" class="login-card register-card">
+        <p class="kicker">Yeni workspace</p>
+        <h1>Qeydiyyat</h1>
+        <label>
+          <span>Şirkət adı</span>
+          <input id="registerCompany" type="text" autocomplete="organization" required>
+        </label>
+        <label>
+          <span>Manager adı</span>
+          <input id="registerFullName" type="text" autocomplete="name" required>
+        </label>
+        <label>
+          <span>İstifadəçi adı</span>
+          <input id="registerUsername" type="text" autocomplete="username" required>
+        </label>
+        <label>
+          <span>Mail</span>
+          <input id="registerEmail" type="email" autocomplete="email">
+        </label>
+        <label>
+          <span>Şifrə</span>
+          <input id="registerPassword" type="password" autocomplete="new-password" required>
+        </label>
+        <p id="registerError" class="login-error"></p>
+        <button class="primary" type="submit">Qeydiyyatdan keç</button>
+      </form>
+      </div>
     </section>
 
     <div id="appShell">
@@ -42,14 +74,14 @@
       </div>
       <nav class="sidebar-menu">
         <span class="sidebar-section-label">Main</span>
-        <button class="view-tab active" data-view="dashboard" type="button"><span class="menu-icon">D</span><span>Dashboard</span></button>
-        <button class="view-tab" data-view="projects" type="button"><span class="menu-icon">P</span><span data-i18n="projects">Layihələr</span></button>
-        <button class="view-tab" data-view="list" type="button"><span class="menu-icon">T</span><span data-i18n="list">Tasklar</span></button>
+        <button class="view-tab active" data-view="dashboard" type="button"><span class="menu-icon" data-menu-icon="D">D</span><span>Dashboard</span></button>
+        <button class="view-tab" data-view="projects" type="button"><span class="menu-icon" data-menu-icon="P">P</span><span data-i18n="projects">Layihələr</span></button>
+        <button class="view-tab" data-view="list" type="button"><span class="menu-icon" data-menu-icon="T">T</span><span data-i18n="list">Tasklar</span></button>
         <span class="sidebar-section-label">Work</span>
-        <button class="view-tab" data-view="kanban" type="button"><span class="menu-icon">K</span><span>Kanban</span></button>
-        <button class="view-tab" data-view="calendar" type="button"><span class="menu-icon">Tə</span><span data-i18n="calendar">Təqvim</span></button>
-        <button class="view-tab" data-view="gantt" type="button"><span class="menu-icon">G</span><span>Gantt</span></button>
-        <button class="view-tab" data-view="reports" type="button"><span class="menu-icon">R</span><span data-i18n="reports">Hesabat</span></button>
+        <button class="view-tab" data-view="kanban" type="button"><span class="menu-icon" data-menu-icon="K">K</span><span>Kanban</span></button>
+        <button class="view-tab" data-view="calendar" type="button"><span class="menu-icon" data-menu-icon="C">C</span><span data-i18n="calendar">Təqvim</span></button>
+        <button class="view-tab" data-view="gantt" type="button"><span class="menu-icon" data-menu-icon="G">G</span><span>Gantt</span></button>
+        <button class="view-tab" data-view="reports" type="button"><span class="menu-icon" data-menu-icon="R">R</span><span data-i18n="reports">Hesabat</span></button>
       </nav>
       <div class="sidebar-footer">
         <span data-i18n="teamCapacity">Komanda yüklənməsi</span>
@@ -273,12 +305,88 @@
             <input id="projectProgress" type="number" min="0" max="100" value="0">
           </label>
 
+          <div class="project-governance">
+            <label>
+              <span>Lifecycle mərhələsi</span>
+              <select id="projectLifecycle">
+                <option value="Initiation">Initiation</option>
+                <option value="Planning">Planning</option>
+                <option value="Execution">Execution</option>
+                <option value="Monitoring">Monitoring</option>
+                <option value="Closing">Closing</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </label>
+            <label>
+              <span>Project charter / Məqsəd</span>
+              <textarea id="projectGoal" rows="3" placeholder="Layihənin biznes məqsədi və gözlənilən nəticə"></textarea>
+            </label>
+            <label>
+              <span>Scope</span>
+              <textarea id="projectScope" rows="3" placeholder="Daxil olan və xaricdə qalan işlər"></textarea>
+            </label>
+            <label>
+              <span>Success criteria</span>
+              <textarea id="projectSuccessCriteria" rows="3" placeholder="Qəbul meyarları, keyfiyyət və nəticə ölçüləri"></textarea>
+            </label>
+            <label>
+              <span>Planning gate checklist</span>
+              <textarea id="projectGateChecklist" rows="4" placeholder="Hər sətrə bir checklist: WBS hazırdır, risk register var, resurs planı təsdiqlənib"></textarea>
+            </label>
+            <label>
+              <span>Closure / lessons learned</span>
+              <textarea id="projectClosureNotes" rows="3" placeholder="Təhvil, sign-off, lessons learned"></textarea>
+            </label>
+            <label>
+              <span>Maraqlı tərəflər registeri</span>
+              <textarea id="projectStakeholders" rows="4" placeholder="Sponsor | yüksək təsir | weekly update"></textarea>
+            </label>
+            <label>
+              <span>Kommunikasiya planı</span>
+              <textarea id="projectCommunicationPlan" rows="4" placeholder="Steering meeting | həftəlik | sponsor və manager"></textarea>
+            </label>
+            <label>
+              <span>Qərar jurnalı</span>
+              <textarea id="projectDecisionLog" rows="4" placeholder="Tarix | qərar | səbəb | təsir"></textarea>
+            </label>
+            <label>
+              <span>Dəyişiklik kontrolu</span>
+              <textarea id="projectChangeControl" rows="4" placeholder="Scope/deadline/resource dəyişikliyi | impact | status"></textarea>
+            </label>
+            <label>
+              <span>Risk və imkanlar</span>
+              <textarea id="projectRiskOpportunity" rows="4" placeholder="Risk/opportunity | ehtimal | təsir | response | owner"></textarea>
+            </label>
+            <label>
+              <span>Keyfiyyət checklist-i</span>
+              <textarea id="projectQualityChecklist" rows="4" placeholder="Acceptance criteria | test status | sign-off"></textarea>
+            </label>
+            <label>
+              <span>Kompetensiya matrisi</span>
+              <textarea id="projectCompetenceMatrix" rows="4" placeholder="Manager/User | leadership/risk/stakeholder | səviyyə"></textarea>
+            </label>
+          </div>
+
           <div class="form-actions">
             <button class="primary" type="submit" data-i18n="save">Yadda saxla</button>
             <button id="cancelProjectCreate" type="button" data-i18n="cancel">Ləğv et</button>
           </div>
         </form>
       </aside>
+      </div>
+
+      <div id="taskDetailModal" class="modal-shell task-detail-shell" aria-hidden="true">
+        <div class="modal-backdrop" data-task-detail-close="true"></div>
+        <aside class="task-detail-panel" role="dialog" aria-modal="true" aria-labelledby="taskDetailTitle">
+          <div class="modal-head">
+            <div>
+              <p class="kicker">Task detail</p>
+              <h2 id="taskDetailTitle">Task</h2>
+            </div>
+            <button id="closeTaskDetail" class="icon-button" type="button" aria-label="Bağla">×</button>
+          </div>
+          <div id="taskDetailBody" class="task-detail-body"></div>
+        </aside>
       </div>
 
       <div id="adminModal" class="modal-shell" aria-hidden="true">
@@ -573,6 +681,9 @@
                 <span data-i18n="role">Rol</span>
                 <select id="newUserRole">
                   <option value="user">User</option>
+                  <option value="contributor">Contributor</option>
+                  <option value="viewer">Viewer</option>
+                  <option value="sponsor">Sponsor</option>
                   <option value="manager">Manager</option>
                   <option value="admin">Admin</option>
                 </select>
@@ -1075,6 +1186,6 @@
     </main>
     </div>
 
-  <script src="script.js?v=20260519-admin-windows"></script>
+  <script src="script.js?v=20260519-ipma-governance-icons"></script>
 </body>
 </html>

@@ -166,14 +166,19 @@ body.logged-in #loginScreen {
   display: none;
 }
 
-body.user-role .admin-only,
-body.user-role .manager-only,
-body.user-role .task-actions .edit-action,
-body.user-role .task-actions .next-action,
-body.user-role .task-actions .danger-action,
-body.user-role .project-create-inline,
-body.user-role #focusNewProject,
-body.user-role #openTaskComposer {
+body.non-manager-role .admin-only,
+body.non-manager-role .manager-only,
+body.non-manager-role .task-actions .edit-action,
+body.non-manager-role .task-actions .danger-action,
+body.non-manager-role .project-create-inline,
+body.non-manager-role #focusNewProject,
+body.non-manager-role #openTaskComposer {
+  display: none;
+}
+
+body.readonly-role .task-actions .next-action,
+body.readonly-role .comment-form,
+body.readonly-role .time-entry-form {
   display: none;
 }
 
@@ -192,8 +197,43 @@ body.admin-role .manager-only {
   padding: 24px;
 }
 
+.auth-panel {
+  width: min(460px, 100%);
+  display: grid;
+  gap: 0;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, white);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  box-shadow: var(--shadow);
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--soft) 74%, var(--panel));
+}
+
+.auth-tab {
+  min-height: 42px;
+  border: 0;
+  background: transparent;
+  font-weight: 900;
+}
+
+.auth-tab.active {
+  background: linear-gradient(135deg, var(--teal), var(--blue));
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.20);
+}
+
 .login-card {
-  width: min(420px, 100%);
+  width: 100%;
   display: grid;
   gap: 16px;
   padding: 26px;
@@ -201,6 +241,22 @@ body.admin-role .manager-only {
   border-radius: 10px;
   background: color-mix(in srgb, var(--panel) 95%, transparent);
   box-shadow: var(--shadow);
+}
+
+.auth-panel .login-card {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 14px 18px 20px;
+}
+
+.auth-panel[data-auth-mode="login"] #registerForm,
+.auth-panel[data-auth-mode="register"] #loginForm {
+  display: none;
+}
+
+.register-card {
+  border-color: color-mix(in srgb, var(--teal) 28%, var(--line));
 }
 
 .login-card h1 {
@@ -599,6 +655,70 @@ h2 {
 .task-composer-modal select,
 .task-composer-modal textarea {
   min-width: 0;
+}
+
+.project-governance {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--teal) 20%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--soft) 72%, var(--panel));
+}
+
+.governance-summary {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 88%, var(--soft));
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.governance-summary strong {
+  color: var(--ink);
+}
+
+.task-detail-shell {
+  place-items: stretch end;
+  padding: 0;
+  z-index: 10020;
+}
+
+.task-detail-panel {
+  position: relative;
+  z-index: 2;
+  width: min(560px, 100%);
+  height: 100vh;
+  overflow: auto;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: -24px 0 60px rgba(15, 23, 42, 0.22);
+}
+
+.task-detail-body {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.task-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.task-detail-grid span,
+.task-detail-section {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 88%, var(--soft));
 }
 
 .composer-head {
@@ -2517,6 +2637,8 @@ button:disabled {
   .form-grid,
   .calendar-grid,
   .calendar-controls,
+  .auth-panel,
+  .task-detail-grid,
   .task-card,
   .project-card,
   .tools,
@@ -2931,6 +3053,12 @@ textarea:focus {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .auth-panel {
+    width: min(460px, 100%);
   }
 }
 

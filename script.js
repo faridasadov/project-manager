@@ -12,6 +12,8 @@ const authTokenKey = "project-manager-auth-token-v1";
 const trashKey = "project-manager-trash-v1";
 const settingsKey = "project-manager-settings-v1";
 const registersKey = "project-manager-registers-v1";
+const localAuditKey = "project-manager-local-audit-v1";
+const notificationsKey = "project-manager-notifications-v1";
 const backupVersion = 1;
 const defaultWorkflowStatuses = ["Plan", "Davam edir", "Bitib"];
 const protectedWorkflowStatuses = new Set(defaultWorkflowStatuses);
@@ -19,7 +21,7 @@ const protectedWorkflowStatuses = new Set(defaultWorkflowStatuses);
 const translations = {
   az: {
     locale: "az-AZ",
-    appKicker: "Project workspace",
+    appKicker: "Layihə mühiti",
     appTitle: "Plan, task və icra paneli",
     clearDone: "Bitənləri təmizlə",
     resetDemo: "Seçilmiş layihəni resetlə",
@@ -262,7 +264,7 @@ const translations = {
     remove: "Sil",
     member: "Şəxs",
     team: "Komanda",
-    loginKicker: "Project access",
+    loginKicker: "Layihəyə giriş",
     loginTitle: "Daxil ol",
     username: "İstifadəçi adı",
     login: "Login",
@@ -281,6 +283,9 @@ const translations = {
     adminRole: "Admin",
     managerRole: "Manager",
     userRole: "User",
+    contributorRole: "Contributor",
+    viewerRole: "Viewer",
+    sponsorRole: "Sponsor",
     comment: "Komment",
     comments: "Kommentlər",
     addComment: "Komment yaz",
@@ -605,6 +610,9 @@ const translations = {
     adminRole: "Админ",
     managerRole: "Менеджер",
     userRole: "Пользователь",
+    contributorRole: "Участник",
+    viewerRole: "Наблюдатель",
+    sponsorRole: "Спонсор",
     comment: "Комментарий",
     comments: "Комментарии",
     addComment: "Добавить комментарий",
@@ -926,6 +934,9 @@ const translations = {
     adminRole: "Admin",
     managerRole: "Manager",
     userRole: "User",
+    contributorRole: "Contributor",
+    viewerRole: "Viewer",
+    sponsorRole: "Sponsor",
     comment: "Comment",
     comments: "Comments",
     addComment: "Add comment",
@@ -1424,6 +1435,19 @@ const projectEndDateInput = document.querySelector("#projectEndDate");
 const projectStatusInput = document.querySelector("#projectStatus");
 const projectPriorityInput = document.querySelector("#projectPriority");
 const projectProgressInput = document.querySelector("#projectProgress");
+const projectLifecycleInput = document.querySelector("#projectLifecycle");
+const projectGoalInput = document.querySelector("#projectGoal");
+const projectScopeInput = document.querySelector("#projectScope");
+const projectSuccessCriteriaInput = document.querySelector("#projectSuccessCriteria");
+const projectGateChecklistInput = document.querySelector("#projectGateChecklist");
+const projectClosureNotesInput = document.querySelector("#projectClosureNotes");
+const projectStakeholdersInput = document.querySelector("#projectStakeholders");
+const projectCommunicationPlanInput = document.querySelector("#projectCommunicationPlan");
+const projectDecisionLogInput = document.querySelector("#projectDecisionLog");
+const projectChangeControlInput = document.querySelector("#projectChangeControl");
+const projectRiskOpportunityInput = document.querySelector("#projectRiskOpportunity");
+const projectQualityChecklistInput = document.querySelector("#projectQualityChecklist");
+const projectCompetenceMatrixInput = document.querySelector("#projectCompetenceMatrix");
 const focusNewProjectButton = document.querySelector("#focusNewProject");
 const projectList = document.querySelector("#projectList");
 const projectCount = document.querySelector("#projectCount");
@@ -1454,11 +1478,20 @@ const trashCount = document.querySelector("#trashCount");
 const dateRequestList = document.querySelector("#dateRequestList");
 const dateRequestCount = document.querySelector("#dateRequestCount");
 const loginScreen = document.querySelector("#loginScreen");
+const authPanel = document.querySelector("#authPanel");
+const authTabs = document.querySelectorAll("[data-auth-tab]");
 const loginForm = document.querySelector("#loginForm");
 const loginUsername = document.querySelector("#loginUsername");
 const loginPassword = document.querySelector("#loginPassword");
 const loginError = document.querySelector("#loginError");
 const loginLanguageSelect = document.querySelector("#loginLanguageSelect");
+const registerForm = document.querySelector("#registerForm");
+const registerCompanyInput = document.querySelector("#registerCompany");
+const registerFullNameInput = document.querySelector("#registerFullName");
+const registerUsernameInput = document.querySelector("#registerUsername");
+const registerEmailInput = document.querySelector("#registerEmail");
+const registerPasswordInput = document.querySelector("#registerPassword");
+const registerError = document.querySelector("#registerError");
 const logoutButton = document.querySelector("#logoutButton");
 const notifyButton = document.querySelector("#notifyButton");
 const openTaskComposerButton = document.querySelector("#openTaskComposer");
@@ -1467,6 +1500,10 @@ const taskComposerModal = document.querySelector("#taskComposerModal");
 const closeProjectComposerButton = document.querySelector("#closeProjectComposer");
 const cancelProjectCreateButton = document.querySelector("#cancelProjectCreate");
 const projectComposerModal = document.querySelector("#projectComposerModal");
+const taskDetailModal = document.querySelector("#taskDetailModal");
+const taskDetailTitle = document.querySelector("#taskDetailTitle");
+const taskDetailBody = document.querySelector("#taskDetailBody");
+const closeTaskDetailButton = document.querySelector("#closeTaskDetail");
 const openAdminPanelButton = document.querySelector("#openAdminPanel");
 const closeAdminPanelButton = document.querySelector("#closeAdminPanel");
 const adminModal = document.querySelector("#adminModal");
@@ -1565,6 +1602,8 @@ let backendSaveTimer = 0;
 let authToken = localStorage.getItem(authTokenKey) || "";
 let auditLogs = [];
 let mailHistory = [];
+let localAuditLogs = loadLocalAuditLogs();
+let notifications = loadNotifications();
 let draggedDashboardPanel = "";
 let ganttDayWidth = Math.min(28, Math.max(2, Number(localStorage.getItem("project-manager-gantt-day-width") || 3)));
 let ganttDragState = null;
@@ -1799,6 +1838,8 @@ function updateViewLabels() {
   viewTabs.forEach((button) => {
     const label = labels[button.dataset.view];
     if (!label) return;
+    const iconNode = button.querySelector?.(".menu-icon");
+    if (iconNode?.dataset?.menuIcon) iconNode.textContent = iconNode.dataset.menuIcon;
     const labelNode = button.querySelector?.("span:last-child");
     if (labelNode) {
       labelNode.textContent = label;
@@ -1813,6 +1854,9 @@ function updateRoleLabels() {
     if (option.value === "admin") option.textContent = text("adminRole");
     if (option.value === "manager") option.textContent = text("managerRole");
     if (option.value === "user") option.textContent = text("userRole");
+    if (option.value === "contributor") option.textContent = text("contributorRole");
+    if (option.value === "viewer") option.textContent = text("viewerRole");
+    if (option.value === "sponsor") option.textContent = text("sponsorRole");
   });
 }
 
@@ -2007,13 +2051,24 @@ function loadUsers() {
   return loadJson(usersKey, () => demoUsers.map((user) => ({ ...user }))).map(normalizeUser);
 }
 
+function companyIdFromName(name) {
+  const slug = String(name || "workspace").trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 42);
+  return `company-${slug || createId()}`;
+}
+
 function normalizeUser(user) {
+  const profile = user.profile || {};
+  const company = profile.company || user.companyName || "";
   const normalized = {
     id: user.id,
     username: user.username,
     passwordHash: user.passwordHash || md5(user.password || ""),
     role: user.role,
     managerId: user.managerId || "",
+    companyId: user.companyId || (company ? companyIdFromName(company) : "company-default"),
     profile: {
       fullName: "",
       fatherName: "",
@@ -2022,7 +2077,7 @@ function normalizeUser(user) {
       phone: "",
       address: "",
       company: "",
-      ...(user.profile || {})
+      ...profile
     }
   };
   if (user.passwordHash) {
@@ -2061,6 +2116,59 @@ function normalizeRegisterItem(item) {
 
 function loadRegisters() {
   return loadJson(registersKey, () => []).map(normalizeRegisterItem);
+}
+
+function loadLocalAuditLogs() {
+  return loadJson(localAuditKey, () => []);
+}
+
+function loadNotifications() {
+  return loadJson(notificationsKey, () => []);
+}
+
+function saveLocalAuditLogs() {
+  localStorage.setItem(localAuditKey, JSON.stringify(localAuditLogs.slice(0, 200)));
+}
+
+function saveNotifications() {
+  localStorage.setItem(notificationsKey, JSON.stringify(notifications.slice(0, 200)));
+}
+
+function currentCompanyId() {
+  return currentUser?.companyId || "company-default";
+}
+
+function isSameCompany(item) {
+  return isAdmin() || !item?.companyId || item.companyId === currentCompanyId();
+}
+
+function recordAudit(action, entityType, entityId, detail = "") {
+  const entry = {
+    id: createId(),
+    action,
+    actor: currentUser?.username || "system",
+    companyId: currentCompanyId(),
+    entity_type: entityType,
+    entity_id: entityId,
+    detail,
+    created_at: new Date().toISOString()
+  };
+  localAuditLogs.unshift(entry);
+  saveLocalAuditLogs();
+  return entry;
+}
+
+function addNotification(message, targetUserId = "", meta = {}) {
+  notifications.unshift({
+    id: createId(),
+    message,
+    targetUserId,
+    companyId: currentCompanyId(),
+    read: false,
+    createdAt: new Date().toISOString(),
+    ...meta
+  });
+  saveNotifications();
 }
 
 function defaultSettings() {
@@ -2164,6 +2272,23 @@ function normalizeProject(project) {
   return {
     managerIds: [],
     teamMemberIds: [],
+    companyId: "company-default",
+    lifecycle: "Initiation",
+    charter: {
+      goal: "",
+      scope: "",
+      successCriteria: "",
+      gateChecklist: [],
+      closureNotes: "",
+      stakeholders: [],
+      communicationPlan: [],
+      decisionLog: [],
+      changeControl: [],
+      riskOpportunity: [],
+      qualityChecklist: [],
+      competenceMatrix: [],
+      gateApprovals: {}
+    },
     start: "",
     end: "",
     customerId: "",
@@ -2171,6 +2296,22 @@ function normalizeProject(project) {
     status: "Plan",
     priority: "Normal",
     ...project,
+    charter: {
+      goal: "",
+      scope: "",
+      successCriteria: "",
+      gateChecklist: [],
+      closureNotes: "",
+      stakeholders: [],
+      communicationPlan: [],
+      decisionLog: [],
+      changeControl: [],
+      riskOpportunity: [],
+      qualityChecklist: [],
+      competenceMatrix: [],
+      gateApprovals: {},
+      ...(project.charter || {})
+    },
     teamMemberIds,
     progress: project.status === "Bitib" ? 100 : progress
   };
@@ -2315,15 +2456,17 @@ function projectExists(name) {
 
 function createProject(name, details = {}) {
   const cleanName = name.trim();
-  if (!cleanName || projects.some((project) => project.name.toLowerCase() === cleanName.toLowerCase())) return false;
+  const companyId = currentCompanyId();
+  if (!cleanName || projects.some((project) => project.companyId === companyId && project.name.toLowerCase() === cleanName.toLowerCase())) return false;
   const defaultManagerId = currentUser?.role === "manager"
     ? currentUser.id
-    : users.find((user) => user.role === "manager")?.id || "";
+    : users.find((user) => user.role === "manager" && user.companyId === companyId)?.id || "";
   const managerIds = details.managerId ? [details.managerId] : (defaultManagerId ? [defaultManagerId] : []);
   const progress = Math.min(100, Math.max(0, Number.parseInt(details.progress || "0", 10)));
   const project = normalizeProject({
     id: createId(),
     name: cleanName,
+    companyId,
     customerId: details.customerId || "",
     managerIds,
     teamMemberIds: details.teamMemberIds || [],
@@ -2331,7 +2474,9 @@ function createProject(name, details = {}) {
     end: details.end || "",
     status: details.status || "Plan",
     priority: details.priority || "Normal",
-    progress: details.status === "Bitib" ? 100 : progress
+    progress: details.status === "Bitib" ? 100 : progress,
+    lifecycle: details.lifecycle || "Initiation",
+    charter: details.charter || {}
   });
   projects.push(project);
   project.teamMemberIds.forEach((resource) => {
@@ -2340,6 +2485,7 @@ function createProject(name, details = {}) {
     }
   });
   saveResources();
+  recordAudit("project.created", "project", project.id, project.name);
   return project;
 }
 
@@ -2347,7 +2493,8 @@ function updateProject(projectId, details = {}) {
   const project = projects.find((item) => item.id === projectId);
   if (!project) return null;
   const cleanName = details.name.trim();
-  if (!cleanName || projects.some((item) => item.id !== projectId && item.name.toLowerCase() === cleanName.toLowerCase())) return null;
+  const companyId = project.companyId || currentCompanyId();
+  if (!cleanName || projects.some((item) => item.id !== projectId && item.companyId === companyId && item.name.toLowerCase() === cleanName.toLowerCase())) return null;
   const previousName = project.name;
   project.name = cleanName;
   project.customerId = details.customerId || "";
@@ -2358,6 +2505,8 @@ function updateProject(projectId, details = {}) {
   project.status = details.status || "Plan";
   project.priority = details.priority || "Normal";
   project.progress = project.status === "Bitib" ? 100 : Math.min(100, Math.max(0, Number.parseInt(details.progress || "0", 10)));
+  project.lifecycle = details.lifecycle || project.lifecycle || "Initiation";
+  project.charter = { ...(project.charter || {}), ...(details.charter || {}) };
   if (previousName !== cleanName) {
     tasks = tasks.map((task) => task.project === previousName ? { ...task, project: cleanName } : task);
     projectLinks = projectLinks.map((link) => link.project === previousName ? { ...link, project: cleanName } : link);
@@ -2370,7 +2519,30 @@ function updateProject(projectId, details = {}) {
     }
   });
   saveResources();
+  recordAudit("project.updated", "project", project.id, project.name);
   return project;
+}
+
+function projectGateError(payload) {
+  const charter = payload.charter || {};
+  const gateCount = Array.isArray(charter.gateChecklist) ? charter.gateChecklist.length : 0;
+  if (["Execution", "Monitoring", "Closing", "Closed"].includes(payload.lifecycle)) {
+    if (!charter.goal || !charter.scope || !charter.successCriteria || gateCount === 0) {
+      return "Execution üçün charter, scope, success criteria və planning gate checklist doldurulmalıdır.";
+    }
+  }
+  if (payload.lifecycle === "Closed" && !charter.closureNotes) {
+    return "Closed mərhələsi üçün closure / lessons learned qeydi doldurulmalıdır.";
+  }
+  return "";
+}
+
+function parseGovernanceLines(value) {
+  return String(value || "").split("\n").map((item) => item.trim()).filter(Boolean);
+}
+
+function governanceLines(value) {
+  return Array.isArray(value) ? value.join("\n") : "";
 }
 
 function managerUsers(managerId) {
@@ -2390,6 +2562,7 @@ function customerLabel(customerId) {
 function canSeeProject(project) {
   if (!currentUser) return true;
   if (isAdmin()) return true;
+  if (project.companyId && project.companyId !== currentCompanyId()) return false;
   return projectHasRoleAccess(project)
     || projectHasResourceAccess(project.name)
     || tasks.some((task) => task.project === project.name && taskHasDirectAccess(task));
@@ -2403,6 +2576,7 @@ function canSeeTask(task) {
   if (!currentUser) return true;
   if (isAdmin()) return true;
   const project = projects.find((item) => item.name === task.project);
+  if (project?.companyId && project.companyId !== currentCompanyId() && !isAdmin()) return false;
   return projectHasRoleAccess(project)
     || taskHasDirectAccess(task)
     || projectHasResourceAccess(task.project);
@@ -2466,35 +2640,42 @@ function resourceTypeLabel(value) {
 function roleLabel(role) {
   if (role === "admin") return text("adminRole");
   if (role === "manager") return text("managerRole");
+  if (role === "contributor") return text("contributorRole");
+  if (role === "viewer") return text("viewerRole");
+  if (role === "sponsor") return text("sponsorRole");
   return text("userRole");
 }
 
 function managerOptions(selectedId = "") {
+  const companyId = currentCompanyId();
   return [
     `<option value="">${text("noOwnerSelect")}</option>`,
     ...users
-      .filter((user) => user.role === "manager")
+      .filter((user) => user.role === "manager" && (isAdmin() || user.companyId === companyId))
       .map((user) => `<option value="${user.id}" ${user.id === selectedId ? "selected" : ""}>${escapeHtml(user.username)}</option>`)
   ].join("");
 }
 
 function managerMultiOptions(selectedIds = []) {
+  const companyId = currentCompanyId();
   return users
-    .filter((user) => user.role === "manager")
+    .filter((user) => user.role === "manager" && (isAdmin() || user.companyId === companyId))
     .map((user) => `<option value="${user.id}" ${selectedIds.includes(user.id) ? "selected" : ""}>${escapeHtml(user.username)}</option>`)
     .join("");
 }
 
 function allResourceOptions() {
+  const companyId = currentCompanyId();
   return [
-    ...users.filter((user) => user.role !== "admin").map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: text("userRole") })),
+    ...users.filter((user) => user.role !== "admin" && (isAdmin() || user.companyId === companyId)).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) })),
     ...teams.map((team) => ({ value: resourceValue("team", team.id), label: team.name, type: text("team") }))
   ];
 }
 
 function teamMemberOptions(selectedIds = []) {
+  const companyId = currentCompanyId();
   return [
-    ...users.filter((user) => user.role !== "admin").map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: text("userRole") }))
+    ...users.filter((user) => user.role !== "admin" && (isAdmin() || user.companyId === companyId)).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) }))
   ].map((option) => `<option value="${option.value}" ${selectedIds.includes(option.value) ? "selected" : ""}>${option.type}: ${escapeHtml(option.label)}</option>`).join("");
 }
 
@@ -2563,8 +2744,8 @@ function resourceInCurrentScope(resource) {
 function projectHasRoleAccess(project) {
   if (!project || !currentUser) return false;
   const managerIds = project.managerIds || [];
-  if (currentUser.role === "manager") return managerIds.includes(currentUser.id);
-  if (currentUser.role === "user") return Boolean(currentUser.managerId && managerIds.includes(currentUser.managerId));
+  if (["manager", "sponsor"].includes(currentUser.role)) return managerIds.includes(currentUser.id);
+  if (["user", "contributor", "viewer"].includes(currentUser.role)) return Boolean(currentUser.managerId && managerIds.includes(currentUser.managerId));
   return false;
 }
 
@@ -2656,16 +2837,24 @@ function canManageTasks() {
   return ["admin", "manager"].includes(currentUser?.role);
 }
 
+function canContribute() {
+  return ["admin", "manager", "user", "contributor"].includes(currentUser?.role);
+}
+
+function canApproveGovernance() {
+  return ["admin", "manager", "sponsor"].includes(currentUser?.role);
+}
+
 function canApproveDateRequest(task) {
   if (isAdmin()) return true;
-  if (currentUser?.role !== "manager") return false;
+  if (!["manager", "sponsor"].includes(currentUser?.role)) return false;
   const project = projects.find((item) => item.name === task.project);
   return Boolean(project?.managerIds?.includes(currentUser.id));
 }
 
 function canApproveTask(task) {
   if (isAdmin()) return true;
-  if (currentUser?.role !== "manager") return false;
+  if (!["manager", "sponsor"].includes(currentUser?.role)) return false;
   const project = projects.find((item) => item.name === task.project);
   return Boolean(project?.managerIds?.includes(currentUser.id));
 }
@@ -2806,6 +2995,19 @@ function resetProjectForm() {
   projectProgressInput.value = 0;
   projectCustomerInput.value = "";
   projectLeaderInput.value = currentUser?.role === "manager" ? currentUser.id : "";
+  projectLifecycleInput.value = "Initiation";
+  projectGoalInput.value = "";
+  projectScopeInput.value = "";
+  projectSuccessCriteriaInput.value = "";
+  projectGateChecklistInput.value = "";
+  projectClosureNotesInput.value = "";
+  projectStakeholdersInput.value = "";
+  projectCommunicationPlanInput.value = "";
+  projectDecisionLogInput.value = "";
+  projectChangeControlInput.value = "";
+  projectRiskOpportunityInput.value = "";
+  projectQualityChecklistInput.value = "";
+  projectCompetenceMatrixInput.value = "";
   renderSelectedProjectTeamMembers();
 }
 
@@ -2834,6 +3036,19 @@ function openProjectEditor(projectName) {
   projectStatusInput.value = project.status || "Plan";
   projectPriorityInput.value = project.priority || "Normal";
   projectProgressInput.value = Number(project.progress) || 0;
+  projectLifecycleInput.value = project.lifecycle || "Initiation";
+  projectGoalInput.value = project.charter?.goal || "";
+  projectScopeInput.value = project.charter?.scope || "";
+  projectSuccessCriteriaInput.value = project.charter?.successCriteria || "";
+  projectGateChecklistInput.value = (project.charter?.gateChecklist || []).join("\n");
+  projectClosureNotesInput.value = project.charter?.closureNotes || "";
+  projectStakeholdersInput.value = governanceLines(project.charter?.stakeholders);
+  projectCommunicationPlanInput.value = governanceLines(project.charter?.communicationPlan);
+  projectDecisionLogInput.value = governanceLines(project.charter?.decisionLog);
+  projectChangeControlInput.value = governanceLines(project.charter?.changeControl);
+  projectRiskOpportunityInput.value = governanceLines(project.charter?.riskOpportunity);
+  projectQualityChecklistInput.value = governanceLines(project.charter?.qualityChecklist);
+  projectCompetenceMatrixInput.value = governanceLines(project.charter?.competenceMatrix);
   renderSelectedProjectTeamMembers();
   raiseModal(projectComposerModal);
   projectComposerModal.classList.add("open");
@@ -2853,6 +3068,11 @@ function syncAuthView() {
   document.body.classList.toggle("admin-role", isAdmin());
   document.body.classList.toggle("manager-role", currentUser?.role === "manager");
   document.body.classList.toggle("user-role", currentUser?.role === "user");
+  document.body.classList.toggle("contributor-role", currentUser?.role === "contributor");
+  document.body.classList.toggle("viewer-role", currentUser?.role === "viewer");
+  document.body.classList.toggle("sponsor-role", currentUser?.role === "sponsor");
+  document.body.classList.toggle("readonly-role", ["viewer", "sponsor"].includes(currentUser?.role));
+  document.body.classList.toggle("non-manager-role", Boolean(currentUser) && !canManageTasks());
   currentUserBadge.textContent = currentUser ? `${currentUser.username} (${roleLabel(currentUser.role)})` : "";
 }
 
@@ -3025,7 +3245,9 @@ function renderResourceControls() {
     </div>
   `).join("") : `<div class="empty">${text("empty")}</div>`;
 
-  const shownUsers = isAdmin() ? users : users.filter((user) => user.managerId === currentUser?.id);
+  const shownUsers = isAdmin()
+    ? users
+    : users.filter((user) => user.companyId === currentCompanyId() && (currentUser?.role === "manager" || user.managerId === currentUser?.id || user.id === currentUser?.id));
   userList.innerHTML = shownUsers.map((user) => `
     <details class="user-profile-card">
       <summary>
@@ -3290,13 +3512,16 @@ function renderNextActions() {
 
 function renderActivityLists() {
   if (auditLogList) {
-    auditLogList.innerHTML = auditLogs.length ? auditLogs.map((item) => `
+    const visibleLocalAudit = localAuditLogs.filter((item) => isAdmin() || !item.companyId || item.companyId === currentCompanyId());
+    const combinedAudit = [...visibleLocalAudit, ...auditLogs].slice(0, 80);
+    auditLogList.innerHTML = combinedAudit.length ? combinedAudit.map((item) => `
       <div class="resource-item activity-item">
         <span>
           <strong>${escapeHtml(item.action || "-")}</strong>
           ${escapeHtml([item.actor, item.entity_type, item.entity_id].filter(Boolean).join(" · "))}
+          ${item.detail ? `<small>${escapeHtml(item.detail)}</small>` : ""}
         </span>
-        <small>${escapeHtml(formatDateTime(item.created_at))}</small>
+        <small>${escapeHtml(formatDateTime(item.created_at || item.createdAt))}</small>
       </div>
     `).join("") : `<div class="empty">${text("empty")}</div>`;
   }
@@ -3394,6 +3619,7 @@ function renderProjectsView() {
     const managerNames = projectManagers(project).map((user) => user.profile?.fullName || user.username);
     const memberNames = (project.teamMemberIds || []).map(resourceLabel).filter(Boolean);
     const counts = registerCounts(project.name);
+    const nextGate = nextGateForProject(project);
     return `
       <article class="project-card">
         <div>
@@ -3403,6 +3629,7 @@ function renderProjectsView() {
             <span>${text("customer")}: ${escapeHtml(customerLabel(project.customerId))}</span>
             <span>${text("projectTeamMembers")}: ${escapeHtml(memberNames.join(", ") || text("empty"))}</span>
             <span>${shortDate(project.start)} - ${shortDate(project.end)}</span>
+            <span>Lifecycle: ${escapeHtml(project.lifecycle || "Initiation")}</span>
             <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
             <span class="badge ${priorityClass(project.priority)}">${priorityLabel(project.priority)}</span>
             <span>${percent}%</span>
@@ -3413,18 +3640,52 @@ function renderProjectsView() {
             <span>${text("milestoneRegister")}: ${counts.milestones}</span>
           </div>
           <div class="progress-mini"><span style="width:${percent}%"></span></div>
+          ${renderProjectGovernance(project)}
         </div>
         <div class="project-card-actions">
           <button type="button" data-project-action="open" data-project="${escapeHtml(project.name)}">${text("openProject")}</button>
           <button type="button" data-project-action="edit" data-project="${escapeHtml(project.name)}">${text("editProject")}</button>
           <button type="button" data-project-action="archive" data-project="${escapeHtml(project.name)}">${text("archiveProject")}</button>
           <button type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>
+          ${nextGate ? `<button type="button" data-project-action="approve-gate" data-gate="${escapeHtml(nextGate)}" data-project="${escapeHtml(project.name)}">Gate təsdiq et: ${escapeHtml(nextGate)}</button>` : ""}
           <button class="primary" type="button" data-project-action="add-task" data-project="${escapeHtml(project.name)}">${text("addTaskToProject")}</button>
         </div>
       </article>
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
   renderArchivedProjects();
+}
+
+function renderProjectGovernance(project) {
+  const checklist = project.charter?.gateChecklist || [];
+  const modules = [
+    ["Maraqlı tərəflər", project.charter?.stakeholders],
+    ["Kommunikasiya", project.charter?.communicationPlan],
+    ["Qərar jurnalı", project.charter?.decisionLog],
+    ["Dəyişiklik kontrolu", project.charter?.changeControl],
+    ["Risk və imkan", project.charter?.riskOpportunity],
+    ["Keyfiyyət", project.charter?.qualityChecklist],
+    ["Kompetensiya", project.charter?.competenceMatrix]
+  ];
+  const hasModules = modules.some(([, rows]) => rows?.length);
+  if (!project.charter?.goal && !project.charter?.scope && !project.charter?.successCriteria && !checklist.length && !project.charter?.closureNotes && !hasModules) return "";
+  const approvals = project.charter?.gateApprovals || {};
+  return `
+    <div class="governance-summary">
+      ${project.charter?.goal ? `<span><strong>Charter:</strong> ${escapeHtml(project.charter.goal)}</span>` : ""}
+      ${project.charter?.scope ? `<span><strong>Scope:</strong> ${escapeHtml(project.charter.scope)}</span>` : ""}
+      ${project.charter?.successCriteria ? `<span><strong>Success:</strong> ${escapeHtml(project.charter.successCriteria)}</span>` : ""}
+      ${checklist.length ? `<span><strong>Gate:</strong> ${escapeHtml(checklist.join(" · "))}</span>` : ""}
+      ${project.charter?.closureNotes ? `<span><strong>Closure:</strong> ${escapeHtml(project.charter.closureNotes)}</span>` : ""}
+      ${modules.map(([label, rows]) => rows?.length ? `<span><strong>${label}:</strong> ${escapeHtml(rows.slice(0, 3).join(" · "))}${rows.length > 3 ? " ..." : ""}</span>` : "").join("")}
+      <span><strong>Gate təsdiqləri:</strong> ${["Initiation", "Planning", "Execution", "Closing"].map((gate) => `${gate}: ${approvals[gate]?.approvedAt ? "OK" : "Gözləyir"}`).join(" · ")}</span>
+    </div>
+  `;
+}
+
+function nextGateForProject(project) {
+  const approvals = project.charter?.gateApprovals || {};
+  return ["Initiation", "Planning", "Execution", "Closing"].find((gate) => !approvals[gate]?.approvedAt) || "";
 }
 
 function renderArchivedProjects() {
@@ -3529,6 +3790,7 @@ function renderTaskActions(task) {
   let actions = "";
   if (task.status === "Bitib") {
     actions = `
+        <button class="action-button" type="button" data-action="view" data-id="${task.id}">Bax</button>
         <button class="action-button next-action" type="button" data-action="reopen" data-id="${task.id}">${text("reopen")}</button>
         <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
       `;
@@ -3538,6 +3800,7 @@ function renderTaskActions(task) {
       ? `${canApproveTask(task) ? `<button class="action-button next-action" type="button" data-action="approve-done" data-id="${task.id}">${text("approveDone")}</button>` : `<span class="pending-label">${text("pendingDone")}</span>`}`
       : `<button class="action-button next-action" type="button" data-action="request-done" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("doneRequest")}</button>`;
     actions = `
+        <button class="action-button" type="button" data-action="view" data-id="${task.id}">Bax</button>
         <button class="action-button edit-action" type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
         <button class="action-button next-action" type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}</button>
         ${completionAction}
@@ -3612,6 +3875,35 @@ function renderComments(task) {
       ${formHtml}
     </div>
   `;
+}
+
+function openTaskDetail(id) {
+  const task = tasks.find((item) => item.id === id);
+  if (!task || !taskDetailModal) return;
+  const project = projects.find((item) => item.name === task.project);
+  taskDetailTitle.textContent = task.name;
+  taskDetailBody.innerHTML = `
+    <div class="task-detail-grid">
+      <span><strong>Layihə</strong>${escapeHtml(task.project || "-")}</span>
+      <span><strong>Lifecycle</strong>${escapeHtml(project?.lifecycle || "Initiation")}</span>
+      <span><strong>Status</strong>${escapeHtml(statusLabel(task.status))}</span>
+      <span><strong>Tarix</strong>${shortDate(task.start)} - ${shortDate(task.end)}</span>
+      <span><strong>Plan/Fakt saat</strong>${plannedHoursForTask(task)} / ${actualHoursForTask(task)}</span>
+      <span><strong>Progress</strong>${Number(task.progress) || 0}%</span>
+    </div>
+    ${renderTaskRelations(task)}
+    ${task.notes ? `<div class="task-detail-section"><h3>Qeyd</h3><p>${escapeHtml(task.notes)}</p></div>` : ""}
+    <div class="task-detail-section"><h3>Comments</h3>${renderComments(task)}</div>
+    <div class="task-detail-section"><h3>Time log</h3>${renderTimeEntries(task)}</div>
+  `;
+  raiseModal(taskDetailModal);
+  taskDetailModal.classList.add("open");
+  taskDetailModal.setAttribute("aria-hidden", "false");
+}
+
+function closeTaskDetail() {
+  taskDetailModal?.classList.remove("open");
+  taskDetailModal?.setAttribute("aria-hidden", "true");
 }
 
 function renderKanban() {
@@ -3867,7 +4159,8 @@ function applyGanttDateChange(state, deltaDays) {
     const nextEnd = shiftIsoDate(state.end, deltaDays);
     next.end = nextEnd >= state.start ? nextEnd : state.start;
   }
-  if (state.type === "task" && currentUser?.role === "user") {
+  if (!canManageTasks()) {
+    if (state.type !== "task" || !canContribute()) return false;
     item.dateChangeRequests = item.dateChangeRequests || [];
     item.dateChangeRequests.push({
       id: createId("date-request"),
@@ -4086,6 +4379,10 @@ function handleTaskAction(action, id) {
     openTaskComposer();
   }
 
+  if (action === "view") {
+    openTaskDetail(task.id);
+  }
+
   if (action === "next") {
     if (!canManageTasks()) return;
     if (!moveForward(task)) return;
@@ -4112,6 +4409,7 @@ function handleTaskAction(action, id) {
   }
 
   if (action === "request-done") {
+    if (!canContribute()) return;
     if (!canStartTask(task)) {
       alert(dependencyBlockedMessage(task));
       return;
@@ -4750,8 +5048,10 @@ form.addEventListener("submit", async (event) => {
   const existingIndex = tasks.findIndex((item) => item.id === task.id);
   if (existingIndex >= 0) {
     tasks[existingIndex] = task;
+    recordAudit("task.updated", "task", task.id, task.name);
   } else {
     tasks.push(task);
+    recordAudit("task.created", "task", task.id, task.name);
   }
 
   if (task.project && task.projectResource && !projectLinks.some((link) => link.project === task.project && link.resource === task.projectResource)) {
@@ -4776,6 +5076,7 @@ form.addEventListener("submit", async (event) => {
     const timeEntryForm = event.target.closest(".time-entry-form");
     if (timeEntryForm?.elements?.hours && currentUser) {
       event.preventDefault();
+      if (!canContribute()) return;
       const task = tasks.find((item) => item.id === timeEntryForm.dataset.taskId);
       const hours = Number(timeEntryForm.elements.hours.value) || 0;
       const date = timeEntryForm.elements.date?.value || isoDate(new Date());
@@ -4799,6 +5100,7 @@ form.addEventListener("submit", async (event) => {
     const commentForm = event.target.closest(".comment-form");
     if (!commentForm || !currentUser) return;
     event.preventDefault();
+    if (!canContribute()) return;
     const task = tasks.find((item) => item.id === commentForm.dataset.taskId);
     const input = commentForm.elements.comment;
     const value = input.value.trim();
@@ -4999,6 +5301,8 @@ dateRequestList?.addEventListener("click", (event) => {
     task.start = request.newStart;
     task.end = request.newEnd;
   }
+  recordAudit(`date-change.${request.status}`, "task", task.id, `${task.name}: ${request.oldStart}-${request.oldEnd} -> ${request.newStart}-${request.newEnd}`);
+  addNotification(`${task.name} tarix sorğusu ${request.status}`, "", { taskId: task.id });
   saveTasks();
   render();
 });
@@ -5054,6 +5358,14 @@ loginLanguageSelect.addEventListener("change", () => {
   changeLanguage(loginLanguageSelect.value);
 });
 
+authTabs.forEach((button) => {
+  button.addEventListener("click", () => {
+    const mode = button.dataset.authTab || "login";
+    authPanel.dataset.authMode = mode;
+    authTabs.forEach((item) => item.classList.toggle("active", item === button));
+  });
+});
+
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const username = loginUsername.value.trim();
@@ -5085,6 +5397,44 @@ loginForm.addEventListener("submit", async (event) => {
     syncBackendState();
     syncBackendSettings();
   }
+});
+
+registerForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const companyName = registerCompanyInput.value.trim();
+  const username = registerUsernameInput.value.trim();
+  const password = registerPasswordInput.value;
+  const fullName = registerFullNameInput.value.trim() || username;
+  const email = registerEmailInput.value.trim();
+  if (!companyName || !username || !password) return;
+  if (users.some((user) => user.username.toLowerCase() === username.toLowerCase())) {
+    registerError.textContent = "Bu istifadəçi adı artıq var.";
+    return;
+  }
+  const companyId = companyIdFromName(companyName);
+  const user = normalizeUser({
+    id: createId(),
+    username,
+    passwordHash: md5(password),
+    role: "manager",
+    managerId: "",
+    companyId,
+    profile: {
+      fullName,
+      email,
+      position: "Project Manager",
+      company: companyName
+    }
+  });
+  users.push(user);
+  saveUsers();
+  currentUser = user;
+  localStorage.setItem(sessionKey, user.id);
+  appSettings = loadSettings();
+  registerError.textContent = "";
+  registerPasswordInput.value = "";
+  recordAudit("workspace.registered", "company", companyId, companyName);
+  render();
 });
 
 logoutButton.addEventListener("click", () => {
@@ -5283,23 +5633,26 @@ workflowStatusList.addEventListener("click", (event) => {
 });
 
 addUserButton.addEventListener("click", () => {
-  if (!isAdmin()) return;
+  if (!canManageTasks()) return;
   const username = newUsernameInput.value.trim();
   const password = newUserPasswordInput.value;
   const role = newUserRoleInput.value;
   if (!username || !password || users.some((user) => user.username === username)) return;
-  const managerId = role === "user" ? users.find((user) => user.role === "manager")?.id || "" : "";
+  const managedRoles = ["user", "contributor", "viewer"];
+  const managerId = managedRoles.includes(role) ? (currentUser?.role === "manager" ? currentUser.id : users.find((user) => user.role === "manager" && user.companyId === currentCompanyId())?.id || "") : "";
   const user = normalizeUser({
     id: createId(),
     username,
     passwordHash: md5(password),
     role,
     managerId,
+    companyId: currentCompanyId(),
     profile: {
       fullName: newUserFullNameInput.value.trim() || username,
       position: newUserPositionInput.value.trim(),
       email: newUserEmailInput.value.trim(),
-      address: newUserAddressInput.value.trim()
+      address: newUserAddressInput.value.trim(),
+      company: currentUser?.profile?.company || ""
     }
   });
   users.push(user);
@@ -5310,6 +5663,7 @@ addUserButton.addEventListener("click", () => {
   newUserEmailInput.value = "";
   newUserAddressInput.value = "";
   saveUsers();
+  recordAudit("user.created", "user", user.id, username);
   render();
 });
 
@@ -5466,8 +5820,29 @@ projectForm.addEventListener("submit", (event) => {
     end: projectEndDateInput.value,
     status: projectStatusInput.value,
     priority: projectPriorityInput.value,
-    progress
+    progress,
+    lifecycle: projectLifecycleInput.value,
+    charter: {
+      goal: projectGoalInput.value.trim(),
+      scope: projectScopeInput.value.trim(),
+      successCriteria: projectSuccessCriteriaInput.value.trim(),
+      gateChecklist: parseGovernanceLines(projectGateChecklistInput.value),
+      closureNotes: projectClosureNotesInput.value.trim(),
+      stakeholders: parseGovernanceLines(projectStakeholdersInput.value),
+      communicationPlan: parseGovernanceLines(projectCommunicationPlanInput.value),
+      decisionLog: parseGovernanceLines(projectDecisionLogInput.value),
+      changeControl: parseGovernanceLines(projectChangeControlInput.value),
+      riskOpportunity: parseGovernanceLines(projectRiskOpportunityInput.value),
+      qualityChecklist: parseGovernanceLines(projectQualityChecklistInput.value),
+      competenceMatrix: parseGovernanceLines(projectCompetenceMatrixInput.value),
+      gateApprovals: activeProjectEditId ? (projects.find((item) => item.id === activeProjectEditId)?.charter?.gateApprovals || {}) : {}
+    }
   };
+  const gateError = projectGateError(payload);
+  if (gateError) {
+    alert(gateError);
+    return;
+  }
   const project = activeProjectEditId
     ? updateProject(activeProjectEditId, payload)
     : createProject(projectNameInput.value, payload);
@@ -5497,6 +5872,10 @@ cancelProjectCreateButton.addEventListener("click", closeProjectComposer);
 projectComposerModal.addEventListener("click", (event) => {
   if (event.target.dataset.projectModalClose) closeProjectComposer();
 });
+closeTaskDetailButton?.addEventListener("click", closeTaskDetail);
+taskDetailModal?.addEventListener("click", (event) => {
+  if (event.target.closest("[data-task-detail-close]")) closeTaskDetail();
+});
 
 projectCards.addEventListener("click", (event) => {
   const button = event.target.closest("button");
@@ -5516,6 +5895,22 @@ projectCards.addEventListener("click", (event) => {
     if (project) {
       project.archived = true;
       saveResources();
+      render();
+    }
+    return;
+  }
+  if (button.dataset.projectAction === "approve-gate") {
+    const project = projects.find((item) => item.name === projectName);
+    if (project && canApproveGovernance()) {
+      const gate = button.dataset.gate;
+      project.charter = project.charter || {};
+      project.charter.gateApprovals = project.charter.gateApprovals || {};
+      project.charter.gateApprovals[gate] = {
+        approvedBy: currentUser.username,
+        approvedAt: new Date().toISOString()
+      };
+      saveResources();
+      recordAudit("gate.approved", "project", project.id, `${project.name}: ${gate}`);
       render();
     }
     return;
