@@ -21,7 +21,8 @@ class Element {
     this.classList = {
       toggle: () => {},
       add: () => {},
-      remove: () => {}
+      remove: () => {},
+      contains: () => false
     };
   }
 
@@ -35,6 +36,21 @@ class Element {
 
   dispatch(type, event = {}) {
     this.listeners[type]?.(event);
+  }
+
+  appendChild(child) {
+    child.parentElement = this;
+    this.child = child;
+    return child;
+  }
+
+  before(node) {
+    node.after = this;
+    node.parentElement = this.parentElement;
+  }
+
+  replaceWith(node) {
+    node.parentElement = this.parentElement;
   }
 
   focus() {}
@@ -62,6 +78,7 @@ const ids = [
   "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusFilters", "smartFilters", "statusBars", "upcomingList",
   "deadlineAlerts", "workloadList", "portfolioHealth", "nextActions", "projectCards", "archivedProjectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
   "openAdminPanel", "closeAdminPanel", "adminModal", "managerAssignModal", "closeManagerAssign",
+  "adminSectionModal", "adminSectionTitle", "adminSectionBody", "closeAdminSection",
   "cancelManagerAssign", "saveProjectManagers", "managerAssignTitle", "managerAssignList", "selectedManagersPreview",
   "exportData", "exportExcel", "exportPdf", "importData",
   "totalCount", "activeCount", "doneCount", "dateRange", "hoursSummary", "resetDemo", "clearDone",
@@ -147,6 +164,12 @@ const views = ["dashboardView", "projectsView", "listView", "kanbanView", "calen
 
 const store = new Map();
 let lastAlert = "";
+const adminSections = ["settings", "users"].map((section) => {
+  const node = new Element(`admin-section-${section}`);
+  node.dataset.adminSection = section;
+  node.dataset.adminTitle = section === "settings" ? "Settings" : "Userlər";
+  return node;
+});
 
 const context = {
   console,
@@ -167,16 +190,18 @@ const context = {
   },
   window: { scrollTo: () => {} },
   document: {
-    body: { dataset: {}, classList: { toggle: () => {}, add: () => {}, remove: () => {} } },
+    body: { dataset: {}, classList: { toggle: () => {}, add: () => {}, remove: () => {} }, appendChild: (node) => node },
     documentElement: { lang: "az" },
     querySelector: (selector) => elements[selector],
     querySelectorAll: (selector) => {
       if (selector === ".filter") return filters;
       if (selector === "[data-smart-filter]") return smartFilterButtons;
+      if (selector === "[data-admin-section]") return adminSections;
       if (selector === ".view-tab") return viewTabs;
       if (selector === ".view") return views;
       return [];
     },
+    createComment: (value) => ({ value, replaceWith: () => {} }),
     addEventListener: () => {}
   }
 };
@@ -238,6 +263,13 @@ elements["#loginUsername"].value = "admin";
 elements["#loginPassword"].value = "admin123";
 elements["#loginForm"].dispatch("submit", { preventDefault: () => {} });
 assert.match(elements["#currentUserBadge"].textContent, /admin/, "admin can login");
+elements["#adminModal"].dispatch("click", {
+  target: {
+    dataset: {},
+    closest: () => ({ dataset: { adminOpenSection: "settings" } })
+  }
+});
+assert.equal(elements["#adminSectionTitle"].textContent, "Settings", "admin sections open in a separate modal");
 
 elements["#newUsername"].value = "commenter";
 elements["#newUserPassword"].value = "comment123";

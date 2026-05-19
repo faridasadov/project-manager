@@ -1470,6 +1470,10 @@ const projectComposerModal = document.querySelector("#projectComposerModal");
 const openAdminPanelButton = document.querySelector("#openAdminPanel");
 const closeAdminPanelButton = document.querySelector("#closeAdminPanel");
 const adminModal = document.querySelector("#adminModal");
+const adminSectionModal = document.querySelector("#adminSectionModal");
+const adminSectionTitle = document.querySelector("#adminSectionTitle");
+const adminSectionBody = document.querySelector("#adminSectionBody");
+const closeAdminSectionButton = document.querySelector("#closeAdminSection");
 const managerAssignModal = document.querySelector("#managerAssignModal");
 const closeManagerAssignButton = document.querySelector("#closeManagerAssign");
 const cancelManagerAssignButton = document.querySelector("#cancelManagerAssign");
@@ -1520,6 +1524,17 @@ const refreshAuditLogsButton = document.querySelector("#refreshAuditLogs");
 const refreshMailHistoryButton = document.querySelector("#refreshMailHistory");
 const auditLogList = document.querySelector("#auditLogList");
 const mailHistoryList = document.querySelector("#mailHistoryList");
+const adminLaunchCounts = {
+  dateRequests: document.querySelector("#dateRequestLaunchCount"),
+  projects: document.querySelector("#projectLaunchCount"),
+  users: document.querySelector("#userLaunchCount"),
+  customers: document.querySelector("#customerLaunchCount"),
+  files: document.querySelector("#fileLaunchCount"),
+  teams: document.querySelector("#teamLaunchCount"),
+  links: document.querySelector("#linkLaunchCount"),
+  registers: document.querySelector("#registerLaunchCount"),
+  trash: document.querySelector("#trashLaunchCount")
+};
 
 let tasks = loadTasks();
 let members = loadMembers();
@@ -1554,6 +1569,8 @@ let draggedDashboardPanel = "";
 let ganttDayWidth = Math.min(28, Math.max(2, Number(localStorage.getItem("project-manager-gantt-day-width") || 3)));
 let ganttDragState = null;
 let ganttManuallyCollapsed = false;
+let activeAdminSection = null;
+let activeAdminSectionPlaceholder = null;
 enforceClinicOnlyState();
 saveUsers();
 
@@ -2655,6 +2672,7 @@ function canApproveTask(task) {
 
 function openAdminPanel() {
   if (!currentUser) return;
+  closeAdminSection();
   raiseModal(adminModal);
   adminModal.classList.add("open");
   adminModal.setAttribute("aria-hidden", "false");
@@ -2664,8 +2682,45 @@ function openAdminPanel() {
 }
 
 function closeAdminPanel() {
+  closeAdminSection();
   adminModal.classList.remove("open");
   adminModal.setAttribute("aria-hidden", "true");
+}
+
+function adminSectionLabel(section) {
+  const title = section?.dataset.adminTitle || section?.querySelector("summary span")?.textContent || text("adminPanel");
+  return title.trim();
+}
+
+function restoreAdminSection() {
+  if (!activeAdminSection || !activeAdminSectionPlaceholder) return;
+  activeAdminSectionPlaceholder.replaceWith(activeAdminSection);
+  activeAdminSectionPlaceholder = null;
+  activeAdminSection = null;
+}
+
+function openAdminSection(key) {
+  if (!currentUser || !key) return;
+  const section = [...document.querySelectorAll("[data-admin-section]")].find((item) => item.dataset.adminSection === key);
+  if (!section) return;
+  restoreAdminSection();
+  activeAdminSection = section;
+  activeAdminSectionPlaceholder = document.createComment(`admin-section:${key}`);
+  section.before(activeAdminSectionPlaceholder);
+  section.open = true;
+  adminSectionTitle.textContent = adminSectionLabel(section);
+  adminSectionBody.appendChild(section);
+  raiseModal(adminSectionModal);
+  adminSectionModal.classList.add("open");
+  adminSectionModal.setAttribute("aria-hidden", "false");
+  closeAdminSectionButton.focus();
+}
+
+function closeAdminSection() {
+  if (!adminSectionModal) return;
+  restoreAdminSection();
+  adminSectionModal.classList.remove("open");
+  adminSectionModal.setAttribute("aria-hidden", "true");
 }
 
 function managerPickerIds() {
@@ -2837,6 +2892,15 @@ function renderResourceControls() {
   teamCount.textContent = teams.length;
   linkCount.textContent = projectLinks.length;
   trashCount.textContent = trash.length;
+  if (adminLaunchCounts.dateRequests) adminLaunchCounts.dateRequests.textContent = pendingDateRequests().length;
+  if (adminLaunchCounts.projects) adminLaunchCounts.projects.textContent = projects.length;
+  if (adminLaunchCounts.users) adminLaunchCounts.users.textContent = users.length;
+  if (adminLaunchCounts.customers) adminLaunchCounts.customers.textContent = customers.length;
+  if (adminLaunchCounts.files) adminLaunchCounts.files.textContent = managedFiles.length;
+  if (adminLaunchCounts.teams) adminLaunchCounts.teams.textContent = teams.length;
+  if (adminLaunchCounts.links) adminLaunchCounts.links.textContent = projectLinks.length;
+  if (adminLaunchCounts.registers) adminLaunchCounts.registers.textContent = registers.length;
+  if (adminLaunchCounts.trash) adminLaunchCounts.trash.textContent = trash.length;
   const currentProject = projectInput.value;
   projectInput.innerHTML = [
     `<option value="">${text("selectProject")}</option>`,
@@ -5048,6 +5112,12 @@ openAdminPanelButton.addEventListener("click", openAdminPanel);
 closeAdminPanelButton.addEventListener("click", closeAdminPanel);
 adminModal.addEventListener("click", (event) => {
   if (event.target.dataset.modalClose) closeAdminPanel();
+  const button = event.target.closest("[data-admin-open-section]");
+  if (button) openAdminSection(button.dataset.adminOpenSection);
+});
+closeAdminSectionButton.addEventListener("click", closeAdminSection);
+adminSectionModal.addEventListener("click", (event) => {
+  if (event.target.dataset.adminSectionClose) closeAdminSection();
 });
 closeManagerAssignButton.addEventListener("click", closeManagerAssign);
 cancelManagerAssignButton.addEventListener("click", closeManagerAssign);
@@ -5066,9 +5136,11 @@ saveProjectManagersButton.addEventListener("click", () => {
   render();
 });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && adminModal.classList.contains("open")) closeAdminPanel();
-  if (event.key === "Escape" && managerAssignModal.classList.contains("open")) closeManagerAssign();
-  if (event.key === "Escape" && taskComposerModal.classList.contains("open")) closeTaskComposer();
+  if (event.key !== "Escape") return;
+  if (adminSectionModal.classList.contains("open")) closeAdminSection();
+  else if (adminModal.classList.contains("open")) closeAdminPanel();
+  if (managerAssignModal.classList.contains("open")) closeManagerAssign();
+  if (taskComposerModal.classList.contains("open")) closeTaskComposer();
 });
 
 exportDataButton.addEventListener("click", () => {

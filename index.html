@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-  <link rel="stylesheet" href="styles.css?v=20260519-admin-modal">
+  <link rel="stylesheet" href="styles.css?v=20260519-admin-windows">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
@@ -305,8 +305,63 @@
             <button id="resetDemo" class="project-reset-button" type="button" data-i18n="resetDemo">Seçilmiş layihəni resetlə</button>
           </div>
 
+          <section class="admin-launch-grid" aria-label="Admin bölmələri">
+            <button type="button" data-admin-open-section="settings">
+              <strong data-i18n="settings">Settings</strong>
+              <span data-i18n="appearanceSettings">Görünüş</span>
+            </button>
+            <button type="button" data-admin-open-section="activity" class="admin-only">
+              <strong data-i18n="adminActivity">Admin aktivliyi</strong>
+              <span data-i18n="auditLogs">Audit logs</span>
+            </button>
+            <button type="button" data-admin-open-section="date-requests" class="manager-only">
+              <strong data-i18n="dateChangeRequests">Tarix dəyişiklik sorğuları</strong>
+              <span id="dateRequestLaunchCount">0</span>
+            </button>
+            <button type="button" data-admin-open-section="projects" class="admin-only">
+              <strong data-i18n="projects">Layihələr</strong>
+              <span id="projectLaunchCount">0</span>
+            </button>
+            <button type="button" data-admin-open-section="users">
+              <strong data-i18n="manageUsers">Userlər</strong>
+              <span id="userLaunchCount">0</span>
+            </button>
+            <button type="button" data-admin-open-section="customers">
+              <strong data-i18n="customers">Sifarişçilər</strong>
+              <span id="customerLaunchCount">0</span>
+            </button>
+            <button type="button" data-admin-open-section="files">
+              <strong data-i18n="fileManager">File manager</strong>
+              <span id="fileLaunchCount">0</span>
+            </button>
+            <button type="button" data-admin-open-section="teams">
+              <strong data-i18n="addTeam">Komanda əlavə et</strong>
+              <span id="teamLaunchCount">0</span>
+            </button>
+            <button type="button" data-admin-open-section="links">
+              <strong data-i18n="addProjectLink">Layihəyə bağla</strong>
+              <span id="linkLaunchCount">0</span>
+            </button>
+            <button type="button" data-admin-open-section="registers">
+              <strong data-i18n="projectRegisters">Layihə registerləri</strong>
+              <span id="registerLaunchCount">0</span>
+            </button>
+            <button type="button" data-admin-open-section="roles" class="admin-only">
+              <strong data-i18n="roleMatrix">Rol icazələri</strong>
+              <span>Admin / Manager / User</span>
+            </button>
+            <button type="button" data-admin-open-section="trash">
+              <strong data-i18n="trash">Zibil qutusu</strong>
+              <span id="trashLaunchCount">0</span>
+            </button>
+            <button type="button" data-admin-open-section="import" class="admin-only">
+              <strong data-i18n="projectImport">Proyekt import</strong>
+              <span>CSV / XML</span>
+            </button>
+          </section>
+
           <section class="resource-panel">
-          <details class="resource-block admin-wide settings-block" open>
+          <details class="resource-block admin-wide settings-block" data-admin-section="settings" data-admin-title="Settings" open>
             <summary>
               <span data-i18n="settings">Settings</span>
               <small data-i18n="new">Yeni</small>
@@ -435,7 +490,7 @@
             </div>
           </details>
 
-          <details class="resource-block admin-wide admin-only">
+          <details class="resource-block admin-wide admin-only" data-admin-section="import" data-admin-title="Proyekt import">
             <summary>
               <span data-i18n="projectImport">Proyekt import</span>
               <small>CSV / XML</small>
@@ -445,7 +500,7 @@
             </div>
           </details>
 
-          <details class="resource-block admin-wide admin-only" open>
+          <details class="resource-block admin-wide admin-only" data-admin-section="activity" data-admin-title="Admin aktivliyi" open>
             <summary>
               <span data-i18n="adminActivity">Admin aktivliyi</span>
               <small data-i18n="new">Yeni</small>
@@ -468,7 +523,7 @@
             </div>
           </details>
 
-          <details class="resource-block admin-wide manager-only" open>
+          <details class="resource-block admin-wide manager-only" data-admin-section="date-requests" data-admin-title="Tarix dəyişiklik sorğuları" open>
             <summary>
               <span data-i18n="dateChangeRequests">Tarix dəyişiklik sorğuları</span>
               <small id="dateRequestCount">0</small>
@@ -478,7 +533,7 @@
             </div>
           </details>
 
-          <details class="resource-block admin-wide admin-only">
+          <details class="resource-block admin-wide admin-only" data-admin-section="roles" data-admin-title="Rol icazələri">
             <summary>
               <span data-i18n="roleMatrix">Rol icazələri</span>
               <small>Admin / Manager / User</small>
@@ -490,7 +545,7 @@
             </div>
           </details>
 
-          <details class="resource-block admin-wide admin-only">
+          <details class="resource-block admin-wide admin-only" data-admin-section="projects" data-admin-title="Layihələr">
             <summary>
               <span data-i18n="projects">Layihələr</span>
               <small id="projectCount">0</small>
@@ -500,7 +555,7 @@
             </div>
           </details>
 
-          <details class="resource-block admin-wide">
+          <details class="resource-block admin-wide" data-admin-section="users" data-admin-title="Userlər">
             <summary>
               <span data-i18n="manageUsers">Userlər</span>
               <small id="userCount">0</small>
@@ -545,7 +600,7 @@
             </div>
           </details>
 
-          <details class="resource-block">
+          <details class="resource-block" data-admin-section="customers" data-admin-title="Sifarişçilər">
             <summary>
               <span data-i18n="customers">Sifarişçilər</span>
               <small id="customerCount">0</small>
@@ -568,7 +623,7 @@
             </div>
           </details>
 
-          <details class="resource-block">
+          <details class="resource-block" data-admin-section="files" data-admin-title="File manager">
             <summary>
               <span data-i18n="fileManager">File manager</span>
               <small id="fileCount">0</small>
@@ -584,7 +639,7 @@
             </div>
           </details>
 
-          <details class="resource-block">
+          <details class="resource-block" data-admin-section="teams" data-admin-title="Komanda əlavə et">
             <summary>
               <span data-i18n="addTeam">Komanda əlavə et</span>
               <small id="teamCount">0</small>
@@ -603,7 +658,7 @@
             </div>
           </details>
 
-          <details class="resource-block">
+          <details class="resource-block" data-admin-section="links" data-admin-title="Layihəyə bağla">
             <summary>
               <span data-i18n="addProjectLink">Layihəyə bağla</span>
               <small id="linkCount">0</small>
@@ -622,7 +677,7 @@
             </div>
           </details>
 
-          <details class="resource-block admin-wide">
+          <details class="resource-block admin-wide" data-admin-section="registers" data-admin-title="Layihə registerləri">
             <summary>
               <span data-i18n="projectRegisters">Layihə registerləri</span>
               <small id="registerCount">0</small>
@@ -677,7 +732,7 @@
             </div>
           </details>
 
-          <details class="resource-block admin-wide">
+          <details class="resource-block admin-wide" data-admin-section="trash" data-admin-title="Zibil qutusu">
             <summary>
               <span data-i18n="trash">Zibil qutusu</span>
               <small id="trashCount">0</small>
@@ -687,6 +742,20 @@
             </div>
           </details>
           </section>
+        </section>
+      </div>
+
+      <div id="adminSectionModal" class="modal-shell admin-section-shell" aria-hidden="true">
+        <div class="modal-backdrop" data-admin-section-close="true"></div>
+        <section class="admin-modal admin-section-modal" role="dialog" aria-modal="true" aria-labelledby="adminSectionTitle">
+          <div class="modal-head">
+            <div>
+              <p class="kicker" data-i18n="adminPanel">Admin panel</p>
+              <h2 id="adminSectionTitle">Settings</h2>
+            </div>
+            <button id="closeAdminSection" class="icon-button" type="button" aria-label="Bağla" data-i18n-aria="close">×</button>
+          </div>
+          <div id="adminSectionBody" class="admin-section-body"></div>
         </section>
       </div>
 
@@ -1006,6 +1075,6 @@
     </main>
     </div>
 
-  <script src="script.js?v=20260519-admin-modal"></script>
+  <script src="script.js?v=20260519-admin-windows"></script>
 </body>
 </html>

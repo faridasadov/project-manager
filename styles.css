@@ -688,9 +688,9 @@ form {
   position: relative;
   z-index: 2;
   width: min(1180px, 100%);
-  max-height: min(760px, calc(100vh - 48px));
+  max-height: min(780px, calc(100vh - 48px));
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto;
   gap: 0;
   overflow: auto;
   border: 1px solid var(--line);
@@ -795,12 +795,76 @@ form {
 
 .admin-tools {
   display: grid;
-  grid-template-columns: repeat(4, minmax(120px, auto)) 1fr repeat(3, minmax(150px, auto));
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 8px;
   flex-wrap: wrap;
   padding: 14px 20px;
   border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--panel) 88%, var(--bg));
+}
+
+.admin-launch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  padding: 18px 20px 20px;
+}
+
+.admin-launch-grid button {
+  min-height: 98px;
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+  border-radius: 8px;
+  padding: 14px;
+  text-align: left;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--teal) 8%, transparent), transparent 44%),
+    var(--panel);
+}
+
+.admin-launch-grid strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.admin-launch-grid span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+#adminModal .resource-panel {
+  display: none;
+}
+
+.admin-section-shell {
+  z-index: 11000;
+}
+
+.admin-section-modal {
+  width: min(1120px, calc(100vw - 42px));
+  max-height: min(820px, calc(100vh - 36px));
+  grid-template-rows: auto 1fr;
+}
+
+.admin-section-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 20px 20px;
+}
+
+.admin-section-body .resource-block {
+  box-shadow: none;
+}
+
+.admin-section-body .resource-block > summary {
+  display: none;
+}
+
+.admin-section-body .resource-body {
+  border-top: 0;
+  padding: 0;
 }
 
 .settings-grid {
