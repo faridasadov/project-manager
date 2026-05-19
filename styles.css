@@ -790,7 +790,8 @@ form {
 }
 
 .admin-tools {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, auto)) 1fr repeat(3, minmax(150px, auto));
   gap: 8px;
   flex-wrap: wrap;
   padding: 14px 20px;
@@ -1132,6 +1133,22 @@ textarea:focus {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) 180px;
   gap: 10px;
+  width: 100%;
+}
+
+.filter-select-label {
+  display: grid;
+  gap: 4px;
+}
+
+.filter-select-label span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.filter-select-label select {
   width: 100%;
 }
 
@@ -2290,6 +2307,15 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .admin-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .project-action-button,
+  .project-reset-button {
+    justify-self: stretch;
+  }
+
   .tools .filters {
     align-items: stretch;
   }
@@ -2545,6 +2571,18 @@ textarea:focus {
   border-color: color-mix(in srgb, var(--green) 38%, var(--line));
   background: color-mix(in srgb, var(--green) 10%, var(--panel));
   color: color-mix(in srgb, var(--green) 82%, var(--ink));
+  font-weight: 800;
+}
+
+.project-action-button,
+.project-reset-button {
+  justify-self: end;
+}
+
+.project-reset-button {
+  border-color: color-mix(in srgb, var(--amber) 42%, var(--line));
+  background: color-mix(in srgb, var(--amber) 10%, var(--panel));
+  color: color-mix(in srgb, var(--amber) 82%, var(--ink));
   font-weight: 800;
 }
 

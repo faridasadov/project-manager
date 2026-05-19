@@ -301,8 +301,8 @@
               <input id="importData" type="file" accept="application/json,.json,.csv,.xml,.mpp">
             </label>
             <button id="clearDone" type="button" data-i18n="clearDone">Bitənləri təmizlə</button>
-            <button id="loadClinicPortfolio" type="button" data-i18n="loadClinicPortfolio">Proyekt yüklə</button>
-            <button id="resetDemo" type="button" data-i18n="resetDemo">Proyekti resetlə</button>
+            <button id="loadClinicPortfolio" class="project-action-button" type="button" data-i18n="loadClinicPortfolio">Layihəyə yüklə</button>
+            <button id="resetDemo" class="project-reset-button" type="button" data-i18n="resetDemo">Seçilmiş layihəni resetlə</button>
           </div>
 
           <section class="resource-panel">
@@ -734,9 +734,12 @@
               <span data-i18n="filtersScope">Task, Kanban, Gantt və Hesabat üçün tətbiq olunur</span>
             </div>
             <input id="searchInput" type="search" placeholder="Task, layihə, məsul şəxs axtar" data-i18n-placeholder="searchPlaceholder">
-            <select id="projectFilter">
-              <option value="Hamısı">Bütün layihələr</option>
-            </select>
+            <label class="filter-select-label">
+              <span data-i18n="project">Layihə</span>
+              <select id="projectFilter">
+                <option value="Hamısı">Bütün layihələr</option>
+              </select>
+            </label>
             <div id="statusFilters" class="filters" aria-label="Status filteri" data-i18n-aria="statusFilterAria">
               <span class="filter-group-label" data-i18n="status">Status</span>
               <button class="filter active" data-filter="Hamısı" type="button">Hamısı</button>

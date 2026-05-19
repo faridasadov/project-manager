@@ -22,8 +22,8 @@ const translations = {
     appKicker: "Project workspace",
     appTitle: "Plan, task və icra paneli",
     clearDone: "Bitənləri təmizlə",
-    resetDemo: "Proyekti resetlə",
-    loadClinicPortfolio: "Proyekt yüklə",
+    resetDemo: "Seçilmiş layihəni resetlə",
+    loadClinicPortfolio: "Layihəyə yüklə",
     adminPanel: "Admin panel",
     close: "Bağla",
     settings: "Settings",
@@ -326,8 +326,8 @@ const translations = {
     appKicker: "Рабочее пространство",
     appTitle: "План, таски и панель контроля",
     clearDone: "Очистить выполненные",
-    resetDemo: "Сбросить проект",
-    loadClinicPortfolio: "Загрузить проект",
+    resetDemo: "Сбросить выбранный проект",
+    loadClinicPortfolio: "Загрузить в проект",
     adminPanel: "Админ панель",
     close: "Закрыть",
     settings: "Настройки",
@@ -633,8 +633,8 @@ const translations = {
     appKicker: "Project workspace",
     appTitle: "Plan, tasks and execution board",
     clearDone: "Clear done",
-    resetDemo: "Reset project",
-    loadClinicPortfolio: "Load project",
+    resetDemo: "Reset selected project",
+    loadClinicPortfolio: "Load to project",
     adminPanel: "Admin panel",
     close: "Close",
     settings: "Settings",
@@ -1790,6 +1790,23 @@ function loadClinicPortfolioState() {
   saveTasks();
   saveResources();
   saveTrash();
+  saveRegisters();
+}
+
+function resetSelectedProjectState() {
+  const selectedProject = projectFilter.value === "Hamısı" ? clinicPortfolioProject.name : projectFilter.value;
+  if (!selectedProject || selectedProject === clinicPortfolioProject.name) {
+    loadClinicPortfolioState();
+    projectFilter.value = clinicPortfolioProject.name;
+    return;
+  }
+
+  tasks = tasks.filter((task) => task.project !== selectedProject);
+  registers = registers.filter((item) => item.project !== selectedProject);
+  projectLinks = projectLinks.filter((link) => link.project !== selectedProject);
+  projects = projects.filter((project) => project.name !== selectedProject);
+  saveTasks();
+  saveResources();
   saveRegisters();
 }
 
@@ -5433,17 +5450,14 @@ trashList.addEventListener("click", (event) => {
 loadClinicPortfolioButton?.addEventListener("click", () => {
   if (!isAdmin()) return;
   loadClinicPortfolioState();
+  projectFilter.value = clinicPortfolioProject.name;
   resetForm();
   render();
 });
 
 resetDemo.addEventListener("click", () => {
   if (!isAdmin()) return;
-  loadClinicPortfolioState();
-  users = demoUsers.map((user) => ({ ...user }));
-  currentUser = users.find((user) => user.role === "admin") || null;
-  if (currentUser) localStorage.setItem(sessionKey, currentUser.id);
-  saveUsers();
+  resetSelectedProjectState();
   resetForm();
   render();
 });
