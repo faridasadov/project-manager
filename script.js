@@ -41,6 +41,23 @@ const translations = {
     fileManager: "File manager",
     filters: "Filterlər",
     filtersScope: "Task, Kanban, Gantt və Hesabat üçün tətbiq olunur",
+    smartFilters: "Ağıllı",
+    overdueTasks: "Gecikən task",
+    riskFocus: "Risk fokus",
+    myTasks: "Mənim tasklarım",
+    portfolioHealth: "Sağlamlıq",
+    portfolioHealthTitle: "Portfolio vəziyyəti",
+    nextActions: "Addımlar",
+    nextActionsTitle: "Növbəti işlər",
+    healthScore: "Sağlamlıq balı",
+    completionRate: "Tamamlanma",
+    riskLoad: "Risk yükü",
+    openIssueLoad: "Açıq issue",
+    noActionNeeded: "Təcili addım yoxdur.",
+    actionBlocked: "Asılılığı aç",
+    actionOverdue: "Gecikməni bağla",
+    actionDueSoon: "Deadline yaxınlaşır",
+    actionHighRisk: "Yüksək riski izlə",
     addFiles: "Fayl əlavə et",
     download: "Yüklə",
     testLdap: "LDAP test et",
@@ -345,6 +362,23 @@ const translations = {
     fileManager: "File manager",
     filters: "Фильтры",
     filtersScope: "Применяется к задачам, Kanban, Gantt и отчетам",
+    smartFilters: "Умные",
+    overdueTasks: "Просроченные задачи",
+    riskFocus: "Фокус на риске",
+    myTasks: "Мои задачи",
+    portfolioHealth: "Здоровье",
+    portfolioHealthTitle: "Состояние портфеля",
+    nextActions: "Действия",
+    nextActionsTitle: "Следующие шаги",
+    healthScore: "Индекс здоровья",
+    completionRate: "Завершение",
+    riskLoad: "Рисковая нагрузка",
+    openIssueLoad: "Открытые issue",
+    noActionNeeded: "Срочных действий нет.",
+    actionBlocked: "Разблокировать зависимость",
+    actionOverdue: "Закрыть просрочку",
+    actionDueSoon: "Срок приближается",
+    actionHighRisk: "Контролировать высокий риск",
     addFiles: "Добавить файлы",
     download: "Скачать",
     testLdap: "Проверить LDAP",
@@ -652,6 +686,23 @@ const translations = {
     fileManager: "File manager",
     filters: "Filters",
     filtersScope: "Applies to Tasks, Kanban, Gantt and Reports",
+    smartFilters: "Smart",
+    overdueTasks: "Overdue tasks",
+    riskFocus: "Risk focus",
+    myTasks: "My tasks",
+    portfolioHealth: "Health",
+    portfolioHealthTitle: "Portfolio health",
+    nextActions: "Actions",
+    nextActionsTitle: "Next actions",
+    healthScore: "Health score",
+    completionRate: "Completion",
+    riskLoad: "Risk load",
+    openIssueLoad: "Open issues",
+    noActionNeeded: "No urgent action needed.",
+    actionBlocked: "Clear dependency",
+    actionOverdue: "Close overdue item",
+    actionDueSoon: "Deadline is near",
+    actionHighRisk: "Monitor high risk",
     addFiles: "Add files",
     download: "Download",
     testLdap: "Test LDAP",
@@ -1322,8 +1373,10 @@ const dashboardPanels = document.querySelectorAll("[data-dashboard-panel]");
 const taskList = document.querySelector("#taskList");
 const statusFilters = document.querySelector("#statusFilters");
 const priorityFilters = document.querySelector("#priorityFilters");
+const smartFilters = document.querySelector("#smartFilters");
 let filters = document.querySelectorAll(".filter");
 let priorityFilterButtons = document.querySelectorAll("[data-priority-filter]");
+let smartFilterButtons = document.querySelectorAll("[data-smart-filter]");
 const viewTabs = document.querySelectorAll(".view-tab");
 const views = document.querySelectorAll(".view");
 const searchInput = document.querySelector("#searchInput");
@@ -1340,6 +1393,10 @@ const activeCount = document.querySelector("#activeCount");
 const doneCount = document.querySelector("#doneCount");
 const dateRange = document.querySelector("#dateRange");
 const hoursSummary = document.querySelector("#hoursSummary");
+const blockedCount = document.querySelector("#blockedCount");
+const riskCount = document.querySelector("#riskCount");
+const portfolioHealth = document.querySelector("#portfolioHealth");
+const nextActions = document.querySelector("#nextActions");
 const resetDemo = document.querySelector("#resetDemo");
 const loadClinicPortfolioButton = document.querySelector("#loadClinicPortfolio");
 const clearDone = document.querySelector("#clearDone");
@@ -1479,6 +1536,7 @@ let appSettings = loadSettings();
 statuses = normalizeWorkflowStatuses(appSettings.workflowStatuses);
 let currentFilter = "Hamısı";
 let currentPriorityFilter = "Hamısı";
+let currentSmartFilter = "Hamısı";
 let currentView = "dashboard";
 let currentLanguage = localStorage.getItem(languageKey) || "az";
 let activeManagerProjectId = "";
@@ -1674,8 +1732,22 @@ function renderStatusControls() {
       ...priorities.map((priority) => `<button class="filter ${currentPriorityFilter === priority ? "active" : ""}" data-priority-filter="${escapeHtml(priority)}" type="button">${escapeHtml(priorityLabel(priority))}</button>`)
     ].join("");
   }
+  if (smartFilters) {
+    const smartItems = [
+      ["Hamısı", text("all")],
+      ["blocked", text("blockedTasks")],
+      ["overdue", text("overdueTasks")],
+      ["risk", text("riskFocus")],
+      ["mine", text("myTasks")]
+    ];
+    smartFilters.innerHTML = [
+      `<span class="filter-group-label">${text("smartFilters")}</span>`,
+      ...smartItems.map(([value, label]) => `<button class="filter ${currentSmartFilter === value ? "active" : ""}" data-smart-filter="${escapeHtml(value)}" type="button">${escapeHtml(label)}</button>`)
+    ].join("");
+  }
   filters = document.querySelectorAll(".filter");
   priorityFilterButtons = document.querySelectorAll("[data-priority-filter]");
+  smartFilterButtons = document.querySelectorAll("[data-smart-filter]");
 }
 
 function updateFilterLabels() {
@@ -1684,6 +1756,16 @@ function updateFilterLabels() {
   });
   document.querySelectorAll("[data-priority-filter]").forEach((button) => {
     button.textContent = button.dataset.priorityFilter === "Hamısı" ? text("all") : priorityLabel(button.dataset.priorityFilter);
+  });
+  document.querySelectorAll("[data-smart-filter]").forEach((button) => {
+    const labels = {
+      "Hamısı": text("all"),
+      blocked: text("blockedTasks"),
+      overdue: text("overdueTasks"),
+      risk: text("riskFocus"),
+      mine: text("myTasks")
+    };
+    button.textContent = labels[button.dataset.smartFilter] || button.dataset.smartFilter;
   });
 }
 
@@ -2494,6 +2576,33 @@ function registerCounts(projectName = "") {
   };
 }
 
+function projectHasOpenRisk(projectName) {
+  return visibleRegisters(projectName).some((item) => item.status !== "Resolved" && ["risk", "issue"].includes(item.type));
+}
+
+function taskMatchesSmartFilter(task) {
+  if (currentSmartFilter === "Hamısı") return true;
+  if (currentSmartFilter === "blocked") return isTaskBlocked(task);
+  if (currentSmartFilter === "overdue") return task.status !== "Bitib" && daysUntil(task.end) < 0;
+  if (currentSmartFilter === "risk") return task.priority === "Yüksək" || projectHasOpenRisk(task.project);
+  if (currentSmartFilter === "mine") return !currentUser || [task.owner, task.projectResource].some(resourceInCurrentScope);
+  return true;
+}
+
+function portfolioMetrics(sourceTasks = accessibleTasks()) {
+  const activeTasks = sourceTasks.filter((task) => task.status !== "Bitib");
+  const doneTasks = sourceTasks.filter((task) => task.status === "Bitib");
+  const overdue = activeTasks.filter((task) => daysUntil(task.end) < 0).length;
+  const blocked = activeTasks.filter(isTaskBlocked).length;
+  const registerItems = visibleRegisters().filter((item) => item.status !== "Resolved");
+  const risks = registerItems.filter((item) => item.type === "risk").length;
+  const issues = registerItems.filter((item) => item.type === "issue").length;
+  const highRisks = registerItems.filter((item) => item.type === "risk" && item.impact === "High").length;
+  const completion = sourceTasks.length ? Math.round((doneTasks.length / sourceTasks.length) * 100) : 0;
+  const score = Math.max(0, Math.min(100, 100 - overdue * 8 - blocked * 7 - risks * 5 - issues * 4 - highRisks * 8));
+  return { active: activeTasks.length, done: doneTasks.length, overdue, blocked, risks, issues, highRisks, completion, score };
+}
+
 function plannedHoursForTask(task) {
   return Number(task.plannedHours) || 0;
 }
@@ -2698,6 +2807,7 @@ function visibleTasks() {
   return accessibleTasks()
     .filter((task) => currentFilter === "Hamısı" || task.status === currentFilter)
     .filter((task) => currentPriorityFilter === "Hamısı" || task.priority === currentPriorityFilter)
+    .filter(taskMatchesSmartFilter)
     .filter((task) => selectedProject === "Hamısı" || getProject(task) === selectedProject)
     .filter((task) => {
       if (!query) return true;
@@ -2950,10 +3060,13 @@ function renderManagedFileList() {
 
 function renderSummary() {
   const shownTasks = accessibleTasks();
+  const metrics = portfolioMetrics(shownTasks);
   if (sidebarCapacityLabel) sidebarCapacityLabel.textContent = `${Number(appSettings.capacityHours) || 40}h`;
   totalCount.textContent = shownTasks.length;
   activeCount.textContent = shownTasks.filter((task) => task.status !== "Bitib").length;
   doneCount.textContent = shownTasks.filter((task) => task.status === "Bitib").length;
+  if (blockedCount) blockedCount.textContent = metrics.blocked;
+  if (riskCount) riskCount.textContent = metrics.risks + metrics.issues;
   const planned = shownTasks.reduce((sum, task) => sum + plannedHoursForTask(task), 0);
   const actual = shownTasks.reduce((sum, task) => sum + actualHoursForTask(task), 0);
   hoursSummary.textContent = `${planned} / ${actual}`;
@@ -3028,6 +3141,8 @@ function renderDashboard() {
   `).join("") : `<div class="empty">${text("empty")}</div>`;
 
   renderDeadlineAlerts();
+  renderPortfolioHealth();
+  renderNextActions();
 }
 
 function deadlineAlertType(task) {
@@ -3058,6 +3173,54 @@ function renderDeadlineAlerts() {
       </div>
     </div>
   `).join("") : `<div class="empty">${text("noDeadlineAlerts")}</div>`;
+}
+
+function renderPortfolioHealth() {
+  if (!portfolioHealth) return;
+  const metrics = portfolioMetrics();
+  portfolioHealth.innerHTML = `
+    <div class="health-score">
+      <strong>${metrics.score}</strong>
+      <span>${text("healthScore")}</span>
+    </div>
+    <div class="health-meter"><span style="width:${metrics.score}%"></span></div>
+    <div class="health-grid">
+      <span><strong>${metrics.completion}%</strong>${text("completionRate")}</span>
+      <span><strong>${metrics.overdue}</strong>${text("overdueTasks")}</span>
+      <span><strong>${metrics.blocked}</strong>${text("blockedTasks")}</span>
+      <span><strong>${metrics.risks}</strong>${text("riskLoad")}</span>
+      <span><strong>${metrics.issues}</strong>${text("openIssueLoad")}</span>
+    </div>
+  `;
+}
+
+function nextActionItems() {
+  const taskActions = accessibleTasks()
+    .filter((task) => task.status !== "Bitib")
+    .flatMap((task) => {
+      const actions = [];
+      const days = daysUntil(task.end);
+      if (isTaskBlocked(task)) actions.push({ type: "blocked", priority: 1, label: text("actionBlocked"), title: task.name, meta: dependencyBlockedMessage(task), target: "blocked" });
+      if (days < 0) actions.push({ type: "danger", priority: 2, label: text("actionOverdue"), title: task.name, meta: `${getProject(task)} · ${shortDate(task.end)}`, target: "overdue" });
+      if (days >= 0 && days <= 3) actions.push({ type: "warning", priority: 3, label: text("actionDueSoon"), title: task.name, meta: `${getProject(task)} · ${shortDate(task.end)}`, target: "overdue" });
+      return actions;
+    });
+  const registerActions = visibleRegisters()
+    .filter((item) => item.status !== "Resolved" && item.type === "risk" && item.impact === "High")
+    .map((item) => ({ type: "danger", priority: 0, label: text("actionHighRisk"), title: item.title, meta: `${item.project} · ${shortDate(item.dueDate)}`, target: "risk" }));
+  return [...registerActions, ...taskActions].sort((a, b) => a.priority - b.priority).slice(0, 7);
+}
+
+function renderNextActions() {
+  if (!nextActions) return;
+  const actions = nextActionItems();
+  nextActions.innerHTML = actions.length ? actions.map((action) => `
+    <button class="compact-item action-item ${escapeHtml(action.type)}" type="button" data-action-filter="${escapeHtml(action.target)}">
+      <strong>${escapeHtml(action.label)}</strong>
+      <span>${escapeHtml(action.title)}</span>
+      <small>${escapeHtml(action.meta || "")}</small>
+    </button>
+  `).join("") : `<div class="empty">${text("noActionNeeded")}</div>`;
 }
 
 function renderActivityLists() {
@@ -3762,6 +3925,10 @@ function activateSummaryCard(card) {
   const target = card.dataset.summaryTarget;
   if (!target) return;
   if (target === "list") applyStatusFilter(card.dataset.summaryStatus || "Hamısı");
+  if (card.dataset.summarySmart) {
+    currentSmartFilter = card.dataset.summarySmart;
+    renderStatusControls();
+  }
   setView(target);
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -4732,6 +4899,23 @@ priorityFilters?.addEventListener("click", (event) => {
   if (!button) return;
   currentPriorityFilter = button.dataset.priorityFilter;
   priorityFilterButtons.forEach((item) => item.classList.toggle("active", item === button));
+  render();
+});
+
+smartFilters?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-smart-filter]");
+  if (!button) return;
+  currentSmartFilter = button.dataset.smartFilter || "Hamısı";
+  smartFilterButtons.forEach((item) => item.classList.toggle("active", item === button));
+  render();
+});
+
+nextActions?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action-filter]");
+  if (!button) return;
+  currentSmartFilter = button.dataset.actionFilter || "Hamısı";
+  currentView = currentSmartFilter === "risk" ? "reports" : "list";
+  viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === currentView));
   render();
 });
 

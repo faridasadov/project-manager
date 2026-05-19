@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-  <link rel="stylesheet" href="styles.css?v=20260518-gantt-timeline-modal">
+  <link rel="stylesheet" href="styles.css?v=20260519-smart-dashboard">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
@@ -754,6 +754,14 @@
               <button class="filter" data-priority-filter="Normal" type="button">Normal</button>
               <button class="filter" data-priority-filter="Aşağı" type="button">Aşağı</button>
             </div>
+            <div id="smartFilters" class="filters smart-filters" aria-label="Ağıllı filterlər">
+              <span class="filter-group-label" data-i18n="smartFilters">Ağıllı</span>
+              <button class="filter active" data-smart-filter="Hamısı" type="button">Hamısı</button>
+              <button class="filter" data-smart-filter="blocked" type="button" data-i18n="blockedTasks">Bloklanmış task</button>
+              <button class="filter" data-smart-filter="overdue" type="button" data-i18n="overdueTasks">Gecikən task</button>
+              <button class="filter" data-smart-filter="risk" type="button" data-i18n="riskFocus">Risk fokus</button>
+              <button class="filter" data-smart-filter="mine" type="button" data-i18n="myTasks">Mənim tasklarım</button>
+            </div>
           </div>
         </section>
 
@@ -777,6 +785,14 @@
             <article class="summary-card" data-summary-target="reports" tabindex="0" role="button">
               <span id="hoursSummary">0 / 0</span>
               <p data-i18n="hoursSummary">Saat plan/fakt</p>
+            </article>
+            <article class="summary-card" data-summary-target="list" data-summary-smart="blocked" tabindex="0" role="button">
+              <span id="blockedCount">0</span>
+              <p data-i18n="blockedTasks">Bloklanmış task</p>
+            </article>
+            <article class="summary-card" data-summary-target="reports" data-summary-smart="risk" tabindex="0" role="button">
+              <span id="riskCount">0</span>
+              <p data-i18n="riskRegister">Risk</p>
             </article>
           </section>
 
@@ -833,6 +849,32 @@
                 </div>
               </div>
               <div id="workloadList" class="compact-list"></div>
+            </article>
+            <article class="panel dashboard-panel" data-dashboard-panel="health" draggable="true">
+              <div class="section-head">
+                <div>
+                  <p class="kicker" data-i18n="portfolioHealth">Sağlamlıq</p>
+                  <h2 data-i18n="portfolioHealthTitle">Portfolio vəziyyəti</h2>
+                </div>
+                <div class="panel-size-controls" aria-label="Panel ölçüsü">
+                  <button type="button" data-panel-size="compact" title="Kiçilt">−</button>
+                  <button type="button" data-panel-size="wide" title="Böyüt">+</button>
+                </div>
+              </div>
+              <div id="portfolioHealth" class="health-panel"></div>
+            </article>
+            <article class="panel dashboard-panel" data-dashboard-panel="actions" draggable="true">
+              <div class="section-head">
+                <div>
+                  <p class="kicker" data-i18n="nextActions">Addımlar</p>
+                  <h2 data-i18n="nextActionsTitle">Növbəti işlər</h2>
+                </div>
+                <div class="panel-size-controls" aria-label="Panel ölçüsü">
+                  <button type="button" data-panel-size="compact" title="Kiçilt">−</button>
+                  <button type="button" data-panel-size="wide" title="Böyüt">+</button>
+                </div>
+              </div>
+              <div id="nextActions" class="compact-list action-list"></div>
             </article>
           </div>
           <div class="dashboard-calendar-grid">
@@ -964,6 +1006,6 @@
     </main>
     </div>
 
-  <script src="script.js?v=20260518-gantt-timeline-modal"></script>
+  <script src="script.js?v=20260519-smart-dashboard"></script>
 </body>
 </html>

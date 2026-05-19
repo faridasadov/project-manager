@@ -1129,6 +1129,19 @@ textarea:focus {
   color: color-mix(in srgb, var(--amber) 80%, var(--ink));
 }
 
+.smart-filters {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--teal) 10%, transparent), transparent 42%),
+    color-mix(in srgb, var(--panel) 88%, var(--field));
+}
+
+.smart-filters .filter.active {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--teal) 22%, transparent);
+}
+
 .tools {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) 180px;
@@ -1204,7 +1217,7 @@ textarea:focus {
 
 .summary {
   display: grid;
-  grid-template-columns: repeat(5, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
 }
 
@@ -1612,6 +1625,93 @@ textarea:focus {
 .compact-item.warning {
   border-color: color-mix(in srgb, var(--amber) 36%, var(--line));
   background: color-mix(in srgb, var(--panel) 88%, var(--amber) 9%);
+}
+
+.health-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.health-score {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.health-score strong {
+  color: var(--teal);
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.health-score span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.health-meter {
+  height: 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 72%, var(--panel));
+  overflow: hidden;
+}
+
+.health-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--red), var(--amber), var(--green));
+}
+
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.health-grid span {
+  min-height: 58px;
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--field);
+  padding: 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.health-grid strong {
+  color: var(--ink);
+  font-size: 1.15rem;
+}
+
+.action-list {
+  align-content: start;
+}
+
+.action-item {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  color: var(--ink);
+}
+
+.action-item span,
+.action-item small {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.action-item:hover {
+  border-color: var(--teal);
+  transform: translateY(-1px);
 }
 
 .task-card {

@@ -59,13 +59,13 @@ const ids = [
   "projectResource", "status", "priority", "owner", "progress", "plannedHours", "actualHours", "notes", "parentTask", "taskDependencies", "cancelEdit", "gantt", "reports",
   "ganttControls", "ganttFit", "ganttZoomOut", "ganttZoomLabel", "ganttZoomIn",
   "kanban", "dashboardCalendar", "calendarBoard", "calendarDetails", "dashboardCalendarStart",
-  "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusFilters", "statusBars", "upcomingList",
-  "deadlineAlerts", "workloadList", "projectCards", "archivedProjectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
+  "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusFilters", "smartFilters", "statusBars", "upcomingList",
+  "deadlineAlerts", "workloadList", "portfolioHealth", "nextActions", "projectCards", "archivedProjectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
   "openAdminPanel", "closeAdminPanel", "adminModal", "managerAssignModal", "closeManagerAssign",
   "cancelManagerAssign", "saveProjectManagers", "managerAssignTitle", "managerAssignList", "selectedManagersPreview",
   "exportData", "exportExcel", "exportPdf", "importData",
   "totalCount", "activeCount", "doneCount", "dateRange", "hoursSummary", "resetDemo", "clearDone",
-  "loadClinicPortfolio", "priorityFilters",
+  "blockedCount", "riskCount", "loadClinicPortfolio", "priorityFilters",
   "languageSelect", "loginLanguageSelect", "teamName", "teamMembers",
   "addTeam", "teamList", "linkProject", "linkResource", "addProjectLink", "projectLinks",
   "teamCount", "linkCount", "projectForm", "projectName", "projectCustomer", "projectLeader", "projectTeamMembers",
@@ -127,6 +127,12 @@ const filters = ["Hamısı", "Plan", "Davam edir", "Bitib"].map((filter) => {
   return button;
 });
 
+const smartFilterButtons = ["Hamısı", "blocked", "overdue", "risk", "mine"].map((filter) => {
+  const button = new Element(`smart-${filter}`);
+  button.dataset.smartFilter = filter;
+  return button;
+});
+
 const viewTabs = ["dashboard", "projects", "list", "kanban", "calendar", "gantt", "reports"].map((view) => {
   const button = new Element(`view-${view}`);
   button.dataset.view = view;
@@ -166,6 +172,7 @@ const context = {
     querySelector: (selector) => elements[selector],
     querySelectorAll: (selector) => {
       if (selector === ".filter") return filters;
+      if (selector === "[data-smart-filter]") return smartFilterButtons;
       if (selector === ".view-tab") return viewTabs;
       if (selector === ".view") return views;
       return [];
@@ -217,6 +224,10 @@ elements["#calendarStart"].dispatch("change");
 assert.match(elements["#calendarBoard"].innerHTML, /Klinika İT Portfeli/, "calendar range filters clinic tasks");
 assert.doesNotMatch(elements["#calendarBoard"].innerHTML, /Smart Anons/, "calendar range excludes tasks outside selected period");
 assert.match(elements["#statusBars"].innerHTML, /Davam edir/, "dashboard renders");
+assert.match(elements["#portfolioHealth"].innerHTML, /Sağlamlıq balı/, "portfolio health renders");
+assert.match(elements["#nextActions"].innerHTML, /Asılılığı aç|Deadline yaxınlaşır|Təcili addım yoxdur/, "next actions render");
+assert.notEqual(elements["#blockedCount"].textContent, "", "blocked summary renders");
+assert.notEqual(elements["#riskCount"].textContent, "", "risk summary renders");
 assert.doesNotMatch(elements["#teamList"].innerHTML, /Core Team/, "old demo teams are removed");
 assert.doesNotMatch(elements["#projectLinks"].innerHTML, /Internal portal/, "old demo project links are removed");
 assert.match(elements["#projectList"].innerHTML, /Klinika İT Portfeli/, "clinic project renders");
@@ -401,6 +412,14 @@ elements["#taskDependencies"].selectedOptions = [{ value: "clinic-task-01" }];
 elements["#taskForm"].dispatch("submit", { preventDefault: () => {} });
 assert.match(elements["#taskList"].innerHTML, /Bloklanan task/, "dependent task can be saved as planned");
 assert.match(elements["#taskList"].innerHTML, /Bloklanıb/, "dependent task renders blocked badge");
+elements["#smartFilters"].dispatch("click", {
+  target: { closest: () => ({ dataset: { smartFilter: "blocked" } }) }
+});
+assert.match(elements["#taskList"].innerHTML, /Bloklanan task/, "blocked smart filter shows blocked tasks");
+assert.doesNotMatch(elements["#taskList"].innerHTML, /<h3>Radiologiya avadanlıqları<\/h3>/, "blocked smart filter hides unblocked tasks");
+elements["#smartFilters"].dispatch("click", {
+  target: { closest: () => ({ dataset: { smartFilter: "Hamısı" } }) }
+});
 const blockedId = JSON.parse(store.get("project-manager-tasks-v2")).find((task) => task.name === "Bloklanan task")?.id;
 assert.ok(blockedId, "blocked task action id is rendered");
 lastAlert = "";
