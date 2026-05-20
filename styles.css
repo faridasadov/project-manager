@@ -166,6 +166,22 @@ body.logged-in #loginScreen {
   display: none;
 }
 
+body:not(.super-admin-role) #platformConsole {
+  display: none;
+}
+
+body.super-admin-role .sidebar,
+body.super-admin-role .layout,
+body.super-admin-role #notifyButton,
+body.super-admin-role #openAdminPanel {
+  display: none;
+}
+
+body.super-admin-role .top-shell {
+  margin-left: 0;
+  border-left: 0;
+}
+
 body.logged-in:not(.admin-role):not(.super-admin-role) #openAdminPanel {
   display: none;
 }
@@ -222,6 +238,123 @@ body.admin-role .manager-only {
   border-radius: 12px;
   background: color-mix(in srgb, var(--panel) 92%, transparent);
   box-shadow: var(--shadow);
+}
+
+.platform-console {
+  min-height: calc(100vh - 96px);
+  padding: 28px;
+  background: #f4f7fb;
+}
+
+.platform-console.active {
+  display: block;
+}
+
+.platform-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.platform-hero h2 {
+  margin: 4px 0 0;
+  font-size: 28px;
+}
+
+.platform-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.platform-stats article,
+.platform-company-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.platform-stats article {
+  padding: 18px;
+}
+
+.platform-stats span {
+  display: block;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.platform-stats p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.platform-section {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.platform-section-head {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.platform-section-head h3 {
+  margin: 3px 0 0;
+}
+
+.platform-company-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  padding: 18px;
+}
+
+.platform-company-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.platform-company-card.suspended {
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+
+.platform-company-card strong {
+  display: block;
+  font-size: 17px;
+}
+
+.platform-company-card span {
+  color: var(--muted);
+}
+
+.platform-company-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.platform-company-card dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.platform-company-card dd {
+  margin: 2px 0 0;
+  font-weight: 700;
 }
 
 .auth-tabs {

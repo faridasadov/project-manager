@@ -1619,6 +1619,10 @@ const adminLaunchCounts = {
 };
 const companyCount = document.querySelector("#companyCount");
 const companyRegistryList = document.querySelector("#companyRegistryList");
+const platformConsole = document.querySelector("#platformConsole");
+const platformStats = document.querySelector("#platformStats");
+const platformCompanyGrid = document.querySelector("#platformCompanyGrid");
+const openPlatformAdminPanelButton = document.querySelector("#openPlatformAdminPanel");
 let companyRegistry = [];
 
 let tasks = loadTasks();
@@ -4476,6 +4480,44 @@ function renderViews() {
   views.forEach((view) => view.classList.toggle("active-view", view.id === `${currentView}View`));
 }
 
+function renderPlatformConsole() {
+  if (!platformConsole) return;
+  if (!isSuperAdmin()) {
+    platformConsole.classList.remove("active");
+    return;
+  }
+  const registry = companyRegistry.length ? companyRegistry : companyRegistryFromLocalState();
+  const activeCount = registry.filter((company) => company.status !== "suspended").length;
+  const suspendedCount = registry.filter((company) => company.status === "suspended").length;
+  const usersTotal = registry.reduce((sum, company) => sum + (Number(company.userCount) || 0), 0);
+  const projectsTotal = registry.reduce((sum, company) => sum + (Number(company.projectCount) || 0), 0);
+  platformConsole.classList.add("active");
+  platformStats.innerHTML = [
+    ["Şirkət", registry.length],
+    ["Aktiv", activeCount],
+    ["Dayanıb", suspendedCount],
+    ["User", usersTotal],
+    ["Layihə", projectsTotal]
+  ].map(([label, value]) => `<article><span>${value}</span><p>${label}</p></article>`).join("");
+  platformCompanyGrid.innerHTML = registry.length ? registry.map((company) => `
+    <article class="platform-company-card ${company.status === "suspended" ? "suspended" : ""}">
+      <div>
+        <strong>${escapeHtml(company.name)}</strong>
+        <span>${escapeHtml(company.subdomain)} · ${escapeHtml(company.plan || "standard")}</span>
+      </div>
+      <dl>
+        <div><dt>Admin</dt><dd>${escapeHtml(company.adminUsername || "-")}</dd></div>
+        <div><dt>Status</dt><dd>${escapeHtml(company.status || "active")}</dd></div>
+        <div><dt>User</dt><dd>${Number(company.userCount) || 0}</dd></div>
+        <div><dt>Project</dt><dd>${Number(company.projectCount) || 0}</dd></div>
+      </dl>
+      <button type="button" data-company-action="${company.status === "suspended" ? "activate" : "suspend"}" data-id="${escapeHtml(company.id)}">
+        ${company.status === "suspended" ? text("activateCompany") : text("suspendCompany")}
+      </button>
+    </article>
+  `).join("") : `<div class="empty">${text("empty")}</div>`;
+}
+
 function setView(view) {
   currentView = view;
   viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === currentView));
@@ -4516,6 +4558,7 @@ function render() {
   renderGantt();
   renderReports();
   renderActivityLists();
+  renderPlatformConsole();
   renderViews();
 }
 
@@ -5747,6 +5790,7 @@ taskComposerModal.addEventListener("click", (event) => {
   if (event.target.dataset.taskModalClose) closeTaskComposer();
 });
 openAdminPanelButton.addEventListener("click", openAdminPanel);
+openPlatformAdminPanelButton?.addEventListener("click", openAdminPanel);
 closeAdminPanelButton.addEventListener("click", closeAdminPanel);
 adminModal.addEventListener("click", (event) => {
   if (event.target.dataset.modalClose) closeAdminPanel();
@@ -6023,6 +6067,23 @@ userList.addEventListener("click", async (event) => {
 });
 
 companyRegistryList?.addEventListener("click", async (event) => {
+  if (!isSuperAdmin()) return;
+  const button = event.target.closest("button[data-company-action]");
+  if (!button) return;
+  const company = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).find((item) => item.id === button.dataset.id);
+  if (!company) return;
+  const nextStatus = button.dataset.companyAction === "activate" ? "active" : "suspended";
+  try {
+    const updated = await updateBackendCompany(company.id, { status: nextStatus });
+    companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? updated : item);
+  } catch (error) {
+    companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? { ...item, status: nextStatus } : item);
+    saveBackendSettings();
+  }
+  render();
+});
+
+platformCompanyGrid?.addEventListener("click", async (event) => {
   if (!isSuperAdmin()) return;
   const button = event.target.closest("button[data-company-action]");
   if (!button) return;
