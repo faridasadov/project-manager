@@ -170,7 +170,8 @@ body:not(.super-admin-role) #platformConsole {
   display: none;
 }
 
-body.super-admin-role .sidebar,
+body.super-admin-role .novo-sidebar,
+body.super-admin-role .mytask-sidebar,
 body.super-admin-role .layout,
 body.super-admin-role #notifyButton,
 body.super-admin-role #openAdminPanel {
@@ -180,6 +181,11 @@ body.super-admin-role #openAdminPanel {
 body.super-admin-role .top-shell {
   margin-left: 0;
   border-left: 0;
+  justify-content: flex-end;
+}
+
+body.super-admin-role .top-shell > div:first-child {
+  display: none;
 }
 
 body.logged-in:not(.admin-role):not(.super-admin-role) #openAdminPanel {

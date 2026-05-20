@@ -4547,6 +4547,11 @@ function render() {
   applyDashboardPanelSizes();
   applyDashboardPanelOrder();
   syncAuthView();
+  if (isSuperAdmin()) {
+    renderPlatformConsole();
+    renderActivityLists();
+    return;
+  }
   renderProjectFilter();
   renderResourceControls();
   renderSummary();
@@ -4787,15 +4792,15 @@ async function saveBackendState() {
 
 async function syncBackendState() {
   if (!canUseBackend()) return;
+  if (isSuperAdmin()) {
+    backendSyncReady = true;
+    render();
+    return;
+  }
   try {
     const response = await fetch(backendUrl("/api/state"), { cache: "no-store", headers: authHeaders() });
     if (response.ok) {
       importBackup(await response.json());
-      if (isSuperAdmin()) {
-        backendSyncReady = true;
-        render();
-        return;
-      }
       const changed = enforceClinicOnlyState();
       backendSyncReady = true;
       if (changed) await saveBackendState();
@@ -4870,8 +4875,26 @@ async function syncBackendSettings() {
     syncWorkflowStatuses();
     saveAppSettings();
     render();
+    if (isSuperAdmin()) await fetchPlatformCompanies();
   } catch (error) {
     console.warn("Backend settings sync failed", error);
+  }
+}
+
+async function fetchPlatformCompanies() {
+  if (!canUseBackend() || !isSuperAdmin()) return;
+  try {
+    const response = await fetch(backendUrl("/api/platform/companies"), { cache: "no-store", headers: authHeaders() });
+    if (!response.ok) return;
+    const registry = await response.json();
+    if (!Array.isArray(registry)) return;
+    companyRegistry = registry;
+    appSettings.companyRegistry = registry;
+    saveAppSettings();
+    renderPlatformConsole();
+    renderActivityLists();
+  } catch (error) {
+    console.warn("Platform companies sync failed", error);
   }
 }
 
