@@ -42,12 +42,16 @@
           <input id="registerCompany" type="text" autocomplete="organization" required>
         </label>
         <label>
+          <span>Subdomain</span>
+          <input id="registerSubdomain" type="text" autocomplete="off" placeholder="klinika">
+        </label>
+        <label>
           <span>Manager adı</span>
           <input id="registerFullName" type="text" autocomplete="name" required>
         </label>
         <label>
           <span>İstifadəçi adı</span>
-          <input id="registerUsername" type="text" autocomplete="username" required>
+          <input id="registerUsername" type="text" autocomplete="username">
         </label>
         <label>
           <span>Mail</span>
@@ -55,7 +59,7 @@
         </label>
         <label>
           <span>Şifrə</span>
-          <input id="registerPassword" type="password" autocomplete="new-password" required>
+          <input id="registerPassword" type="password" autocomplete="new-password">
         </label>
         <p id="registerError" class="login-error"></p>
         <button class="primary" type="submit">Qeydiyyatdan keç</button>
@@ -422,6 +426,10 @@
               <strong data-i18n="adminActivity">Admin aktivliyi</strong>
               <span data-i18n="auditLogs">Audit logs</span>
             </button>
+            <button type="button" data-admin-open-section="companies" class="platform-only">
+              <strong data-i18n="platformCompanies">Şirkətlər</strong>
+              <span id="companyLaunchCount">0</span>
+            </button>
             <button type="button" data-admin-open-section="date-requests" class="manager-only">
               <strong data-i18n="dateChangeRequests">Tarix dəyişiklik sorğuları</strong>
               <span id="dateRequestLaunchCount">0</span>
@@ -628,6 +636,16 @@
                   <div id="mailHistoryList" class="resource-list activity-list"></div>
                 </div>
               </div>
+            </div>
+          </details>
+
+          <details class="resource-block admin-wide platform-only" data-admin-section="companies" data-admin-title="Şirkətlər">
+            <summary>
+              <span data-i18n="platformCompanies">Şirkətlər</span>
+              <small id="companyCount">0</small>
+            </summary>
+            <div class="resource-body">
+              <div id="companyRegistryList" class="resource-list"></div>
             </div>
           </details>
 

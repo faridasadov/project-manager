@@ -51,6 +51,17 @@ Mail settings use `emailProvider` as either an SMTP URL or an HTTP endpoint that
 LDAP login uses `ldapUrl`, `ldapBaseDn`, and `ldapUserFilter`; the default filter is `(uid={username})`.
 If the database has no state yet, `POST /api/auth/login` accepts the demo admin credentials so the first browser session can bootstrap the state.
 
+## cPanel / shared hosting
+
+The backend is compatible with Node.js `14.21.3+` and does not require Docker. For OUR Host or a similar cPanel provider, create a Node.js application with:
+
+- startup file: `server.js`
+- application root: the uploaded project directory
+- Node.js version: `14.21.3` minimum, preferably `18` or `20`
+- environment variables: `PORT`, `AUTH_SECRET`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+
+Create the MariaDB/MySQL database and user in cPanel first, then put those values into the Node.js app environment. Run `npm install --omit=dev` from the app terminal or cPanel Node.js screen, then start/restart the application.
+
 ## Operations
 
 Install on a fresh Alma/RHEL-style server:

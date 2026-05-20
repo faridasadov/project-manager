@@ -99,7 +99,7 @@ const ids = [
   "capacityHours", "ldapBaseDn", "ldapUserFilter", "ldapBindDn", "ldapBindPassword", "ldapGroupRoleMap", "saveSettings", "testMail", "testLdap", "settingsStatus",
   "newUserFullName", "newUserPosition", "newUserEmail", "newUserAddress"
   , "loginScreen", "authPanel", "showLoginTab", "showRegisterTab", "loginForm", "loginUsername", "loginPassword", "loginError",
-  "registerForm", "registerCompany", "registerFullName", "registerUsername", "registerEmail", "registerPassword", "registerError",
+  "registerForm", "registerCompany", "registerSubdomain", "registerFullName", "registerUsername", "registerEmail", "registerPassword", "registerError",
   "logoutButton", "currentUserBadge", "newUsername", "newUserPassword",
   "newUserRole", "addUser", "userList", "userCount", "trashList", "trashCount",
   "dateRequestList", "dateRequestCount", "taskDetailModal", "taskDetailTitle", "taskDetailBody", "closeTaskDetail"
@@ -111,7 +111,7 @@ ids.forEach((id) => element(`#${id}`));
   "projectName", "projectCustomer", "projectLeader", "projectTeamMembers", "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress",
   "projectLifecycle", "projectGoal", "projectScope", "projectSuccessCriteria", "projectGateChecklist", "projectClosureNotes",
   "projectStakeholders", "projectCommunicationPlan", "projectDecisionLog", "projectChangeControl", "projectRiskOpportunity", "projectQualityChecklist", "projectCompetenceMatrix",
-  "registerCompany", "registerFullName", "registerUsername", "registerEmail", "registerPassword",
+  "registerCompany", "registerSubdomain", "registerFullName", "registerUsername", "registerEmail", "registerPassword",
   "registerProject", "registerType", "registerTitle", "registerOwner", "registerStatus", "registerImpact", "registerDueDate", "registerMitigation"
 ].forEach((id) => {
   elements[`#${id}`].formField = true;
@@ -274,8 +274,8 @@ assert.match(elements["#projectList"].innerHTML, /Klinika İT Portfeli/, "clinic
 assert.match(elements["#projectList"].innerHTML, /open-project-managers/, "project manager picker button renders");
 assert.doesNotMatch(elements["#projectList"].innerHTML, /delete-project|project-manager-select/, "project list does not expose delete or inline manager select");
 
-elements["#loginUsername"].value = "admin";
-elements["#loginPassword"].value = "admin123";
+elements["#loginUsername"].value = "adminklinika";
+elements["#loginPassword"].value = "adminklinika123";
 elements["#loginForm"].dispatch("submit", { preventDefault: () => {} });
 assert.match(elements["#currentUserBadge"].textContent, /admin/, "admin can login");
 elements["#adminModal"].dispatch("click", {
@@ -446,8 +446,8 @@ assert.equal(approvedTask.dateChangeRequests[0].status, "approved", "manager app
 assert.notEqual(approvedTask.start, userTask.start, "approved date request changes task start");
 
 elements["#logoutButton"].dispatch("click");
-elements["#loginUsername"].value = "admin";
-elements["#loginPassword"].value = "admin123";
+elements["#loginUsername"].value = "adminklinika";
+elements["#loginPassword"].value = "adminklinika123";
 elements["#loginForm"].dispatch("submit", { preventDefault: () => {} });
 elements["#taskList"].dispatch("click", {
   target: { closest: () => ({ dataset: { action: "request-done", id: editedId } }) }

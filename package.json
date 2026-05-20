@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=14.21.3"
+  },
   "scripts": {
     "start": "node server.js",
     "test": "node --check script.js && node test-runner.mjs"

@@ -166,6 +166,22 @@ body.logged-in #loginScreen {
   display: none;
 }
 
+body.logged-in:not(.admin-role):not(.super-admin-role) #openAdminPanel {
+  display: none;
+}
+
+body.super-admin-role .admin-launch-grid [data-admin-open-section]:not([data-admin-open-section="settings"]):not([data-admin-open-section="activity"]) {
+  display: none;
+}
+
+body.super-admin-role .admin-launch-grid [data-admin-open-section="companies"] {
+  display: flex;
+}
+
+body:not(.super-admin-role) .platform-only {
+  display: none;
+}
+
 body.non-manager-role .admin-only,
 body.non-manager-role .manager-only,
 body.non-manager-role .task-actions .edit-action,

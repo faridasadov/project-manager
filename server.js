@@ -1,9 +1,10 @@
-import { createServer } from "node:http";
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { stat } from "node:fs/promises";
-import { createReadStream } from "node:fs";
-import { dirname, extname, normalize, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { createServer, request as httpRequest } from "http";
+import { request as httpsRequest } from "https";
+import { createHash, createHmac, timingSafeEqual } from "crypto";
+import { stat } from "fs/promises";
+import { createReadStream } from "fs";
+import { dirname, extname, normalize, resolve } from "path";
+import { fileURLToPath } from "url";
 import ldap from "ldapjs";
 import mysql from "mysql2/promise";
 import nodemailer from "nodemailer";
@@ -26,9 +27,10 @@ const dbConfig = {
 const pool = mysql.createPool(dbConfig);
 const pdfFontPath = process.env.PDF_FONT_PATH || "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf";
 const bootstrapUsers = [
-  { id: "user-admin", username: "admin", passwordHash: md5("admin123"), role: "admin", managerId: "", profile: { fullName: "Admin User", email: "", fatherName: "", position: "Admin", phone: "", address: "", company: "" } },
-  { id: "user-manager", username: "manager", passwordHash: md5("manager123"), role: "manager", managerId: "", profile: { fullName: "Project Manager", email: "", fatherName: "", position: "Manager", phone: "", address: "", company: "" } },
-  { id: "user-demo", username: "user", passwordHash: md5("user123"), role: "user", managerId: "user-manager", profile: { fullName: "Demo User", email: "", fatherName: "", position: "User", phone: "", address: "", company: "" } }
+  { id: "user-super-admin", username: "superadmin", passwordHash: md5("superadmin123"), role: "super_admin", managerId: "", companyId: "platform", profile: { fullName: "Platform Admin", email: "", fatherName: "", position: "Super Admin", phone: "", address: "", company: "Platform" } },
+  { id: "user-admin", username: "adminklinika", passwordHash: md5("adminklinika123"), role: "admin", managerId: "", companyId: "company-default", profile: { fullName: "Klinika Admin", email: "", fatherName: "", position: "Company Admin", phone: "", address: "", company: "Klinika" } },
+  { id: "user-manager", username: "manager", passwordHash: md5("manager123"), role: "manager", managerId: "", companyId: "company-default", profile: { fullName: "Project Manager", email: "", fatherName: "", position: "Manager", phone: "", address: "", company: "Klinika" } },
+  { id: "user-demo", username: "user", passwordHash: md5("user123"), role: "user", managerId: "user-manager", companyId: "company-default", profile: { fullName: "Demo User", email: "", fatherName: "", position: "User", phone: "", address: "", company: "Klinika" } }
 ];
 
 const mimeTypes = {
@@ -71,13 +73,27 @@ function md5(value) {
   return createHash("md5").update(String(value)).digest("hex");
 }
 
-function base64Url(value) {
-  return Buffer.from(JSON.stringify(value)).toString("base64url");
+function base64UrlEncode(value) {
+  return Buffer.from(value)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+function base64UrlDecode(value) {
+  const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), "=");
+  return Buffer.from(padded, "base64");
+}
+
+function base64UrlJson(value) {
+  return base64UrlEncode(JSON.stringify(value));
 }
 
 function signToken(payload) {
-  const body = base64Url(payload);
-  const signature = createHmac("sha256", authSecret).update(body).digest("base64url");
+  const body = base64UrlJson(payload);
+  const signature = base64UrlEncode(createHmac("sha256", authSecret).update(body).digest());
   return `${body}.${signature}`;
 }
 
@@ -85,11 +101,11 @@ function verifyToken(token) {
   try {
     if (!token || !token.includes(".")) return null;
     const [body, signature] = token.split(".");
-    const expected = createHmac("sha256", authSecret).update(body).digest("base64url");
+    const expected = base64UrlEncode(createHmac("sha256", authSecret).update(body).digest());
     const signatureBuffer = Buffer.from(signature);
     const expectedBuffer = Buffer.from(expected);
     if (signatureBuffer.length !== expectedBuffer.length || !timingSafeEqual(signatureBuffer, expectedBuffer)) return null;
-    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+    const payload = JSON.parse(base64UrlDecode(body).toString("utf8"));
     if (!payload.exp || payload.exp < Date.now()) return null;
     return payload;
   } catch {
@@ -117,6 +133,7 @@ function tokenForUser(user) {
     sub: user.id,
     username: user.username,
     role: user.role || "user",
+    companyId: user.companyId || "company-default",
     exp: Date.now() + 12 * 60 * 60 * 1000
   });
 }
@@ -499,7 +516,9 @@ function defaultSettings() {
     ldapBindPassword: "",
     ldapGroupRoleMap: "",
     workflowStatuses: ["Plan", "Davam edir", "Bitib"],
-    capacityHours: 40
+    capacityHours: 40,
+    companyRegistry: [],
+    companyMailSettings: {}
   };
 }
 
@@ -521,6 +540,8 @@ function publicSettings(settings, options = {}) {
     ldapBindPasswordSet: Boolean(merged.ldapBindPassword || process.env.LDAP_BIND_PASSWORD),
     ldapGroupRoleMap: merged.ldapGroupRoleMap || "",
     capacityHours: Number(merged.capacityHours) || 40,
+    companyRegistry: Array.isArray(merged.companyRegistry) ? merged.companyRegistry : [],
+    companyMailSettings: options.includeSecrets ? merged.companyMailSettings || {} : {},
     workflowStatuses: Array.isArray(merged.workflowStatuses) && merged.workflowStatuses.length
       ? merged.workflowStatuses.map((status) => String(status || "").trim()).filter(Boolean)
       : ["Plan", "Davam edir", "Bitib"]
@@ -537,7 +558,8 @@ async function writeSettings(settings) {
   const current = await readSettings();
   const nextSettings = {
     ...publicSettings({ ...current, ...settings }, { includeSecrets: true }),
-    ldapBindPassword: settings.ldapBindPassword ? settings.ldapBindPassword : current.ldapBindPassword || ""
+    ldapBindPassword: settings.ldapBindPassword ? settings.ldapBindPassword : current.ldapBindPassword || "",
+    companyMailSettings: settings.companyMailSettings || current.companyMailSettings || {}
   };
   await pool.execute(
     `INSERT INTO app_settings (id, settings_json)
@@ -562,7 +584,7 @@ function roleFromLdapGroups(entry, settings) {
   const map = parseRoleMap(settings.ldapGroupRoleMap || process.env.LDAP_GROUP_ROLE_MAP || "");
   for (const [groupNeedle, role] of Object.entries(map)) {
     if (memberOf.some((group) => String(group).toLowerCase().includes(groupNeedle.toLowerCase()))) {
-      return ["admin", "manager", "user"].includes(role) ? role : "user";
+      return ["super_admin", "admin", "manager", "user"].includes(role) ? role : "user";
     }
   }
   return "user";
@@ -603,8 +625,12 @@ async function authenticateLdap(username, password, settings) {
     const bindDn = settings.ldapBindDn || process.env.LDAP_BIND_DN || "";
     const bindPassword = settings.ldapBindPassword || process.env.LDAP_BIND_PASSWORD || "";
     if (bindDn && bindPassword) await ldapBind(client, bindDn, bindPassword);
-    const escapedUsername = username.replaceAll("\\", "\\5c").replaceAll("*", "\\2a").replaceAll("(", "\\28").replaceAll(")", "\\29");
-    const filter = (settings.ldapUserFilter || "(uid={username})").replaceAll("{username}", escapedUsername);
+    const escapedUsername = username
+      .split("\\").join("\\5c")
+      .split("*").join("\\2a")
+      .split("(").join("\\28")
+      .split(")").join("\\29");
+    const filter = (settings.ldapUserFilter || "(uid={username})").split("{username}").join(escapedUsername);
     const entries = await ldapSearch(client, settings.ldapBaseDn, filter);
     if (!entries.length || !entries[0].dn) return null;
     await ldapBind(client, entries[0].dn, password);
@@ -637,6 +663,31 @@ async function testLdapSettings(settings) {
   } finally {
     client.unbind();
   }
+}
+
+function postJson(urlString, payload) {
+  return new Promise((resolvePost, rejectPost) => {
+    const url = new URL(urlString);
+    const client = url.protocol === "https:" ? httpsRequest : httpRequest;
+    const body = JSON.stringify(payload);
+    const request = client(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "content-length": Buffer.byteLength(body)
+      }
+    }, (response) => {
+      response.resume();
+      response.on("end", () => resolvePost({
+        ok: Boolean(response.statusCode && response.statusCode >= 200 && response.statusCode < 300),
+        status: response.statusCode || 0
+      }));
+    });
+    request.setTimeout(15000, () => request.destroy(new Error("HTTP mail provider timeout")));
+    request.on("error", rejectPost);
+    request.write(body);
+    request.end();
+  });
 }
 
 function normalizeTaskPayload(payload = {}) {
@@ -690,6 +741,7 @@ function normalizeProjectPayload(payload = {}) {
   return {
     id: payload.id || createId("project"),
     name: String(payload.name || "").trim(),
+    companyId: payload.companyId || "company-default",
     customerId: payload.customerId || "",
     managerIds: Array.isArray(payload.managerIds) ? payload.managerIds : (payload.managerId ? [payload.managerId] : []),
     teamMemberIds: Array.isArray(payload.teamMemberIds) ? payload.teamMemberIds : [],
@@ -703,11 +755,271 @@ function normalizeProjectPayload(payload = {}) {
 }
 
 function ensureStateShape(state) {
-  return { ...blankState(), ...(state || {}) };
+  const shaped = { ...blankState(), ...(state || {}) };
+  const users = Array.isArray(shaped.users) ? shaped.users : [];
+  shaped.users = [
+    ...users.map((user) => {
+      if (user.id === "user-admin" && user.username === "admin") {
+        return {
+          ...user,
+          username: "adminklinika",
+          passwordHash: user.passwordHash === md5("admin123") ? md5("adminklinika123") : user.passwordHash,
+          companyId: user.companyId || "company-default",
+          profile: { ...(user.profile || {}), fullName: user.profile?.fullName || "Klinika Admin", position: user.profile?.position || "Company Admin", company: user.profile?.company || "Klinika" }
+        };
+      }
+      return user;
+    })
+  ];
+  bootstrapUsers.forEach((bootstrapUser) => {
+    if (!shaped.users.some((user) => user.id === bootstrapUser.id || user.username === bootstrapUser.username)) {
+      shaped.users.push({ ...bootstrapUser });
+    }
+  });
+  return shaped;
+}
+
+function actorCompanyId(actor) {
+  return actor?.companyId || "company-default";
+}
+
+function itemCompanyId(item) {
+  return item?.companyId || "company-default";
+}
+
+function sameCompany(item, companyId) {
+  return itemCompanyId(item) === companyId;
+}
+
+function slugFromName(name) {
+  return String(name || "workspace").trim().toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ə/g, "e")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ü/g, "u")
+    .replace(/ğ/g, "g")
+    .replace(/ş/g, "s")
+    .replace(/ç/g, "c")
+    .replace(/[^a-z0-9]+/g, "")
+    .slice(0, 32) || "workspace";
+}
+
+function companyIdFromName(name) {
+  const slug = String(name || "workspace").trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 42);
+  return `company-${slug || createId()}`;
+}
+
+function projectCompanyMap(state) {
+  return new Map((state.projects || []).map((project) => [project.name, itemCompanyId(project)]));
+}
+
+function stateForActor(state, actor) {
+  const source = ensureStateShape(state);
+  if (actor?.role === "super_admin") {
+    return {
+      version: source.version || 1,
+      savedAt: source.savedAt || "",
+      tasks: [],
+      projects: [],
+      customers: [],
+      managedFiles: [],
+      members: [],
+      teams: [],
+      projectLinks: [],
+      registers: [],
+      users: (source.users || []).filter((user) => user.role === "super_admin"),
+      trash: []
+    };
+  }
+
+  const companyId = actorCompanyId(actor);
+  const ownProjects = (source.projects || []).filter((project) => sameCompany(project, companyId));
+  const ownProjectNames = new Set(ownProjects.map((project) => project.name));
+  const ownCustomerIds = new Set(ownProjects.map((project) => project.customerId).filter(Boolean));
+  const ownResourceIds = new Set([
+    ...(source.members || []).filter((item) => sameCompany(item, companyId)).map((item) => `member:${item.id}`),
+    ...(source.teams || []).filter((item) => sameCompany(item, companyId)).map((item) => `team:${item.id}`),
+    ...(source.users || []).filter((user) => user.role !== "super_admin" && sameCompany(user, companyId)).map((user) => `user:${user.id}`)
+  ]);
+
+  return {
+    ...source,
+    projects: ownProjects,
+    tasks: (source.tasks || []).filter((task) => ownProjectNames.has(task.project)),
+    customers: (source.customers || []).filter((customer) => sameCompany(customer, companyId) || ownCustomerIds.has(customer.id)),
+    managedFiles: (source.managedFiles || []).filter((file) => sameCompany(file, companyId)),
+    members: (source.members || []).filter((member) => sameCompany(member, companyId)),
+    teams: (source.teams || []).filter((team) => sameCompany(team, companyId)),
+    projectLinks: (source.projectLinks || []).filter((link) => ownProjectNames.has(link.project) || ownResourceIds.has(link.resource)),
+    registers: (source.registers || []).filter((item) => ownProjectNames.has(item.project)),
+    users: (source.users || []).filter((user) => user.role !== "super_admin" && sameCompany(user, companyId)),
+    trash: (source.trash || []).filter((item) => sameCompany(item, companyId))
+  };
+}
+
+function withCompany(items, companyId) {
+  return (items || []).map((item) => ({ ...item, companyId: itemCompanyId(item) === "company-default" ? companyId : itemCompanyId(item) }));
+}
+
+function mergeActorState(currentState, incomingState, actor) {
+  if (actor?.role === "super_admin") {
+    const error = new Error("Super admin cannot modify company state");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const companyId = actorCompanyId(actor);
+  const current = ensureStateShape(currentState);
+  const incoming = ensureStateShape(incomingState);
+  const currentProjectCompanies = projectCompanyMap(current);
+  const incomingProjects = withCompany(incoming.projects, companyId).filter((project) => itemCompanyId(project) === companyId);
+  const incomingProjectNames = new Set(incomingProjects.map((project) => project.name));
+  const incomingCustomerIds = new Set(incomingProjects.map((project) => project.customerId).filter(Boolean));
+  const currentCompanyProjectNames = new Set((current.projects || []).filter((project) => sameCompany(project, companyId)).map((project) => project.name));
+  const belongsToCompanyProject = (item) => currentCompanyProjectNames.has(item.project) || incomingProjectNames.has(item.project);
+
+  return {
+    ...current,
+    ...incoming,
+    projects: [
+      ...(current.projects || []).filter((project) => !sameCompany(project, companyId)),
+      ...incomingProjects
+    ],
+    tasks: [
+      ...(current.tasks || []).filter((task) => !belongsToCompanyProject(task)),
+      ...(incoming.tasks || []).filter((task) => incomingProjectNames.has(task.project))
+    ],
+    customers: [
+      ...(current.customers || []).filter((customer) => !sameCompany(customer, companyId) && !incomingCustomerIds.has(customer.id)),
+      ...withCompany(incoming.customers, companyId).filter((customer) => sameCompany(customer, companyId) || incomingCustomerIds.has(customer.id))
+    ],
+    managedFiles: [
+      ...(current.managedFiles || []).filter((file) => !sameCompany(file, companyId)),
+      ...withCompany(incoming.managedFiles, companyId).filter((file) => sameCompany(file, companyId))
+    ],
+    members: [
+      ...(current.members || []).filter((member) => !sameCompany(member, companyId)),
+      ...withCompany(incoming.members, companyId).filter((member) => sameCompany(member, companyId))
+    ],
+    teams: [
+      ...(current.teams || []).filter((team) => !sameCompany(team, companyId)),
+      ...withCompany(incoming.teams, companyId).filter((team) => sameCompany(team, companyId))
+    ],
+    projectLinks: [
+      ...(current.projectLinks || []).filter((link) => !currentCompanyProjectNames.has(link.project)),
+      ...(incoming.projectLinks || []).filter((link) => incomingProjectNames.has(link.project))
+    ],
+    registers: [
+      ...(current.registers || []).filter((item) => !belongsToCompanyProject(item)),
+      ...(incoming.registers || []).filter((item) => incomingProjectNames.has(item.project))
+    ],
+    users: [
+      ...(current.users || []).filter((user) => user.role === "super_admin" || !sameCompany(user, companyId)),
+      ...withCompany(incoming.users, companyId).filter((user) => user.role !== "super_admin" && sameCompany(user, companyId))
+    ],
+    trash: [
+      ...(current.trash || []).filter((item) => !sameCompany(item, companyId)),
+      ...withCompany(incoming.trash, companyId).filter((item) => sameCompany(item, companyId))
+    ],
+    savedBy: actor.username
+  };
+}
+
+function visibleUserForActor(state, actor, userId) {
+  const user = (state.users || []).find((item) => item.id === userId);
+  if (!user || user.role === "super_admin") return null;
+  if (actor?.role === "admin" && sameCompany(user, actorCompanyId(actor))) return user;
+  return null;
+}
+
+function passwordChangeToken() {
+  return base64UrlEncode(`${Date.now()}:${Math.random()}:${createId("pwd")}`);
+}
+
+function companyRegistryFromState(state, settings = {}) {
+  const existing = new Map((settings.companyRegistry || []).map((company) => [company.id, { ...company }]));
+  const usersByCompany = new Map();
+  (state.users || []).forEach((user) => {
+    if (user.role === "super_admin") return;
+    const companyId = itemCompanyId(user);
+    const list = usersByCompany.get(companyId) || [];
+    list.push(user);
+    usersByCompany.set(companyId, list);
+  });
+  const projectsByCompany = new Map();
+  (state.projects || []).forEach((project) => {
+    const companyId = itemCompanyId(project);
+    projectsByCompany.set(companyId, (projectsByCompany.get(companyId) || 0) + 1);
+  });
+  const companyIds = new Set([...usersByCompany.keys(), ...projectsByCompany.keys(), ...existing.keys()].filter((id) => id && id !== "platform"));
+  return [...companyIds].map((companyId) => {
+    const users = usersByCompany.get(companyId) || [];
+    const admin = users.find((user) => user.role === "admin");
+    const name = existing.get(companyId)?.name || admin?.profile?.company || users[0]?.profile?.company || companyId.replace(/^company-/, "");
+    const subdomain = existing.get(companyId)?.subdomain || slugFromName(name);
+    return {
+      id: companyId,
+      name,
+      subdomain,
+      status: existing.get(companyId)?.status || "active",
+      plan: existing.get(companyId)?.plan || "standard",
+      adminUsername: admin?.username || existing.get(companyId)?.adminUsername || `admin${subdomain}`,
+      userCount: users.length,
+      projectCount: projectsByCompany.get(companyId) || 0,
+      lastLoginAt: existing.get(companyId)?.lastLoginAt || "",
+      createdAt: existing.get(companyId)?.createdAt || new Date().toISOString()
+    };
+  }).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function companyRegistryEntry(settings, companyId) {
+  return (settings.companyRegistry || []).find((company) => company.id === companyId);
+}
+
+function companyMailSettings(settings, companyId) {
+  const companySettings = settings.companyMailSettings?.[companyId] || {};
+  return {
+    ...settings,
+    ...companySettings,
+    emailEnabled: Boolean(companySettings.emailEnabled),
+    emailRecipients: companySettings.emailRecipients || "",
+    emailProvider: companySettings.emailProvider || "",
+    mailSubjectTemplate: companySettings.mailSubjectTemplate || settings.mailSubjectTemplate || "Project Manager deadline alerts",
+    mailBodyTemplate: companySettings.mailBodyTemplate || settings.mailBodyTemplate || "{{alerts}}",
+    testMailBody: companySettings.testMailBody || settings.testMailBody || "Project Manager mail ayarlari test edildi.",
+    mailFrom: companySettings.mailFrom || settings.mailFrom || process.env.MAIL_FROM || "project-manager@localhost"
+  };
+}
+
+async function recordAuditLog(actor, action, entityType, entityId, details = {}) {
+  await pool.execute(
+    "INSERT INTO audit_logs (actor, action, entity_type, entity_id, details_json) VALUES (?, ?, ?, ?, ?)",
+    [actor || "system", action, entityType || "", entityId || "", JSON.stringify(details)]
+  );
+}
+
+async function sendPasswordConfirmation(settings, user, token) {
+  const email = String(user.profile?.email || "").trim();
+  if (!email) return { skipped: true, reason: "User email is empty" };
+  return sendMailWithSettings(settings, {
+    to: email,
+    subject: "Project Manager password confirmation",
+    text: [
+      "Parol deyisikliyini tesdiq etmek ucun kod:",
+      token,
+      "",
+      "Bu kod 30 deqiqe etibarlidir."
+    ].join("\n")
+  });
 }
 
 function csvCell(value) {
-  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+  return `"${String(value ?? "").split('"').join('""')}"`;
 }
 
 function stateToCsv(state) {
@@ -883,28 +1195,24 @@ function recipientsFrom(value) {
 }
 
 function applyMailTemplate(template, values) {
-  return String(template || "{{alerts}}").replaceAll(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => String(values[key] ?? ""));
+  return String(template || "{{alerts}}").replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => String(values[key] ?? ""));
 }
 
 async function sendMailWithSettings(settings, message) {
   if (!settings.emailEnabled) return { skipped: true, reason: "Email disabled" };
-  const to = recipientsFrom(settings.emailRecipients);
+  const to = recipientsFrom(message.to || settings.emailRecipients);
   if (!to.length) return { skipped: true, reason: "No recipients" };
   const provider = String(settings.emailProvider || process.env.SMTP_URL || "").trim();
   if (!provider) return { skipped: true, reason: "No email provider configured" };
 
   if (provider.startsWith("http://") || provider.startsWith("https://")) {
-    const response = await fetch(provider, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...message, to })
-    });
+    const response = await postJson(provider, { ...message, to });
     return { ok: response.ok, skipped: !response.ok, status: response.status };
   }
 
   const transport = nodemailer.createTransport(provider);
   const info = await transport.sendMail({
-    from: process.env.MAIL_FROM || "project-manager@localhost",
+    from: settings.mailFrom || process.env.MAIL_FROM || "project-manager@localhost",
     to,
     subject: message.subject,
     text: message.text
@@ -973,9 +1281,27 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/settings" && request.method === "GET") {
-    if (!requireAuth(request, response)) return true;
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
     try {
-      sendJson(response, 200, publicSettings(await readSettings()));
+      const settings = await readSettings();
+      const state = ensureStateShape(await readState());
+      const payload = publicSettings(settings);
+      if (actor.role === "super_admin") {
+        payload.companyRegistry = companyRegistryFromState(state, settings);
+      } else {
+        const mail = companyMailSettings(settings, actorCompanyId(actor));
+        Object.assign(payload, {
+          emailEnabled: mail.emailEnabled,
+          emailRecipients: mail.emailRecipients,
+          emailProvider: mail.emailProvider,
+          mailSubjectTemplate: mail.mailSubjectTemplate,
+          mailBodyTemplate: mail.mailBodyTemplate,
+          testMailBody: mail.testMailBody,
+          companyRegistry: []
+        });
+      }
+      sendJson(response, 200, payload);
     } catch {
       sendJson(response, 500, { error: "Could not read settings" });
     }
@@ -997,12 +1323,71 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/settings" && request.method === "PUT") {
-    if (!requireAuth(request, response, ["admin"])) return true;
+    const actor = requireAuth(request, response, ["super_admin", "admin"]);
+    if (!actor) return true;
     try {
       const payload = JSON.parse(await readBody(request));
+      if (actor.role === "admin") {
+        const current = await readSettings();
+        const companyId = actorCompanyId(actor);
+        const companyMail = {
+          emailEnabled: Boolean(payload.emailEnabled),
+          emailRecipients: payload.emailRecipients || "",
+          emailProvider: payload.emailProvider || "",
+          mailSubjectTemplate: payload.mailSubjectTemplate || "Project Manager deadline alerts",
+          mailBodyTemplate: payload.mailBodyTemplate || "{{alerts}}",
+          testMailBody: payload.testMailBody || "Project Manager mail ayarlari test edildi.",
+          mailFrom: payload.mailFrom || ""
+        };
+        const settings = await writeSettings({
+          ...current,
+          companyMailSettings: { ...(current.companyMailSettings || {}), [companyId]: companyMail }
+        });
+        await recordAuditLog(actor.username, "company.mail_settings_saved", "company", companyId, { emailEnabled: companyMail.emailEnabled, emailProviderSet: Boolean(companyMail.emailProvider) });
+        sendJson(response, 200, { ok: true, settings: companyMail });
+        return true;
+      }
       sendJson(response, 200, { ok: true, settings: publicSettings(await writeSettings(payload)) });
     } catch {
       sendJson(response, 400, { error: "Could not save settings" });
+    }
+    return true;
+  }
+
+  if (pathname === "/api/platform/companies" && request.method === "GET") {
+    if (!requireAuth(request, response, ["super_admin"])) return true;
+    const state = ensureStateShape(await readState());
+    const settings = await readSettings();
+    sendJson(response, 200, companyRegistryFromState(state, settings));
+    return true;
+  }
+
+  const companyMatch = pathname.match(/^\/api\/platform\/companies\/([^/]+)$/);
+  if (companyMatch && request.method === "PATCH") {
+    const actor = requireAuth(request, response, ["super_admin"]);
+    if (!actor) return true;
+    try {
+      const companyId = decodeURIComponent(companyMatch[1]);
+      const payload = JSON.parse(await readBody(request) || "{}");
+      const settings = await readSettings();
+      const registry = companyRegistryFromState(ensureStateShape(await readState()), settings);
+      const index = registry.findIndex((company) => company.id === companyId);
+      if (index < 0) {
+        sendJson(response, 404, { error: "Company not found" });
+        return true;
+      }
+      registry[index] = {
+        ...registry[index],
+        name: payload.name ? String(payload.name).trim() : registry[index].name,
+        subdomain: payload.subdomain ? slugFromName(payload.subdomain) : registry[index].subdomain,
+        status: ["active", "suspended"].includes(payload.status) ? payload.status : registry[index].status,
+        plan: payload.plan ? String(payload.plan).trim() : registry[index].plan
+      };
+      await writeSettings({ ...settings, companyRegistry: registry });
+      await recordAuditLog(actor.username, "company.updated", "company", companyId, registry[index]);
+      sendJson(response, 200, registry[index]);
+    } catch {
+      sendJson(response, 400, { error: "Could not update company" });
     }
     return true;
   }
@@ -1012,10 +1397,20 @@ async function handleApi(request, response) {
       const { username, password } = JSON.parse(await readBody(request));
       const cleanUsername = String(username || "").trim();
       const cleanPassword = String(password || "");
-      const state = await readState();
-      const localUsers = state?.users?.length ? state.users : bootstrapUsers;
+      const state = ensureStateShape(await readState());
+      const stateUsers = state?.users?.length ? state.users : [];
+      const localUsers = [
+        ...stateUsers,
+        ...bootstrapUsers.filter((bootstrapUser) => !stateUsers.some((user) => user.username === bootstrapUser.username))
+      ];
       const localUser = localUsers.find((user) => user.username === cleanUsername && user.passwordHash === md5(cleanPassword));
       if (localUser) {
+        const settings = await readSettings();
+        const company = localUser.role === "super_admin" ? null : companyRegistryEntry(settings, actorCompanyId(localUser));
+        if (company?.status === "suspended") {
+          sendJson(response, 403, { ok: false, error: "Company suspended" });
+          return true;
+        }
         sendJson(response, 200, { ok: true, token: tokenForUser(localUser), user: localUser });
         return true;
       }
@@ -1053,12 +1448,124 @@ async function handleApi(request, response) {
     return true;
   }
 
+  if (pathname === "/api/auth/password-change/request" && request.method === "POST") {
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
+    if (actor.role === "super_admin") {
+      sendJson(response, 403, { error: "Super admin password is managed outside company workspace" });
+      return true;
+    }
+    try {
+      const { newPassword } = JSON.parse(await readBody(request));
+      const cleanPassword = String(newPassword || "");
+      if (cleanPassword.length < 8) {
+        sendJson(response, 400, { error: "Password is too short" });
+        return true;
+      }
+      const state = ensureStateShape(await readState());
+      const userIndex = state.users.findIndex((user) => user.id === actor.sub && user.role !== "super_admin");
+      if (userIndex < 0) {
+        sendJson(response, 404, { error: "User not found" });
+        return true;
+      }
+      const token = passwordChangeToken();
+      state.users[userIndex] = {
+        ...state.users[userIndex],
+        passwordChange: {
+          tokenHash: md5(token),
+          passwordHash: md5(cleanPassword),
+          expiresAt: Date.now() + 30 * 60 * 1000
+        }
+      };
+      await writeState({ ...state, savedBy: actor.username });
+      const settings = await readSettings();
+      const result = await sendPasswordConfirmation(companyMailSettings(settings, actorCompanyId(actor)), state.users[userIndex], token);
+      await pool.execute(
+        "INSERT INTO notifications (type, recipient, subject, body, status, payload_json) VALUES ('password_change', ?, ?, ?, ?, ?)",
+        [
+          state.users[userIndex].profile?.email || actor.username,
+          "Password confirmation",
+          result.skipped ? result.reason || "Password confirmation was not sent." : "Password confirmation was sent.",
+          result.skipped ? "skipped" : (result.ok === false ? "failed" : "sent"),
+          JSON.stringify({ result, userId: actor.sub })
+        ]
+      );
+      sendJson(response, 200, { ok: true, sent: !result.skipped && result.ok !== false, skipped: Boolean(result.skipped), reason: result.reason || "" });
+    } catch {
+      sendJson(response, 400, { error: "Could not request password change" });
+    }
+    return true;
+  }
+
+  if (pathname === "/api/auth/password-change/confirm" && request.method === "POST") {
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
+    if (actor.role === "super_admin") {
+      sendJson(response, 403, { error: "Super admin password is managed outside company workspace" });
+      return true;
+    }
+    try {
+      const { token } = JSON.parse(await readBody(request));
+      const state = ensureStateShape(await readState());
+      const userIndex = state.users.findIndex((user) => user.id === actor.sub && user.role !== "super_admin");
+      const user = state.users[userIndex];
+      const requestState = user?.passwordChange;
+      if (!user || !requestState || requestState.expiresAt < Date.now() || requestState.tokenHash !== md5(String(token || "").trim())) {
+        sendJson(response, 400, { error: "Invalid confirmation token" });
+        return true;
+      }
+      const { passwordChange, ...nextUser } = user;
+      state.users[userIndex] = { ...nextUser, passwordHash: requestState.passwordHash };
+      await writeState({ ...state, savedBy: actor.username });
+      await recordAuditLog(actor.username, "user.password_confirmed", "user", actor.sub, { companyId: actorCompanyId(actor) });
+      sendJson(response, 200, { ok: true });
+    } catch {
+      sendJson(response, 400, { error: "Could not confirm password change" });
+    }
+    return true;
+  }
+
+  const passwordMatch = pathname.match(/^\/api\/users\/([^/]+)\/password$/);
+  if (passwordMatch && request.method === "PUT") {
+    const actor = requireAuth(request, response, ["admin"]);
+    if (!actor) return true;
+    try {
+      const { password } = JSON.parse(await readBody(request));
+      const cleanPassword = String(password || "");
+      if (cleanPassword.length < 8) {
+        sendJson(response, 400, { error: "Password is too short" });
+        return true;
+      }
+      const userId = decodeURIComponent(passwordMatch[1]);
+      if (userId === actor.sub) {
+        sendJson(response, 403, { error: "Use email confirmation for your own password" });
+        return true;
+      }
+      const state = ensureStateShape(await readState());
+      const target = visibleUserForActor(state, actor, userId);
+      if (!target) {
+        sendJson(response, 404, { error: "User not found" });
+        return true;
+      }
+      target.passwordHash = md5(cleanPassword);
+      delete target.password;
+      delete target.passwordChange;
+      await writeState({ ...state, savedBy: actor.username });
+      await recordAuditLog(actor.username, "user.password_changed", "user", target.id, { companyId: actorCompanyId(actor), targetUsername: target.username });
+      sendJson(response, 200, { ok: true });
+    } catch {
+      sendJson(response, 400, { error: "Could not change password" });
+    }
+    return true;
+  }
+
   if (pathname === "/api/mail/deadline-alerts" && request.method === "POST") {
-    if (!requireAuth(request, response)) return true;
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
     try {
       const payload = JSON.parse(await readBody(request));
       const alerts = Array.isArray(payload.alerts) ? payload.alerts : [];
-      const settings = await readSettings();
+      const settings = companyMailSettings(await readSettings(), actorCompanyId(actor));
       const lines = alerts.map((alert) => (
         `- ${alert.label}: ${alert.taskName} (${alert.project}, ${alert.end})`
       ));
@@ -1091,10 +1598,11 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/mail/test" && request.method === "POST") {
-    if (!requireAuth(request, response, ["admin"])) return true;
+    const actor = requireAuth(request, response, ["super_admin", "admin"]);
+    if (!actor) return true;
     try {
       const payload = JSON.parse(await readBody(request) || "{}");
-      const settings = await readSettings();
+      const settings = actor.role === "admin" ? companyMailSettings(await readSettings(), actorCompanyId(actor)) : await readSettings();
       const subject = payload.subject || "Project Manager test email";
       const body = payload.text || settings.testMailBody || "Project Manager mail ayarlari test edildi.";
       const result = await sendMailWithSettings(settings, {
@@ -1119,7 +1627,7 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/ldap/test" && request.method === "POST") {
-    if (!requireAuth(request, response, ["admin"])) return true;
+    if (!requireAuth(request, response, ["super_admin"])) return true;
     try {
       const settings = await readSettings();
       const result = await testLdapSettings(settings);
@@ -1140,9 +1648,10 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/projects" && request.method === "GET") {
-    if (!requireAuth(request, response)) return true;
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
     const state = ensureStateShape(await readState());
-    sendJson(response, 200, state.projects || []);
+    sendJson(response, 200, stateForActor(state, actor).projects || []);
     return true;
   }
 
@@ -1151,8 +1660,8 @@ async function handleApi(request, response) {
     if (!actor) return true;
     try {
       const state = ensureStateShape(await readState());
-      const project = normalizeProjectPayload(JSON.parse(await readBody(request)));
-      if (!project.name || state.projects.some((item) => item.name.toLowerCase() === project.name.toLowerCase())) {
+      const project = normalizeProjectPayload({ ...JSON.parse(await readBody(request)), companyId: actorCompanyId(actor) });
+      if (!project.name || state.projects.some((item) => sameCompany(item, actorCompanyId(actor)) && item.name.toLowerCase() === project.name.toLowerCase())) {
         sendJson(response, 400, { error: "Invalid project" });
         return true;
       }
@@ -1172,7 +1681,7 @@ async function handleApi(request, response) {
     const projectId = decodeURIComponent(projectMatch[1]);
     const state = ensureStateShape(await readState());
     const projectIndex = state.projects.findIndex((item) => item.id === projectId);
-    if (projectIndex < 0) {
+    if (projectIndex < 0 || !sameCompany(state.projects[projectIndex], actorCompanyId(actor))) {
       sendJson(response, 404, { error: "Project not found" });
       return true;
     }
@@ -1187,8 +1696,8 @@ async function handleApi(request, response) {
     }
     try {
       const previous = state.projects[projectIndex];
-      const nextProject = normalizeProjectPayload({ ...previous, ...JSON.parse(await readBody(request)), id: previous.id });
-      if (!nextProject.name || state.projects.some((item) => item.id !== previous.id && item.name.toLowerCase() === nextProject.name.toLowerCase())) {
+      const nextProject = normalizeProjectPayload({ ...previous, ...JSON.parse(await readBody(request)), id: previous.id, companyId: previous.companyId || actorCompanyId(actor) });
+      if (!nextProject.name || state.projects.some((item) => item.id !== previous.id && sameCompany(item, actorCompanyId(actor)) && item.name.toLowerCase() === nextProject.name.toLowerCase())) {
         sendJson(response, 400, { error: "Invalid project" });
         return true;
       }
@@ -1206,10 +1715,12 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/tasks" && request.method === "GET") {
-    if (!requireAuth(request, response)) return true;
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
     const state = ensureStateShape(await readState());
+    const scoped = stateForActor(state, actor);
     const project = url.searchParams.get("project");
-    const tasks = project ? (state.tasks || []).filter((task) => task.project === project) : state.tasks || [];
+    const tasks = project ? (scoped.tasks || []).filter((task) => task.project === project) : scoped.tasks || [];
     sendJson(response, 200, tasks);
     return true;
   }
@@ -1220,7 +1731,7 @@ async function handleApi(request, response) {
     try {
       const state = ensureStateShape(await readState());
       const task = normalizeTaskPayload(JSON.parse(await readBody(request)));
-      if (!task.name || (task.project && !state.projects.some((project) => project.name === task.project))) {
+      if (!task.name || (task.project && !state.projects.some((project) => project.name === task.project && sameCompany(project, actorCompanyId(actor))))) {
         sendJson(response, 400, { error: "Invalid task" });
         return true;
       }
@@ -1240,7 +1751,8 @@ async function handleApi(request, response) {
     const taskId = decodeURIComponent(taskMatch[1]);
     const state = ensureStateShape(await readState());
     const taskIndex = state.tasks.findIndex((item) => item.id === taskId);
-    if (taskIndex < 0) {
+    const taskProject = state.projects.find((project) => project.name === state.tasks[taskIndex]?.project);
+    if (taskIndex < 0 || !sameCompany(taskProject, actorCompanyId(actor))) {
       sendJson(response, 404, { error: "Task not found" });
       return true;
     }
@@ -1259,7 +1771,7 @@ async function handleApi(request, response) {
     try {
       const previous = state.tasks[taskIndex];
       const task = normalizeTaskPayload({ ...previous, ...JSON.parse(await readBody(request)), id: previous.id });
-      if (!task.name || (task.project && !state.projects.some((project) => project.name === task.project))) {
+      if (!task.name || (task.project && !state.projects.some((project) => project.name === task.project && sameCompany(project, actorCompanyId(actor))))) {
         sendJson(response, 400, { error: "Invalid task" });
         return true;
       }
@@ -1273,28 +1785,31 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/export/excel" && request.method === "GET") {
-    if (!requireAuth(request, response, ["admin", "manager"])) return true;
+    const actor = requireAuth(request, response, ["admin", "manager"]);
+    if (!actor) return true;
     const state = ensureStateShape(await readState());
-    sendText(response, 200, stateToCsv(state), "text/csv; charset=utf-8", "project-manager-export.csv");
+    sendText(response, 200, stateToCsv(stateForActor(state, actor)), "text/csv; charset=utf-8", "project-manager-export.csv");
     return true;
   }
 
   if (pathname === "/api/export/pdf" && request.method === "GET") {
-    if (!requireAuth(request, response, ["admin", "manager"])) return true;
+    const actor = requireAuth(request, response, ["admin", "manager"]);
+    if (!actor) return true;
     const state = ensureStateShape(await readState());
-    sendText(response, 200, await stateToPdf(state), "application/pdf", "project-manager-report.pdf");
+    sendText(response, 200, await stateToPdf(stateForActor(state, actor)), "application/pdf", "project-manager-report.pdf");
     return true;
   }
 
   if (pathname === "/api/state" && request.method === "GET") {
-    if (!requireAuth(request, response)) return true;
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
     try {
       const state = await readState();
       if (!state) {
         sendJson(response, 404, { error: "State has not been created yet" });
         return true;
       }
-      sendJson(response, 200, state);
+      sendJson(response, 200, stateForActor(state, actor));
     } catch (error) {
       sendJson(response, 500, { error: "Could not read state" });
     }
@@ -1310,10 +1825,11 @@ async function handleApi(request, response) {
         sendJson(response, 400, { error: "Invalid project manager state" });
         return true;
       }
-      const nextState = await writeState({ ...payload, savedBy: actor.username });
+      const currentState = ensureStateShape(await readState());
+      const nextState = await writeState(mergeActorState(currentState, payload, actor));
       sendJson(response, 200, { ok: true, savedAt: nextState.savedAt });
     } catch (error) {
-      sendJson(response, 400, { error: "Could not save state" });
+      sendJson(response, error.statusCode || 400, { error: "Could not save state" });
     }
     return true;
   }

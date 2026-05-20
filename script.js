@@ -86,6 +86,12 @@ const translations = {
     mailSubjectTemplate: "Deadline mövzusu",
     mailBodyTemplate: "Deadline şablonu",
     testMailBody: "Test mail mətni",
+    platformCompanies: "Şirkətlər",
+    companyStatus: "Status",
+    companyPlan: "Plan",
+    suspendCompany: "Dayandır",
+    activateCompany: "Aktiv et",
+    companySuspended: "Şirkət dayandırılıb.",
     projectImport: "Proyekt import",
     projectImportHint: "Import düyməsi JSON backup, Excel CSV və MS Project XML fayllarını qəbul edir. CSV başlıqları: Project, Task, Start, End, Status, Priority, Progress, Owner, Dependencies, Milestone.",
     adminActivity: "Admin aktivliyi",
@@ -269,6 +275,13 @@ const translations = {
     username: "İstifadəçi adı",
     login: "Login",
     password: "Şifrə",
+    subdomain: "Subdomain",
+    confirmationCode: "Təsdiq kodu",
+    requestPasswordChange: "Mail təsdiqi göndər",
+    confirmPasswordChange: "Parolu təsdiqlə",
+    passwordChangeSent: "Təsdiq kodu mailə göndərildi.",
+    passwordChangeSkipped: "Mail göndərilmədi. Mail və SMTP ayarlarını yoxlayın.",
+    passwordChanged: "Parol dəyişdirildi.",
     loginButton: "Daxil ol",
     logout: "Çıxış",
     loginError: "İstifadəçi adı və ya şifrə yanlışdır.",
@@ -280,7 +293,8 @@ const translations = {
     addUser: "User əlavə et",
     changePassword: "Parolu dəyiş",
     newPassword: "Yeni parol",
-    adminRole: "Admin",
+    superAdminRole: "Super admin",
+    adminRole: "Şirkət admini",
     managerRole: "Manager",
     userRole: "User",
     contributorRole: "Contributor",
@@ -410,6 +424,12 @@ const translations = {
     mailSubjectTemplate: "Тема deadline",
     mailBodyTemplate: "Шаблон deadline",
     testMailBody: "Текст тестового письма",
+    platformCompanies: "Компании",
+    companyStatus: "Статус",
+    companyPlan: "План",
+    suspendCompany: "Остановить",
+    activateCompany: "Активировать",
+    companySuspended: "Компания приостановлена.",
     projectImport: "Импорт проекта",
     projectImportHint: "Import принимает JSON backup, Excel CSV и MS Project XML. CSV headers: Project, Task, Start, End, Status, Priority, Progress, Owner, Dependencies, Milestone.",
     adminActivity: "Активность admin",
@@ -596,6 +616,13 @@ const translations = {
     username: "Имя пользователя",
     login: "Логин",
     password: "Пароль",
+    subdomain: "Subdomain",
+    confirmationCode: "Код подтверждения",
+    requestPasswordChange: "Отправить email код",
+    confirmPasswordChange: "Подтвердить пароль",
+    passwordChangeSent: "Код подтверждения отправлен на email.",
+    passwordChangeSkipped: "Email не отправлен. Проверьте email и SMTP настройки.",
+    passwordChanged: "Пароль изменен.",
     loginButton: "Войти",
     logout: "Выйти",
     loginError: "Неверное имя пользователя или пароль.",
@@ -607,7 +634,8 @@ const translations = {
     addUser: "Добавить пользователя",
     changePassword: "Сменить пароль",
     newPassword: "Новый пароль",
-    adminRole: "Админ",
+    superAdminRole: "Супер админ",
+    adminRole: "Админ компании",
     managerRole: "Менеджер",
     userRole: "Пользователь",
     contributorRole: "Участник",
@@ -737,6 +765,12 @@ const translations = {
     mailSubjectTemplate: "Deadline subject",
     mailBodyTemplate: "Deadline template",
     testMailBody: "Test mail body",
+    platformCompanies: "Companies",
+    companyStatus: "Status",
+    companyPlan: "Plan",
+    suspendCompany: "Suspend",
+    activateCompany: "Activate",
+    companySuspended: "Company is suspended.",
     projectImport: "Project import",
     projectImportHint: "Import accepts JSON backup, Excel CSV and MS Project XML files. CSV headers: Project, Task, Start, End, Status, Priority, Progress, Owner, Dependencies, Milestone.",
     adminActivity: "Admin activity",
@@ -920,6 +954,13 @@ const translations = {
     username: "Username",
     login: "Login",
     password: "Password",
+    subdomain: "Subdomain",
+    confirmationCode: "Confirmation code",
+    requestPasswordChange: "Send email confirmation",
+    confirmPasswordChange: "Confirm password",
+    passwordChangeSent: "Confirmation code was sent by email.",
+    passwordChangeSkipped: "Email was not sent. Check user email and SMTP settings.",
+    passwordChanged: "Password was changed.",
     loginButton: "Sign in",
     logout: "Logout",
     loginError: "Username or password is incorrect.",
@@ -931,7 +972,8 @@ const translations = {
     addUser: "Add user",
     changePassword: "Change password",
     newPassword: "New password",
-    adminRole: "Admin",
+    superAdminRole: "Super admin",
+    adminRole: "Company admin",
     managerRole: "Manager",
     userRole: "User",
     contributorRole: "Contributor",
@@ -1335,13 +1377,14 @@ const demoCustomers = [
 ];
 
 const demoUsers = [
-  { id: "user-admin", username: "admin", passwordHash: md5("admin123"), role: "admin", managerId: "", profile: { fullName: "Admin User", email: "", fatherName: "", position: "Admin", phone: "", address: "", company: "" } },
-  { id: "user-manager", username: "manager", passwordHash: md5("manager123"), role: "manager", managerId: "", profile: { fullName: "Project Manager", email: "", fatherName: "", position: "Manager", phone: "", address: "", company: "" } },
-  { id: "user-manager-2", username: "manager2", passwordHash: md5("manager123"), role: "manager", managerId: "", profile: { fullName: "Aysel Manager", email: "aysel.manager@example.com", fatherName: "", position: "Delivery Manager", phone: "", address: "", company: "PMO" } },
-  { id: "user-demo", username: "user", passwordHash: md5("user123"), role: "user", managerId: "user-manager", profile: { fullName: "Demo User", email: "", fatherName: "", position: "User", phone: "", address: "", company: "" } },
-  { id: "user-aysel", username: "aysel", passwordHash: md5("user123"), role: "user", managerId: "user-manager", profile: { fullName: "Aysel Mammadova", email: "aysel@example.com", fatherName: "", position: "Frontend developer", phone: "", address: "", company: "Digital" } },
-  { id: "user-rashad", username: "rashad", passwordHash: md5("user123"), role: "user", managerId: "user-manager-2", profile: { fullName: "Rashad Aliyev", email: "rashad@example.com", fatherName: "", position: "Backend developer", phone: "", address: "", company: "Digital" } },
-  { id: "user-nigar", username: "nigar", passwordHash: md5("user123"), role: "user", managerId: "user-manager-2", profile: { fullName: "Nigar Karimova", email: "nigar@example.com", fatherName: "", position: "QA engineer", phone: "", address: "", company: "Digital" } }
+  { id: "user-super-admin", username: "superadmin", passwordHash: md5("superadmin123"), role: "super_admin", managerId: "", companyId: "platform", profile: { fullName: "Platform Admin", email: "", fatherName: "", position: "Super Admin", phone: "", address: "", company: "Platform" } },
+  { id: "user-admin", username: "adminklinika", passwordHash: md5("adminklinika123"), role: "admin", managerId: "", companyId: "company-default", profile: { fullName: "Klinika Admin", email: "", fatherName: "", position: "Company Admin", phone: "", address: "", company: "Klinika" } },
+  { id: "user-manager", username: "manager", passwordHash: md5("manager123"), role: "manager", managerId: "", companyId: "company-default", profile: { fullName: "Project Manager", email: "", fatherName: "", position: "Manager", phone: "", address: "", company: "Klinika" } },
+  { id: "user-manager-2", username: "manager2", passwordHash: md5("manager123"), role: "manager", managerId: "", companyId: "company-digital", profile: { fullName: "Aysel Manager", email: "aysel.manager@example.com", fatherName: "", position: "Delivery Manager", phone: "", address: "", company: "Digital" } },
+  { id: "user-demo", username: "user", passwordHash: md5("user123"), role: "user", managerId: "user-manager", companyId: "company-default", profile: { fullName: "Demo User", email: "", fatherName: "", position: "User", phone: "", address: "", company: "Klinika" } },
+  { id: "user-aysel", username: "aysel", passwordHash: md5("user123"), role: "user", managerId: "user-manager", companyId: "company-default", profile: { fullName: "Aysel Mammadova", email: "aysel@example.com", fatherName: "", position: "Frontend developer", phone: "", address: "", company: "Klinika" } },
+  { id: "user-rashad", username: "rashad", passwordHash: md5("user123"), role: "user", managerId: "user-manager-2", companyId: "company-digital", profile: { fullName: "Rashad Aliyev", email: "rashad@example.com", fatherName: "", position: "Backend developer", phone: "", address: "", company: "Digital" } },
+  { id: "user-nigar", username: "nigar", passwordHash: md5("user123"), role: "user", managerId: "user-manager-2", companyId: "company-digital", profile: { fullName: "Nigar Karimova", email: "nigar@example.com", fatherName: "", position: "QA engineer", phone: "", address: "", company: "Digital" } }
 ];
 
 let statuses = [...defaultWorkflowStatuses];
@@ -1487,6 +1530,7 @@ const loginError = document.querySelector("#loginError");
 const loginLanguageSelect = document.querySelector("#loginLanguageSelect");
 const registerForm = document.querySelector("#registerForm");
 const registerCompanyInput = document.querySelector("#registerCompany");
+const registerSubdomainInput = document.querySelector("#registerSubdomain");
 const registerFullNameInput = document.querySelector("#registerFullName");
 const registerUsernameInput = document.querySelector("#registerUsername");
 const registerEmailInput = document.querySelector("#registerEmail");
@@ -1563,6 +1607,7 @@ const auditLogList = document.querySelector("#auditLogList");
 const mailHistoryList = document.querySelector("#mailHistoryList");
 const adminLaunchCounts = {
   dateRequests: document.querySelector("#dateRequestLaunchCount"),
+  companies: document.querySelector("#companyLaunchCount"),
   projects: document.querySelector("#projectLaunchCount"),
   users: document.querySelector("#userLaunchCount"),
   customers: document.querySelector("#customerLaunchCount"),
@@ -1572,6 +1617,9 @@ const adminLaunchCounts = {
   registers: document.querySelector("#registerLaunchCount"),
   trash: document.querySelector("#trashLaunchCount")
 };
+const companyCount = document.querySelector("#companyCount");
+const companyRegistryList = document.querySelector("#companyRegistryList");
+let companyRegistry = [];
 
 let tasks = loadTasks();
 let members = loadMembers();
@@ -1852,6 +1900,7 @@ function updateViewLabels() {
 function updateRoleLabels() {
   [...newUserRoleInput.options].forEach((option) => {
     if (option.value === "admin") option.textContent = text("adminRole");
+    if (option.value === "super_admin") option.textContent = text("superAdminRole");
     if (option.value === "manager") option.textContent = text("managerRole");
     if (option.value === "user") option.textContent = text("userRole");
     if (option.value === "contributor") option.textContent = text("contributorRole");
@@ -2048,7 +2097,12 @@ function loadManagedFiles() {
 }
 
 function loadUsers() {
-  return loadJson(usersKey, () => demoUsers.map((user) => ({ ...user }))).map(normalizeUser);
+  const stored = loadJson(usersKey, () => demoUsers.map((user) => ({ ...user })));
+  const merged = [
+    ...stored,
+    ...demoUsers.filter((demoUser) => !stored.some((user) => user.username === demoUser.username))
+  ];
+  return merged.map(normalizeUser);
 }
 
 function companyIdFromName(name) {
@@ -2059,7 +2113,39 @@ function companyIdFromName(name) {
   return `company-${slug || createId()}`;
 }
 
+function slugFromName(name) {
+  return String(name || "workspace").trim().toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ə/g, "e")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ü/g, "u")
+    .replace(/ğ/g, "g")
+    .replace(/ş/g, "s")
+    .replace(/ç/g, "c")
+    .replace(/[^a-z0-9]+/g, "")
+    .slice(0, 32) || "workspace";
+}
+
+function uniqueUsername(base) {
+  const cleanBase = slugFromName(base);
+  if (!users.some((user) => user.username === cleanBase)) return cleanBase;
+  let index = 2;
+  while (users.some((user) => user.username === `${cleanBase}${index}`)) index += 1;
+  return `${cleanBase}${index}`;
+}
+
 function normalizeUser(user) {
+  if (user.id === "user-admin" && user.username === "admin") {
+    user = {
+      ...user,
+      username: "adminklinika",
+      passwordHash: user.passwordHash === md5("admin123") ? md5("adminklinika123") : user.passwordHash,
+      companyId: user.companyId || "company-default",
+      profile: { ...(user.profile || {}), fullName: user.profile?.fullName || "Klinika Admin", position: user.profile?.position || "Company Admin", company: user.profile?.company || "Klinika" }
+    };
+  }
   const profile = user.profile || {};
   const company = profile.company || user.companyName || "";
   const normalized = {
@@ -2089,6 +2175,7 @@ function normalizeUser(user) {
 function normalizeCustomer(customer = {}) {
   return {
     id: customer.id || createId(),
+    companyId: customer.companyId || "company-default",
     name: String(customer.name || "").trim(),
     contact: String(customer.contact || "").trim(),
     email: String(customer.email || "").trim()
@@ -2102,6 +2189,7 @@ function loadTrash() {
 function normalizeRegisterItem(item) {
   return {
     id: item.id || createId(),
+    companyId: item.companyId || "company-default",
     project: item.project || "",
     type: item.type || "risk",
     title: item.title || "",
@@ -2139,7 +2227,7 @@ function currentCompanyId() {
 }
 
 function isSameCompany(item) {
-  return isAdmin() || !item?.companyId || item.companyId === currentCompanyId();
+  return !item?.companyId || item.companyId === currentCompanyId();
 }
 
 function recordAudit(action, entityType, entityId, detail = "") {
@@ -2156,6 +2244,42 @@ function recordAudit(action, entityType, entityId, detail = "") {
   localAuditLogs.unshift(entry);
   saveLocalAuditLogs();
   return entry;
+}
+
+function companyRegistryFromLocalState() {
+  const existing = new Map((companyRegistry || []).map((company) => [company.id, { ...company }]));
+  const usersByCompany = new Map();
+  users.forEach((user) => {
+    if (user.role === "super_admin") return;
+    const companyId = user.companyId || "company-default";
+    const list = usersByCompany.get(companyId) || [];
+    list.push(user);
+    usersByCompany.set(companyId, list);
+  });
+  const projectCounts = new Map();
+  projects.forEach((project) => {
+    const companyId = project.companyId || "company-default";
+    projectCounts.set(companyId, (projectCounts.get(companyId) || 0) + 1);
+  });
+  const companyIds = new Set([...usersByCompany.keys(), ...projectCounts.keys(), ...existing.keys()].filter((id) => id && id !== "platform"));
+  return [...companyIds].map((companyId) => {
+    const companyUsers = usersByCompany.get(companyId) || [];
+    const admin = companyUsers.find((user) => user.role === "admin");
+    const name = existing.get(companyId)?.name || admin?.profile?.company || companyUsers[0]?.profile?.company || companyId.replace(/^company-/, "");
+    const subdomain = existing.get(companyId)?.subdomain || slugFromName(name);
+    return {
+      id: companyId,
+      name,
+      subdomain,
+      status: existing.get(companyId)?.status || "active",
+      plan: existing.get(companyId)?.plan || "standard",
+      adminUsername: admin?.username || existing.get(companyId)?.adminUsername || `admin${subdomain}`,
+      userCount: companyUsers.length,
+      projectCount: projectCounts.get(companyId) || 0,
+      lastLoginAt: existing.get(companyId)?.lastLoginAt || "",
+      createdAt: existing.get(companyId)?.createdAt || new Date().toISOString()
+    };
+  }).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function addNotification(message, targetUserId = "", meta = {}) {
@@ -2192,7 +2316,8 @@ function defaultSettings() {
     ldapUserFilter: "(uid={username})",
     ldapBindDn: "",
     ldapBindPassword: "",
-    ldapGroupRoleMap: ""
+    ldapGroupRoleMap: "",
+    companyRegistry: []
   };
 }
 
@@ -2481,7 +2606,7 @@ function createProject(name, details = {}) {
   projects.push(project);
   project.teamMemberIds.forEach((resource) => {
     if (!projectLinks.some((link) => link.project === cleanName && link.resource === resource)) {
-      projectLinks.push({ id: createId(), project: cleanName, resource });
+      projectLinks.push({ id: createId(), companyId, project: cleanName, resource });
     }
   });
   saveResources();
@@ -2515,7 +2640,7 @@ function updateProject(projectId, details = {}) {
   projectLinks = projectLinks.filter((link) => link.project !== cleanName || !link.resource.startsWith("user:"));
   project.teamMemberIds.forEach((resource) => {
     if (!projectLinks.some((link) => link.project === cleanName && link.resource === resource)) {
-      projectLinks.push({ id: createId(), project: cleanName, resource });
+    projectLinks.push({ id: createId(), companyId, project: cleanName, resource });
     }
   });
   saveResources();
@@ -2561,8 +2686,9 @@ function customerLabel(customerId) {
 
 function canSeeProject(project) {
   if (!currentUser) return true;
-  if (isAdmin()) return true;
+  if (isSuperAdmin()) return false;
   if (project.companyId && project.companyId !== currentCompanyId()) return false;
+  if (isAdmin()) return true;
   return projectHasRoleAccess(project)
     || projectHasResourceAccess(project.name)
     || tasks.some((task) => task.project === project.name && taskHasDirectAccess(task));
@@ -2574,9 +2700,10 @@ function visibleProjects() {
 
 function canSeeTask(task) {
   if (!currentUser) return true;
-  if (isAdmin()) return true;
+  if (isSuperAdmin()) return false;
   const project = projects.find((item) => item.name === task.project);
   if (project?.companyId && project.companyId !== currentCompanyId() && !isAdmin()) return false;
+  if (isAdmin() && (!project || isSameCompany(project))) return true;
   return projectHasRoleAccess(project)
     || taskHasDirectAccess(task)
     || projectHasResourceAccess(task.project);
@@ -2638,6 +2765,7 @@ function resourceTypeLabel(value) {
 }
 
 function roleLabel(role) {
+  if (role === "super_admin") return text("superAdminRole");
   if (role === "admin") return text("adminRole");
   if (role === "manager") return text("managerRole");
   if (role === "contributor") return text("contributorRole");
@@ -2651,7 +2779,7 @@ function managerOptions(selectedId = "") {
   return [
     `<option value="">${text("noOwnerSelect")}</option>`,
     ...users
-      .filter((user) => user.role === "manager" && (isAdmin() || user.companyId === companyId))
+      .filter((user) => user.role === "manager" && user.companyId === companyId)
       .map((user) => `<option value="${user.id}" ${user.id === selectedId ? "selected" : ""}>${escapeHtml(user.username)}</option>`)
   ].join("");
 }
@@ -2659,7 +2787,7 @@ function managerOptions(selectedId = "") {
 function managerMultiOptions(selectedIds = []) {
   const companyId = currentCompanyId();
   return users
-    .filter((user) => user.role === "manager" && (isAdmin() || user.companyId === companyId))
+    .filter((user) => user.role === "manager" && user.companyId === companyId)
     .map((user) => `<option value="${user.id}" ${selectedIds.includes(user.id) ? "selected" : ""}>${escapeHtml(user.username)}</option>`)
     .join("");
 }
@@ -2667,15 +2795,15 @@ function managerMultiOptions(selectedIds = []) {
 function allResourceOptions() {
   const companyId = currentCompanyId();
   return [
-    ...users.filter((user) => user.role !== "admin" && (isAdmin() || user.companyId === companyId)).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) })),
-    ...teams.map((team) => ({ value: resourceValue("team", team.id), label: team.name, type: text("team") }))
+    ...users.filter((user) => !["admin", "super_admin"].includes(user.role) && user.companyId === companyId).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) })),
+    ...teams.filter((team) => isSameCompany(team)).map((team) => ({ value: resourceValue("team", team.id), label: team.name, type: text("team") }))
   ];
 }
 
 function teamMemberOptions(selectedIds = []) {
   const companyId = currentCompanyId();
   return [
-    ...users.filter((user) => user.role !== "admin" && (isAdmin() || user.companyId === companyId)).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) }))
+    ...users.filter((user) => !["admin", "super_admin"].includes(user.role) && user.companyId === companyId).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) }))
   ].map((option) => `<option value="${option.value}" ${selectedIds.includes(option.value) ? "selected" : ""}>${option.type}: ${escapeHtml(option.label)}</option>`).join("");
 }
 
@@ -2732,7 +2860,8 @@ function resourceIncludesUser(resource, userId) {
 
 function visibleUserIdsForCurrentUser() {
   if (!currentUser) return [];
-  if (isAdmin()) return users.map((user) => user.id);
+  if (isSuperAdmin()) return [];
+  if (isAdmin()) return users.filter((user) => user.companyId === currentCompanyId()).map((user) => user.id);
   if (currentUser.role === "manager") return [currentUser.id, ...managerUsers(currentUser.id).map((user) => user.id)];
   return [currentUser.id];
 }
@@ -2833,6 +2962,22 @@ function isAdmin() {
   return currentUser?.role === "admin";
 }
 
+function isSuperAdmin() {
+  return currentUser?.role === "super_admin";
+}
+
+function canOpenAdminPanel() {
+  return isSuperAdmin() || isAdmin();
+}
+
+function canManagePlatformSettings() {
+  return isSuperAdmin();
+}
+
+function canManageMailSettings() {
+  return isSuperAdmin() || isAdmin();
+}
+
 function canManageTasks() {
   return ["admin", "manager"].includes(currentUser?.role);
 }
@@ -2860,7 +3005,7 @@ function canApproveTask(task) {
 }
 
 function openAdminPanel() {
-  if (!currentUser) return;
+  if (!currentUser || !canOpenAdminPanel()) return;
   closeAdminSection();
   raiseModal(adminModal);
   adminModal.classList.add("open");
@@ -3065,6 +3210,7 @@ function closeProjectComposer() {
 function syncAuthView() {
   document.body.classList.toggle("logged-in", Boolean(currentUser));
   document.body.classList.toggle("logged-out", !currentUser);
+  document.body.classList.toggle("super-admin-role", isSuperAdmin());
   document.body.classList.toggle("admin-role", isAdmin());
   document.body.classList.toggle("manager-role", currentUser?.role === "manager");
   document.body.classList.toggle("user-role", currentUser?.role === "user");
@@ -3104,6 +3250,56 @@ function renderProjectFilter() {
 }
 
 function renderResourceControls() {
+  if (isSuperAdmin()) {
+    const registry = companyRegistry.length ? companyRegistry : companyRegistryFromLocalState();
+    if (companyCount) companyCount.textContent = registry.length;
+    userCount.textContent = users.filter((user) => user.role === "super_admin").length;
+    projectCount.textContent = 0;
+    customerCount.textContent = 0;
+    fileCount.textContent = 0;
+    teamCount.textContent = 0;
+    linkCount.textContent = 0;
+    trashCount.textContent = 0;
+    Object.entries(adminLaunchCounts).forEach(([key, node]) => {
+      if (node) node.textContent = key === "users" ? userCount.textContent : key === "companies" ? registry.length : 0;
+    });
+    projectInput.innerHTML = `<option value="">${text("selectProject")}</option>`;
+    ownerInput.innerHTML = `<option value="">${text("noOwnerSelect")}</option>`;
+    projectResourceInput.innerHTML = `<option value="">${text("noResource")}</option>`;
+    parentTaskInput.innerHTML = `<option value="">${text("noParentTask")}</option>`;
+    taskDependenciesInput.innerHTML = "";
+    teamMembersInput.innerHTML = "";
+    projectCustomerInput.innerHTML = `<option value="">${text("empty")}</option>`;
+    projectLeaderInput.innerHTML = "";
+    registerProjectInput.innerHTML = "";
+    customerList.innerHTML = `<div class="empty">${text("empty")}</div>`;
+    fileList.innerHTML = `<div class="empty">${text("empty")}</div>`;
+    teamList.innerHTML = `<div class="empty">${text("empty")}</div>`;
+    projectLinksList.innerHTML = `<div class="empty">${text("empty")}</div>`;
+    registerList.innerHTML = `<div class="empty">${text("empty")}</div>`;
+    projectList.innerHTML = `<div class="empty">${text("empty")}</div>`;
+    trashList.innerHTML = `<div class="empty">${text("empty")}</div>`;
+    userList.innerHTML = users.filter((user) => user.role === "super_admin").map((user) => `
+      <details class="user-profile-card">
+        <summary><span><strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>${escapeHtml(roleLabel(user.role))} · ${escapeHtml(user.username)}</span></summary>
+      </details>
+    `).join("") || `<div class="empty">${text("empty")}</div>`;
+    if (companyRegistryList) {
+      companyRegistryList.innerHTML = registry.length ? registry.map((company) => `
+        <div class="resource-item company-registry-item">
+          <span>
+            <strong>${escapeHtml(company.name)}</strong>
+            ${escapeHtml(company.subdomain)} · ${escapeHtml(company.status)} · ${escapeHtml(company.plan)}
+            <small>${escapeHtml(company.adminUsername || "")} · ${company.userCount || 0} user · ${company.projectCount || 0} project</small>
+          </span>
+          <button type="button" data-company-action="${company.status === "suspended" ? "activate" : "suspend"}" data-id="${escapeHtml(company.id)}">
+            ${company.status === "suspended" ? text("activateCompany") : text("suspendCompany")}
+          </button>
+        </div>
+      `).join("") : `<div class="empty">${text("empty")}</div>`;
+    }
+    return;
+  }
   const options = allResourceOptions();
   userCount.textContent = users.length;
   projectCount.textContent = projects.length;
@@ -3113,6 +3309,7 @@ function renderResourceControls() {
   linkCount.textContent = projectLinks.length;
   trashCount.textContent = trash.length;
   if (adminLaunchCounts.dateRequests) adminLaunchCounts.dateRequests.textContent = pendingDateRequests().length;
+  if (adminLaunchCounts.companies) adminLaunchCounts.companies.textContent = companyRegistry.length || companyRegistryFromLocalState().length;
   if (adminLaunchCounts.projects) adminLaunchCounts.projects.textContent = projects.length;
   if (adminLaunchCounts.users) adminLaunchCounts.users.textContent = users.length;
   if (adminLaunchCounts.customers) adminLaunchCounts.customers.textContent = customers.length;
@@ -3245,8 +3442,10 @@ function renderResourceControls() {
     </div>
   `).join("") : `<div class="empty">${text("empty")}</div>`;
 
-  const shownUsers = isAdmin()
-    ? users
+  const shownUsers = isSuperAdmin()
+    ? users.filter((user) => user.role === "super_admin")
+    : isAdmin()
+      ? users.filter((user) => user.role !== "super_admin" && user.companyId === currentCompanyId())
     : users.filter((user) => user.companyId === currentCompanyId() && (currentUser?.role === "manager" || user.managerId === currentUser?.id || user.id === currentUser?.id));
   userList.innerHTML = shownUsers.map((user) => `
     <details class="user-profile-card">
@@ -3264,10 +3463,19 @@ function renderResourceControls() {
         <label><span>${text("company")}</span><input name="company" value="${escapeHtml(user.profile?.company || "")}" ${isAdmin() ? "" : "readonly"}></label>
         <label class="admin-only"><span>${text("manager")}</span><select name="managerId">${managerOptions(user.managerId || "")}</select></label>
         <div class="user-actions">
-        <div class="password-form" data-user-id="${user.id}">
-          <input type="password" name="password" placeholder="${text("newPassword")}" required>
-          <button type="button" data-user-action="change-password" data-id="${user.id}">${text("changePassword")}</button>
-        </div>
+        ${user.id === currentUser?.id ? `
+          <div class="password-form" data-user-id="${user.id}">
+            <input type="password" name="password" placeholder="${text("newPassword")}" required>
+            <button type="button" data-user-action="request-own-password" data-id="${user.id}">${text("requestPasswordChange")}</button>
+            <input type="text" name="token" placeholder="${text("confirmationCode")}">
+            <button type="button" data-user-action="confirm-own-password" data-id="${user.id}">${text("confirmPasswordChange")}</button>
+          </div>
+        ` : `
+          <div class="password-form" data-user-id="${user.id}">
+            <input type="password" name="password" placeholder="${text("newPassword")}" required>
+            <button type="button" data-user-action="change-password" data-id="${user.id}">${text("changePassword")}</button>
+          </div>
+        `}
         ${user.id === currentUser?.id ? "" : `<button type="button" data-user-action="delete-user" data-id="${user.id}">${text("remove")}</button>`}
         ${isAdmin() ? `<button class="primary" type="submit">${text("saveProfile")}</button>` : ""}
         </div>
@@ -4444,7 +4652,7 @@ function handleTaskAction(action, id) {
 
   if (action === "delete") {
     if (!canManageTasks()) return;
-    trash.push({ id: createId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
+    trash.push({ id: createId(), companyId: currentCompanyId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
     tasks = tasks.filter((item) => item.id !== task.id);
     saveTrash();
     saveTasks();
@@ -4491,7 +4699,8 @@ function backupPayload() {
     projectLinks,
     registers,
     users,
-    trash
+    trash,
+    companyRegistry: companyRegistryFromLocalState()
   };
 }
 
@@ -4521,7 +4730,7 @@ function scheduleBackendSave() {
 }
 
 async function saveBackendState() {
-  if (!canUseBackend()) return;
+  if (!canUseBackend() || isSuperAdmin()) return;
   try {
     await fetch(backendUrl("/api/state"), {
       method: "PUT",
@@ -4539,6 +4748,11 @@ async function syncBackendState() {
     const response = await fetch(backendUrl("/api/state"), { cache: "no-store", headers: authHeaders() });
     if (response.ok) {
       importBackup(await response.json());
+      if (isSuperAdmin()) {
+        backendSyncReady = true;
+        render();
+        return;
+      }
       const changed = enforceClinicOnlyState();
       backendSyncReady = true;
       if (changed) await saveBackendState();
@@ -4556,7 +4770,7 @@ async function syncBackendState() {
 }
 
 async function saveBackendSettings() {
-  if (!canUseBackend() || !isAdmin()) return;
+  if (!canUseBackend() || !canManageMailSettings()) return;
   try {
     await fetch(backendUrl("/api/settings"), {
       method: "PUT",
@@ -4605,9 +4819,11 @@ async function syncBackendSettings() {
       ldapBindDn: serverSettings.ldapBindDn || "",
       ldapBindPassword: "",
       ldapGroupRoleMap: serverSettings.ldapGroupRoleMap || "",
+      companyRegistry: Array.isArray(serverSettings.companyRegistry) ? serverSettings.companyRegistry : [],
       workflowStatuses: normalizeWorkflowStatuses(serverSettings.workflowStatuses || appSettings.workflowStatuses),
       capacityHours: Number(serverSettings.capacityHours) || appSettings.capacityHours || 40
     };
+    companyRegistry = appSettings.companyRegistry;
     syncWorkflowStatuses();
     saveAppSettings();
     render();
@@ -4747,6 +4963,7 @@ function importBackup(payload) {
   registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : registers;
   users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
   trash = Array.isArray(payload.trash) ? payload.trash : trash;
+  companyRegistry = Array.isArray(payload.companyRegistry) ? payload.companyRegistry : companyRegistry;
   saveTasks();
   saveResources();
   saveRegisters();
@@ -4990,6 +5207,50 @@ async function sendBackendTestLdap() {
   return response.json();
 }
 
+async function requestBackendPasswordChange(newPassword) {
+  if (!canUseBackend()) return { skipped: true };
+  const response = await fetch(backendUrl("/api/auth/password-change/request"), {
+    method: "POST",
+    headers: authHeaders({ "content-type": "application/json" }),
+    body: JSON.stringify({ newPassword })
+  });
+  if (!response.ok) throw new Error("Password change request failed");
+  return response.json();
+}
+
+async function confirmBackendPasswordChange(token) {
+  if (!canUseBackend()) return { skipped: true };
+  const response = await fetch(backendUrl("/api/auth/password-change/confirm"), {
+    method: "POST",
+    headers: authHeaders({ "content-type": "application/json" }),
+    body: JSON.stringify({ token })
+  });
+  if (!response.ok) throw new Error("Password change confirmation failed");
+  return response.json();
+}
+
+async function updateBackendCompany(companyId, payload) {
+  if (!canUseBackend()) return null;
+  const response = await fetch(backendUrl(`/api/platform/companies/${encodeURIComponent(companyId)}`), {
+    method: "PATCH",
+    headers: authHeaders({ "content-type": "application/json" }),
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error("Company update failed");
+  return response.json();
+}
+
+async function changeBackendUserPassword(userId, password) {
+  if (!canUseBackend()) return { skipped: true };
+  const response = await fetch(backendUrl(`/api/users/${encodeURIComponent(userId)}/password`), {
+    method: "PUT",
+    headers: authHeaders({ "content-type": "application/json" }),
+    body: JSON.stringify({ password })
+  });
+  if (!response.ok) throw new Error("User password change failed");
+  return response.json();
+}
+
 async function enableNotifications() {
   if (!("Notification" in window)) {
     sendDeadlineNotifications();
@@ -5055,7 +5316,7 @@ form.addEventListener("submit", async (event) => {
   }
 
   if (task.project && task.projectResource && !projectLinks.some((link) => link.project === task.project && link.resource === task.projectResource)) {
-    projectLinks.push({ id: createId(), project: task.project, resource: task.projectResource });
+    projectLinks.push({ id: createId(), companyId: currentCompanyId(), project: task.project, resource: task.projectResource });
     saveResources();
   }
 
@@ -5382,6 +5643,11 @@ loginForm.addEventListener("submit", async (event) => {
     loginError.textContent = text("loginError");
     return;
   }
+  const company = companyRegistryFromLocalState().find((item) => item.id === user.companyId);
+  if (user.role !== "super_admin" && company?.status === "suspended" && !canUseBackend()) {
+    loginError.textContent = text("companySuspended");
+    return;
+  }
   currentUser = user;
   localStorage.setItem(sessionKey, user.id);
   appSettings = loadSettings();
@@ -5402,8 +5668,9 @@ loginForm.addEventListener("submit", async (event) => {
 registerForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   const companyName = registerCompanyInput.value.trim();
-  const username = registerUsernameInput.value.trim();
-  const password = registerPasswordInput.value;
+  const subdomain = slugFromName(registerSubdomainInput?.value || companyName);
+  const username = registerUsernameInput.value.trim() || `admin${subdomain}`;
+  const password = registerPasswordInput.value || `admin${subdomain}123`;
   const fullName = registerFullNameInput.value.trim() || username;
   const email = registerEmailInput.value.trim();
   if (!companyName || !username || !password) return;
@@ -5412,6 +5679,7 @@ registerForm?.addEventListener("submit", (event) => {
     return;
   }
   const companyId = companyIdFromName(companyName);
+  const adminUsername = username;
   const user = normalizeUser({
     id: createId(),
     username,
@@ -5427,14 +5695,34 @@ registerForm?.addEventListener("submit", (event) => {
     }
   });
   users.push(user);
+  companyRegistry = [
+    ...companyRegistry.filter((company) => company.id !== companyId),
+    { id: companyId, name: companyName, subdomain, status: "active", plan: "standard", adminUsername, userCount: 1, projectCount: 0, createdAt: new Date().toISOString(), lastLoginAt: "" }
+  ];
   saveUsers();
   currentUser = user;
   localStorage.setItem(sessionKey, user.id);
   appSettings = loadSettings();
   registerError.textContent = "";
+  if (registerSubdomainInput) registerSubdomainInput.value = "";
   registerPasswordInput.value = "";
   recordAudit("workspace.registered", "company", companyId, companyName);
   render();
+});
+
+registerCompanyInput?.addEventListener("input", () => {
+  if (registerSubdomainInput && !registerSubdomainInput.value.trim()) {
+    registerSubdomainInput.placeholder = slugFromName(registerCompanyInput.value || "klinika");
+  }
+  const subdomain = slugFromName(registerSubdomainInput?.value || registerCompanyInput.value);
+  if (!registerUsernameInput.value.trim()) registerUsernameInput.placeholder = `admin${subdomain}`;
+  if (!registerPasswordInput.value.trim()) registerPasswordInput.placeholder = `admin${subdomain}123`;
+});
+
+registerSubdomainInput?.addEventListener("input", () => {
+  const subdomain = slugFromName(registerSubdomainInput.value || registerCompanyInput.value);
+  if (!registerUsernameInput.value.trim()) registerUsernameInput.placeholder = `admin${subdomain}`;
+  if (!registerPasswordInput.value.trim()) registerPasswordInput.placeholder = `admin${subdomain}123`;
 });
 
 logoutButton.addEventListener("click", () => {
@@ -5545,20 +5833,20 @@ saveSettingsButton.addEventListener("click", () => {
     themeMode: themeModeInput.value,
     backgroundStyle: backgroundStyleInput.value,
     accentColor: accentColorInput.value,
-    emailEnabled: isAdmin() ? emailEnabledInput.checked : appSettings.emailEnabled,
-    emailRecipients: isAdmin() ? emailRecipientsInput.value.trim() : appSettings.emailRecipients,
-    emailProvider: isAdmin() ? emailProviderInput.value.trim() : appSettings.emailProvider,
-    mailSubjectTemplate: isAdmin() ? mailSubjectTemplateInput.value.trim() || "Project Manager deadline alerts" : appSettings.mailSubjectTemplate,
-    mailBodyTemplate: isAdmin() ? mailBodyTemplateInput.value.trim() || "{{alerts}}" : appSettings.mailBodyTemplate,
-    testMailBody: isAdmin() ? testMailBodyInput.value.trim() || "Project Manager mail ayarları test edildi." : appSettings.testMailBody,
-    ldapEnabled: isAdmin() ? ldapEnabledInput.checked : appSettings.ldapEnabled,
-    ldapUrl: isAdmin() ? ldapUrlInput.value.trim() : appSettings.ldapUrl,
-    ldapBaseDn: isAdmin() ? ldapBaseDnInput.value.trim() : appSettings.ldapBaseDn,
-    ldapUserFilter: isAdmin() ? ldapUserFilterInput.value.trim() || "(uid={username})" : appSettings.ldapUserFilter,
-    ldapBindDn: isAdmin() ? ldapBindDnInput.value.trim() : appSettings.ldapBindDn,
-    ldapBindPassword: isAdmin() ? ldapBindPasswordInput.value : appSettings.ldapBindPassword,
-    ldapGroupRoleMap: isAdmin() ? ldapGroupRoleMapInput.value.trim() : appSettings.ldapGroupRoleMap,
-    capacityHours: isAdmin() ? Number(capacityHoursInput.value) || 40 : appSettings.capacityHours,
+    emailEnabled: canManageMailSettings() ? emailEnabledInput.checked : appSettings.emailEnabled,
+    emailRecipients: canManageMailSettings() ? emailRecipientsInput.value.trim() : appSettings.emailRecipients,
+    emailProvider: canManageMailSettings() ? emailProviderInput.value.trim() : appSettings.emailProvider,
+    mailSubjectTemplate: canManageMailSettings() ? mailSubjectTemplateInput.value.trim() || "Project Manager deadline alerts" : appSettings.mailSubjectTemplate,
+    mailBodyTemplate: canManageMailSettings() ? mailBodyTemplateInput.value.trim() || "{{alerts}}" : appSettings.mailBodyTemplate,
+    testMailBody: canManageMailSettings() ? testMailBodyInput.value.trim() || "Project Manager mail ayarları test edildi." : appSettings.testMailBody,
+    ldapEnabled: canManagePlatformSettings() ? ldapEnabledInput.checked : appSettings.ldapEnabled,
+    ldapUrl: canManagePlatformSettings() ? ldapUrlInput.value.trim() : appSettings.ldapUrl,
+    ldapBaseDn: canManagePlatformSettings() ? ldapBaseDnInput.value.trim() : appSettings.ldapBaseDn,
+    ldapUserFilter: canManagePlatformSettings() ? ldapUserFilterInput.value.trim() || "(uid={username})" : appSettings.ldapUserFilter,
+    ldapBindDn: canManagePlatformSettings() ? ldapBindDnInput.value.trim() : appSettings.ldapBindDn,
+    ldapBindPassword: canManagePlatformSettings() ? ldapBindPasswordInput.value : appSettings.ldapBindPassword,
+    ldapGroupRoleMap: canManagePlatformSettings() ? ldapGroupRoleMapInput.value.trim() : appSettings.ldapGroupRoleMap,
+    capacityHours: canManagePlatformSettings() ? Number(capacityHoursInput.value) || 40 : appSettings.capacityHours,
     workflowStatuses: normalizeWorkflowStatuses(appSettings.workflowStatuses)
   };
   syncWorkflowStatuses();
@@ -5569,7 +5857,7 @@ saveSettingsButton.addEventListener("click", () => {
 });
 
 testMailButton.addEventListener("click", async () => {
-  if (!isAdmin()) return;
+  if (!canManageMailSettings()) return;
   settingsStatus.textContent = "";
   appSettings = {
     ...appSettings,
@@ -5591,7 +5879,7 @@ testMailButton.addEventListener("click", async () => {
 });
 
 testLdapButton.addEventListener("click", async () => {
-  if (!isAdmin()) return;
+  if (!canManagePlatformSettings()) return;
   settingsStatus.textContent = "";
   try {
     const result = await sendBackendTestLdap();
@@ -5602,7 +5890,7 @@ testLdapButton.addEventListener("click", async () => {
 });
 
 addWorkflowStatusButton.addEventListener("click", () => {
-  if (!isAdmin()) return;
+  if (!canManagePlatformSettings()) return;
   const nextStatus = workflowStatusNameInput.value.trim();
   if (!nextStatus || statuses.some((status) => status.toLowerCase() === nextStatus.toLowerCase())) return;
   const withoutDone = statuses.filter((status) => status !== "Bitib");
@@ -5634,16 +5922,18 @@ workflowStatusList.addEventListener("click", (event) => {
 
 addUserButton.addEventListener("click", () => {
   if (!canManageTasks()) return;
-  const username = newUsernameInput.value.trim();
+  const companySlug = slugFromName(currentUser?.profile?.company || currentCompanyId());
   const password = newUserPasswordInput.value;
   const role = newUserRoleInput.value;
-  if (!username || !password || users.some((user) => user.username === username)) return;
+  const username = newUsernameInput.value.trim() || uniqueUsername(`${role}${companySlug}`);
+  const finalPassword = password || `${username}123`;
+  if (!username || users.some((user) => user.username === username)) return;
   const managedRoles = ["user", "contributor", "viewer"];
   const managerId = managedRoles.includes(role) ? (currentUser?.role === "manager" ? currentUser.id : users.find((user) => user.role === "manager" && user.companyId === currentCompanyId())?.id || "") : "";
   const user = normalizeUser({
     id: createId(),
     username,
-    passwordHash: md5(password),
+    passwordHash: md5(finalPassword),
     role,
     managerId,
     companyId: currentCompanyId(),
@@ -5667,7 +5957,7 @@ addUserButton.addEventListener("click", () => {
   render();
 });
 
-userList.addEventListener("click", (event) => {
+userList.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button) return;
   if (button.dataset.userAction === "change-password") {
@@ -5676,11 +5966,50 @@ userList.addEventListener("click", (event) => {
     const user = users.find((item) => item.id === button.dataset.id);
     const input = row?.querySelector("input[name='password']");
     const password = input?.value || "";
-    if (!user || !password) return;
+    if (!user || user.role === "super_admin" || user.id === currentUser?.id || user.companyId !== currentCompanyId() || !password) return;
+    try {
+      await changeBackendUserPassword(user.id, password);
+    } catch (error) {
+      console.warn("Backend user password change failed", error);
+    }
     user.passwordHash = md5(password);
     input.value = "";
     saveUsers();
     render();
+  }
+  if (button.dataset.userAction === "request-own-password") {
+    const row = button.closest(".password-form");
+    const input = row?.querySelector("input[name='password']");
+    const password = input?.value || "";
+    if (!password || button.dataset.id !== currentUser?.id) return;
+    try {
+      const result = await requestBackendPasswordChange(password);
+      alert(result.skipped ? text("passwordChangeSkipped") : text("passwordChangeSent"));
+    } catch (error) {
+      alert(text("passwordChangeSkipped"));
+    }
+  }
+  if (button.dataset.userAction === "confirm-own-password") {
+    const row = button.closest(".password-form");
+    const tokenInput = row?.querySelector("input[name='token']");
+    const passwordInput = row?.querySelector("input[name='password']");
+    const token = tokenInput?.value || "";
+    if (!token || button.dataset.id !== currentUser?.id) return;
+    try {
+      await confirmBackendPasswordChange(token);
+      if (passwordInput?.value) {
+        currentUser.passwordHash = md5(passwordInput.value);
+        const localUser = users.find((user) => user.id === currentUser.id);
+        if (localUser) localUser.passwordHash = currentUser.passwordHash;
+      }
+      if (tokenInput) tokenInput.value = "";
+      if (passwordInput) passwordInput.value = "";
+      saveUsers();
+      alert(text("passwordChanged"));
+      render();
+    } catch (error) {
+      alert(text("passwordChangeSkipped"));
+    }
   }
   if (button.dataset.userAction === "delete-user") {
     if (!isAdmin()) return;
@@ -5691,6 +6020,23 @@ userList.addEventListener("click", (event) => {
     saveUsers();
     render();
   }
+});
+
+companyRegistryList?.addEventListener("click", async (event) => {
+  if (!isSuperAdmin()) return;
+  const button = event.target.closest("button[data-company-action]");
+  if (!button) return;
+  const company = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).find((item) => item.id === button.dataset.id);
+  if (!company) return;
+  const nextStatus = button.dataset.companyAction === "activate" ? "active" : "suspended";
+  try {
+    const updated = await updateBackendCompany(company.id, { status: nextStatus });
+    companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? updated : item);
+  } catch (error) {
+    companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? { ...item, status: nextStatus } : item);
+    saveBackendSettings();
+  }
+  render();
 });
 
 userList.addEventListener("submit", (event) => {
@@ -5732,6 +6078,7 @@ userList.addEventListener("submit", (event) => {
 addCustomerButton.addEventListener("click", () => {
   if (!isAdmin()) return;
   const customer = normalizeCustomer({
+    companyId: currentCompanyId(),
     name: customerNameInput.value,
     contact: customerContactInput.value,
     email: customerEmailInput.value
@@ -5767,6 +6114,7 @@ addManagedFilesButton.addEventListener("click", async () => {
     managedFiles.push(...files.map((file) => ({
       ...file,
       id: createId(),
+      companyId: currentCompanyId(),
       uploadedBy: currentUser?.username || "",
       createdAt: new Date().toISOString()
     })));
@@ -5927,7 +6275,7 @@ projectCards.addEventListener("click", (event) => {
   if (button.dataset.projectAction === "delete") {
     const project = projects.find((item) => item.name === projectName);
     if (project) {
-      trash.push({ id: createId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
+      trash.push({ id: createId(), companyId: currentCompanyId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
       projects = projects.filter((item) => item.id !== project.id);
       tasks = tasks.map((task) => task.project === projectName ? { ...task, project: "" } : task);
       projectLinks = projectLinks.filter((link) => link.project !== projectName);
@@ -5956,7 +6304,7 @@ archivedProjectCards.addEventListener("click", (event) => {
     return;
   }
   if (button.dataset.projectAction === "delete") {
-    trash.push({ id: createId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
+    trash.push({ id: createId(), companyId: currentCompanyId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
     projects = projects.filter((item) => item.id !== project.id);
     projectLinks = projectLinks.filter((link) => link.project !== projectName);
     registers = registers.filter((item) => item.project !== projectName);
@@ -5972,7 +6320,7 @@ addTeamButton.addEventListener("click", () => {
   const name = teamNameInput.value.trim();
   const memberIds = [...teamMembersInput.selectedOptions].map((option) => option.value);
   if (!name) return;
-  teams.push({ id: createId(), name, memberIds });
+  teams.push({ id: createId(), companyId: currentCompanyId(), name, memberIds });
   teamNameInput.value = "";
   saveResources();
   render();
@@ -5984,7 +6332,7 @@ addProjectLinkButton.addEventListener("click", () => {
   const resource = linkResourceInput.value;
   if (!project || !resource) return;
   if (!projectLinks.some((link) => link.project === project && link.resource === resource)) {
-    projectLinks.push({ id: createId(), project, resource });
+    projectLinks.push({ id: createId(), companyId: currentCompanyId(), project, resource });
   }
   linkProjectInput.value = "";
   saveResources();
@@ -5994,6 +6342,7 @@ addProjectLinkButton.addEventListener("click", () => {
 addRegisterItemButton.addEventListener("click", () => {
   if (!canManageTasks()) return;
   const item = normalizeRegisterItem({
+    companyId: currentCompanyId(),
     project: registerProjectInput.value,
     type: registerTypeInput.value,
     title: registerTitleInput.value.trim(),
@@ -6058,7 +6407,7 @@ registerList.addEventListener("click", (event) => {
     if (action === "delete-link") {
       const link = projectLinks.find((item) => item.id === id);
       if (link) {
-        trash.push({ id: createId(), type: "project", data: { ...link }, deletedAt: new Date().toISOString() });
+        trash.push({ id: createId(), companyId: currentCompanyId(), type: "project", data: { ...link }, deletedAt: new Date().toISOString() });
       }
       projectLinks = projectLinks.filter((link) => link.id !== id);
     }
@@ -6115,7 +6464,7 @@ clearDone.addEventListener("click", () => {
   if (!isAdmin()) return;
   const doneTasks = tasks.filter((task) => task.status === "Bitib");
   doneTasks.forEach((task) => {
-    trash.push({ id: createId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
+    trash.push({ id: createId(), companyId: currentCompanyId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
   });
   tasks = tasks.filter((task) => task.status !== "Bitib");
   saveTrash();
