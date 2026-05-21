@@ -86,4 +86,9 @@ const pdf = await request("/api/export/pdf", { token: admin.token });
 assert.equal(pdf.response.status, 200, "PDF export failed");
 assert.match(String(pdf.body).slice(0, 20), /%PDF/, "PDF export is not a PDF");
 
+const jsonBackup = await request("/api/backup/json", { token: admin.token });
+assert.equal(jsonBackup.response.status, 200, "JSON backup failed");
+assert.equal(jsonBackup.body.type, "project-manager-json-backup", "JSON backup type mismatch");
+assert.ok(Array.isArray(jsonBackup.body.state?.projects), "JSON backup projects missing");
+
 console.log("Backend smoke tests passed.");

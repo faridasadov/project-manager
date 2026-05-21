@@ -37,21 +37,35 @@ const tenantSeedState = {
     { id: "user-admin-digital", username: "admindigital", passwordHash: md5("admindigital123"), role: "admin", managerId: "", companyId: "company-digital", profile: { fullName: "Digital Admin", email: "admin@digital.local", fatherName: "", position: "Company Admin", phone: "", address: "", company: "Digital Solutions" } },
     { id: "user-manager-2", username: "manager2", passwordHash: md5("manager123"), role: "manager", managerId: "", companyId: "company-digital", profile: { fullName: "Aysel Manager", email: "aysel.manager@example.com", fatherName: "", position: "Delivery Manager", phone: "", address: "", company: "Digital Solutions" } },
     { id: "user-admin-logistics", username: "adminlogistika", passwordHash: md5("adminlogistika123"), role: "admin", managerId: "", companyId: "company-logistics", profile: { fullName: "Logistika Admin", email: "admin@logistika.local", fatherName: "", position: "Company Admin", phone: "", address: "", company: "Logistika Group" } },
-    { id: "user-manager-logistics", username: "managerlogistika", passwordHash: md5("managerlogistika123"), role: "manager", managerId: "", companyId: "company-logistics", profile: { fullName: "Logistika Manager", email: "manager@logistika.local", fatherName: "", position: "Project Manager", phone: "", address: "", company: "Logistika Group" } }
+    { id: "user-manager-logistics", username: "managerlogistika", passwordHash: md5("managerlogistika123"), role: "manager", managerId: "", companyId: "company-logistics", profile: { fullName: "Logistika Manager", email: "manager@logistika.local", fatherName: "", position: "Project Manager", phone: "", address: "", company: "Logistika Group" } },
+    { id: "user-admin-qarabag", username: "adminqarabag", passwordHash: md5("adminqarabag123"), role: "admin", managerId: "", companyId: "company-qarabag", profile: { fullName: "Qarabag Admin", email: "admin@qarabag.local", fatherName: "", position: "Company Admin", phone: "", address: "", company: "Qarabag University" } },
+    { id: "user-manager-qarabag", username: "managerqarabag", passwordHash: md5("managerqarabag123"), role: "manager", managerId: "", companyId: "company-qarabag", profile: { fullName: "Qarabag Manager", email: "manager@qarabag.local", fatherName: "", position: "Project Manager", phone: "", address: "", company: "Qarabag University" } },
+    { id: "user-admin-retail", username: "adminretail", passwordHash: md5("adminretail123"), role: "admin", managerId: "", companyId: "company-retail", profile: { fullName: "Retail Admin", email: "admin@retail.local", fatherName: "", position: "Company Admin", phone: "", address: "", company: "Retail Group" } },
+    { id: "user-manager-retail", username: "managerretail", passwordHash: md5("managerretail123"), role: "manager", managerId: "", companyId: "company-retail", profile: { fullName: "Retail Manager", email: "manager@retail.local", fatherName: "", position: "Project Manager", phone: "", address: "", company: "Retail Group" } }
   ],
   customers: [
     { id: "customer-digital-solutions", companyId: "company-digital", name: "Digital Solutions", contact: "Digital PMO", email: "pmo@digital.local" },
-    { id: "customer-logistics-group", companyId: "company-logistics", name: "Logistika Group", contact: "Operations Office", email: "ops@logistika.local" }
+    { id: "customer-logistics-group", companyId: "company-logistics", name: "Logistika Group", contact: "Operations Office", email: "ops@logistika.local" },
+    { id: "customer-qarabag-university", companyId: "company-qarabag", name: "Qarabag University", contact: "Campus Operations", email: "ops@qarabag.local" },
+    { id: "customer-retail-group", companyId: "company-retail", name: "Retail Group", contact: "Store Operations", email: "ops@retail.local" }
   ],
   projects: [
     { id: "project-digital-crm", companyId: "company-digital", name: "Digital CRM Rollout", customerId: "customer-digital-solutions", managerIds: ["user-manager-2"], teamMemberIds: [], start: "2026-06-01", end: "2026-08-15", status: "Davam edir", priority: "Yüksək", progress: 28 },
-    { id: "project-logistics-wms", companyId: "company-logistics", name: "Logistika WMS Modernizasiya", customerId: "customer-logistics-group", managerIds: ["user-manager-logistics"], teamMemberIds: [], start: "2026-06-10", end: "2026-09-30", status: "Plan", priority: "Normal", progress: 0 }
+    { id: "project-logistics-wms", companyId: "company-logistics", name: "Logistika WMS Modernizasiya", customerId: "customer-logistics-group", managerIds: ["user-manager-logistics"], teamMemberIds: [], start: "2026-06-10", end: "2026-09-30", status: "Plan", priority: "Normal", progress: 0 },
+    { id: "project-qarabag-helpdesk", companyId: "company-qarabag", name: "Campus Helpdesk Platform", customerId: "customer-qarabag-university", managerIds: ["user-manager-qarabag"], teamMemberIds: [], start: "2026-07-01", end: "2026-10-15", status: "Plan", priority: "Yüksək", progress: 0 },
+    { id: "project-qarabag-network", companyId: "company-qarabag", name: "Dormitory Network Expansion", customerId: "customer-qarabag-university", managerIds: ["user-manager-qarabag"], teamMemberIds: [], start: "2026-07-10", end: "2026-11-30", status: "Plan", priority: "Normal", progress: 0 },
+    { id: "project-retail-pos", companyId: "company-retail", name: "Retail POS Upgrade", customerId: "customer-retail-group", managerIds: ["user-manager-retail"], teamMemberIds: [], start: "2026-06-20", end: "2026-09-20", status: "Davam edir", priority: "Yüksək", progress: 18 },
+    { id: "project-retail-inventory", companyId: "company-retail", name: "Inventory Forecasting", customerId: "customer-retail-group", managerIds: ["user-manager-retail"], teamMemberIds: [], start: "2026-08-01", end: "2026-12-10", status: "Plan", priority: "Normal", progress: 0 }
   ],
   tasks: [
     { id: "task-digital-crm-01", project: "Digital CRM Rollout", name: "Tenant CRM scope", owner: "user:user-manager-2", start: "2026-06-01", end: "2026-06-12", status: "Davam edir", priority: "Yüksək", progress: 35, notes: "Digital şirkəti üçün CRM modulları və rollar dəqiqləşdirilir." },
     { id: "task-digital-crm-02", project: "Digital CRM Rollout", name: "Migration rehearsal", owner: "user:user-manager-2", start: "2026-06-15", end: "2026-06-28", status: "Plan", priority: "Normal", progress: 0, dependencyIds: ["task-digital-crm-01"], notes: "Müştəri datalarının test mühitinə köçürülməsi." },
     { id: "task-logistics-wms-01", project: "Logistika WMS Modernizasiya", name: "Anbar proses xəritəsi", owner: "user:user-manager-logistics", start: "2026-06-10", end: "2026-06-24", status: "Plan", priority: "Normal", progress: 0, notes: "Qəbul, yerləşdirmə, picking və dispatch prosesləri toplanır." },
-    { id: "task-logistics-wms-02", project: "Logistika WMS Modernizasiya", name: "Barcode pilot", owner: "user:user-manager-logistics", start: "2026-06-25", end: "2026-07-08", status: "Plan", priority: "Yüksək", progress: 0, dependencyIds: ["task-logistics-wms-01"], notes: "Pilot anbar üçün barcode avadanlıq və test ssenariləri." }
+    { id: "task-logistics-wms-02", project: "Logistika WMS Modernizasiya", name: "Barcode pilot", owner: "user:user-manager-logistics", start: "2026-06-25", end: "2026-07-08", status: "Plan", priority: "Yüksək", progress: 0, dependencyIds: ["task-logistics-wms-01"], notes: "Pilot anbar üçün barcode avadanlıq və test ssenariləri." },
+    { id: "task-qarabag-helpdesk-01", project: "Campus Helpdesk Platform", name: "Ticket workflow", owner: "user:user-manager-qarabag", start: "2026-07-01", end: "2026-07-18", status: "Plan", priority: "Yüksək", progress: 0, notes: "Tələbə və əməkdaş müraciət axınları modelləşdirilir." },
+    { id: "task-qarabag-network-01", project: "Dormitory Network Expansion", name: "Switch placement plan", owner: "user:user-manager-qarabag", start: "2026-07-10", end: "2026-07-28", status: "Plan", priority: "Normal", progress: 0, notes: "Yataqxana mərtəbələri üzrə switch və fiber xəritəsi hazırlanır." },
+    { id: "task-retail-pos-01", project: "Retail POS Upgrade", name: "Pilot store rollout", owner: "user:user-manager-retail", start: "2026-06-20", end: "2026-07-05", status: "Davam edir", priority: "Yüksək", progress: 25, notes: "İlk mağazada POS terminal və receipt printer sınaqları." },
+    { id: "task-retail-inventory-01", project: "Inventory Forecasting", name: "Sales data mapping", owner: "user:user-manager-retail", start: "2026-08-01", end: "2026-08-14", status: "Plan", priority: "Normal", progress: 0, notes: "Satış və stok tarixçəsi forecast modeli üçün xəritələnir." }
   ]
 };
 
@@ -921,6 +935,19 @@ function stateForActor(state, actor) {
     registers: (source.registers || []).filter((item) => ownProjectNames.has(item.project)),
     users: (source.users || []).filter((user) => user.role !== "super_admin" && sameCompany(user, companyId)),
     trash: (source.trash || []).filter((item) => sameCompany(item, companyId))
+  };
+}
+
+function jsonBackupForActor(state, actor) {
+  const scopedState = stateForActor(ensureStateShape(state), actor);
+  return {
+    version: 1,
+    type: "project-manager-json-backup",
+    exportedAt: new Date().toISOString(),
+    exportedBy: actor?.username || "system",
+    role: actor?.role || "",
+    companyId: actorCompanyId(actor),
+    state: scopedState
   };
 }
 
@@ -1932,6 +1959,16 @@ async function handleApi(request, response) {
     if (!actor) return true;
     const state = ensureStateShape(await readState());
     sendText(response, 200, await stateToPdf(stateForActor(state, actor)), "application/pdf", "project-manager-report.pdf");
+    return true;
+  }
+
+  if (pathname === "/api/backup/json" && request.method === "GET") {
+    const actor = requireAuth(request, response, ["admin", "manager"]);
+    if (!actor) return true;
+    const state = ensureStateShape(await readState());
+    const backup = jsonBackupForActor(state, actor);
+    const date = new Date().toISOString().slice(0, 10);
+    sendText(response, 200, JSON.stringify(backup, null, 2), "application/json; charset=utf-8", `project-manager-json-backup-${date}.json`);
     return true;
   }
 

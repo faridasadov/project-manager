@@ -6,7 +6,7 @@ The frontend still keeps a localStorage fallback, but when it is opened through 
 
 ## Demo users
 
-- `admin / admin123`
+- `adminklinika / adminklinika123`
 - `manager / manager123`
 - `user / user123`
 
@@ -20,12 +20,13 @@ Backend smoke test, when the app is already running:
 
 ```bash
 npm run test:backend
+BASE_URL=http://localhost:3015 npm run test:tenant
 ```
 
 By default it checks `http://localhost`. To point it at another local port:
 
 ```bash
-APP_URL=http://localhost:3015 npm run test:backend
+BASE_URL=http://localhost:3015 npm run test:backend
 ```
 
 ## Backend
@@ -58,6 +59,7 @@ API:
 - `GET /api/settings` requires `Authorization: Bearer <token>`
 - `PUT /api/settings` requires admin token
 - `POST /api/mail/deadline-alerts`
+- `GET /api/backup/json` exports a scoped JSON backup without using `mysqldump`.
 
 Mail settings use `emailProvider` as either an SMTP URL or an HTTP endpoint that accepts a JSON payload.
 LDAP login uses `ldapUrl`, `ldapBaseDn`, and `ldapUserFilter`; the default filter is `(uid={username})`.
@@ -87,8 +89,16 @@ sudo APP_DIR=/opt/project-manager DB_PASSWORD='change-this' scripts/install-serv
 Database backup and restore:
 
 ```bash
-scripts/backup-db.sh
-scripts/restore-db.sh backups/project-manager-YYYYMMDD-HHMMSS.sql
+DB_HOST=127.0.0.1 DB_PORT=3306 DB_NAME=project_manager DB_USER=project_manager DB_PASSWORD='change-this' npm run backup:db
+FORCE=1 DB_HOST=127.0.0.1 DB_PORT=3306 DB_NAME=project_manager DB_USER=project_manager DB_PASSWORD='change-this' scripts/restore-db.sh backups/project-manager-mariadb-YYYYMMDD-HHMMSS.sql.gz
+```
+
+MariaDB backup uses `mariadb-dump` when available, otherwise `mysqldump`. If the database is running in Docker and the host has no dump client, set `DB_CONTAINER` or use the default `projects-mariadb` container name. It includes routines, triggers, and events, uses a single transaction, and writes compressed `.sql.gz` files by default. Set `COMPRESS=0` if a plain `.sql` file is required.
+
+JSON app-state backup without MariaDB dump:
+
+```bash
+BASE_URL=http://localhost PM_USER=adminklinika PM_PASSWORD=adminklinika123 npm run backup:json
 ```
 
 The backend keeps the compatibility `app_state` JSON document and also syncs normalized MariaDB tables for users, projects, tasks, teams, comments, attachments, notifications, and audit logs.
