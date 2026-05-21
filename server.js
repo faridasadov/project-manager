@@ -69,6 +69,12 @@ const tenantSeedState = {
   ]
 };
 
+const tenantUserCompanyMigrations = {
+  manager2: { companyId: "company-digital", company: "Digital Solutions" },
+  rashad: { companyId: "company-digital", company: "Digital Solutions" },
+  nigar: { companyId: "company-digital", company: "Digital Solutions" }
+};
+
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -824,6 +830,14 @@ function ensureStateShape(state) {
           profile: { ...(user.profile || {}), fullName: user.profile?.fullName || "Klinika Admin", position: user.profile?.position || "Company Admin", company: user.profile?.company || "Klinika" }
         };
       }
+      const tenantMigration = tenantUserCompanyMigrations[user.username];
+      if (tenantMigration) {
+        return {
+          ...user,
+          companyId: tenantMigration.companyId,
+          profile: { ...(user.profile || {}), company: tenantMigration.company }
+        };
+      }
       return user;
     })
   ];
@@ -1573,7 +1587,8 @@ async function handleApi(request, response) {
           sendJson(response, 403, { ok: false, error: "Company suspended" });
           return true;
         }
-        sendJson(response, 200, { ok: true, token: tokenForUser(localUser), user: localUser });
+        const { passwordHash: _h1, passwordChange: _pc1, ...safeLocalUser } = localUser;
+        sendJson(response, 200, { ok: true, token: tokenForUser(localUser), user: safeLocalUser });
         return true;
       }
       const settings = await readSettings();
@@ -1599,10 +1614,11 @@ async function handleApi(request, response) {
           company: ""
         }
       };
+      const { passwordHash: _h2, passwordChange: _pc2, ...safeUser } = user;
       sendJson(response, 200, {
         ok: true,
         token: tokenForUser(user),
-        user
+        user: safeUser
       });
     } catch {
       sendJson(response, 401, { ok: false, error: "LDAP login failed" });

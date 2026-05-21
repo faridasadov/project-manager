@@ -502,9 +502,6 @@ const translations = {
     newWorkflowStatus: "Новый статус",
     addWorkflowStatus: "Добавить статус",
     requiredWorkflowStatus: "Системный статус",
-    testMail: "Test email",
-    mailTestSent: "Test email was sent.",
-    mailTestSkipped: "Test email was not sent. Check email settings.",
     testMail: "Проверить email",
     mailTestSent: "Тестовое письмо отправлено.",
     mailTestSkipped: "Тестовое письмо не отправлено. Проверьте настройки email.",
@@ -1526,6 +1523,12 @@ const tenantSeedTasks = [
   { id: "task-retail-inventory-01", project: "Inventory Forecasting", name: "Sales data mapping", owner: "user:user-manager-retail", start: "2026-08-01", end: "2026-08-14", status: "Plan", priority: "Normal", progress: 0, notes: "Satış və stok tarixçəsi forecast modeli üçün xəritələnir." }
 ];
 
+const tenantUserCompanyMigrations = {
+  manager2: { companyId: "company-digital", company: "Digital Solutions" },
+  rashad: { companyId: "company-digital", company: "Digital Solutions" },
+  nigar: { companyId: "company-digital", company: "Digital Solutions" }
+};
+
 let statuses = [...defaultWorkflowStatuses];
 
 const form = document.querySelector("#taskForm");
@@ -2301,7 +2304,13 @@ function loadUsers() {
     ...stored,
     ...[...demoUsers, ...tenantSeedUsers].filter((demoUser) => !stored.some((user) => user.username === demoUser.username))
   ];
-  return merged.map(normalizeUser);
+  return merged.map((user) => {
+    const normalized = normalizeUser(user);
+    const tenantMigration = tenantUserCompanyMigrations[normalized.username];
+    return tenantMigration
+      ? { ...normalized, companyId: tenantMigration.companyId, profile: { ...(normalized.profile || {}), company: tenantMigration.company } }
+      : normalized;
+  });
 }
 
 function companyIdFromName(name) {
@@ -2365,9 +2374,6 @@ function normalizeUser(user) {
       ...profile
     }
   };
-  if (user.passwordHash) {
-    return normalized;
-  }
   return normalized;
 }
 
@@ -5111,7 +5117,6 @@ function handleTaskAction(action, id) {
     taskName.value = task.name;
     projectInput.value = task.project || "";
     renderResourceControls();
-    projectInput.value = task.project || "";
     projectResourceInput.value = task.projectResource || "";
     startDate.value = task.start;
     endDate.value = task.end;
@@ -5258,7 +5263,7 @@ function canUseBackend() {
 function backendUrl(path) {
   const location = window.location;
   if (location?.protocol === "http:" || location?.protocol === "https:") return path;
-  return `http://localhost:3003${path}`;
+  return `http://localhost:3000${path}`;
 }
 
 function authHeaders(extraHeaders = {}) {
