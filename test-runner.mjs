@@ -90,6 +90,7 @@ const ids = [
   "projectStartDate", "projectEndDate", "projectStatus", "projectPriority", "projectProgress",
   "projectLifecycle", "projectGoal", "projectScope", "projectSuccessCriteria", "projectGateChecklist", "projectClosureNotes",
   "projectStakeholders", "projectCommunicationPlan", "projectDecisionLog", "projectChangeControl", "projectRiskOpportunity", "projectQualityChecklist", "projectCompetenceMatrix",
+  "projectGovernanceScore",
   "focusNewProject", "closeProjectComposer", "cancelProjectCreate", "projectComposerModal", "projectList",
   "registerProject", "registerType", "registerTitle", "registerOwner", "registerStatus", "registerImpact", "registerDueDate", "registerMitigation", "addRegisterItem", "registerList", "registerCount",
   "projectCount", "customerName", "customerContact", "customerEmail", "addCustomer", "customerList", "customerCount", "managedFileInput", "managedFileStatus", "addManagedFiles", "managedFileList", "fileCount",
@@ -342,6 +343,8 @@ assert.match(elements["#projectCards"].innerHTML, /Planning/, "project lifecycle
 assert.match(elements["#projectCards"].innerHTML, /IPMA charter goal/, "project charter renders");
 assert.match(elements["#projectCards"].innerHTML, /Maraqlı tərəflər/, "project stakeholder register renders");
 assert.match(elements["#projectCards"].innerHTML, /Gate təsdiqləri/, "project gate approvals render");
+assert.match(elements["#projectCards"].innerHTML, /IPMA balı: 100%/, "project governance score renders");
+assert.match(elements["#registerList"].innerHTML, /Opportunity/, "IPMA risk lines sync into register");
 elements["#newUserRole"].value = "viewer";
 elements["#newUsername"].value = "viewer1";
 elements["#newUserPassword"].value = "viewer123";

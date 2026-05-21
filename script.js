@@ -86,9 +86,34 @@ const translations = {
     mailSubjectTemplate: "Deadline mövzusu",
     mailBodyTemplate: "Deadline şablonu",
     testMailBody: "Test mail mətni",
+    ipmaGovernance: "IPMA / Governance",
+    ipmaScore: "IPMA balı",
+    lifecycleStage: "Lifecycle mərhələsi",
+    projectCharter: "Project charter / Məqsəd",
+    projectScope: "Scope",
+    successCriteria: "Success criteria",
+    planningGateChecklist: "Planning gate checklist",
+    closureLessons: "Closure / lessons learned",
+    stakeholderRegister: "Maraqlı tərəflər registeri",
+    communicationPlan: "Kommunikasiya planı",
+    decisionLog: "Qərar jurnalı",
+    changeControl: "Dəyişiklik kontrolu",
+    riskOpportunity: "Risk və imkanlar",
+    qualityChecklist: "Keyfiyyət checklist-i",
+    competenceMatrix: "Kompetensiya matrisi",
+    governanceCoverage: "Governance tamamlanma",
+    governanceMissing: "Çatışmayan IPMA sahələri",
+    gateApprovals: "Gate təsdiqləri",
+    openGovernanceRisk: "Açıq governance riskləri",
+    ipmaReport: "IPMA hesabatı",
+    gateExecutionError: "Execution üçün charter, scope, success criteria və planning gate checklist doldurulmalıdır.",
+    gateClosedError: "Closed mərhələsi üçün closure / lessons learned qeydi doldurulmalıdır.",
+    gateRequirementError: "Bu gate üçün tələb olunan IPMA sahələri tamamlanmayıb.",
     platformCompanies: "Şirkətlər",
     companyStatus: "Status",
     companyPlan: "Plan",
+    statusReason: "Səbəb",
+    statusChangedBy: "Dəyişən",
     suspendCompany: "Dayandır",
     activateCompany: "Aktiv et",
     companySuspended: "Şirkət dayandırılıb.",
@@ -424,9 +449,34 @@ const translations = {
     mailSubjectTemplate: "Тема deadline",
     mailBodyTemplate: "Шаблон deadline",
     testMailBody: "Текст тестового письма",
+    ipmaGovernance: "IPMA / Governance",
+    ipmaScore: "IPMA балл",
+    lifecycleStage: "Lifecycle этап",
+    projectCharter: "Project charter / цель",
+    projectScope: "Scope",
+    successCriteria: "Success criteria",
+    planningGateChecklist: "Planning gate checklist",
+    closureLessons: "Closure / lessons learned",
+    stakeholderRegister: "Реестр stakeholders",
+    communicationPlan: "План коммуникации",
+    decisionLog: "Журнал решений",
+    changeControl: "Change control",
+    riskOpportunity: "Риски и возможности",
+    qualityChecklist: "Quality checklist",
+    competenceMatrix: "Матрица компетенций",
+    governanceCoverage: "Governance готовность",
+    governanceMissing: "Недостающие IPMA поля",
+    gateApprovals: "Gate approvals",
+    openGovernanceRisk: "Открытые governance риски",
+    ipmaReport: "IPMA отчет",
+    gateExecutionError: "Для Execution нужно заполнить charter, scope, success criteria и planning gate checklist.",
+    gateClosedError: "Для Closed нужно заполнить closure / lessons learned.",
+    gateRequirementError: "Для этого gate не заполнены обязательные IPMA поля.",
     platformCompanies: "Компании",
     companyStatus: "Статус",
     companyPlan: "План",
+    statusReason: "Причина",
+    statusChangedBy: "Изменил",
     suspendCompany: "Остановить",
     activateCompany: "Активировать",
     companySuspended: "Компания приостановлена.",
@@ -765,9 +815,34 @@ const translations = {
     mailSubjectTemplate: "Deadline subject",
     mailBodyTemplate: "Deadline template",
     testMailBody: "Test mail body",
+    ipmaGovernance: "IPMA / Governance",
+    ipmaScore: "IPMA score",
+    lifecycleStage: "Lifecycle stage",
+    projectCharter: "Project charter / goal",
+    projectScope: "Scope",
+    successCriteria: "Success criteria",
+    planningGateChecklist: "Planning gate checklist",
+    closureLessons: "Closure / lessons learned",
+    stakeholderRegister: "Stakeholder register",
+    communicationPlan: "Communication plan",
+    decisionLog: "Decision log",
+    changeControl: "Change control",
+    riskOpportunity: "Risks and opportunities",
+    qualityChecklist: "Quality checklist",
+    competenceMatrix: "Competence matrix",
+    governanceCoverage: "Governance coverage",
+    governanceMissing: "Missing IPMA fields",
+    gateApprovals: "Gate approvals",
+    openGovernanceRisk: "Open governance risks",
+    ipmaReport: "IPMA report",
+    gateExecutionError: "Execution requires charter, scope, success criteria and planning gate checklist.",
+    gateClosedError: "Closed requires closure / lessons learned.",
+    gateRequirementError: "Required IPMA fields for this gate are not complete.",
     platformCompanies: "Companies",
     companyStatus: "Status",
     companyPlan: "Plan",
+    statusReason: "Reason",
+    statusChangedBy: "Changed by",
     suspendCompany: "Suspend",
     activateCompany: "Activate",
     companySuspended: "Company is suspended.",
@@ -1491,6 +1566,7 @@ const projectChangeControlInput = document.querySelector("#projectChangeControl"
 const projectRiskOpportunityInput = document.querySelector("#projectRiskOpportunity");
 const projectQualityChecklistInput = document.querySelector("#projectQualityChecklist");
 const projectCompetenceMatrixInput = document.querySelector("#projectCompetenceMatrix");
+const projectGovernanceScore = document.querySelector("#projectGovernanceScore");
 const focusNewProjectButton = document.querySelector("#focusNewProject");
 const projectList = document.querySelector("#projectList");
 const projectCount = document.querySelector("#projectCount");
@@ -1622,6 +1698,7 @@ const companyRegistryList = document.querySelector("#companyRegistryList");
 const platformConsole = document.querySelector("#platformConsole");
 const platformStats = document.querySelector("#platformStats");
 const platformCompanyGrid = document.querySelector("#platformCompanyGrid");
+const platformTimeline = document.querySelector("#platformTimeline");
 const openPlatformAdminPanelButton = document.querySelector("#openPlatformAdminPanel");
 let companyRegistry = [];
 
@@ -2202,6 +2279,8 @@ function normalizeRegisterItem(item) {
     impact: item.impact || "Medium",
     dueDate: item.dueDate || "",
     mitigation: item.mitigation || "",
+    source: item.source || "",
+    sourceKey: item.sourceKey || "",
     createdAt: item.createdAt || new Date().toISOString()
   };
 }
@@ -2281,7 +2360,10 @@ function companyRegistryFromLocalState() {
       userCount: companyUsers.length,
       projectCount: projectCounts.get(companyId) || 0,
       lastLoginAt: existing.get(companyId)?.lastLoginAt || "",
-      createdAt: existing.get(companyId)?.createdAt || new Date().toISOString()
+      createdAt: existing.get(companyId)?.createdAt || new Date().toISOString(),
+      statusChangedAt: existing.get(companyId)?.statusChangedAt || existing.get(companyId)?.createdAt || new Date().toISOString(),
+      activatedAt: existing.get(companyId)?.activatedAt || existing.get(companyId)?.createdAt || new Date().toISOString(),
+      suspendedAt: existing.get(companyId)?.suspendedAt || ""
     };
   }).sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -2513,6 +2595,29 @@ function formatDateTime(value) {
   }).format(new Date(value));
 }
 
+function statusDurationLabel(value) {
+  if (!value) return "-";
+  const start = new Date(value);
+  if (Number.isNaN(start.getTime())) return "-";
+  const days = Math.max(0, Math.floor((Date.now() - start.getTime()) / 86400000));
+  if (days === 0) return "bu gün";
+  return `${days} gün`;
+}
+
+function companyStatusMeta(company) {
+  const isSuspended = company.status === "suspended";
+  const changedAt = company.statusChangedAt || (isSuspended ? company.suspendedAt : company.activatedAt) || company.createdAt;
+  return {
+    label: isSuspended ? "Dayandırılıb" : "Aktiv edilib",
+    changedAt,
+    activatedAt: company.activatedAt || company.createdAt || "",
+    suspendedAt: company.suspendedAt || "",
+    changedBy: company.statusChangedBy || "",
+    reason: company.statusReason || "",
+    duration: statusDurationLabel(changedAt)
+  };
+}
+
 function todayStart() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -2614,6 +2719,7 @@ function createProject(name, details = {}) {
     }
   });
   saveResources();
+  syncGovernanceRisks(project);
   recordAudit("project.created", "project", project.id, project.name);
   return project;
 }
@@ -2639,7 +2745,9 @@ function updateProject(projectId, details = {}) {
   if (previousName !== cleanName) {
     tasks = tasks.map((task) => task.project === previousName ? { ...task, project: cleanName } : task);
     projectLinks = projectLinks.map((link) => link.project === previousName ? { ...link, project: cleanName } : link);
+    registers = registers.map((item) => item.project === previousName ? { ...item, project: cleanName } : item);
     saveTasks();
+    saveRegisters();
   }
   projectLinks = projectLinks.filter((link) => link.project !== cleanName || !link.resource.startsWith("user:"));
   project.teamMemberIds.forEach((resource) => {
@@ -2648,6 +2756,7 @@ function updateProject(projectId, details = {}) {
     }
   });
   saveResources();
+  syncGovernanceRisks(project);
   recordAudit("project.updated", "project", project.id, project.name);
   return project;
 }
@@ -2657,11 +2766,11 @@ function projectGateError(payload) {
   const gateCount = Array.isArray(charter.gateChecklist) ? charter.gateChecklist.length : 0;
   if (["Execution", "Monitoring", "Closing", "Closed"].includes(payload.lifecycle)) {
     if (!charter.goal || !charter.scope || !charter.successCriteria || gateCount === 0) {
-      return "Execution üçün charter, scope, success criteria və planning gate checklist doldurulmalıdır.";
+      return text("gateExecutionError");
     }
   }
   if (payload.lifecycle === "Closed" && !charter.closureNotes) {
-    return "Closed mərhələsi üçün closure / lessons learned qeydi doldurulmalıdır.";
+    return text("gateClosedError");
   }
   return "";
 }
@@ -2672,6 +2781,125 @@ function parseGovernanceLines(value) {
 
 function governanceLines(value) {
   return Array.isArray(value) ? value.join("\n") : "";
+}
+
+function gateRequirementKeys(gate) {
+  const requirements = {
+    Initiation: ["goal", "scope", "successCriteria", "stakeholders"],
+    Planning: ["goal", "scope", "successCriteria", "gateChecklist", "stakeholders", "communicationPlan", "riskOpportunity"],
+    Execution: ["goal", "scope", "successCriteria", "gateChecklist", "stakeholders", "communicationPlan", "decisionLog", "changeControl", "riskOpportunity", "qualityChecklist"],
+    Closing: ["goal", "scope", "successCriteria", "gateChecklist", "closureNotes", "qualityChecklist", "competenceMatrix"]
+  };
+  return requirements[gate] || [];
+}
+
+function charterFieldComplete(charter = {}, key) {
+  const value = charter[key];
+  return Array.isArray(value) ? value.length > 0 : Boolean(value);
+}
+
+function gateRequirementMissing(project, gate) {
+  const charter = project?.charter || {};
+  const labels = {
+    goal: text("projectCharter"),
+    scope: text("projectScope"),
+    successCriteria: text("successCriteria"),
+    gateChecklist: text("planningGateChecklist"),
+    closureNotes: text("closureLessons"),
+    stakeholders: text("stakeholderRegister"),
+    communicationPlan: text("communicationPlan"),
+    decisionLog: text("decisionLog"),
+    changeControl: text("changeControl"),
+    riskOpportunity: text("riskOpportunity"),
+    qualityChecklist: text("qualityChecklist"),
+    competenceMatrix: text("competenceMatrix")
+  };
+  return gateRequirementKeys(gate)
+    .filter((key) => !charterFieldComplete(charter, key))
+    .map((key) => labels[key] || key);
+}
+
+function syncGovernanceRisks(project) {
+  const lines = project?.charter?.riskOpportunity || [];
+  const companyId = project?.companyId || currentCompanyId();
+  const existingKeys = new Set(registers.map((item) => item.sourceKey).filter(Boolean));
+  lines.forEach((line) => {
+    const title = line.split("|")[0]?.trim() || line.trim();
+    if (!title) return;
+    const sourceKey = `${project.id || project.name}:risk:${title.toLowerCase()}`;
+    if (existingKeys.has(sourceKey) || registers.some((item) => item.project === project.name && item.type === "risk" && item.title.toLowerCase() === title.toLowerCase())) return;
+    registers.push(normalizeRegisterItem({
+      id: createId("register"),
+      companyId,
+      project: project.name,
+      type: "risk",
+      title,
+      status: "Open",
+      impact: line.toLowerCase().includes("high") || line.toLowerCase().includes("yüksək") ? "High" : "Medium",
+      mitigation: line,
+      source: "ipma-risk-opportunity",
+      sourceKey
+    }));
+  });
+  saveRegisters();
+}
+
+function projectGovernanceAudit(project) {
+  const charter = project?.charter || {};
+  const checks = [
+    ["goal", text("projectCharter"), Boolean(charter.goal)],
+    ["scope", text("projectScope"), Boolean(charter.scope)],
+    ["successCriteria", text("successCriteria"), Boolean(charter.successCriteria)],
+    ["gateChecklist", text("planningGateChecklist"), Boolean(charter.gateChecklist?.length)],
+    ["stakeholders", text("stakeholderRegister"), Boolean(charter.stakeholders?.length)],
+    ["communicationPlan", text("communicationPlan"), Boolean(charter.communicationPlan?.length)],
+    ["decisionLog", text("decisionLog"), Boolean(charter.decisionLog?.length)],
+    ["changeControl", text("changeControl"), Boolean(charter.changeControl?.length)],
+    ["riskOpportunity", text("riskOpportunity"), Boolean(charter.riskOpportunity?.length || visibleRegisters(project?.name).some((item) => item.type === "risk"))],
+    ["qualityChecklist", text("qualityChecklist"), Boolean(charter.qualityChecklist?.length)],
+    ["competenceMatrix", text("competenceMatrix"), Boolean(charter.competenceMatrix?.length)]
+  ];
+  const done = checks.filter(([, , ok]) => ok).length;
+  const score = Math.round((done / checks.length) * 100);
+  const approvals = project?.charter?.gateApprovals || {};
+  const approvedGates = ["Initiation", "Planning", "Execution", "Closing"].filter((gate) => approvals[gate]?.approvedAt);
+  const openGovernanceRisks = visibleRegisters(project?.name).filter((item) => item.status !== "Resolved" && ["risk", "issue"].includes(item.type));
+  return {
+    score,
+    done,
+    total: checks.length,
+    missing: checks.filter(([, , ok]) => !ok).map(([, label]) => label),
+    approvedGates,
+    openGovernanceRisks
+  };
+}
+
+function projectGovernancePayloadFromForm() {
+  return {
+    name: projectNameInput.value || "",
+    lifecycle: projectLifecycleInput.value,
+    charter: {
+      goal: projectGoalInput.value.trim(),
+      scope: projectScopeInput.value.trim(),
+      successCriteria: projectSuccessCriteriaInput.value.trim(),
+      gateChecklist: parseGovernanceLines(projectGateChecklistInput.value),
+      closureNotes: projectClosureNotesInput.value.trim(),
+      stakeholders: parseGovernanceLines(projectStakeholdersInput.value),
+      communicationPlan: parseGovernanceLines(projectCommunicationPlanInput.value),
+      decisionLog: parseGovernanceLines(projectDecisionLogInput.value),
+      changeControl: parseGovernanceLines(projectChangeControlInput.value),
+      riskOpportunity: parseGovernanceLines(projectRiskOpportunityInput.value),
+      qualityChecklist: parseGovernanceLines(projectQualityChecklistInput.value),
+      competenceMatrix: parseGovernanceLines(projectCompetenceMatrixInput.value),
+      gateApprovals: activeProjectEditId ? (projects.find((item) => item.id === activeProjectEditId)?.charter?.gateApprovals || {}) : {}
+    }
+  };
+}
+
+function updateGovernanceScorePreview() {
+  if (!projectGovernanceScore) return;
+  const audit = projectGovernanceAudit(projectGovernancePayloadFromForm());
+  projectGovernanceScore.textContent = `${text("ipmaScore")}: ${audit.score}%`;
 }
 
 function managerUsers(managerId) {
@@ -2930,8 +3158,10 @@ function portfolioMetrics(sourceTasks = accessibleTasks()) {
   const issues = registerItems.filter((item) => item.type === "issue").length;
   const highRisks = registerItems.filter((item) => item.type === "risk" && item.impact === "High").length;
   const completion = sourceTasks.length ? Math.round((doneTasks.length / sourceTasks.length) * 100) : 0;
-  const score = Math.max(0, Math.min(100, 100 - overdue * 8 - blocked * 7 - risks * 5 - issues * 4 - highRisks * 8));
-  return { active: activeTasks.length, done: doneTasks.length, overdue, blocked, risks, issues, highRisks, completion, score };
+  const projectAudits = visibleProjects().map(projectGovernanceAudit);
+  const governanceScore = projectAudits.length ? Math.round(projectAudits.reduce((sum, audit) => sum + audit.score, 0) / projectAudits.length) : 100;
+  const score = Math.max(0, Math.min(100, Math.round((100 - overdue * 8 - blocked * 7 - risks * 5 - issues * 4 - highRisks * 8) * 0.75 + governanceScore * 0.25)));
+  return { active: activeTasks.length, done: doneTasks.length, overdue, blocked, risks, issues, highRisks, completion, governanceScore, score };
 }
 
 function plannedHoursForTask(task) {
@@ -3158,6 +3388,7 @@ function resetProjectForm() {
   projectQualityChecklistInput.value = "";
   projectCompetenceMatrixInput.value = "";
   renderSelectedProjectTeamMembers();
+  updateGovernanceScorePreview();
 }
 
 function openProjectComposer() {
@@ -3199,6 +3430,7 @@ function openProjectEditor(projectName) {
   projectQualityChecklistInput.value = governanceLines(project.charter?.qualityChecklist);
   projectCompetenceMatrixInput.value = governanceLines(project.charter?.competenceMatrix);
   renderSelectedProjectTeamMembers();
+  updateGovernanceScorePreview();
   raiseModal(projectComposerModal);
   projectComposerModal.classList.add("open");
   projectComposerModal.setAttribute("aria-hidden", "false");
@@ -3289,18 +3521,22 @@ function renderResourceControls() {
       </details>
     `).join("") || `<div class="empty">${text("empty")}</div>`;
     if (companyRegistryList) {
-      companyRegistryList.innerHTML = registry.length ? registry.map((company) => `
-        <div class="resource-item company-registry-item">
-          <span>
-            <strong>${escapeHtml(company.name)}</strong>
-            ${escapeHtml(company.subdomain)} · ${escapeHtml(company.status)} · ${escapeHtml(company.plan)}
-            <small>${escapeHtml(company.adminUsername || "")} · ${company.userCount || 0} user · ${company.projectCount || 0} project</small>
-          </span>
-          <button type="button" data-company-action="${company.status === "suspended" ? "activate" : "suspend"}" data-id="${escapeHtml(company.id)}">
-            ${company.status === "suspended" ? text("activateCompany") : text("suspendCompany")}
-          </button>
-        </div>
-      `).join("") : `<div class="empty">${text("empty")}</div>`;
+      companyRegistryList.innerHTML = registry.length ? registry.map((company) => {
+        const statusMeta = companyStatusMeta(company);
+        return `
+          <div class="resource-item company-registry-item">
+            <span>
+              <strong>${escapeHtml(company.name)}</strong>
+              ${escapeHtml(company.subdomain)} · ${escapeHtml(company.status)} · ${escapeHtml(company.plan)}
+              <small>${escapeHtml(company.adminUsername || "")} · ${company.userCount || 0} user · ${company.projectCount || 0} project</small>
+              <small>${statusMeta.label}: ${escapeHtml(formatDateTime(statusMeta.changedAt) || "-")} · ${statusMeta.duration}</small>
+            </span>
+            <button type="button" data-company-action="${company.status === "suspended" ? "activate" : "suspend"}" data-id="${escapeHtml(company.id)}">
+              ${company.status === "suspended" ? text("activateCompany") : text("suspendCompany")}
+            </button>
+          </div>
+        `;
+      }).join("") : `<div class="empty">${text("empty")}</div>`;
     }
     return;
   }
@@ -3689,6 +3925,7 @@ function renderPortfolioHealth() {
       <span><strong>${metrics.blocked}</strong>${text("blockedTasks")}</span>
       <span><strong>${metrics.risks}</strong>${text("riskLoad")}</span>
       <span><strong>${metrics.issues}</strong>${text("openIssueLoad")}</span>
+      <span><strong>${metrics.governanceScore}%</strong>${text("ipmaScore")}</span>
     </div>
   `;
 }
@@ -3870,27 +4107,36 @@ function renderProjectsView() {
 
 function renderProjectGovernance(project) {
   const checklist = project.charter?.gateChecklist || [];
+  const audit = projectGovernanceAudit(project);
   const modules = [
-    ["Maraqlı tərəflər", project.charter?.stakeholders],
-    ["Kommunikasiya", project.charter?.communicationPlan],
-    ["Qərar jurnalı", project.charter?.decisionLog],
-    ["Dəyişiklik kontrolu", project.charter?.changeControl],
-    ["Risk və imkan", project.charter?.riskOpportunity],
-    ["Keyfiyyət", project.charter?.qualityChecklist],
-    ["Kompetensiya", project.charter?.competenceMatrix]
+    [text("stakeholderRegister"), project.charter?.stakeholders],
+    [text("communicationPlan"), project.charter?.communicationPlan],
+    [text("decisionLog"), project.charter?.decisionLog],
+    [text("changeControl"), project.charter?.changeControl],
+    [text("riskOpportunity"), project.charter?.riskOpportunity],
+    [text("qualityChecklist"), project.charter?.qualityChecklist],
+    [text("competenceMatrix"), project.charter?.competenceMatrix]
   ];
   const hasModules = modules.some(([, rows]) => rows?.length);
   if (!project.charter?.goal && !project.charter?.scope && !project.charter?.successCriteria && !checklist.length && !project.charter?.closureNotes && !hasModules) return "";
   const approvals = project.charter?.gateApprovals || {};
   return `
     <div class="governance-summary">
-      ${project.charter?.goal ? `<span><strong>Charter:</strong> ${escapeHtml(project.charter.goal)}</span>` : ""}
-      ${project.charter?.scope ? `<span><strong>Scope:</strong> ${escapeHtml(project.charter.scope)}</span>` : ""}
-      ${project.charter?.successCriteria ? `<span><strong>Success:</strong> ${escapeHtml(project.charter.successCriteria)}</span>` : ""}
-      ${checklist.length ? `<span><strong>Gate:</strong> ${escapeHtml(checklist.join(" · "))}</span>` : ""}
-      ${project.charter?.closureNotes ? `<span><strong>Closure:</strong> ${escapeHtml(project.charter.closureNotes)}</span>` : ""}
+      <div class="governance-score-line">
+        <strong>${text("ipmaGovernance")}</strong>
+        <span>${text("ipmaScore")}: ${audit.score}%</span>
+        <span>${audit.done}/${audit.total}</span>
+      </div>
+      ${audit.missing.length ? `<span class="governance-warning"><strong>${text("governanceMissing")}:</strong> ${escapeHtml(audit.missing.slice(0, 5).join(" · "))}${audit.missing.length > 5 ? " ..." : ""}</span>` : ""}
+      ${audit.openGovernanceRisks.length ? `<span class="governance-warning"><strong>${text("openGovernanceRisk")}:</strong> ${audit.openGovernanceRisks.length}</span>` : ""}
+      ${project.charter?.goal ? `<span><strong>${text("projectCharter")}:</strong> ${escapeHtml(project.charter.goal)}</span>` : ""}
+      ${project.charter?.scope ? `<span><strong>${text("projectScope")}:</strong> ${escapeHtml(project.charter.scope)}</span>` : ""}
+      ${project.charter?.successCriteria ? `<span><strong>${text("successCriteria")}:</strong> ${escapeHtml(project.charter.successCriteria)}</span>` : ""}
+      ${checklist.length ? `<span><strong>${text("planningGateChecklist")}:</strong> ${escapeHtml(checklist.join(" · "))}</span>` : ""}
+      ${project.charter?.closureNotes ? `<span><strong>${text("closureLessons")}:</strong> ${escapeHtml(project.charter.closureNotes)}</span>` : ""}
       ${modules.map(([label, rows]) => rows?.length ? `<span><strong>${label}:</strong> ${escapeHtml(rows.slice(0, 3).join(" · "))}${rows.length > 3 ? " ..." : ""}</span>` : "").join("")}
-      <span><strong>Gate təsdiqləri:</strong> ${["Initiation", "Planning", "Execution", "Closing"].map((gate) => `${gate}: ${approvals[gate]?.approvedAt ? "OK" : "Gözləyir"}`).join(" · ")}</span>
+      <span><strong>${text("gateApprovals")}:</strong> ${["Initiation", "Planning", "Execution", "Closing"].map((gate) => `${gate}: ${approvals[gate]?.approvedAt ? `${approvals[gate].approvedBy || "OK"} ${formatDateTime(approvals[gate].approvedAt)}` : "Gözləyir"}`).join(" · ")}</span>
+      ${nextGateForProject(project) ? `<span><strong>${text("governanceMissing")} (${nextGateForProject(project)}):</strong> ${escapeHtml(gateRequirementMissing(project, nextGateForProject(project)).join(" · ") || "-")}</span>` : ""}
     </div>
   `;
 }
@@ -4424,7 +4670,7 @@ function renderReports() {
   const reportTasks = visibleTasks();
   const shownProjects = visibleProjects()
     .filter((project) => selectedProject === "Hamısı" || project.name === selectedProject)
-    .filter((project) => selectedProject !== "Hamısı" || reportTasks.some((task) => task.project === project.name));
+    .filter((project) => selectedProject !== "Hamısı" || reportTasks.some((task) => task.project === project.name) || visibleRegisters(project.name).length || projectGovernanceAudit(project).done);
   const totalPlanned = reportTasks.reduce((sum, task) => sum + plannedHoursForTask(task), 0);
   const totalActual = reportTasks.reduce((sum, task) => sum + actualHoursForTask(task), 0);
   const blockedCount = reportTasks.filter(isTaskBlocked).length;
@@ -4438,6 +4684,7 @@ function renderReports() {
     </section>
   `;
   reports.innerHTML = shownProjects.length ? shownProjects.map((project) => {
+    const audit = projectGovernanceAudit(project);
     const projectTasks = reportTasks.filter((task) => task.project === project.name)
       .sort((a, b) => parseDate(a.start) - parseDate(b.start));
     const rows = projectTasks.length ? projectTasks.map((task) => `
@@ -4464,9 +4711,21 @@ function renderReports() {
         <span>${shortDate(item.dueDate)}</span>
       </div>
     `).join("") : `<div class="empty">${text("empty")}</div>`;
+    const governanceRows = `
+      <div class="report-row">
+        <strong>${text("ipmaScore")}: ${audit.score}%</strong>
+        <span>${text("lifecycleStage")}: ${escapeHtml(project.lifecycle || "Initiation")}</span>
+        <span>${text("governanceCoverage")}: ${audit.done}/${audit.total}</span>
+        <span>${text("openGovernanceRisk")}: ${audit.openGovernanceRisks.length}</span>
+        <span>${text("gateApprovals")}: ${audit.approvedGates.length}/4</span>
+        <span>${text("governanceMissing")}: ${escapeHtml(audit.missing.join(" · ") || "-")}</span>
+      </div>
+    `;
     return `
       <article class="report-project">
         <h3>${escapeHtml(project.name)}</h3>
+        <h3>${text("ipmaReport")}</h3>
+        <div class="report-rows">${governanceRows}</div>
         <div class="report-rows">${rows}</div>
         <h3>${text("projectRegisters")}</h3>
         <div class="report-rows">${registerRows}</div>
@@ -4491,31 +4750,60 @@ function renderPlatformConsole() {
   const suspendedCount = registry.filter((company) => company.status === "suspended").length;
   const usersTotal = registry.reduce((sum, company) => sum + (Number(company.userCount) || 0), 0);
   const projectsTotal = registry.reduce((sum, company) => sum + (Number(company.projectCount) || 0), 0);
+  const lastStatusChange = registry
+    .map((company) => companyStatusMeta(company).changedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
   platformConsole.classList.add("active");
   platformStats.innerHTML = [
     ["Şirkət", registry.length],
     ["Aktiv", activeCount],
     ["Dayanıb", suspendedCount],
     ["User", usersTotal],
-    ["Layihə", projectsTotal]
-  ].map(([label, value]) => `<article><span>${value}</span><p>${label}</p></article>`).join("");
-  platformCompanyGrid.innerHTML = registry.length ? registry.map((company) => `
-    <article class="platform-company-card ${company.status === "suspended" ? "suspended" : ""}">
-      <div>
-        <strong>${escapeHtml(company.name)}</strong>
-        <span>${escapeHtml(company.subdomain)} · ${escapeHtml(company.plan || "standard")}</span>
+    ["Layihə", projectsTotal],
+    ["Son status", formatDateTime(lastStatusChange) || "-"]
+  ].map(([label, value]) => `<article class="${typeof value === "string" && value.length > 8 ? "compact-stat" : ""}"><span>${value}</span><p>${label}</p></article>`).join("");
+  platformCompanyGrid.innerHTML = registry.length ? registry.map((company) => {
+    const statusMeta = companyStatusMeta(company);
+    return `
+      <article class="platform-company-card ${company.status === "suspended" ? "suspended" : ""}">
+        <div>
+          <strong>${escapeHtml(company.name)}</strong>
+          <span>${escapeHtml(company.subdomain)} · ${escapeHtml(company.plan || "standard")}</span>
+        </div>
+        <dl>
+          <div><dt>Admin</dt><dd>${escapeHtml(company.adminUsername || "-")}</dd></div>
+          <div><dt>Status</dt><dd>${escapeHtml(company.status || "active")}</dd></div>
+          <div><dt>User</dt><dd>${Number(company.userCount) || 0}</dd></div>
+          <div><dt>Project</dt><dd>${Number(company.projectCount) || 0}</dd></div>
+          <div><dt>${statusMeta.label}</dt><dd>${escapeHtml(formatDateTime(statusMeta.changedAt) || "-")}</dd></div>
+          <div><dt>Bu statusda</dt><dd>${escapeHtml(statusMeta.duration)}</dd></div>
+          <div><dt>${text("statusChangedBy")}</dt><dd>${escapeHtml(statusMeta.changedBy || "-")}</dd></div>
+          <div><dt>${text("statusReason")}</dt><dd>${escapeHtml(statusMeta.reason || "-")}</dd></div>
+          <div><dt>Son aktiv</dt><dd>${escapeHtml(formatDateTime(statusMeta.activatedAt) || "-")}</dd></div>
+          <div><dt>Son dayandırma</dt><dd>${escapeHtml(formatDateTime(statusMeta.suspendedAt) || "-")}</dd></div>
+        </dl>
+        <button type="button" data-company-action="${company.status === "suspended" ? "activate" : "suspend"}" data-id="${escapeHtml(company.id)}">
+          ${company.status === "suspended" ? text("activateCompany") : text("suspendCompany")}
+        </button>
+      </article>
+    `;
+  }).join("") : `<div class="empty">${text("empty")}</div>`;
+  if (platformTimeline) {
+    const platformAudit = [...auditLogs, ...localAuditLogs]
+      .filter((item) => ["company.updated", "company.mail_settings_saved", "workspace.registered"].includes(item.action) || item.entity_type === "company")
+      .slice(0, 12);
+    platformTimeline.innerHTML = platformAudit.length ? platformAudit.map((item) => `
+      <div class="platform-timeline-item">
+        <span>
+          <strong>${escapeHtml(item.action || "-")}</strong>
+          ${escapeHtml([item.actor, item.entity_id].filter(Boolean).join(" · "))}
+        </span>
+        <small>${escapeHtml(formatDateTime(item.created_at || item.createdAt) || "-")}</small>
       </div>
-      <dl>
-        <div><dt>Admin</dt><dd>${escapeHtml(company.adminUsername || "-")}</dd></div>
-        <div><dt>Status</dt><dd>${escapeHtml(company.status || "active")}</dd></div>
-        <div><dt>User</dt><dd>${Number(company.userCount) || 0}</dd></div>
-        <div><dt>Project</dt><dd>${Number(company.projectCount) || 0}</dd></div>
-      </dl>
-      <button type="button" data-company-action="${company.status === "suspended" ? "activate" : "suspend"}" data-id="${escapeHtml(company.id)}">
-        ${company.status === "suspended" ? text("activateCompany") : text("suspendCompany")}
-      </button>
-    </article>
-  `).join("") : `<div class="empty">${text("empty")}</div>`;
+    `).join("") : `<div class="empty">${text("empty")}</div>`;
+  }
 }
 
 function setView(view) {
@@ -4891,6 +5179,7 @@ async function fetchPlatformCompanies() {
     companyRegistry = registry;
     appSettings.companyRegistry = registry;
     saveAppSettings();
+    fetchAuditLogs();
     renderPlatformConsole();
     renderActivityLists();
   } catch (error) {
@@ -4940,7 +5229,7 @@ function downloadText(filename, body, type = "text/plain;charset=utf-8") {
 }
 
 async function fetchAuditLogs() {
-  if (!canUseBackend() || !isAdmin()) return;
+  if (!canUseBackend() || (!isAdmin() && !isSuperAdmin())) return;
   try {
     const response = await fetch(backendUrl("/api/audit-logs"), { cache: "no-store", headers: authHeaders() });
     auditLogs = response.ok ? await response.json() : [];
@@ -4968,7 +5257,7 @@ function csvCell(value) {
 }
 
 function filteredReportCsv() {
-  const header = [
+  const taskHeader = [
     "Project",
     "Task",
     "Status",
@@ -4983,7 +5272,7 @@ function filteredReportCsv() {
     "Dependencies",
     "Notes"
   ];
-  const rows = visibleTasks().map((task) => [
+  const taskRows = visibleTasks().map((task) => [
     task.project,
     task.name,
     statusLabel(task.status),
@@ -4998,7 +5287,28 @@ function filteredReportCsv() {
     (task.dependencyIds || []).map(taskNameById).filter(Boolean).join("; "),
     task.notes || ""
   ]);
-  return [header, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");
+  const governanceHeader = ["Project", "Lifecycle", "IPMA score", "Coverage", "Approved gates", "Open risks/issues", "Missing IPMA fields"];
+  const governanceRows = visibleProjects().map((project) => {
+    const audit = projectGovernanceAudit(project);
+    return [
+      project.name,
+      project.lifecycle || "Initiation",
+      `${audit.score}%`,
+      `${audit.done}/${audit.total}`,
+      `${audit.approvedGates.length}/4`,
+      audit.openGovernanceRisks.length,
+      audit.missing.join("; ")
+    ];
+  });
+  return [
+    [text("ipmaReport")],
+    governanceHeader,
+    ...governanceRows,
+    [],
+    ["Tasks"],
+    taskHeader,
+    ...taskRows
+  ].map((row) => row.map(csvCell).join(",")).join("\n");
 }
 
 async function downloadBackendFile(path, fallbackFilename) {
@@ -6096,11 +6406,21 @@ companyRegistryList?.addEventListener("click", async (event) => {
   const company = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).find((item) => item.id === button.dataset.id);
   if (!company) return;
   const nextStatus = button.dataset.companyAction === "activate" ? "active" : "suspended";
+  const statusReason = `${nextStatus === "active" ? text("activateCompany") : text("suspendCompany")} · ${currentUser?.username || "system"}`;
   try {
-    const updated = await updateBackendCompany(company.id, { status: nextStatus });
+    const updated = await updateBackendCompany(company.id, { status: nextStatus, statusReason });
     companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? updated : item);
   } catch (error) {
-    companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? { ...item, status: nextStatus } : item);
+    const now = new Date().toISOString();
+    companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? {
+      ...item,
+      status: nextStatus,
+      statusChangedAt: now,
+      activatedAt: nextStatus === "active" ? now : item.activatedAt,
+      suspendedAt: nextStatus === "suspended" ? now : item.suspendedAt,
+      statusChangedBy: currentUser?.username || "",
+      statusReason
+    } : item);
     saveBackendSettings();
   }
   render();
@@ -6113,11 +6433,21 @@ platformCompanyGrid?.addEventListener("click", async (event) => {
   const company = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).find((item) => item.id === button.dataset.id);
   if (!company) return;
   const nextStatus = button.dataset.companyAction === "activate" ? "active" : "suspended";
+  const statusReason = `${nextStatus === "active" ? text("activateCompany") : text("suspendCompany")} · ${currentUser?.username || "system"}`;
   try {
-    const updated = await updateBackendCompany(company.id, { status: nextStatus });
+    const updated = await updateBackendCompany(company.id, { status: nextStatus, statusReason });
     companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? updated : item);
   } catch (error) {
-    companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? { ...item, status: nextStatus } : item);
+    const now = new Date().toISOString();
+    companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? {
+      ...item,
+      status: nextStatus,
+      statusChangedAt: now,
+      activatedAt: nextStatus === "active" ? now : item.activatedAt,
+      suspendedAt: nextStatus === "suspended" ? now : item.suspendedAt,
+      statusChangedBy: currentUser?.username || "",
+      statusReason
+    } : item);
     saveBackendSettings();
   }
   render();
@@ -6243,6 +6573,7 @@ projectForm.addEventListener("submit", (event) => {
   }
 
   const progress = Math.min(100, Math.max(0, Number.parseInt(projectProgressInput.value || "0", 10)));
+  const governancePayload = projectGovernancePayloadFromForm();
   const payload = {
     name: projectNameInput.value,
     customerId: projectCustomerInput.value,
@@ -6253,22 +6584,8 @@ projectForm.addEventListener("submit", (event) => {
     status: projectStatusInput.value,
     priority: projectPriorityInput.value,
     progress,
-    lifecycle: projectLifecycleInput.value,
-    charter: {
-      goal: projectGoalInput.value.trim(),
-      scope: projectScopeInput.value.trim(),
-      successCriteria: projectSuccessCriteriaInput.value.trim(),
-      gateChecklist: parseGovernanceLines(projectGateChecklistInput.value),
-      closureNotes: projectClosureNotesInput.value.trim(),
-      stakeholders: parseGovernanceLines(projectStakeholdersInput.value),
-      communicationPlan: parseGovernanceLines(projectCommunicationPlanInput.value),
-      decisionLog: parseGovernanceLines(projectDecisionLogInput.value),
-      changeControl: parseGovernanceLines(projectChangeControlInput.value),
-      riskOpportunity: parseGovernanceLines(projectRiskOpportunityInput.value),
-      qualityChecklist: parseGovernanceLines(projectQualityChecklistInput.value),
-      competenceMatrix: parseGovernanceLines(projectCompetenceMatrixInput.value),
-      gateApprovals: activeProjectEditId ? (projects.find((item) => item.id === activeProjectEditId)?.charter?.gateApprovals || {}) : {}
-    }
+    lifecycle: governancePayload.lifecycle,
+    charter: governancePayload.charter
   };
   const gateError = projectGateError(payload);
   if (gateError) {
@@ -6304,6 +6621,23 @@ cancelProjectCreateButton.addEventListener("click", closeProjectComposer);
 projectComposerModal.addEventListener("click", (event) => {
   if (event.target.dataset.projectModalClose) closeProjectComposer();
 });
+[
+  projectNameInput,
+  projectLifecycleInput,
+  projectGoalInput,
+  projectScopeInput,
+  projectSuccessCriteriaInput,
+  projectGateChecklistInput,
+  projectClosureNotesInput,
+  projectStakeholdersInput,
+  projectCommunicationPlanInput,
+  projectDecisionLogInput,
+  projectChangeControlInput,
+  projectRiskOpportunityInput,
+  projectQualityChecklistInput,
+  projectCompetenceMatrixInput
+].forEach((input) => input?.addEventListener("input", updateGovernanceScorePreview));
+projectLifecycleInput?.addEventListener("change", updateGovernanceScorePreview);
 closeTaskDetailButton?.addEventListener("click", closeTaskDetail);
 taskDetailModal?.addEventListener("click", (event) => {
   if (event.target.closest("[data-task-detail-close]")) closeTaskDetail();
@@ -6335,10 +6669,16 @@ projectCards.addEventListener("click", (event) => {
     const project = projects.find((item) => item.name === projectName);
     if (project && canApproveGovernance()) {
       const gate = button.dataset.gate;
+      const missing = gateRequirementMissing(project, gate);
+      if (missing.length) {
+        alert(`${text("gateRequirementError")}\n${missing.join("\n")}`);
+        return;
+      }
       project.charter = project.charter || {};
       project.charter.gateApprovals = project.charter.gateApprovals || {};
       project.charter.gateApprovals[gate] = {
         approvedBy: currentUser.username,
+        approvedRole: currentUser.role,
         approvedAt: new Date().toISOString()
       };
       saveResources();

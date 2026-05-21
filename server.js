@@ -738,6 +738,7 @@ function actualHoursFromTask(task = {}) {
 
 function normalizeProjectPayload(payload = {}) {
   const progress = Math.min(100, Math.max(0, Number.parseInt(payload.progress || "0", 10)));
+  const charter = payload.charter || {};
   return {
     id: payload.id || createId("project"),
     name: String(payload.name || "").trim(),
@@ -750,7 +751,23 @@ function normalizeProjectPayload(payload = {}) {
     status: payload.status || "Plan",
     priority: payload.priority || "Normal",
     progress: payload.status === "Bitib" ? 100 : progress,
-    archived: Boolean(payload.archived)
+    archived: Boolean(payload.archived),
+    lifecycle: payload.lifecycle || "Initiation",
+    charter: {
+      goal: charter.goal || "",
+      scope: charter.scope || "",
+      successCriteria: charter.successCriteria || "",
+      gateChecklist: Array.isArray(charter.gateChecklist) ? charter.gateChecklist : [],
+      closureNotes: charter.closureNotes || "",
+      stakeholders: Array.isArray(charter.stakeholders) ? charter.stakeholders : [],
+      communicationPlan: Array.isArray(charter.communicationPlan) ? charter.communicationPlan : [],
+      decisionLog: Array.isArray(charter.decisionLog) ? charter.decisionLog : [],
+      changeControl: Array.isArray(charter.changeControl) ? charter.changeControl : [],
+      riskOpportunity: Array.isArray(charter.riskOpportunity) ? charter.riskOpportunity : [],
+      qualityChecklist: Array.isArray(charter.qualityChecklist) ? charter.qualityChecklist : [],
+      competenceMatrix: Array.isArray(charter.competenceMatrix) ? charter.competenceMatrix : [],
+      gateApprovals: charter.gateApprovals || {}
+    }
   };
 }
 
@@ -972,7 +989,12 @@ function companyRegistryFromState(state, settings = {}) {
       userCount: users.length,
       projectCount: projectsByCompany.get(companyId) || 0,
       lastLoginAt: existing.get(companyId)?.lastLoginAt || "",
-      createdAt: existing.get(companyId)?.createdAt || new Date().toISOString()
+      createdAt: existing.get(companyId)?.createdAt || new Date().toISOString(),
+      statusChangedAt: existing.get(companyId)?.statusChangedAt || existing.get(companyId)?.createdAt || new Date().toISOString(),
+      activatedAt: existing.get(companyId)?.activatedAt || existing.get(companyId)?.createdAt || new Date().toISOString(),
+      suspendedAt: existing.get(companyId)?.suspendedAt || "",
+      statusChangedBy: existing.get(companyId)?.statusChangedBy || "",
+      statusReason: existing.get(companyId)?.statusReason || ""
     };
   }).sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -1022,6 +1044,36 @@ function csvCell(value) {
   return `"${String(value ?? "").split('"').join('""')}"`;
 }
 
+function projectGovernanceAuditFromState(state, project = {}) {
+  const charter = project.charter || {};
+  const projectRegisters = (state.registers || []).filter((item) => item.project === project.name);
+  const checks = [
+    ["Project charter", Boolean(charter.goal)],
+    ["Scope", Boolean(charter.scope)],
+    ["Success criteria", Boolean(charter.successCriteria)],
+    ["Planning gate checklist", Boolean(charter.gateChecklist?.length)],
+    ["Stakeholder register", Boolean(charter.stakeholders?.length)],
+    ["Communication plan", Boolean(charter.communicationPlan?.length)],
+    ["Decision log", Boolean(charter.decisionLog?.length)],
+    ["Change control", Boolean(charter.changeControl?.length)],
+    ["Risk and opportunity", Boolean(charter.riskOpportunity?.length || projectRegisters.some((item) => item.type === "risk"))],
+    ["Quality checklist", Boolean(charter.qualityChecklist?.length)],
+    ["Competence matrix", Boolean(charter.competenceMatrix?.length)]
+  ];
+  const done = checks.filter(([, ok]) => ok).length;
+  const approvals = charter.gateApprovals || {};
+  const approvedGates = ["Initiation", "Planning", "Execution", "Closing"].filter((gate) => approvals[gate]?.approvedAt);
+  const openGovernanceRisks = projectRegisters.filter((item) => item.status !== "Resolved" && ["risk", "issue"].includes(item.type));
+  return {
+    score: Math.round((done / checks.length) * 100),
+    done,
+    total: checks.length,
+    missing: checks.filter(([, ok]) => !ok).map(([label]) => label),
+    approvedGates,
+    openGovernanceRisks
+  };
+}
+
 function stateToCsv(state) {
   const taskRows = [
     ["Type", "ID", "Name", "Project", "Status", "Priority", "Owner", "Start", "End", "Progress", "Planned Hours", "Actual Hours", "Parent", "Dependencies", "Notes"],
@@ -1058,6 +1110,21 @@ function stateToCsv(state) {
       (project.managerIds || []).join(" | "),
       (project.teamMemberIds || []).join(" | ")
     ]),
+    [],
+    ["Type", "Project", "Lifecycle", "IPMA Score", "Coverage", "Approved Gates", "Open Risks/Issues", "Missing IPMA Fields"],
+    ...(state.projects || []).map((project) => {
+      const audit = projectGovernanceAuditFromState(state, project);
+      return [
+        "IPMA",
+        project.name,
+        project.lifecycle || "Initiation",
+        `${audit.score}%`,
+        `${audit.done}/${audit.total}`,
+        `${audit.approvedGates.length}/4`,
+        audit.openGovernanceRisks.length,
+        audit.missing.join(" | ")
+      ];
+    }),
     [],
     ["Type", "ID", "Project", "Register Type", "Title", "Status", "Impact", "Owner", "Due Date", "Mitigation"],
     ...(state.registers || []).map((item) => [
@@ -1155,6 +1222,21 @@ async function stateToPdf(state) {
       project.end || "-",
       `${project.progress || 0}%`
     ], [115, 95, 70, 60, 60, 60, 55]);
+  });
+
+  drawPdfSectionTitle(document, "IPMA / Governance");
+  drawPdfRow(document, ["Layihə", "Lifecycle", "IPMA", "Coverage", "Gate", "Risk", "Çatışmayan sahələr"], [95, 65, 45, 60, 45, 45, 160]);
+  (state.projects || []).forEach((project) => {
+    const audit = projectGovernanceAuditFromState(state, project);
+    drawPdfRow(document, [
+      project.name,
+      project.lifecycle || "Initiation",
+      `${audit.score}%`,
+      `${audit.done}/${audit.total}`,
+      `${audit.approvedGates.length}/4`,
+      audit.openGovernanceRisks.length,
+      audit.missing.join(", ") || "-"
+    ], [95, 65, 45, 60, 45, 45, 160]);
   });
 
   drawPdfSectionTitle(document, "Tasklar");
@@ -1309,7 +1391,7 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/audit-logs" && request.method === "GET") {
-    if (!requireAuth(request, response, ["admin"])) return true;
+    if (!requireAuth(request, response, ["super_admin", "admin"])) return true;
     const [rows] = await pool.execute("SELECT actor, action, entity_type, entity_id, created_at, details_json FROM audit_logs ORDER BY id DESC LIMIT 100");
     sendJson(response, 200, rows);
     return true;
@@ -1376,12 +1458,20 @@ async function handleApi(request, response) {
         sendJson(response, 404, { error: "Company not found" });
         return true;
       }
+      const nextStatus = ["active", "suspended"].includes(payload.status) ? payload.status : registry[index].status;
+      const statusChanged = nextStatus !== registry[index].status;
+      const now = new Date().toISOString();
       registry[index] = {
         ...registry[index],
         name: payload.name ? String(payload.name).trim() : registry[index].name,
         subdomain: payload.subdomain ? slugFromName(payload.subdomain) : registry[index].subdomain,
-        status: ["active", "suspended"].includes(payload.status) ? payload.status : registry[index].status,
-        plan: payload.plan ? String(payload.plan).trim() : registry[index].plan
+        status: nextStatus,
+        plan: payload.plan ? String(payload.plan).trim() : registry[index].plan,
+        statusChangedAt: statusChanged ? now : registry[index].statusChangedAt,
+        activatedAt: statusChanged && nextStatus === "active" ? now : registry[index].activatedAt,
+        suspendedAt: statusChanged && nextStatus === "suspended" ? now : registry[index].suspendedAt,
+        statusChangedBy: statusChanged ? actor.username : registry[index].statusChangedBy,
+        statusReason: statusChanged ? String(payload.statusReason || "Platform action").trim() : registry[index].statusReason
       };
       await writeSettings({ ...settings, companyRegistry: registry });
       await recordAuditLog(actor.username, "company.updated", "company", companyId, registry[index]);
@@ -1817,7 +1907,7 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/state" && request.method === "PUT") {
-    const actor = requireAuth(request, response);
+    const actor = requireAuth(request, response, ["admin", "manager"]);
     if (!actor) return true;
     try {
       const payload = JSON.parse(await readBody(request));

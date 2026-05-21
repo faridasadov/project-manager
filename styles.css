@@ -275,7 +275,7 @@ body.admin-role .manager-only {
 
 .platform-stats {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
   margin: 18px 0;
 }
@@ -294,8 +294,15 @@ body.admin-role .manager-only {
 
 .platform-stats span {
   display: block;
-  font-size: 28px;
+  font-size: clamp(18px, 2vw, 28px);
   font-weight: 800;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.platform-stats .compact-stat span {
+  font-size: clamp(16px, 1.35vw, 20px);
+  line-height: 1.25;
 }
 
 .platform-stats p {
@@ -324,6 +331,33 @@ body.admin-role .manager-only {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 14px;
   padding: 18px;
+}
+
+.platform-timeline {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.platform-timeline-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 10px 12px;
+}
+
+.platform-timeline-item span {
+  display: grid;
+  gap: 2px;
+}
+
+.platform-timeline-item small {
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .platform-company-card {
@@ -361,6 +395,7 @@ body.admin-role .manager-only {
 .platform-company-card dd {
   margin: 2px 0 0;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .auth-tabs {
@@ -821,6 +856,26 @@ h2 {
   background: color-mix(in srgb, var(--soft) 72%, var(--panel));
 }
 
+.governance-form-head,
+.governance-score-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.governance-score-preview,
+.governance-score-line span {
+  border: 1px solid color-mix(in srgb, var(--teal) 26%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 84%, var(--teal) 8%);
+  color: var(--ink);
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
 .governance-summary {
   display: grid;
   gap: 6px;
@@ -835,6 +890,10 @@ h2 {
 
 .governance-summary strong {
   color: var(--ink);
+}
+
+.governance-warning {
+  color: #991b1b;
 }
 
 .task-detail-shell {
@@ -2684,6 +2743,7 @@ button:disabled {
   .layout,
   .summary,
   .report-summary,
+  .platform-stats,
   .insight-grid,
   .dashboard-calendar-grid,
   .resource-panel,

@@ -128,6 +128,15 @@
         </div>
         <div id="platformCompanyGrid" class="platform-company-grid"></div>
       </div>
+      <div class="platform-section">
+        <div class="platform-section-head">
+          <div>
+            <p class="kicker" data-i18n="auditLogs">Audit logs</p>
+            <h3>Platform timeline</h3>
+          </div>
+        </div>
+        <div id="platformTimeline" class="platform-timeline"></div>
+      </div>
     </section>
 
     <main class="layout">
@@ -330,8 +339,12 @@
           </label>
 
           <div class="project-governance">
+            <div class="governance-form-head">
+              <p class="kicker" data-i18n="ipmaGovernance">IPMA / Governance</p>
+              <div id="projectGovernanceScore" class="governance-score-preview">0%</div>
+            </div>
             <label>
-              <span>Lifecycle mərhələsi</span>
+              <span data-i18n="lifecycleStage">Lifecycle mərhələsi</span>
               <select id="projectLifecycle">
                 <option value="Initiation">Initiation</option>
                 <option value="Planning">Planning</option>
@@ -342,51 +355,51 @@
               </select>
             </label>
             <label>
-              <span>Project charter / Məqsəd</span>
+              <span data-i18n="projectCharter">Project charter / Məqsəd</span>
               <textarea id="projectGoal" rows="3" placeholder="Layihənin biznes məqsədi və gözlənilən nəticə"></textarea>
             </label>
             <label>
-              <span>Scope</span>
+              <span data-i18n="projectScope">Scope</span>
               <textarea id="projectScope" rows="3" placeholder="Daxil olan və xaricdə qalan işlər"></textarea>
             </label>
             <label>
-              <span>Success criteria</span>
+              <span data-i18n="successCriteria">Success criteria</span>
               <textarea id="projectSuccessCriteria" rows="3" placeholder="Qəbul meyarları, keyfiyyət və nəticə ölçüləri"></textarea>
             </label>
             <label>
-              <span>Planning gate checklist</span>
+              <span data-i18n="planningGateChecklist">Planning gate checklist</span>
               <textarea id="projectGateChecklist" rows="4" placeholder="Hər sətrə bir checklist: WBS hazırdır, risk register var, resurs planı təsdiqlənib"></textarea>
             </label>
             <label>
-              <span>Closure / lessons learned</span>
+              <span data-i18n="closureLessons">Closure / lessons learned</span>
               <textarea id="projectClosureNotes" rows="3" placeholder="Təhvil, sign-off, lessons learned"></textarea>
             </label>
             <label>
-              <span>Maraqlı tərəflər registeri</span>
+              <span data-i18n="stakeholderRegister">Maraqlı tərəflər registeri</span>
               <textarea id="projectStakeholders" rows="4" placeholder="Sponsor | yüksək təsir | weekly update"></textarea>
             </label>
             <label>
-              <span>Kommunikasiya planı</span>
+              <span data-i18n="communicationPlan">Kommunikasiya planı</span>
               <textarea id="projectCommunicationPlan" rows="4" placeholder="Steering meeting | həftəlik | sponsor və manager"></textarea>
             </label>
             <label>
-              <span>Qərar jurnalı</span>
+              <span data-i18n="decisionLog">Qərar jurnalı</span>
               <textarea id="projectDecisionLog" rows="4" placeholder="Tarix | qərar | səbəb | təsir"></textarea>
             </label>
             <label>
-              <span>Dəyişiklik kontrolu</span>
+              <span data-i18n="changeControl">Dəyişiklik kontrolu</span>
               <textarea id="projectChangeControl" rows="4" placeholder="Scope/deadline/resource dəyişikliyi | impact | status"></textarea>
             </label>
             <label>
-              <span>Risk və imkanlar</span>
+              <span data-i18n="riskOpportunity">Risk və imkanlar</span>
               <textarea id="projectRiskOpportunity" rows="4" placeholder="Risk/opportunity | ehtimal | təsir | response | owner"></textarea>
             </label>
             <label>
-              <span>Keyfiyyət checklist-i</span>
+              <span data-i18n="qualityChecklist">Keyfiyyət checklist-i</span>
               <textarea id="projectQualityChecklist" rows="4" placeholder="Acceptance criteria | test status | sign-off"></textarea>
             </label>
             <label>
-              <span>Kompetensiya matrisi</span>
+              <span data-i18n="competenceMatrix">Kompetensiya matrisi</span>
               <textarea id="projectCompetenceMatrix" rows="4" placeholder="Manager/User | leadership/risk/stakeholder | səviyyə"></textarea>
             </label>
           </div>
