@@ -184,6 +184,32 @@ body.super-admin-role .top-shell {
   justify-content: flex-end;
 }
 
+.notify-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notify-badge {
+  min-width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--red);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0 6px;
+  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.24);
+}
+
+.notify-badge[hidden] {
+  display: none;
+}
+
 body.super-admin-role .top-shell > div:first-child {
   display: none;
 }
@@ -913,6 +939,58 @@ h2 {
   box-shadow: -24px 0 60px rgba(15, 23, 42, 0.22);
 }
 
+.notification-shell {
+  place-items: stretch end;
+  padding: 0;
+  z-index: 10030;
+}
+
+.notification-panel {
+  position: relative;
+  z-index: 2;
+  width: min(520px, 100%);
+  height: 100vh;
+  overflow: auto;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: -24px 0 70px rgba(15, 23, 42, 0.2);
+}
+
+.notification-list {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 16px;
+}
+
+.notification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.notification-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--teal) 22%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 88%, var(--teal) 6%);
+  padding: 12px;
+}
+
+.notification-item.read {
+  opacity: 0.72;
+}
+
+.notification-item span {
+  display: grid;
+  gap: 3px;
+}
+
 .task-detail-body {
   display: grid;
   gap: 14px;
@@ -1282,6 +1360,22 @@ form {
 .register-grid textarea,
 .register-grid .register-list,
 .register-grid button {
+  grid-column: 1 / -1;
+}
+
+.import-mapping-grid,
+.backup-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.backup-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.backup-grid .resource-list,
+.import-mapping-grid + button {
   grid-column: 1 / -1;
 }
 
@@ -2852,6 +2946,8 @@ button:disabled {
   .form-grid,
   .calendar-grid,
   .calendar-controls,
+  .import-mapping-grid,
+  .backup-grid,
   .auth-panel,
   .task-detail-grid,
   .task-card,
@@ -2972,6 +3068,15 @@ body.dark-mode {
   background: linear-gradient(135deg, #14b8a6, #2563eb);
   color: #ffffff;
   box-shadow: 0 8px 18px rgba(20, 184, 166, 0.22);
+}
+
+.novo-brand strong {
+  color: #ffffff;
+}
+
+.novo-brand small,
+.sidebar-section-label {
+  color: #a9b7cc;
 }
 
 .sidebar-menu .view-tab {

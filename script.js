@@ -228,7 +228,7 @@ const translations = {
     taskListTitle: "Tasklar siyahısı",
     kanban: "Kanban",
     calendar: "Təqvim",
-    deadlineCalendar: "Deadline təqvimi",
+    deadlineCalendar: "Təqvim",
     rangeStart: "Başlama",
     rangeEnd: "Bitmə",
     selectedDay: "Seçilən gün",
@@ -342,10 +342,19 @@ const translations = {
     notify: "Bildirişlər",
     notificationsEnabled: "Bildirişlər aktivdir",
     notificationsBlocked: "Bildiriş icazəsi verilmədi.",
+    notificationCenter: "Bildiriş mərkəzi",
+    markAllRead: "Hamısını oxundu et",
+    enableBrowserNotifications: "Browser bildirişlərini aktiv et",
     exportData: "Backup",
     exportExcel: "Excel export",
     exportPdf: "PDF export",
     importData: "Import",
+    backupPanel: "Backup / Restore",
+    createBackup: "Backup yarat",
+    restoreBackup: "Backup bərpa et",
+    saveImportMapping: "Mapping saxla",
+    backupCreated: "Backup yaradıldı.",
+    dependencyRescheduled: "Asılı taskların tarixləri yeniləndi.",
     backupError: "Backup faylı oxunmadı.",
     risk: "Risk",
     projectRegisters: "Layihə registerləri",
@@ -594,7 +603,7 @@ const translations = {
     taskListTitle: "Список тасков",
     kanban: "Канбан",
     calendar: "Календарь",
-    deadlineCalendar: "Календарь дедлайнов",
+    deadlineCalendar: "Календарь",
     rangeStart: "Начало",
     rangeEnd: "Конец",
     selectedDay: "Выбранный день",
@@ -708,10 +717,19 @@ const translations = {
     notify: "Уведомления",
     notificationsEnabled: "Уведомления включены",
     notificationsBlocked: "Разрешение на уведомления не выдано.",
+    notificationCenter: "Центр уведомлений",
+    markAllRead: "Отметить все прочитанными",
+    enableBrowserNotifications: "Включить уведомления браузера",
     exportData: "Backup",
     exportExcel: "Excel export",
     exportPdf: "PDF export",
     importData: "Import",
+    backupPanel: "Backup / Restore",
+    createBackup: "Создать backup",
+    restoreBackup: "Восстановить backup",
+    saveImportMapping: "Сохранить mapping",
+    backupCreated: "Backup создан.",
+    dependencyRescheduled: "Даты зависимых задач обновлены.",
     backupError: "Backup файл не прочитан.",
     risk: "Риск",
     projectRegisters: "Реестры проекта",
@@ -957,7 +975,7 @@ const translations = {
     taskListTitle: "Task list",
     kanban: "Kanban",
     calendar: "Calendar",
-    deadlineCalendar: "Deadline calendar",
+    deadlineCalendar: "Calendar",
     rangeStart: "Start",
     rangeEnd: "End",
     selectedDay: "Selected day",
@@ -1071,10 +1089,19 @@ const translations = {
     notify: "Notifications",
     notificationsEnabled: "Notifications enabled",
     notificationsBlocked: "Notification permission was not granted.",
+    notificationCenter: "Notification center",
+    markAllRead: "Mark all read",
+    enableBrowserNotifications: "Enable browser notifications",
     exportData: "Backup",
     exportExcel: "Excel export",
     exportPdf: "PDF export",
     importData: "Import",
+    backupPanel: "Backup / Restore",
+    createBackup: "Create backup",
+    restoreBackup: "Restore backup",
+    saveImportMapping: "Save mapping",
+    backupCreated: "Backup created.",
+    dependencyRescheduled: "Dependent task dates were updated.",
     backupError: "Backup file could not be read.",
     risk: "Risk",
     projectRegisters: "Project registers",
@@ -1462,6 +1489,29 @@ const demoUsers = [
   { id: "user-nigar", username: "nigar", passwordHash: md5("user123"), role: "user", managerId: "user-manager-2", companyId: "company-digital", profile: { fullName: "Nigar Karimova", email: "nigar@example.com", fatherName: "", position: "QA engineer", phone: "", address: "", company: "Digital" } }
 ];
 
+const tenantSeedUsers = [
+  { id: "user-admin-digital", username: "admindigital", passwordHash: md5("admindigital123"), role: "admin", managerId: "", companyId: "company-digital", profile: { fullName: "Digital Admin", email: "admin@digital.local", fatherName: "", position: "Company Admin", phone: "", address: "", company: "Digital Solutions" } },
+  { id: "user-admin-logistics", username: "adminlogistika", passwordHash: md5("adminlogistika123"), role: "admin", managerId: "", companyId: "company-logistics", profile: { fullName: "Logistika Admin", email: "admin@logistika.local", fatherName: "", position: "Company Admin", phone: "", address: "", company: "Logistika Group" } },
+  { id: "user-manager-logistics", username: "managerlogistika", passwordHash: md5("managerlogistika123"), role: "manager", managerId: "", companyId: "company-logistics", profile: { fullName: "Logistika Manager", email: "manager@logistika.local", fatherName: "", position: "Project Manager", phone: "", address: "", company: "Logistika Group" } }
+];
+
+const tenantSeedCustomers = [
+  { id: "customer-digital-solutions", companyId: "company-digital", name: "Digital Solutions", contact: "Digital PMO", email: "pmo@digital.local" },
+  { id: "customer-logistics-group", companyId: "company-logistics", name: "Logistika Group", contact: "Operations Office", email: "ops@logistika.local" }
+];
+
+const tenantSeedProjects = [
+  { id: "project-digital-crm", companyId: "company-digital", name: "Digital CRM Rollout", customerId: "customer-digital-solutions", managerIds: ["user-manager-2"], teamMemberIds: ["user:user-rashad", "user:user-nigar"], start: "2026-06-01", end: "2026-08-15", status: "Davam edir", priority: "Yüksək", progress: 28 },
+  { id: "project-logistics-wms", companyId: "company-logistics", name: "Logistika WMS Modernizasiya", customerId: "customer-logistics-group", managerIds: ["user-manager-logistics"], teamMemberIds: [], start: "2026-06-10", end: "2026-09-30", status: "Plan", priority: "Normal", progress: 0 }
+];
+
+const tenantSeedTasks = [
+  { id: "task-digital-crm-01", project: "Digital CRM Rollout", name: "Tenant CRM scope", owner: "user:user-rashad", start: "2026-06-01", end: "2026-06-12", status: "Davam edir", priority: "Yüksək", progress: 35, notes: "Digital şirkəti üçün CRM modulları və rollar dəqiqləşdirilir." },
+  { id: "task-digital-crm-02", project: "Digital CRM Rollout", name: "Migration rehearsal", owner: "user:user-nigar", start: "2026-06-15", end: "2026-06-28", status: "Plan", priority: "Normal", progress: 0, dependencyIds: ["task-digital-crm-01"], notes: "Müştəri datalarının test mühitinə köçürülməsi." },
+  { id: "task-logistics-wms-01", project: "Logistika WMS Modernizasiya", name: "Anbar proses xəritəsi", owner: "user:user-manager-logistics", start: "2026-06-10", end: "2026-06-24", status: "Plan", priority: "Normal", progress: 0, notes: "Qəbul, yerləşdirmə, picking və dispatch prosesləri toplanır." },
+  { id: "task-logistics-wms-02", project: "Logistika WMS Modernizasiya", name: "Barcode pilot", owner: "user:user-manager-logistics", start: "2026-06-25", end: "2026-07-08", status: "Plan", priority: "Yüksək", progress: 0, dependencyIds: ["task-logistics-wms-01"], notes: "Pilot anbar üçün barcode avadanlıq və test ssenariləri." }
+];
+
 let statuses = [...defaultWorkflowStatuses];
 
 const form = document.querySelector("#taskForm");
@@ -1614,6 +1664,7 @@ const registerPasswordInput = document.querySelector("#registerPassword");
 const registerError = document.querySelector("#registerError");
 const logoutButton = document.querySelector("#logoutButton");
 const notifyButton = document.querySelector("#notifyButton");
+const notifyUnreadCount = document.querySelector("#notifyUnreadCount");
 const openTaskComposerButton = document.querySelector("#openTaskComposer");
 const closeTaskComposerButton = document.querySelector("#closeTaskComposer");
 const taskComposerModal = document.querySelector("#taskComposerModal");
@@ -1624,6 +1675,9 @@ const taskDetailModal = document.querySelector("#taskDetailModal");
 const taskDetailTitle = document.querySelector("#taskDetailTitle");
 const taskDetailBody = document.querySelector("#taskDetailBody");
 const closeTaskDetailButton = document.querySelector("#closeTaskDetail");
+const notificationModal = document.querySelector("#notificationModal");
+const notificationList = document.querySelector("#notificationList");
+const closeNotificationPanelButton = document.querySelector("#closeNotificationPanel");
 const openAdminPanelButton = document.querySelector("#openAdminPanel");
 const closeAdminPanelButton = document.querySelector("#closeAdminPanel");
 const adminModal = document.querySelector("#adminModal");
@@ -1642,6 +1696,16 @@ const exportDataButton = document.querySelector("#exportData");
 const exportExcelButton = document.querySelector("#exportExcel");
 const exportPdfButton = document.querySelector("#exportPdf");
 const importDataInput = document.querySelector("#importData");
+const saveImportMappingButton = document.querySelector("#saveImportMapping");
+const importProjectColumnInput = document.querySelector("#importProjectColumn");
+const importTaskColumnInput = document.querySelector("#importTaskColumn");
+const importOwnerColumnInput = document.querySelector("#importOwnerColumn");
+const importDependencyColumnInput = document.querySelector("#importDependencyColumn");
+const createManualBackupButton = document.querySelector("#createManualBackup");
+const restoreBackupInput = document.querySelector("#restoreBackupInput");
+const backupList = document.querySelector("#backupList");
+const backupCount = document.querySelector("#backupCount");
+const backupSummary = document.querySelector("#backupSummary");
 const currentUserBadge = document.querySelector("#currentUserBadge");
 const newUsernameInput = document.querySelector("#newUsername");
 const newUserPasswordInput = document.querySelector("#newUserPassword");
@@ -1740,6 +1804,7 @@ let ganttManuallyCollapsed = false;
 let activeAdminSection = null;
 let activeAdminSectionPlaceholder = null;
 enforceClinicOnlyState();
+if (currentUser) ensureTenantSeedData();
 saveUsers();
 
 function text(key) {
@@ -2141,6 +2206,45 @@ function ensureDemoData() {
   if (changedUsers) saveUsers();
 }
 
+function ensureTenantSeedData() {
+  let changedTasks = false;
+  let changedResources = false;
+  let changedUsers = false;
+
+  tenantSeedUsers.forEach((user) => {
+    if (!users.some((item) => item.id === user.id || item.username === user.username)) {
+      users.push(normalizeUser({ ...user }));
+      changedUsers = true;
+    }
+  });
+
+  tenantSeedCustomers.forEach((customer) => {
+    if (!customers.some((item) => item.id === customer.id || item.name === customer.name)) {
+      customers.push(normalizeCustomer({ ...customer }));
+      changedResources = true;
+    }
+  });
+
+  tenantSeedProjects.forEach((project) => {
+    if (!projects.some((item) => item.id === project.id || item.name === project.name)) {
+      projects.push(normalizeProject({ ...project }));
+      changedResources = true;
+    }
+  });
+
+  tenantSeedTasks.forEach((task) => {
+    if (!tasks.some((item) => item.id === task.id || (item.project === task.project && item.name === task.name))) {
+      tasks.push(normalizeTask({ ...task }));
+      changedTasks = true;
+    }
+  });
+
+  if (changedTasks) saveTasks();
+  if (changedResources) saveResources();
+  if (changedUsers) saveUsers();
+  return changedTasks || changedResources || changedUsers;
+}
+
 function loadJson(key, fallback) {
   const stored = localStorage.getItem(key);
   if (!stored) return fallback();
@@ -2181,7 +2285,7 @@ function loadUsers() {
   const stored = loadJson(usersKey, () => demoUsers.map((user) => ({ ...user })));
   const merged = [
     ...stored,
-    ...demoUsers.filter((demoUser) => !stored.some((user) => user.username === demoUser.username))
+    ...[...demoUsers, ...tenantSeedUsers].filter((demoUser) => !stored.some((user) => user.username === demoUser.username))
   ];
   return merged.map(normalizeUser);
 }
@@ -2303,6 +2407,7 @@ function saveLocalAuditLogs() {
 
 function saveNotifications() {
   localStorage.setItem(notificationsKey, JSON.stringify(notifications.slice(0, 200)));
+  renderNotificationBadge();
 }
 
 function currentCompanyId() {
@@ -2381,6 +2486,23 @@ function addNotification(message, targetUserId = "", meta = {}) {
   saveNotifications();
 }
 
+function visibleNotifications() {
+  const companyId = currentCompanyId();
+  return notifications.filter((item) => {
+    const sameCompany = !item.companyId || item.companyId === companyId;
+    const sameTarget = !item.targetUserId || item.targetUserId === currentUser?.id;
+    return sameCompany && sameTarget;
+  });
+}
+
+function renderNotificationBadge() {
+  if (!notifyUnreadCount) return;
+  const unreadCount = visibleNotifications().filter((item) => !item.read).length;
+  notifyUnreadCount.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
+  notifyUnreadCount.hidden = unreadCount === 0;
+  notifyButton?.setAttribute("aria-label", unreadCount ? `${text("notify")}: ${unreadCount}` : text("notify"));
+}
+
 function defaultSettings() {
   return {
     themeMode: "light",
@@ -2396,6 +2518,8 @@ function defaultSettings() {
     testMailBody: "Project Manager mail ayarları test edildi.",
     dashboardPanelSizes: {},
     dashboardPanelOrder: [],
+    importColumnMap: {},
+    backups: [],
     ldapEnabled: false,
     ldapUrl: "",
     ldapBaseDn: "",
@@ -2934,7 +3058,7 @@ function canSeeTask(task) {
   if (!currentUser) return true;
   if (isSuperAdmin()) return false;
   const project = projects.find((item) => item.name === task.project);
-  if (project?.companyId && project.companyId !== currentCompanyId() && !isAdmin()) return false;
+  if (project?.companyId && project.companyId !== currentCompanyId()) return false;
   if (isAdmin() && (!project || isSameCompany(project))) return true;
   return projectHasRoleAccess(project)
     || taskHasDirectAccess(task)
@@ -3073,6 +3197,25 @@ function dependencyBlockedMessage(task) {
   return names.length
     ? `${text("dependencyStartBlocked")} ${text("blockedBy")}: ${names.join(", ")}`
     : text("dependencyStartBlocked");
+}
+
+function rescheduleDependentTasks(sourceTask) {
+  if (!sourceTask?.end) return 0;
+  let changed = 0;
+  tasks = tasks.map((task) => {
+    if (task.id === sourceTask.id || !(task.dependencyIds || []).includes(sourceTask.id) || !task.start || !task.end) return task;
+    if (parseDate(task.start) > parseDate(sourceTask.end)) return task;
+    const duration = Math.max(0, daysBetween(task.start, task.end));
+    const nextStart = isoDate(addDays(parseDate(sourceTask.end), 1));
+    const nextEnd = isoDate(addDays(parseDate(nextStart), duration));
+    changed += 1;
+    return { ...task, start: nextStart, end: nextEnd };
+  });
+  if (changed) {
+    addNotification(`${text("dependencyRescheduled")}: ${sourceTask.name}`, "", { type: "dependency", taskId: sourceTask.id });
+    recordAudit("dependency.rescheduled", "task", sourceTask.id, `${changed} dependent task`);
+  }
+  return changed;
 }
 
 function linkedResourcesForProject(project) {
@@ -3987,6 +4130,50 @@ function renderActivityLists() {
   }
 }
 
+function renderNotificationCenter() {
+  if (!notificationList) return;
+  const rows = visibleNotifications().slice(0, 80);
+  notificationList.innerHTML = rows.length ? `
+    <div class="notification-actions">
+      <button type="button" data-notification-action="mark-read">${text("markAllRead")}</button>
+      <button type="button" data-notification-action="enable">${text("enableBrowserNotifications")}</button>
+    </div>
+    ${rows.map((item) => `
+      <div class="notification-item ${item.read ? "read" : ""}">
+        <span>
+          <strong>${escapeHtml(item.message || item.subject || "-")}</strong>
+          <small>${escapeHtml([item.type, item.status].filter(Boolean).join(" · "))}</small>
+        </span>
+        <small>${escapeHtml(formatDateTime(item.createdAt || item.created_at) || "-")}</small>
+      </div>
+    `).join("")}
+  ` : `<div class="empty">${text("empty")}</div>`;
+}
+
+function renderBackupPanel() {
+  const backups = Array.isArray(appSettings.backups) ? appSettings.backups : [];
+  if (backupCount) backupCount.textContent = backups.length;
+  if (backupSummary) backupSummary.textContent = backups[0]?.createdAt ? formatDateTime(backups[0].createdAt) : "-";
+  if (!backupList) return;
+  backupList.innerHTML = backups.length ? backups.slice(0, 10).map((backup) => `
+    <div class="resource-item">
+      <span>
+        <strong>${escapeHtml(formatDateTime(backup.createdAt) || "-")}</strong>
+        ${backup.taskCount || 0} task · ${backup.projectCount || 0} project
+      </span>
+      <button type="button" data-backup-download="${escapeHtml(backup.id)}">${text("download")}</button>
+    </div>
+  `).join("") : `<div class="empty">${text("empty")}</div>`;
+}
+
+function renderImportMappingControls() {
+  const map = appSettings.importColumnMap || {};
+  if (importProjectColumnInput) importProjectColumnInput.value = map.project || "";
+  if (importTaskColumnInput) importTaskColumnInput.value = map.task || "";
+  if (importOwnerColumnInput) importOwnerColumnInput.value = map.owner || "";
+  if (importDependencyColumnInput) importDependencyColumnInput.value = map.dependencies || "";
+}
+
 function isoDateFromParts(year, month, day) {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
@@ -4835,6 +5022,10 @@ function render() {
   applyDashboardPanelSizes();
   applyDashboardPanelOrder();
   syncAuthView();
+  renderNotificationCenter();
+  renderNotificationBadge();
+  renderBackupPanel();
+  renderImportMappingControls();
   if (isSuperAdmin()) {
     renderPlatformConsole();
     renderActivityLists();
@@ -5023,20 +5214,26 @@ function editTask(id, options = {}) {
 }
 
 function backupPayload() {
+  const companyId = currentCompanyId();
+  const scopedProjects = isSuperAdmin() ? [] : projects.filter((project) => !project.companyId || project.companyId === companyId);
+  const projectNames = new Set(scopedProjects.map((project) => project.name));
+  const scopedUsers = isSuperAdmin()
+    ? users.filter((user) => user.role === "super_admin" && user.id === currentUser?.id)
+    : users.filter((user) => user.role !== "super_admin" && (!user.companyId || user.companyId === companyId));
   return {
     version: backupVersion,
     exportedAt: new Date().toISOString(),
-    tasks,
-    projects,
-    members,
-    teams,
-    customers,
-    managedFiles,
-    projectLinks,
-    registers,
-    users,
-    trash,
-    companyRegistry: companyRegistryFromLocalState()
+    tasks: tasks.filter((task) => projectNames.has(task.project)),
+    projects: scopedProjects,
+    members: isSuperAdmin() ? [] : members.filter((member) => !member.companyId || member.companyId === companyId),
+    teams: isSuperAdmin() ? [] : teams.filter((team) => !team.companyId || team.companyId === companyId),
+    customers: isSuperAdmin() ? [] : customers.filter((customer) => !customer.companyId || customer.companyId === companyId),
+    managedFiles: isSuperAdmin() ? [] : managedFiles.filter((file) => !file.companyId || file.companyId === companyId),
+    projectLinks: isSuperAdmin() ? [] : projectLinks.filter((link) => projectNames.has(link.project)),
+    registers: isSuperAdmin() ? [] : registers.filter((item) => projectNames.has(item.project)),
+    users: scopedUsers,
+    trash: isSuperAdmin() ? [] : trash.filter((item) => !item.companyId || item.companyId === companyId),
+    companyRegistry: isSuperAdmin() ? companyRegistryFromLocalState() : companyRegistryFromLocalState().filter((company) => company.id === companyId)
   };
 }
 
@@ -5090,8 +5287,9 @@ async function syncBackendState() {
     if (response.ok) {
       importBackup(await response.json());
       const changed = enforceClinicOnlyState();
+      const seeded = ensureTenantSeedData();
       backendSyncReady = true;
-      if (changed) await saveBackendState();
+      if (changed || seeded) await saveBackendState();
       render();
       return;
     } else if (response.status === 404) {
@@ -5329,6 +5527,7 @@ async function downloadBackendFile(path, fallbackFilename) {
 
 function importBackup(payload) {
   if (!payload || !Array.isArray(payload.tasks)) throw new Error(text("backupError"));
+  const companyId = currentCompanyId();
   tasks = payload.tasks.map(normalizeTask);
   projects = Array.isArray(payload.projects) ? payload.projects.map(normalizeProject) : projects;
   members = Array.isArray(payload.members) ? payload.members : members;
@@ -5340,6 +5539,20 @@ function importBackup(payload) {
   users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
   trash = Array.isArray(payload.trash) ? payload.trash : trash;
   companyRegistry = Array.isArray(payload.companyRegistry) ? payload.companyRegistry : companyRegistry;
+  if (currentUser && !isSuperAdmin()) {
+    projects = projects.map((project) => ({ ...project, companyId })).filter((project) => project.companyId === companyId);
+    const projectNames = new Set(projects.map((project) => project.name));
+    tasks = tasks.filter((task) => projectNames.has(task.project));
+    members = members.map((member) => ({ ...member, companyId })).filter((member) => member.companyId === companyId);
+    teams = teams.map((team) => ({ ...team, companyId })).filter((team) => team.companyId === companyId);
+    customers = customers.map((customer) => normalizeCustomer({ ...customer, companyId })).filter((customer) => customer.companyId === companyId);
+    managedFiles = managedFiles.map((file) => ({ ...file, companyId })).filter((file) => file.companyId === companyId);
+    projectLinks = projectLinks.filter((link) => projectNames.has(link.project));
+    registers = registers.filter((item) => projectNames.has(item.project));
+    users = users.filter((user) => user.role !== "super_admin").map((user) => ({ ...user, companyId })).filter((user) => user.companyId === companyId);
+    trash = trash.map((item) => ({ ...item, companyId })).filter((item) => item.companyId === companyId);
+    companyRegistry = companyRegistryFromLocalState().filter((company) => company.id === companyId);
+  }
   saveTasks();
   saveResources();
   saveRegisters();
@@ -5393,11 +5606,12 @@ function importTabularProject(textBody) {
   const rows = parseDelimitedRows(textBody);
   if (rows.length < 2) throw new Error(text("backupError"));
   const headers = rows[0];
+  const columnMap = appSettings.importColumnMap || {};
   const createdProjects = new Map(projects.map((project) => [project.name.toLowerCase(), project]));
   const createdTasks = [];
   rows.slice(1).forEach((row, index) => {
-    const projectName = valueFromRow(row, headers, ["Project", "Project Name", "Layihə"]) || "Imported Project";
-    const taskName = valueFromRow(row, headers, ["Task", "Task Name", "Name", "Task adı"]);
+    const projectName = valueFromRow(row, headers, [columnMap.project, "Project", "Project Name", "Layihə"].filter(Boolean)) || "Imported Project";
+    const taskName = valueFromRow(row, headers, [columnMap.task, "Task", "Task Name", "Name", "Task adı"].filter(Boolean));
     if (!taskName) return;
     if (!createdProjects.has(projectName.toLowerCase())) {
       const project = normalizeProject({
@@ -5417,14 +5631,14 @@ function importTabularProject(textBody) {
       id: createId("task"),
       name: taskName,
       project: projectName,
-      owner: valueFromRow(row, headers, ["Owner", "Resource", "Məsul şəxs"]),
+      owner: valueFromRow(row, headers, [columnMap.owner, "Owner", "Resource", "Məsul şəxs"].filter(Boolean)),
       start: valueFromRow(row, headers, ["Start", "Start Date", "Başlama"]),
       end: valueFromRow(row, headers, ["End", "Finish", "End Date", "Bitmə"]),
       status: valueFromRow(row, headers, "Status") || "Plan",
       priority: valueFromRow(row, headers, "Priority") || "Normal",
       progress: valueFromRow(row, headers, "Progress") || 0,
       notes: valueFromRow(row, headers, ["Notes", "Qeyd"]),
-      importDependencyNames: valueFromRow(row, headers, ["Dependencies", "Depends On", "Predecessors"])
+      importDependencyNames: valueFromRow(row, headers, [columnMap.dependencies, "Dependencies", "Depends On", "Predecessors"].filter(Boolean))
     });
     tasks.push(task);
     createdTasks.push(task);
@@ -5524,6 +5738,9 @@ function importProjectFile(filename, body) {
 function sendDeadlineNotifications() {
   const alerts = riskyTasks();
   if (!alerts.length) return;
+  alerts.slice(0, 5).forEach(({ task, alert }) => {
+    addNotification(`${alert.label}: ${task.name}`, "", { type: "deadline", taskId: task.id, status: alert.type });
+  });
   if ("Notification" in window && Notification.permission === "granted") {
     alerts.slice(0, 3).forEach(({ task, alert }) => {
       new Notification(`${alert.label}: ${task.name}`, {
@@ -5645,6 +5862,18 @@ async function enableNotifications() {
   sendDeadlineNotifications();
 }
 
+function openNotificationPanel() {
+  renderNotificationCenter();
+  raiseModal(notificationModal);
+  notificationModal?.classList.add("open");
+  notificationModal?.setAttribute("aria-hidden", "false");
+}
+
+function closeNotificationPanel() {
+  notificationModal?.classList.remove("open");
+  notificationModal?.setAttribute("aria-hidden", "true");
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!canManageTasks()) return;
@@ -5696,6 +5925,7 @@ form.addEventListener("submit", async (event) => {
     saveResources();
   }
 
+  rescheduleDependentTasks(task);
   saveTasks();
   resetForm();
   closeTaskComposer();
@@ -6027,6 +6257,7 @@ loginForm.addEventListener("submit", async (event) => {
   currentUser = user;
   localStorage.setItem(sessionKey, user.id);
   appSettings = loadSettings();
+  ensureTenantSeedData();
   loginError.textContent = "";
   loginPassword.value = "";
   render();
@@ -6079,6 +6310,7 @@ registerForm?.addEventListener("submit", (event) => {
   currentUser = user;
   localStorage.setItem(sessionKey, user.id);
   appSettings = loadSettings();
+  ensureTenantSeedData();
   registerError.textContent = "";
   if (registerSubdomainInput) registerSubdomainInput.value = "";
   registerPasswordInput.value = "";
@@ -6113,7 +6345,20 @@ logoutButton.addEventListener("click", () => {
   render();
 });
 
-notifyButton.addEventListener("click", enableNotifications);
+notifyButton.addEventListener("click", openNotificationPanel);
+closeNotificationPanelButton?.addEventListener("click", closeNotificationPanel);
+notificationModal?.addEventListener("click", (event) => {
+  if (event.target.closest("[data-notification-close]")) closeNotificationPanel();
+  const button = event.target.closest("[data-notification-action]");
+  if (button?.dataset.notificationAction === "mark-read") {
+    const visibleIds = new Set(visibleNotifications().map((item) => item.id));
+    notifications = notifications.map((item) => visibleIds.has(item.id) ? { ...item, read: true } : item);
+    saveNotifications();
+    renderNotificationCenter();
+  } else if (button?.dataset.notificationAction === "enable") {
+    enableNotifications();
+  }
+});
 openTaskComposerButton.addEventListener("click", () => {
   const selectedProject = projectFilter.value === "Hamısı" ? "" : projectFilter.value;
   openTaskComposerForProject(selectedProject);
@@ -6188,6 +6433,64 @@ importDataInput.addEventListener("change", () => {
   });
   reader.addEventListener("error", () => alert(text("backupError")));
   reader.readAsText(importDataInput.files[0]);
+});
+
+saveImportMappingButton?.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  appSettings = {
+    ...appSettings,
+    importColumnMap: {
+      project: importProjectColumnInput?.value.trim() || "",
+      task: importTaskColumnInput?.value.trim() || "",
+      owner: importOwnerColumnInput?.value.trim() || "",
+      dependencies: importDependencyColumnInput?.value.trim() || ""
+    }
+  };
+  saveAppSettings();
+  renderImportMappingControls();
+});
+
+createManualBackupButton?.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  const payload = backupPayload();
+  const backup = {
+    id: createId("backup"),
+    createdAt: new Date().toISOString(),
+    taskCount: tasks.length,
+    projectCount: projects.length,
+    payload
+  };
+  appSettings = {
+    ...appSettings,
+    backups: [backup, ...(appSettings.backups || [])].slice(0, 10)
+  };
+  saveAppSettings();
+  addNotification(text("backupCreated"), "", { type: "backup", status: "ok" });
+  renderBackupPanel();
+});
+
+backupList?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-backup-download]");
+  if (!button || !isAdmin()) return;
+  const backup = (appSettings.backups || []).find((item) => item.id === button.dataset.backupDownload);
+  if (!backup) return;
+  downloadJson(`project-manager-backup-${isoDate(new Date(backup.createdAt))}.json`, backup.payload);
+});
+
+restoreBackupInput?.addEventListener("change", () => {
+  if (!isAdmin() || !restoreBackupInput.files?.length) return;
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    try {
+      importBackup(JSON.parse(String(reader.result || "{}")));
+      restoreBackupInput.value = "";
+      alert(text("importDone"));
+    } catch (error) {
+      alert(error.message || text("backupError"));
+    }
+  });
+  reader.addEventListener("error", () => alert(text("backupError")));
+  reader.readAsText(restoreBackupInput.files[0]);
 });
 
 [themeModeInput, backgroundStyleInput, accentColorInput].forEach((input) => {

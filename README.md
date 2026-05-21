@@ -16,6 +16,18 @@ The frontend still keeps a localStorage fallback, but when it is opened through 
 npm test
 ```
 
+Backend smoke test, when the app is already running:
+
+```bash
+npm run test:backend
+```
+
+By default it checks `http://localhost`. To point it at another local port:
+
+```bash
+APP_URL=http://localhost:3015 npm run test:backend
+```
+
 ## Backend
 
 ```bash
@@ -62,6 +74,8 @@ The backend is compatible with Node.js `14.21.3+` and does not require Docker. F
 
 Create the MariaDB/MySQL database and user in cPanel first, then put those values into the Node.js app environment. Run `npm install --omit=dev` from the app terminal or cPanel Node.js screen, then start/restart the application.
 
+If the host requires a manual database import, load `db/schema.sql` into the MariaDB/MySQL database before starting the app. The server also runs schema checks on startup, but the SQL file is useful for cPanel/phpMyAdmin setups and deployment reviews.
+
 ## Operations
 
 Install on a fresh Alma/RHEL-style server:
@@ -78,6 +92,13 @@ scripts/restore-db.sh backups/project-manager-YYYYMMDD-HHMMSS.sql
 ```
 
 The backend keeps the compatibility `app_state` JSON document and also syncs normalized MariaDB tables for users, projects, tasks, teams, comments, attachments, notifications, and audit logs.
+
+Admin panel backup/restore:
+
+- Use **Manual backup** to keep the last 10 JSON snapshots inside app settings.
+- Use **Download** on a backup row to export a snapshot.
+- Use **Restore JSON** to import a previously exported app snapshot.
+- Use the Excel import mapping fields when clinic spreadsheets use custom column names for project, task, owner, or dependencies.
 
 ## GitHub Pages
 

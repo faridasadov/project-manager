@@ -76,11 +76,12 @@ const ids = [
   "ganttControls", "ganttFit", "ganttZoomOut", "ganttZoomLabel", "ganttZoomIn",
   "kanban", "dashboardCalendar", "calendarBoard", "calendarDetails", "dashboardCalendarStart",
   "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusFilters", "smartFilters", "statusBars", "upcomingList",
-  "deadlineAlerts", "workloadList", "portfolioHealth", "nextActions", "projectCards", "archivedProjectCards", "notifyButton", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
+  "deadlineAlerts", "workloadList", "portfolioHealth", "nextActions", "projectCards", "archivedProjectCards", "notifyButton", "notifyUnreadCount", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
   "openAdminPanel", "closeAdminPanel", "adminModal", "managerAssignModal", "closeManagerAssign",
   "adminSectionModal", "adminSectionTitle", "adminSectionBody", "closeAdminSection",
   "cancelManagerAssign", "saveProjectManagers", "managerAssignTitle", "managerAssignList", "selectedManagersPreview",
-  "exportData", "exportExcel", "exportPdf", "importData",
+  "exportData", "exportExcel", "exportPdf", "importData", "saveImportMapping", "importProjectColumn", "importTaskColumn", "importOwnerColumn", "importDependencyColumn",
+  "createManualBackup", "restoreBackupInput", "backupList", "backupCount", "backupSummary",
   "totalCount", "activeCount", "doneCount", "dateRange", "hoursSummary", "resetDemo", "clearDone",
   "blockedCount", "riskCount", "loadClinicPortfolio", "priorityFilters",
   "languageSelect", "loginLanguageSelect", "teamName", "teamMembers",
@@ -103,7 +104,8 @@ const ids = [
   "registerForm", "registerCompany", "registerSubdomain", "registerFullName", "registerUsername", "registerEmail", "registerPassword", "registerError",
   "logoutButton", "currentUserBadge", "newUsername", "newUserPassword",
   "newUserRole", "addUser", "userList", "userCount", "trashList", "trashCount",
-  "dateRequestList", "dateRequestCount", "taskDetailModal", "taskDetailTitle", "taskDetailBody", "closeTaskDetail"
+  "dateRequestList", "dateRequestCount", "taskDetailModal", "taskDetailTitle", "taskDetailBody", "closeTaskDetail",
+  "notificationModal", "notificationTitle", "notificationList", "closeNotificationPanel"
 ];
 
 ids.forEach((id) => element(`#${id}`));

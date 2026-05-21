@@ -105,7 +105,10 @@
           <option value="en">EN</option>
         </select>
         <button id="logoutButton" type="button" data-i18n="logout">Çıxış</button>
-        <button id="notifyButton" type="button" data-i18n="notify">Bildirişlər</button>
+        <button id="notifyButton" class="notify-button" type="button">
+          <span data-i18n="notify">Bildirişlər</span>
+          <span id="notifyUnreadCount" class="notify-badge" hidden>0</span>
+        </button>
         <button id="openAdminPanel" type="button" data-i18n="adminPanel">Admin panel</button>
       </div>
     </header>
@@ -426,6 +429,20 @@
         </aside>
       </div>
 
+      <div id="notificationModal" class="modal-shell notification-shell" aria-hidden="true">
+        <div class="modal-backdrop" data-notification-close="true"></div>
+        <aside class="notification-panel" role="dialog" aria-modal="true" aria-labelledby="notificationTitle">
+          <div class="modal-head">
+            <div>
+              <p class="kicker" data-i18n="notify">Bildirişlər</p>
+              <h2 id="notificationTitle" data-i18n="notificationCenter">Notification center</h2>
+            </div>
+            <button id="closeNotificationPanel" class="icon-button" type="button" aria-label="Bağla" data-i18n-aria="close">×</button>
+          </div>
+          <div id="notificationList" class="notification-list"></div>
+        </aside>
+      </div>
+
       <div id="adminModal" class="modal-shell" aria-hidden="true">
         <div class="modal-backdrop" data-modal-close="true"></div>
         <section class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="adminPanelTitle">
@@ -458,6 +475,10 @@
             <button type="button" data-admin-open-section="activity" class="admin-only">
               <strong data-i18n="adminActivity">Admin aktivliyi</strong>
               <span data-i18n="auditLogs">Audit logs</span>
+            </button>
+            <button type="button" data-admin-open-section="backup" class="admin-only">
+              <strong data-i18n="backupPanel">Backup / Restore</strong>
+              <span id="backupSummary">-</span>
             </button>
             <button type="button" data-admin-open-section="companies" class="platform-only">
               <strong data-i18n="platformCompanies">Şirkətlər</strong>
@@ -646,6 +667,28 @@
             </summary>
             <div class="resource-body">
               <p class="field-hint" data-i18n="projectImportHint">Import düyməsi JSON backup, Excel CSV və MS Project XML fayllarını qəbul edir. CSV başlıqları: Project, Task, Start, End, Status, Priority, Progress, Owner, Dependencies, Milestone.</p>
+              <div class="import-mapping-grid">
+                <label><span>Project column</span><input id="importProjectColumn" type="text" placeholder="Project"></label>
+                <label><span>Task column</span><input id="importTaskColumn" type="text" placeholder="Task"></label>
+                <label><span>Owner column</span><input id="importOwnerColumn" type="text" placeholder="Owner"></label>
+                <label><span>Dependency column</span><input id="importDependencyColumn" type="text" placeholder="Dependencies"></label>
+              </div>
+              <button id="saveImportMapping" type="button" data-i18n="saveImportMapping">Mapping saxla</button>
+            </div>
+          </details>
+
+          <details class="resource-block admin-wide admin-only" data-admin-section="backup" data-admin-title="Backup / Restore">
+            <summary>
+              <span data-i18n="backupPanel">Backup / Restore</span>
+              <small id="backupCount">0</small>
+            </summary>
+            <div class="resource-body backup-grid">
+              <button id="createManualBackup" class="primary" type="button" data-i18n="createBackup">Backup yarat</button>
+              <label class="import-button">
+                <span data-i18n="restoreBackup">Restore backup</span>
+                <input id="restoreBackupInput" type="file" accept="application/json,.json">
+              </label>
+              <div id="backupList" class="resource-list"></div>
             </div>
           </details>
 
@@ -1113,7 +1156,7 @@
               <div class="section-head">
                 <div>
                   <p class="kicker" data-i18n="calendar">Təqvim</p>
-                  <h2 data-i18n="deadlineCalendar">Deadline təqvimi</h2>
+                  <h2 data-i18n="deadlineCalendar">Təqvim</h2>
                 </div>
               </div>
               <div class="calendar-controls">
@@ -1184,7 +1227,7 @@
             <div class="section-head">
               <div>
                 <p class="kicker" data-i18n="calendar">Təqvim</p>
-                <h2 data-i18n="deadlineCalendar">Deadline təqvimi</h2>
+                <h2 data-i18n="deadlineCalendar">Təqvim</h2>
               </div>
             </div>
             <div class="calendar-controls">

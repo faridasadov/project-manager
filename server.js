@@ -32,6 +32,28 @@ const bootstrapUsers = [
   { id: "user-manager", username: "manager", passwordHash: md5("manager123"), role: "manager", managerId: "", companyId: "company-default", profile: { fullName: "Project Manager", email: "", fatherName: "", position: "Manager", phone: "", address: "", company: "Klinika" } },
   { id: "user-demo", username: "user", passwordHash: md5("user123"), role: "user", managerId: "user-manager", companyId: "company-default", profile: { fullName: "Demo User", email: "", fatherName: "", position: "User", phone: "", address: "", company: "Klinika" } }
 ];
+const tenantSeedState = {
+  users: [
+    { id: "user-admin-digital", username: "admindigital", passwordHash: md5("admindigital123"), role: "admin", managerId: "", companyId: "company-digital", profile: { fullName: "Digital Admin", email: "admin@digital.local", fatherName: "", position: "Company Admin", phone: "", address: "", company: "Digital Solutions" } },
+    { id: "user-manager-2", username: "manager2", passwordHash: md5("manager123"), role: "manager", managerId: "", companyId: "company-digital", profile: { fullName: "Aysel Manager", email: "aysel.manager@example.com", fatherName: "", position: "Delivery Manager", phone: "", address: "", company: "Digital Solutions" } },
+    { id: "user-admin-logistics", username: "adminlogistika", passwordHash: md5("adminlogistika123"), role: "admin", managerId: "", companyId: "company-logistics", profile: { fullName: "Logistika Admin", email: "admin@logistika.local", fatherName: "", position: "Company Admin", phone: "", address: "", company: "Logistika Group" } },
+    { id: "user-manager-logistics", username: "managerlogistika", passwordHash: md5("managerlogistika123"), role: "manager", managerId: "", companyId: "company-logistics", profile: { fullName: "Logistika Manager", email: "manager@logistika.local", fatherName: "", position: "Project Manager", phone: "", address: "", company: "Logistika Group" } }
+  ],
+  customers: [
+    { id: "customer-digital-solutions", companyId: "company-digital", name: "Digital Solutions", contact: "Digital PMO", email: "pmo@digital.local" },
+    { id: "customer-logistics-group", companyId: "company-logistics", name: "Logistika Group", contact: "Operations Office", email: "ops@logistika.local" }
+  ],
+  projects: [
+    { id: "project-digital-crm", companyId: "company-digital", name: "Digital CRM Rollout", customerId: "customer-digital-solutions", managerIds: ["user-manager-2"], teamMemberIds: [], start: "2026-06-01", end: "2026-08-15", status: "Davam edir", priority: "Yüksək", progress: 28 },
+    { id: "project-logistics-wms", companyId: "company-logistics", name: "Logistika WMS Modernizasiya", customerId: "customer-logistics-group", managerIds: ["user-manager-logistics"], teamMemberIds: [], start: "2026-06-10", end: "2026-09-30", status: "Plan", priority: "Normal", progress: 0 }
+  ],
+  tasks: [
+    { id: "task-digital-crm-01", project: "Digital CRM Rollout", name: "Tenant CRM scope", owner: "user:user-manager-2", start: "2026-06-01", end: "2026-06-12", status: "Davam edir", priority: "Yüksək", progress: 35, notes: "Digital şirkəti üçün CRM modulları və rollar dəqiqləşdirilir." },
+    { id: "task-digital-crm-02", project: "Digital CRM Rollout", name: "Migration rehearsal", owner: "user:user-manager-2", start: "2026-06-15", end: "2026-06-28", status: "Plan", priority: "Normal", progress: 0, dependencyIds: ["task-digital-crm-01"], notes: "Müştəri datalarının test mühitinə köçürülməsi." },
+    { id: "task-logistics-wms-01", project: "Logistika WMS Modernizasiya", name: "Anbar proses xəritəsi", owner: "user:user-manager-logistics", start: "2026-06-10", end: "2026-06-24", status: "Plan", priority: "Normal", progress: 0, notes: "Qəbul, yerləşdirmə, picking və dispatch prosesləri toplanır." },
+    { id: "task-logistics-wms-02", project: "Logistika WMS Modernizasiya", name: "Barcode pilot", owner: "user:user-manager-logistics", start: "2026-06-25", end: "2026-07-08", status: "Plan", priority: "Yüksək", progress: 0, dependencyIds: ["task-logistics-wms-01"], notes: "Pilot anbar üçün barcode avadanlıq və test ssenariləri." }
+  ]
+};
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -774,6 +796,9 @@ function normalizeProjectPayload(payload = {}) {
 function ensureStateShape(state) {
   const shaped = { ...blankState(), ...(state || {}) };
   const users = Array.isArray(shaped.users) ? shaped.users : [];
+  shaped.customers = Array.isArray(shaped.customers) ? shaped.customers : [];
+  shaped.projects = Array.isArray(shaped.projects) ? shaped.projects : [];
+  shaped.tasks = Array.isArray(shaped.tasks) ? shaped.tasks : [];
   shaped.users = [
     ...users.map((user) => {
       if (user.id === "user-admin" && user.username === "admin") {
@@ -791,6 +816,26 @@ function ensureStateShape(state) {
   bootstrapUsers.forEach((bootstrapUser) => {
     if (!shaped.users.some((user) => user.id === bootstrapUser.id || user.username === bootstrapUser.username)) {
       shaped.users.push({ ...bootstrapUser });
+    }
+  });
+  tenantSeedState.users.forEach((seedUser) => {
+    if (!shaped.users.some((user) => user.id === seedUser.id || user.username === seedUser.username)) {
+      shaped.users.push({ ...seedUser });
+    }
+  });
+  tenantSeedState.customers.forEach((seedCustomer) => {
+    if (!shaped.customers.some((customer) => customer.id === seedCustomer.id || customer.name === seedCustomer.name)) {
+      shaped.customers.push({ ...seedCustomer });
+    }
+  });
+  tenantSeedState.projects.forEach((seedProject) => {
+    if (!shaped.projects.some((project) => project.id === seedProject.id || project.name === seedProject.name)) {
+      shaped.projects.push({ ...seedProject });
+    }
+  });
+  tenantSeedState.tasks.forEach((seedTask) => {
+    if (!shaped.tasks.some((task) => task.id === seedTask.id || (task.project === seedTask.project && task.name === seedTask.name))) {
+      shaped.tasks.push({ ...seedTask });
     }
   });
   return shaped;
