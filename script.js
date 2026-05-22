@@ -1780,6 +1780,7 @@ const platformConsole = document.querySelector("#platformConsole");
 const platformStats = document.querySelector("#platformStats");
 const platformCompanyGrid = document.querySelector("#platformCompanyGrid");
 const platformTimeline = document.querySelector("#platformTimeline");
+const refreshPlatformCompaniesButton = document.querySelector("#refreshPlatformCompanies");
 const openPlatformAdminPanelButton = document.querySelector("#openPlatformAdminPanel");
 let companyRegistry = [];
 
@@ -6176,6 +6177,10 @@ nextActions?.addEventListener("click", (event) => {
 
 refreshAuditLogsButton?.addEventListener("click", fetchAuditLogs);
 refreshMailHistoryButton?.addEventListener("click", fetchMailHistory);
+refreshPlatformCompaniesButton?.addEventListener("click", () => {
+  fetchPlatformCompanies();
+  fetchAuditLogs();
+});
 
 dateRequestList?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-date-request-action]");

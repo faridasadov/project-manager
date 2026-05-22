@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-  <link rel="stylesheet" href="styles.css?v=20260521-ops-backup">
+  <link rel="stylesheet" href="styles.css?v=20260522-ui-audit">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
@@ -119,7 +119,10 @@
           <p class="kicker">Platform control</p>
           <h2>Super Admin Console</h2>
         </div>
-        <button id="openPlatformAdminPanel" type="button" data-i18n="settings">Settings</button>
+        <div class="platform-hero-actions">
+          <button id="refreshPlatformCompanies" type="button" data-i18n="refresh">Yenilə</button>
+          <button id="openPlatformAdminPanel" type="button" data-i18n="settings">Settings</button>
+        </div>
       </div>
       <div id="platformStats" class="platform-stats"></div>
       <div class="platform-section">
@@ -1280,6 +1283,6 @@
     </main>
     </div>
 
-  <script src="script.js?v=20260521-ops-backup"></script>
+  <script src="script.js?v=20260522-ui-audit"></script>
 </body>
 </html>

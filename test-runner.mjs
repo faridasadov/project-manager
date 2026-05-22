@@ -105,7 +105,8 @@ const ids = [
   "logoutButton", "currentUserBadge", "newUsername", "newUserPassword",
   "newUserRole", "addUser", "userList", "userCount", "trashList", "trashCount",
   "dateRequestList", "dateRequestCount", "taskDetailModal", "taskDetailTitle", "taskDetailBody", "closeTaskDetail",
-  "notificationModal", "notificationTitle", "notificationList", "closeNotificationPanel"
+  "notificationModal", "notificationTitle", "notificationList", "closeNotificationPanel",
+  "refreshPlatformCompanies"
 ];
 
 ids.forEach((id) => element(`#${id}`));

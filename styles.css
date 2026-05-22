@@ -301,9 +301,22 @@ body.admin-role .manager-only {
   box-shadow: var(--shadow);
 }
 
+.platform-hero > div:first-child {
+  min-width: 0;
+}
+
+.platform-hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .platform-hero h2 {
   margin: 4px 0 0;
   font-size: 28px;
+  overflow-wrap: anywhere;
 }
 
 .platform-stats {
@@ -407,10 +420,12 @@ body.admin-role .manager-only {
 .platform-company-card strong {
   display: block;
   font-size: 17px;
+  overflow-wrap: anywhere;
 }
 
 .platform-company-card span {
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .platform-company-card dl {
@@ -429,6 +444,7 @@ body.admin-role .manager-only {
   margin: 2px 0 0;
   font-weight: 700;
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .auth-tabs {
@@ -743,6 +759,26 @@ button:hover {
   align-items: center;
   gap: 18px;
   border-bottom: 1px solid var(--line);
+}
+
+.top-shell > div:first-child {
+  min-width: 0;
+}
+
+.header-actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.user-badge {
+  max-width: min(360px, 38vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kicker {
