@@ -159,18 +159,10 @@
         <aside class="composer task-composer-modal" aria-label="Task forması" data-i18n-aria="taskFormAria" role="dialog" aria-modal="true" aria-labelledby="formTitle">
         <div class="task-composer-top">
           <div>
-            <p class="kicker" data-i18n="appKicker">Project workspace</p>
-            <h2 id="formTitle">Yeni task</h2>
+            <p class="kicker" data-i18n="tasks">Tasklar</p>
+            <h2 id="formTitle" data-i18n="newTask">Yeni task</h2>
           </div>
           <button id="closeTaskComposer" class="icon-button" type="button" aria-label="Bağla" data-i18n-aria="close">×</button>
-        </div>
-
-        <div class="composer-head task-form-head">
-          <span class="dot"></span>
-          <div>
-            <p class="kicker" data-i18n="tasks">Tasklar</p>
-            <h3 data-i18n="newTask">Yeni task</h3>
-          </div>
         </div>
 
         <form id="taskForm">
@@ -185,13 +177,6 @@
             <span data-i18n="project">Layihə</span>
             <select id="project" required>
               <option value="" data-i18n="selectProject">Layihə seç</option>
-            </select>
-          </label>
-
-          <label>
-            <span data-i18n="projectResource">Layihə resursu</span>
-            <select id="projectResource">
-              <option value="" data-i18n="noResource">Resurs seçilməyib</option>
             </select>
           </label>
 
@@ -220,6 +205,7 @@
               <select id="priority">
                 <option value="Normal">Normal</option>
                 <option value="Yüksək">Yüksək</option>
+                <option value="Kritik">Kritik</option>
                 <option value="Aşağı">Aşağı</option>
               </select>
             </label>
@@ -251,21 +237,34 @@
 
           <label>
             <span data-i18n="notes">Qeyd</span>
-            <textarea id="notes" rows="4" placeholder="Qısa qeyd yaz" data-i18n-placeholder="notesPlaceholder"></textarea>
+            <textarea id="notes" rows="2" placeholder="Qısa qeyd yaz" data-i18n-placeholder="notesPlaceholder"></textarea>
           </label>
 
-          <div class="form-grid">
-            <label>
-              <span data-i18n="parentTask">Ana task</span>
-              <select id="parentTask">
-                <option value="" data-i18n="noParentTask">Ana task yoxdur</option>
-              </select>
-            </label>
-            <label>
-              <span data-i18n="taskDependencies">Asılı tasklar</span>
-              <select id="taskDependencies" multiple size="4"></select>
-            </label>
-          </div>
+          <details class="task-extra-details">
+            <summary class="task-extra-summary">
+              <span data-i18n="advanced">Ətraflı</span>
+            </summary>
+            <div class="task-extra-body">
+              <label>
+                <span data-i18n="projectResource">Layihə resursu</span>
+                <select id="projectResource">
+                  <option value="" data-i18n="noResource">Resurs seçilməyib</option>
+                </select>
+              </label>
+              <div class="form-grid">
+                <label>
+                  <span data-i18n="parentTask">Ana task</span>
+                  <select id="parentTask">
+                    <option value="" data-i18n="noParentTask">Ana task yoxdur</option>
+                  </select>
+                </label>
+                <label>
+                  <span data-i18n="taskDependencies">Asılı tasklar</span>
+                  <select id="taskDependencies" multiple size="3"></select>
+                </label>
+              </div>
+            </div>
+          </details>
 
           <div class="form-actions">
             <button class="primary" type="submit" data-i18n="save">Yadda saxla</button>
@@ -296,23 +295,62 @@
 
         <form id="projectForm">
           <label>
+            <span data-i18n="template">Şablon (isteğe bağlı)</span>
+            <select id="projectTemplate">
+              <option value="">— Şablon seçin —</option>
+              <option value="software">Software Development</option>
+              <option value="infrastructure">IT İnfrastruktur</option>
+              <option value="marketing">Marketinq Kampaniyası</option>
+              <option value="basic">Sadə Layihə</option>
+            </select>
+          </label>
+
+          <label>
             <span data-i18n="projectName">Layihənin adı</span>
             <input id="projectName" type="text" placeholder="Layihə adı" data-i18n-placeholder="projectNamePlaceholder" required>
           </label>
 
           <label>
-            <span data-i18n="customer">Sifarişçi</span>
-            <select id="projectCustomer"></select>
+            <span data-i18n="projectDescription">Qısa açıqlama</span>
+            <textarea id="projectDescription" rows="2" placeholder="Layihənin qısa xülasəsi (kart görünüşündə göstərilir)"></textarea>
           </label>
 
-          <label>
-            <span data-i18n="projectLeader">Layihə rəhbəri</span>
-            <select id="projectLeader"></select>
-          </label>
+          <div class="field-with-quick-create">
+            <label>
+              <span data-i18n="customer">Sifarişçi</span>
+              <select id="projectCustomer"></select>
+            </label>
+            <button id="toggleQuickCustomer" type="button" class="quick-add-btn" title="Yeni sifarişçi yarat">+</button>
+          </div>
+          <div id="quickCustomerForm" class="quick-create-panel" hidden>
+            <input id="quickCustomerName" type="text" placeholder="Sifarişçi adı (tələb olunur)">
+            <input id="quickCustomerContact" type="text" placeholder="Əlaqə şəxsi (isteğe bağlı)">
+            <div class="quick-create-actions">
+              <button id="quickCustomerSave" type="button" class="primary small">Əlavə et</button>
+              <button id="quickCustomerCancel" type="button" class="small">Ləğv et</button>
+            </div>
+          </div>
+
+          <div class="field-with-quick-create">
+            <label>
+              <span data-i18n="projectLeader">Layihə rəhbəri</span>
+              <select id="projectLeader"></select>
+            </label>
+            <button id="toggleQuickManager" type="button" class="quick-add-btn" title="Yeni manager yarat">+</button>
+          </div>
+          <div id="quickManagerForm" class="quick-create-panel" hidden>
+            <input id="quickManagerFullName" type="text" placeholder="Ad Soyad (isteğe bağlı)">
+            <input id="quickManagerUsername" type="text" placeholder="İstifadəçi adı (tələb olunur)">
+            <input id="quickManagerPassword" type="password" placeholder="Şifrə (tələb olunur)">
+            <div class="quick-create-actions">
+              <button id="quickManagerSave" type="button" class="primary small">Manager yarat</button>
+              <button id="quickManagerCancel" type="button" class="small">Ləğv et</button>
+            </div>
+          </div>
 
           <label>
             <span data-i18n="projectTeamMembers">Komanda üzvləri</span>
-            <select id="projectTeamMembers" multiple size="5"></select>
+            <select id="projectTeamMembers" multiple size="3"></select>
           </label>
           <button id="addProjectTeamMembers" type="button" data-i18n="addSelectedTeamMembers">Komandaya əlavə et</button>
           <div id="selectedProjectTeamMembers" class="selected-manager-list project-team-selection"></div>
@@ -342,21 +380,29 @@
               <select id="projectPriority">
                 <option value="Normal">Normal</option>
                 <option value="Yüksək">Yüksək</option>
+                <option value="Kritik">Kritik</option>
                 <option value="Aşağı">Aşağı</option>
               </select>
             </label>
           </div>
 
-          <label>
-            <span data-i18n="progress">Progress %</span>
-            <input id="projectProgress" type="number" min="0" max="100" value="0">
-          </label>
+          <div class="form-grid">
+            <label>
+              <span data-i18n="budget">Büdcə (AZN)</span>
+              <input id="projectBudget" type="number" min="0" step="0.01" placeholder="0.00">
+            </label>
+            <label>
+              <span data-i18n="progress">Progress %</span>
+              <input id="projectProgress" type="number" min="0" max="100" value="0" readonly title="Taskların ortalamasından avtomatik hesablanır">
+            </label>
+          </div>
 
+          <details class="project-governance-details">
+            <summary class="governance-details-summary">
+              <span class="kicker" data-i18n="ipmaGovernance">IPMA / Governance</span>
+              <span id="projectGovernanceScore" class="governance-score-preview">0%</span>
+            </summary>
           <div class="project-governance">
-            <div class="governance-form-head">
-              <p class="kicker" data-i18n="ipmaGovernance">IPMA / Governance</p>
-              <div id="projectGovernanceScore" class="governance-score-preview">0%</div>
-            </div>
             <label>
               <span data-i18n="lifecycleStage">Lifecycle mərhələsi</span>
               <select id="projectLifecycle">
@@ -370,53 +416,54 @@
             </label>
             <label>
               <span data-i18n="projectCharter">Project charter / Məqsəd</span>
-              <textarea id="projectGoal" rows="3" placeholder="Layihənin biznes məqsədi və gözlənilən nəticə"></textarea>
+              <textarea id="projectGoal" rows="2" placeholder="Layihənin biznes məqsədi və gözlənilən nəticə"></textarea>
             </label>
             <label>
               <span data-i18n="projectScope">Scope</span>
-              <textarea id="projectScope" rows="3" placeholder="Daxil olan və xaricdə qalan işlər"></textarea>
+              <textarea id="projectScope" rows="2" placeholder="Daxil olan və xaricdə qalan işlər"></textarea>
             </label>
             <label>
               <span data-i18n="successCriteria">Success criteria</span>
-              <textarea id="projectSuccessCriteria" rows="3" placeholder="Qəbul meyarları, keyfiyyət və nəticə ölçüləri"></textarea>
+              <textarea id="projectSuccessCriteria" rows="2" placeholder="Qəbul meyarları, keyfiyyət və nəticə ölçüləri"></textarea>
             </label>
             <label>
               <span data-i18n="planningGateChecklist">Planning gate checklist</span>
-              <textarea id="projectGateChecklist" rows="4" placeholder="Hər sətrə bir checklist: WBS hazırdır, risk register var, resurs planı təsdiqlənib"></textarea>
+              <textarea id="projectGateChecklist" rows="2" placeholder="Hər sətrə bir checklist: WBS hazırdır, risk register var, resurs planı təsdiqlənib"></textarea>
             </label>
             <label>
               <span data-i18n="closureLessons">Closure / lessons learned</span>
-              <textarea id="projectClosureNotes" rows="3" placeholder="Təhvil, sign-off, lessons learned"></textarea>
+              <textarea id="projectClosureNotes" rows="2" placeholder="Təhvil, sign-off, lessons learned"></textarea>
             </label>
             <label>
               <span data-i18n="stakeholderRegister">Maraqlı tərəflər registeri</span>
-              <textarea id="projectStakeholders" rows="4" placeholder="Sponsor | yüksək təsir | weekly update"></textarea>
+              <textarea id="projectStakeholders" rows="2" placeholder="Sponsor | yüksək təsir | weekly update"></textarea>
             </label>
             <label>
               <span data-i18n="communicationPlan">Kommunikasiya planı</span>
-              <textarea id="projectCommunicationPlan" rows="4" placeholder="Steering meeting | həftəlik | sponsor və manager"></textarea>
+              <textarea id="projectCommunicationPlan" rows="2" placeholder="Steering meeting | həftəlik | sponsor və manager"></textarea>
             </label>
             <label>
               <span data-i18n="decisionLog">Qərar jurnalı</span>
-              <textarea id="projectDecisionLog" rows="4" placeholder="Tarix | qərar | səbəb | təsir"></textarea>
+              <textarea id="projectDecisionLog" rows="2" placeholder="Tarix | qərar | səbəb | təsir"></textarea>
             </label>
             <label>
               <span data-i18n="changeControl">Dəyişiklik kontrolu</span>
-              <textarea id="projectChangeControl" rows="4" placeholder="Scope/deadline/resource dəyişikliyi | impact | status"></textarea>
+              <textarea id="projectChangeControl" rows="2" placeholder="Scope/deadline/resource dəyişikliyi | impact | status"></textarea>
             </label>
             <label>
               <span data-i18n="riskOpportunity">Risk və imkanlar</span>
-              <textarea id="projectRiskOpportunity" rows="4" placeholder="Risk/opportunity | ehtimal | təsir | response | owner"></textarea>
+              <textarea id="projectRiskOpportunity" rows="2" placeholder="Risk/opportunity | ehtimal | təsir | response | owner"></textarea>
             </label>
             <label>
               <span data-i18n="qualityChecklist">Keyfiyyət checklist-i</span>
-              <textarea id="projectQualityChecklist" rows="4" placeholder="Acceptance criteria | test status | sign-off"></textarea>
+              <textarea id="projectQualityChecklist" rows="2" placeholder="Acceptance criteria | test status | sign-off"></textarea>
             </label>
             <label>
               <span data-i18n="competenceMatrix">Kompetensiya matrisi</span>
-              <textarea id="projectCompetenceMatrix" rows="4" placeholder="Manager/User | leadership/risk/stakeholder | səviyyə"></textarea>
+              <textarea id="projectCompetenceMatrix" rows="2" placeholder="Manager/User | leadership/risk/stakeholder | səviyyə"></textarea>
             </label>
           </div>
+          </details>
 
           <div class="form-actions">
             <button class="primary" type="submit" data-i18n="save">Yadda saxla</button>
@@ -1071,6 +1118,16 @@
               <p data-i18n="riskRegister">Risk</p>
             </article>
           </section>
+
+        <div id="projectContextBar" class="project-context-bar" hidden>
+          <button id="backToProjects" type="button" class="back-btn">&#8592; <span data-i18n="projects">Layihələr</span></button>
+          <span class="context-separator">/</span>
+          <span id="contextProjectName" class="context-project-name"></span>
+          <div class="context-actions">
+            <button id="contextAddTask" type="button" class="primary small" data-i18n="addTaskToProject">Task əlavə et</button>
+            <button id="contextEditProject" type="button" class="small" data-i18n="editProject">Düzəlt</button>
+          </div>
+        </div>
 
         <section id="dashboardView" class="view active-view">
           <div class="insight-grid">

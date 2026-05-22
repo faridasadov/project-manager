@@ -153,6 +153,9 @@ const translations = {
     projects: "Layihələr",
     newProject: "Yeni layihə",
     projectNamePlaceholder: "Layihə adı",
+    template: "Şablon",
+    budget: "Büdcə (AZN)",
+    projectDescription: "Qısa açıqlama",
     addProject: "Layihə yarat",
     editProject: "Layihəni redaktə et",
     archiveProject: "Arxivlə",
@@ -234,6 +237,7 @@ const translations = {
     selectedDay: "Seçilən gün",
     projectAndTask: "Layihə və task",
     selectCalendarDay: "Təqvimdə gün seçin.",
+    advanced: "Ətraflı parametrlər",
     noTaskOnDay: "Bu gün üçün task yoxdur.",
     parentTask: "Ana task",
     noParentTask: "Ana task yoxdur",
@@ -389,7 +393,7 @@ const translations = {
     fileTooLarge: "Fayl çox böyükdür. Hər fayl maksimum 800 KB ola bilər.",
     all: "Hamısı",
     statuses: { "Plan": "Plan", "Davam edir": "Davam edir", "Bitib": "Bitib" },
-    priorities: { "Normal": "Normal", "Yüksək": "Yüksək", "Aşağı": "Aşağı" }
+    priorities: { "Kritik": "Kritik", "Normal": "Normal", "Yüksək": "Yüksək", "Aşağı": "Aşağı" }
   },
   ru: {
     locale: "ru-RU",
@@ -525,6 +529,9 @@ const translations = {
     projects: "Проекты",
     newProject: "Новый проект",
     projectNamePlaceholder: "Название проекта",
+    template: "Шаблон",
+    budget: "Бюджет (AZN)",
+    projectDescription: "Краткое описание",
     addProject: "Создать проект",
     editProject: "Редактировать проект",
     archiveProject: "Архив",
@@ -605,6 +612,7 @@ const translations = {
     rangeEnd: "Конец",
     selectedDay: "Выбранный день",
     projectAndTask: "Проект и таск",
+    advanced: "Дополнительно",
     selectCalendarDay: "Выберите день в календаре.",
     noTaskOnDay: "На этот день тасков нет.",
     parentTask: "Родительский таск",
@@ -761,7 +769,7 @@ const translations = {
     fileTooLarge: "Файл слишком большой. Максимум 800 KB на файл.",
     all: "Все",
     statuses: { "Plan": "План", "Davam edir": "В работе", "Bitib": "Выполнено" },
-    priorities: { "Normal": "Нормальный", "Yüksək": "Высокий", "Aşağı": "Низкий" }
+    priorities: { "Kritik": "Критический", "Normal": "Нормальный", "Yüksək": "Высокий", "Aşağı": "Низкий" }
   },
   en: {
     locale: "en-US",
@@ -897,6 +905,9 @@ const translations = {
     projects: "Projects",
     newProject: "New project",
     projectNamePlaceholder: "Project name",
+    template: "Template",
+    budget: "Budget (AZN)",
+    projectDescription: "Short description",
     addProject: "Create project",
     editProject: "Edit project",
     archiveProject: "Archive",
@@ -976,6 +987,7 @@ const translations = {
     rangeStart: "Start",
     rangeEnd: "End",
     selectedDay: "Selected day",
+    advanced: "Advanced",
     projectAndTask: "Project and task",
     selectCalendarDay: "Select a day in the calendar.",
     noTaskOnDay: "No task for this day.",
@@ -1133,7 +1145,7 @@ const translations = {
     fileTooLarge: "File is too large. Each file can be up to 800 KB.",
     all: "All",
     statuses: { "Plan": "Plan", "Davam edir": "In progress", "Bitib": "Done" },
-    priorities: { "Normal": "Normal", "Yüksək": "High", "Aşağı": "Low" }
+    priorities: { "Kritik": "Critical", "Normal": "Normal", "Yüksək": "High", "Aşağı": "Low" }
   }
 };
 
@@ -1548,6 +1560,7 @@ const actualHoursInput = document.querySelector("#actualHours");
 const notesInput = document.querySelector("#notes");
 const parentTaskInput = document.querySelector("#parentTask");
 const taskDependenciesInput = document.querySelector("#taskDependencies");
+const taskExtraDetails = document.querySelector(".task-extra-details");
 const cancelEdit = document.querySelector("#cancelEdit");
 const gantt = document.querySelector("#gantt");
 const ganttControls = document.querySelector("#ganttControls");
@@ -1577,6 +1590,11 @@ const viewTabs = document.querySelectorAll(".view-tab");
 const views = document.querySelectorAll(".view");
 const searchInput = document.querySelector("#searchInput");
 const projectFilter = document.querySelector("#projectFilter");
+const projectContextBar = document.querySelector("#projectContextBar");
+const contextProjectName = document.querySelector("#contextProjectName");
+const backToProjectsBtn = document.querySelector("#backToProjects");
+const contextAddTaskBtn = document.querySelector("#contextAddTask");
+const contextEditProjectBtn = document.querySelector("#contextEditProject");
 const projectCards = document.querySelector("#projectCards");
 const archivedProjectCards = document.querySelector("#archivedProjectCards");
 const statusBars = document.querySelector("#statusBars");
@@ -1609,9 +1627,24 @@ const projectLinksList = document.querySelector("#projectLinks");
 const linkCount = document.querySelector("#linkCount");
 const projectForm = document.querySelector("#projectForm");
 const projectFormTitle = document.querySelector("#projectFormTitle");
+const projectTemplateInput = document.querySelector("#projectTemplate");
 const projectNameInput = document.querySelector("#projectName");
+const projectDescriptionInput = document.querySelector("#projectDescription");
 const projectCustomerInput = document.querySelector("#projectCustomer");
+const toggleQuickCustomerBtn = document.querySelector("#toggleQuickCustomer");
+const quickCustomerForm = document.querySelector("#quickCustomerForm");
+const quickCustomerNameInput = document.querySelector("#quickCustomerName");
+const quickCustomerContactInput = document.querySelector("#quickCustomerContact");
+const quickCustomerSaveBtn = document.querySelector("#quickCustomerSave");
+const quickCustomerCancelBtn = document.querySelector("#quickCustomerCancel");
 const projectLeaderInput = document.querySelector("#projectLeader");
+const toggleQuickManagerBtn = document.querySelector("#toggleQuickManager");
+const quickManagerForm = document.querySelector("#quickManagerForm");
+const quickManagerFullNameInput = document.querySelector("#quickManagerFullName");
+const quickManagerUsernameInput = document.querySelector("#quickManagerUsername");
+const quickManagerPasswordInput = document.querySelector("#quickManagerPassword");
+const quickManagerSaveBtn = document.querySelector("#quickManagerSave");
+const quickManagerCancelBtn = document.querySelector("#quickManagerCancel");
 const projectTeamMembersInput = document.querySelector("#projectTeamMembers");
 const addProjectTeamMembersButton = document.querySelector("#addProjectTeamMembers");
 const selectedProjectTeamMembers = document.querySelector("#selectedProjectTeamMembers");
@@ -1619,6 +1652,7 @@ const projectStartDateInput = document.querySelector("#projectStartDate");
 const projectEndDateInput = document.querySelector("#projectEndDate");
 const projectStatusInput = document.querySelector("#projectStatus");
 const projectPriorityInput = document.querySelector("#projectPriority");
+const projectBudgetInput = document.querySelector("#projectBudget");
 const projectProgressInput = document.querySelector("#projectProgress");
 const projectLifecycleInput = document.querySelector("#projectLifecycle");
 const projectGoalInput = document.querySelector("#projectGoal");
@@ -2001,7 +2035,7 @@ function renderStatusControls() {
     ...statuses.map((status) => `<button class="filter ${currentFilter === status ? "active" : ""}" data-filter="${escapeHtml(status)}" type="button">${escapeHtml(statusLabel(status))}</button>`)
   ].join("");
   if (priorityFilters) {
-    const priorities = ["Yüksək", "Normal", "Aşağı"];
+    const priorities = ["Kritik", "Yüksək", "Normal", "Aşağı"];
     priorityFilters.innerHTML = [
       `<span class="filter-group-label">${text("priority")}</span>`,
       `<button class="filter ${currentPriorityFilter === "Hamısı" ? "active" : ""}" data-priority-filter="Hamısı" type="button">${text("all")}</button>`,
@@ -2645,6 +2679,8 @@ function normalizeProject(project) {
     teamMemberIds: [],
     companyId: "company-default",
     lifecycle: "Initiation",
+    description: "",
+    budget: 0,
     charter: {
       goal: "",
       scope: "",
@@ -2667,6 +2703,8 @@ function normalizeProject(project) {
     status: "Plan",
     priority: "Normal",
     ...project,
+    description: String(project.description || ""),
+    budget: Math.max(0, Number(project.budget) || 0),
     charter: {
       goal: "",
       scope: "",
@@ -2915,7 +2953,10 @@ function statusClass(status) {
 }
 
 function priorityClass(priority) {
-  return priority === "Yüksək" ? "high" : "";
+  if (priority === "Kritik") return "critical";
+  if (priority === "Yüksək") return "high";
+  if (priority === "Aşağı") return "low";
+  return "";
 }
 
 function getProject(task) {
@@ -2948,6 +2989,8 @@ function createProject(name, details = {}) {
     priority: details.priority || "Normal",
     progress: details.status === "Bitib" ? 100 : progress,
     lifecycle: details.lifecycle || "Initiation",
+    description: details.description || "",
+    budget: Math.max(0, Number(details.budget) || 0),
     charter: details.charter || {}
   });
   projects.push(project);
@@ -2979,6 +3022,8 @@ function updateProject(projectId, details = {}) {
   project.priority = details.priority || "Normal";
   project.progress = project.status === "Bitib" ? 100 : Math.min(100, Math.max(0, Number.parseInt(details.progress || "0", 10)));
   project.lifecycle = details.lifecycle || project.lifecycle || "Initiation";
+  project.description = String(details.description || "");
+  project.budget = Math.max(0, Number(details.budget) || 0);
   project.charter = { ...(project.charter || {}), ...(details.charter || {}) };
   if (previousName !== cleanName) {
     tasks = tasks.map((task) => task.project === previousName ? { ...task, project: cleanName } : task);
@@ -3185,8 +3230,9 @@ function accessibleTasks() {
 
 function openProjectPage(projectName) {
   projectFilter.value = projectName;
-  currentView = "list";
-  viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === "list"));
+  const targetView = ["list", "kanban", "calendar", "gantt"].includes(currentView) ? currentView : "list";
+  currentView = targetView;
+  viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === targetView));
   projectInput.value = projectName;
   renderResourceControls();
   render();
@@ -3250,7 +3296,10 @@ function managerOptions(selectedId = "") {
     `<option value="">${text("noOwnerSelect")}</option>`,
     ...users
       .filter((user) => user.role === "manager" && user.companyId === companyId)
-      .map((user) => `<option value="${user.id}" ${user.id === selectedId ? "selected" : ""}>${escapeHtml(user.username)}</option>`)
+      .map((user) => {
+        const label = user.profile?.fullName ? `${user.profile.fullName} (${user.username})` : user.username;
+        return `<option value="${user.id}" ${user.id === selectedId ? "selected" : ""}>${escapeHtml(label)}</option>`;
+      })
   ].join("");
 }
 
@@ -3626,9 +3675,19 @@ function resetProjectForm() {
   activeProjectEditId = "";
   selectedProjectTeamMemberIds = [];
   projectFormTitle.textContent = text("newProject");
+  projectTemplateInput.value = "";
   projectStatusInput.value = "Plan";
   projectPriorityInput.value = "Normal";
+  projectBudgetInput.value = "";
   projectProgressInput.value = 0;
+  projectDescriptionInput.value = "";
+  quickCustomerForm.hidden = true;
+  quickCustomerNameInput.value = "";
+  quickCustomerContactInput.value = "";
+  quickManagerForm.hidden = true;
+  quickManagerFullNameInput.value = "";
+  quickManagerUsernameInput.value = "";
+  quickManagerPasswordInput.value = "";
   projectCustomerInput.value = "";
   projectLeaderInput.value = currentUser?.role === "manager" ? currentUser.id : "";
   projectLifecycleInput.value = "Initiation";
@@ -3665,13 +3724,16 @@ function openProjectEditor(projectName) {
   selectedProjectTeamMemberIds = [...(project.teamMemberIds || [])];
   renderResourceControls();
   projectFormTitle.textContent = text("editProject");
+  projectTemplateInput.value = "";
   projectNameInput.value = project.name;
+  projectDescriptionInput.value = project.description || "";
   projectCustomerInput.value = project.customerId || "";
   projectLeaderInput.value = project.managerIds?.[0] || "";
   projectStartDateInput.value = project.start || "";
   projectEndDateInput.value = project.end || "";
   projectStatusInput.value = project.status || "Plan";
   projectPriorityInput.value = project.priority || "Normal";
+  projectBudgetInput.value = project.budget || "";
   projectProgressInput.value = Number(project.progress) || 0;
   projectLifecycleInput.value = project.lifecycle || "Initiation";
   projectGoalInput.value = project.charter?.goal || "";
@@ -3730,6 +3792,14 @@ function visibleTasks() {
         .some((value) => String(value || "").toLowerCase().includes(query));
     })
     .sort((a, b) => parseDate(a.start) - parseDate(b.start));
+}
+
+function renderProjectContextBar() {
+  const selected = projectFilter.value;
+  const inProjectView = ["list", "kanban", "calendar", "gantt"].includes(currentView);
+  const hasProject = selected && selected !== "Hamısı";
+  projectContextBar.hidden = !(inProjectView && hasProject);
+  if (hasProject) contextProjectName.textContent = selected;
 }
 
 function renderProjectFilter() {
@@ -5258,6 +5328,7 @@ function renderPlatformConsole() {
 function setView(view) {
   currentView = view;
   viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === currentView));
+  if (view === "projects") projectFilter.value = "Hamısı";
   render();
 }
 
@@ -5295,6 +5366,7 @@ function render() {
   }
   renderProjectFilter();
   renderResourceControls();
+  renderProjectContextBar();
   renderSummary();
   renderDashboard();
   renderProjectsView();
@@ -5330,6 +5402,7 @@ function resetForm() {
   actualHoursInput.value = 0;
   parentTaskInput.value = "";
   taskDependenciesInput.innerHTML = taskOptionItems();
+  if (taskExtraDetails) taskExtraDetails.open = false;
 }
 
 function moveForward(task) {
@@ -5469,6 +5542,9 @@ function editTask(id, options = {}) {
   notesInput.value = task.notes;
   parentTaskInput.value = task.parentTaskId || "";
   taskDependenciesInput.innerHTML = taskOptionItems(task.dependencyIds || [], task.id);
+  if (taskExtraDetails && (task.parentTaskId || (task.dependencyIds || []).length || task.projectResource)) {
+    taskExtraDetails.open = true;
+  }
   formTitle.textContent = readonly ? task.name : text("editTask");
   taskFormFields().forEach((field) => { field.disabled = readonly; });
   openTaskComposer();
@@ -5852,7 +5928,7 @@ function importBackup(payload) {
     managedFiles = managedFiles.map((file) => ({ ...file, companyId })).filter((file) => file.companyId === companyId);
     projectLinks = projectLinks.filter((link) => projectNames.has(link.project));
     registers = registers.filter((item) => projectNames.has(item.project));
-    users = users.filter((user) => user.role !== "super_admin").map((user) => ({ ...user, companyId })).filter((user) => user.companyId === companyId);
+    users = users.filter((user) => user.role !== "super_admin" && user.companyId === companyId);
     trash = trash.map((item) => ({ ...item, companyId })).filter((item) => item.companyId === companyId);
     companyRegistry = companyRegistryFromLocalState().filter((company) => company.id === companyId);
   }
@@ -6533,6 +6609,23 @@ summaryCards.forEach((card) => {
 
 searchInput.addEventListener("input", render);
 projectFilter.addEventListener("change", render);
+
+backToProjectsBtn.addEventListener("click", () => {
+  const projectName = projectFilter.value;
+  setView("projects");
+  requestAnimationFrame(() => {
+    const card = document.querySelector(`[data-project="${CSS.escape(projectName)}"]`);
+    if (card) card.closest("article")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+});
+
+contextAddTaskBtn.addEventListener("click", () => {
+  openTaskComposerForProject(projectFilter.value);
+});
+
+contextEditProjectBtn.addEventListener("click", () => {
+  openProjectEditor(projectFilter.value);
+});
 function handleCalendarClick(event) {
   const button = event.target.closest("[data-calendar-day]");
   if (!button) return;
@@ -7338,6 +7431,7 @@ projectForm.addEventListener("submit", (event) => {
   const governancePayload = projectGovernancePayloadFromForm();
   const payload = {
     name: projectNameInput.value,
+    description: projectDescriptionInput.value,
     customerId: projectCustomerInput.value,
     managerId: projectLeaderInput.value,
     teamMemberIds: selectedProjectTeamMemberIds,
@@ -7345,6 +7439,7 @@ projectForm.addEventListener("submit", (event) => {
     end: projectEndDateInput.value,
     status: projectStatusInput.value,
     priority: projectPriorityInput.value,
+    budget: Number(projectBudgetInput.value) || 0,
     progress,
     lifecycle: governancePayload.lifecycle,
     charter: governancePayload.charter
@@ -7354,11 +7449,20 @@ projectForm.addEventListener("submit", (event) => {
     alert(gateError);
     return;
   }
-  const project = activeProjectEditId
-    ? updateProject(activeProjectEditId, payload)
-    : createProject(projectNameInput.value, payload);
+  const isNew = !activeProjectEditId;
+  const project = isNew
+    ? createProject(projectNameInput.value, payload)
+    : updateProject(activeProjectEditId, payload);
   if (!project) return;
+  const selectedTemplate = isNew ? projectTemplateInput.value : "";
   closeProjectComposer();
+  if (selectedTemplate && canUseBackend() && authToken) {
+    fetch(backendUrl(`/api/projects/${encodeURIComponent(project.id)}/apply-template`), {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ templateId: selectedTemplate, startDate: project.start })
+    }).then((r) => r.ok ? syncFromBackend() : null).catch(() => {});
+  }
   openProjectPage(project.name);
 });
 
@@ -7400,6 +7504,83 @@ projectComposerModal.addEventListener("click", (event) => {
   projectCompetenceMatrixInput
 ].forEach((input) => input?.addEventListener("input", updateGovernanceScorePreview));
 projectLifecycleInput?.addEventListener("change", updateGovernanceScorePreview);
+
+toggleQuickCustomerBtn.addEventListener("click", () => {
+  quickCustomerForm.hidden = !quickCustomerForm.hidden;
+  if (!quickCustomerForm.hidden) quickCustomerNameInput.focus();
+});
+quickCustomerCancelBtn.addEventListener("click", () => {
+  quickCustomerForm.hidden = true;
+  quickCustomerNameInput.value = "";
+  quickCustomerContactInput.value = "";
+});
+quickCustomerSaveBtn.addEventListener("click", () => {
+  const name = quickCustomerNameInput.value.trim();
+  if (!name) { quickCustomerNameInput.focus(); return; }
+  if (customers.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+    const existing = customers.find((c) => c.name.toLowerCase() === name.toLowerCase());
+    projectCustomerInput.value = existing.id;
+    quickCustomerForm.hidden = true;
+    quickCustomerNameInput.value = "";
+    quickCustomerContactInput.value = "";
+    return;
+  }
+  const customer = normalizeCustomer({
+    companyId: currentCompanyId(),
+    name,
+    contact: quickCustomerContactInput.value.trim(),
+    email: ""
+  });
+  customers.push(customer);
+  saveResources();
+  renderResourceControls();
+  projectCustomerInput.value = customer.id;
+  quickCustomerForm.hidden = true;
+  quickCustomerNameInput.value = "";
+  quickCustomerContactInput.value = "";
+});
+
+toggleQuickManagerBtn.addEventListener("click", () => {
+  quickManagerForm.hidden = !quickManagerForm.hidden;
+  if (!quickManagerForm.hidden) quickManagerFullNameInput.focus();
+});
+quickManagerCancelBtn.addEventListener("click", () => {
+  quickManagerForm.hidden = true;
+  quickManagerFullNameInput.value = "";
+  quickManagerUsernameInput.value = "";
+  quickManagerPasswordInput.value = "";
+});
+quickManagerSaveBtn.addEventListener("click", () => {
+  if (!isAdmin()) { alert("Manager yaratmaq üçün admin icazəsi tələb olunur."); return; }
+  const username = quickManagerUsernameInput.value.trim();
+  const password = quickManagerPasswordInput.value;
+  const fullName = quickManagerFullNameInput.value.trim();
+  if (!username || !password) { quickManagerUsernameInput.focus(); return; }
+  if (users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
+    alert(`"${username}" artıq mövcuddur`);
+    return;
+  }
+  const companyId = currentCompanyId();
+  const companyName = customers.find((c) => c.companyId === companyId)?.name || "";
+  const newManager = normalizeUser({
+    id: createId(),
+    username,
+    passwordHash: md5(password),
+    role: "manager",
+    managerId: "",
+    companyId,
+    profile: { fullName: fullName || username, position: "Project Manager", company: companyName, email: "", fatherName: "", phone: "", address: "" }
+  });
+  users.push(newManager);
+  saveResources();
+  renderResourceControls();
+  projectLeaderInput.value = newManager.id;
+  quickManagerForm.hidden = true;
+  quickManagerFullNameInput.value = "";
+  quickManagerUsernameInput.value = "";
+  quickManagerPasswordInput.value = "";
+});
+
 closeTaskDetailButton?.addEventListener("click", closeTaskDetail);
 taskDetailModal?.addEventListener("click", (event) => {
   if (event.target.closest("[data-task-detail-close]")) closeTaskDetail();

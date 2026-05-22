@@ -561,6 +561,24 @@ async function runMigrations() {
     currentVersion = 1;
     console.log("[migration] v1: FK constraints and project_id column added");
   }
+
+  if (currentVersion < 2) {
+    const [budgetCol] = await pool.execute(
+      "SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'projects' AND COLUMN_NAME = 'budget'"
+    );
+    if (!budgetCol[0].cnt) {
+      await pool.execute("ALTER TABLE projects ADD COLUMN budget DECIMAL(15,2) NOT NULL DEFAULT 0");
+    }
+    const [descCol] = await pool.execute(
+      "SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'projects' AND COLUMN_NAME = 'description'"
+    );
+    if (!descCol[0].cnt) {
+      await pool.execute("ALTER TABLE projects ADD COLUMN description TEXT NULL DEFAULT NULL");
+    }
+    await pool.execute("INSERT IGNORE INTO schema_version (version) VALUES (2)");
+    currentVersion = 2;
+    console.log("[migration] v2: budget and description columns added to projects");
+  }
 }
 
 async function readState() {
@@ -1023,6 +1041,13 @@ function actualHoursFromTask(task = {}) {
 function normalizeProjectPayload(payload = {}) {
   const progress = Math.min(100, Math.max(0, Number.parseInt(payload.progress || "0", 10)));
   const charter = payload.charter || {};
+  const start = payload.start || "";
+  const end = payload.end || "";
+  if (start && end && start > end) {
+    const err = new Error("Project start date cannot be after end date");
+    err.statusCode = 400;
+    throw err;
+  }
   return {
     id: payload.id || createId("project"),
     name: String(payload.name || "").trim(),
@@ -1030,13 +1055,15 @@ function normalizeProjectPayload(payload = {}) {
     customerId: payload.customerId || "",
     managerIds: Array.isArray(payload.managerIds) ? payload.managerIds : (payload.managerId ? [payload.managerId] : []),
     teamMemberIds: Array.isArray(payload.teamMemberIds) ? payload.teamMemberIds : [],
-    start: payload.start || "",
-    end: payload.end || "",
+    start,
+    end,
     status: payload.status || "Plan",
     priority: payload.priority || "Normal",
     progress: payload.status === "Bitib" ? 100 : progress,
     archived: Boolean(payload.archived),
     lifecycle: payload.lifecycle || "Initiation",
+    description: String(payload.description || ""),
+    budget: Math.max(0, Number(payload.budget) || 0),
     charter: {
       goal: charter.goal || "",
       scope: charter.scope || "",
@@ -2374,7 +2401,13 @@ async function handleApi(request, response) {
     if (!actor) return true;
     try {
       const state = ensureStateShape(await readState());
-      const project = normalizeProjectPayload({ ...JSON.parse(await readBody(request)), companyId: actorCompanyId(actor) });
+      let project;
+      try {
+        project = normalizeProjectPayload({ ...JSON.parse(await readBody(request)), companyId: actorCompanyId(actor) });
+      } catch (e) {
+        sendJson(response, e.statusCode || 400, { error: e.message || "Invalid project data" });
+        return true;
+      }
       if (!project.name || state.projects.some((item) => sameCompany(item, actorCompanyId(actor)) && item.name.toLowerCase() === project.name.toLowerCase())) {
         sendJson(response, 400, { error: "Invalid project" });
         return true;
@@ -2410,7 +2443,13 @@ async function handleApi(request, response) {
     }
     try {
       const previous = state.projects[projectIndex];
-      const nextProject = normalizeProjectPayload({ ...previous, ...JSON.parse(await readBody(request)), id: previous.id, companyId: previous.companyId || actorCompanyId(actor) });
+      let nextProject;
+      try {
+        nextProject = normalizeProjectPayload({ ...previous, ...JSON.parse(await readBody(request)), id: previous.id, companyId: previous.companyId || actorCompanyId(actor) });
+      } catch (e) {
+        sendJson(response, e.statusCode || 400, { error: e.message || "Invalid project data" });
+        return true;
+      }
       if (!nextProject.name || state.projects.some((item) => item.id !== previous.id && sameCompany(item, actorCompanyId(actor)) && item.name.toLowerCase() === nextProject.name.toLowerCase())) {
         sendJson(response, 400, { error: "Invalid project" });
         return true;
