@@ -2132,6 +2132,10 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
+.project-context-bar[hidden] {
+  display: none;
+}
+
 .project-context-bar .back-btn {
   background: transparent;
   border: none;
