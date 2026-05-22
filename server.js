@@ -1,6 +1,6 @@
 import { createServer, request as httpRequest } from "http";
 import { request as httpsRequest } from "https";
-import { createHash, createHmac, timingSafeEqual } from "crypto";
+import { createHash, createHmac, timingSafeEqual, scryptSync, randomBytes } from "crypto";
 import { stat } from "fs/promises";
 import { createReadStream } from "fs";
 import { dirname, extname, normalize, resolve } from "path";
@@ -13,6 +13,9 @@ import PDFDocument from "pdfkit";
 const rootDir = dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 3000);
 const authSecret = process.env.AUTH_SECRET || "project-manager-change-this-secret";
+if (authSecret === "project-manager-change-this-secret") {
+  console.warn("[SECURITY] AUTH_SECRET is using the default value. Set AUTH_SECRET in your .env file before deploying.");
+}
 const corsOrigin = process.env.CORS_ORIGIN || "*";
 const dbConfig = {
   host: process.env.DB_HOST || "127.0.0.1",
@@ -115,6 +118,59 @@ function md5(value) {
   return createHash("md5").update(String(value)).digest("hex");
 }
 
+function hashPassword(plain) {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(String(plain), salt, 32, { N: 16384, r: 8, p: 1 }).toString("hex");
+  return `scrypt:${salt}:${hash}`;
+}
+
+function verifyPassword(plain, stored) {
+  if (String(stored || "").startsWith("scrypt:")) {
+    const parts = stored.split(":");
+    if (parts.length !== 3) return false;
+    const [, salt, hash] = parts;
+    try {
+      const attempt = scryptSync(String(plain), salt, 32, { N: 16384, r: 8, p: 1 }).toString("hex");
+      const hashBuf = Buffer.from(hash, "hex");
+      const attemptBuf = Buffer.from(attempt, "hex");
+      return hashBuf.length === attemptBuf.length && timingSafeEqual(hashBuf, attemptBuf);
+    } catch {
+      return false;
+    }
+  }
+  return md5(plain) === stored;
+}
+
+const loginAttempts = new Map();
+const RATE_WINDOW_MS = 15 * 60 * 1000;
+const RATE_MAX = 10;
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip) || { count: 0, resetAt: now + RATE_WINDOW_MS };
+  if (now > entry.resetAt) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_MAX) return false;
+  loginAttempts.set(ip, { ...entry, count: entry.count + 1 });
+  return true;
+}
+
+function clearRateLimit(ip) {
+  loginAttempts.delete(ip);
+}
+
+const revokedTokens = new Set();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const key of revokedTokens) {
+    const exp = Number(key.split(":")[1] || 0);
+    if (exp && exp < now) revokedTokens.delete(key);
+  }
+}, 60 * 60 * 1000);
+
 function base64UrlEncode(value) {
   return Buffer.from(value)
     .toString("base64")
@@ -149,6 +205,7 @@ function verifyToken(token) {
     if (signatureBuffer.length !== expectedBuffer.length || !timingSafeEqual(signatureBuffer, expectedBuffer)) return null;
     const payload = JSON.parse(base64UrlDecode(body).toString("utf8"));
     if (!payload.exp || payload.exp < Date.now()) return null;
+    if (revokedTokens.has(`${payload.sub}:${payload.exp}`)) return null;
     return payload;
   } catch {
     return null;
@@ -1568,7 +1625,7 @@ async function handleApi(request, response) {
       const adminUser = {
         id: createId("user"),
         username,
-        passwordHash: md5(password),
+        passwordHash: hashPassword(password),
         role: "admin",
         managerId: "",
         companyId,
@@ -1661,6 +1718,11 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/auth/login" && request.method === "POST") {
+    const clientIp = (request.headers["x-forwarded-for"] || request.socket.remoteAddress || "unknown").split(",")[0].trim();
+    if (!checkRateLimit(clientIp)) {
+      sendJson(response, 429, { ok: false, error: "Too many login attempts. Please wait 15 minutes." });
+      return true;
+    }
     try {
       const { username, password } = JSON.parse(await readBody(request));
       const cleanUsername = String(username || "").trim();
@@ -1671,7 +1733,7 @@ async function handleApi(request, response) {
         ...stateUsers,
         ...bootstrapUsers.filter((bootstrapUser) => !stateUsers.some((user) => user.username === bootstrapUser.username))
       ];
-      const localUser = localUsers.find((user) => user.username === cleanUsername && user.passwordHash === md5(cleanPassword));
+      const localUser = localUsers.find((user) => user.username === cleanUsername && verifyPassword(cleanPassword, user.passwordHash));
       if (localUser) {
         const settings = await readSettings();
         const company = localUser.role === "super_admin" ? null : companyRegistryEntry(settings, actorCompanyId(localUser));
@@ -1680,6 +1742,15 @@ async function handleApi(request, response) {
           sendJson(response, 403, { ok: false, error: "Company suspended" });
           return true;
         }
+        if (localUser.passwordHash && !localUser.passwordHash.startsWith("scrypt:")) {
+          const upgraded = hashPassword(cleanPassword);
+          const userIndex = state.users.findIndex((u) => u.id === localUser.id);
+          if (userIndex >= 0) {
+            state.users[userIndex] = { ...state.users[userIndex], passwordHash: upgraded };
+            await writeState({ ...state, savedBy: "system:hash-upgrade" });
+          }
+        }
+        clearRateLimit(clientIp);
         await recordAuditLog(cleanUsername, "auth.login_success", "user", localUser.id, { role: localUser.role, companyId: actorCompanyId(localUser) });
         const { passwordHash: _h1, passwordChange: _pc1, ...safeLocalUser } = localUser;
         sendJson(response, 200, { ok: true, token: tokenForUser(localUser), user: safeLocalUser });
@@ -1709,6 +1780,7 @@ async function handleApi(request, response) {
           company: ""
         }
       };
+      clearRateLimit(clientIp);
       const { passwordHash: _h2, passwordChange: _pc2, ...safeUser } = user;
       await recordAuditLog(cleanUsername, "auth.login_success", "user", user.id, { role: user.role, provider: "ldap" });
       sendJson(response, 200, {
@@ -1719,6 +1791,34 @@ async function handleApi(request, response) {
     } catch {
       sendJson(response, 401, { ok: false, error: "LDAP login failed" });
     }
+    return true;
+  }
+
+  if (pathname === "/api/auth/logout" && request.method === "POST") {
+    const actor = authPayload(request);
+    if (actor?.sub && actor?.exp) {
+      revokedTokens.add(`${actor.sub}:${actor.exp}`);
+    }
+    sendJson(response, 200, { ok: true });
+    return true;
+  }
+
+  if (pathname === "/api/auth/refresh" && request.method === "POST") {
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
+    const state = ensureStateShape(await readState());
+    const stateUsers = state?.users?.length ? state.users : [];
+    const allUsers = [
+      ...stateUsers,
+      ...bootstrapUsers.filter((b) => !stateUsers.some((u) => u.username === b.username))
+    ];
+    const user = allUsers.find((u) => u.id === actor.sub);
+    if (!user) {
+      sendJson(response, 404, { error: "User not found" });
+      return true;
+    }
+    revokedTokens.add(`${actor.sub}:${actor.exp}`);
+    sendJson(response, 200, { ok: true, token: tokenForUser(user) });
     return true;
   }
 
@@ -1747,7 +1847,7 @@ async function handleApi(request, response) {
         ...state.users[userIndex],
         passwordChange: {
           tokenHash: md5(token),
-          passwordHash: md5(cleanPassword),
+          passwordHash: hashPassword(cleanPassword),
           expiresAt: Date.now() + 30 * 60 * 1000
         }
       };
@@ -1821,7 +1921,7 @@ async function handleApi(request, response) {
         sendJson(response, 404, { error: "User not found" });
         return true;
       }
-      target.passwordHash = md5(cleanPassword);
+      target.passwordHash = hashPassword(cleanPassword);
       delete target.password;
       delete target.passwordChange;
       await writeState({ ...state, savedBy: actor.username });
@@ -1925,7 +2025,10 @@ async function handleApi(request, response) {
     const actor = requireAuth(request, response);
     if (!actor) return true;
     const state = ensureStateShape(await readState());
-    sendJson(response, 200, stateForActor(state, actor).projects || []);
+    const q = (url.searchParams.get("q") || "").toLowerCase().trim();
+    let projects = stateForActor(state, actor).projects || [];
+    if (q) projects = projects.filter((p) => p.name.toLowerCase().includes(q) || (p.status || "").toLowerCase().includes(q));
+    sendJson(response, 200, projects);
     return true;
   }
 
@@ -1994,7 +2097,9 @@ async function handleApi(request, response) {
     const state = ensureStateShape(await readState());
     const scoped = stateForActor(state, actor);
     const project = url.searchParams.get("project");
-    const tasks = project ? (scoped.tasks || []).filter((task) => task.project === project) : scoped.tasks || [];
+    const q = (url.searchParams.get("q") || "").toLowerCase().trim();
+    let tasks = project ? (scoped.tasks || []).filter((task) => task.project === project) : scoped.tasks || [];
+    if (q) tasks = tasks.filter((task) => task.name.toLowerCase().includes(q) || task.project.toLowerCase().includes(q) || (task.owner || "").toLowerCase().includes(q));
     sendJson(response, 200, tasks);
     return true;
   }
@@ -2018,7 +2123,88 @@ async function handleApi(request, response) {
     return true;
   }
 
+  const commentDeleteMatch = pathname.match(/^\/api\/comments\/([^/]+)$/);
+  if (commentDeleteMatch && request.method === "DELETE") {
+    const actor = requireAuth(request, response, ["admin", "manager", "user"]);
+    if (!actor) return true;
+    const commentId = decodeURIComponent(commentDeleteMatch[1]);
+    const state = ensureStateShape(await readState());
+    let found = false;
+    state.tasks = state.tasks.map((task) => {
+      const idx = (task.comments || []).findIndex((c) => c.id === commentId && (c.author === actor.username || ["admin", "manager"].includes(actor.role)));
+      if (idx < 0) return task;
+      found = true;
+      return { ...task, comments: task.comments.filter((_, i) => i !== idx) };
+    });
+    if (!found) {
+      sendJson(response, 404, { error: "Comment not found or not allowed" });
+      return true;
+    }
+    await writeState({ ...state, savedBy: actor.username });
+    sendJson(response, 200, { ok: true });
+    return true;
+  }
+
+  const taskCommentsMatch = pathname.match(/^\/api\/tasks\/([^/]+)\/comments$/);
+  if (taskCommentsMatch) {
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
+    const taskId = decodeURIComponent(taskCommentsMatch[1]);
+    const state = ensureStateShape(await readState());
+    const scoped = stateForActor(state, actor);
+    const task = scoped.tasks?.find((t) => t.id === taskId);
+    if (!task) {
+      sendJson(response, 404, { error: "Task not found" });
+      return true;
+    }
+    if (request.method === "GET") {
+      sendJson(response, 200, task.comments || []);
+      return true;
+    }
+    if (request.method === "POST") {
+      const body = JSON.parse(await readBody(request));
+      const text = String(body.text || "").trim();
+      if (!text) {
+        sendJson(response, 400, { error: "Comment text is required" });
+        return true;
+      }
+      const comment = {
+        id: createId("comment"),
+        author: actor.username,
+        text,
+        createdAt: new Date().toISOString()
+      };
+      const fullState = ensureStateShape(await readState());
+      const taskIndex = fullState.tasks.findIndex((t) => t.id === taskId);
+      if (taskIndex < 0) {
+        sendJson(response, 404, { error: "Task not found" });
+        return true;
+      }
+      fullState.tasks[taskIndex] = {
+        ...fullState.tasks[taskIndex],
+        comments: [...(fullState.tasks[taskIndex].comments || []), comment]
+      };
+      await writeState({ ...fullState, savedBy: actor.username });
+      sendJson(response, 201, comment);
+      return true;
+    }
+  }
+
   const taskMatch = pathname.match(/^\/api\/tasks\/([^/]+)$/);
+  if (taskMatch && request.method === "GET") {
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
+    const taskId = decodeURIComponent(taskMatch[1]);
+    const state = ensureStateShape(await readState());
+    const task = stateForActor(state, actor).tasks?.find((t) => t.id === taskId);
+    if (!task) {
+      sendJson(response, 404, { error: "Task not found" });
+      return true;
+    }
+    sendJson(response, 200, task);
+    return true;
+  }
+
   if (taskMatch && ["PUT", "PATCH", "DELETE"].includes(request.method || "")) {
     const actor = requireAuth(request, response, ["admin", "manager"]);
     if (!actor) return true;
