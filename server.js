@@ -1,9 +1,9 @@
 import { createServer, request as httpRequest } from "http";
 import { request as httpsRequest } from "https";
 import { createHash, createHmac, timingSafeEqual, scryptSync, randomBytes } from "crypto";
-import { stat } from "fs/promises";
+import { stat, mkdir, writeFile } from "fs/promises";
 import { createReadStream } from "fs";
-import { dirname, extname, normalize, resolve } from "path";
+import { dirname, extname, normalize, resolve, join } from "path";
 import { fileURLToPath } from "url";
 import ldap from "ldapjs";
 import mysql from "mysql2/promise";
@@ -11,6 +11,7 @@ import nodemailer from "nodemailer";
 import PDFDocument from "pdfkit";
 
 const rootDir = dirname(fileURLToPath(import.meta.url));
+const uploadsDir = join(rootDir, "uploads");
 const port = Number(process.env.PORT || 3000);
 const authSecret = process.env.AUTH_SECRET || "project-manager-change-this-secret";
 if (authSecret === "project-manager-change-this-secret") {
@@ -117,6 +118,83 @@ function sendText(response, statusCode, body, contentType, filename) {
 function md5(value) {
   return createHash("md5").update(String(value)).digest("hex");
 }
+
+const sseClients = new Set();
+
+function broadcastStateChange(companyId) {
+  const payload = `data: ${JSON.stringify({ type: "state_updated", companyId, ts: Date.now() })}\n\n`;
+  for (const client of sseClients) {
+    if (client.companyId === companyId || companyId === "platform") {
+      try { client.response.write(payload); } catch {}
+    }
+  }
+}
+
+const PROJECT_TEMPLATES = [
+  {
+    id: "software",
+    name: "Software Development",
+    description: "Agile sprint tsikli: analiz, inkişaf, test, deployment",
+    category: "IT",
+    tasks: [
+      { name: "Tələblər analizi", status: "Plan", priority: "Yüksək", offsetDays: 0, durationDays: 5 },
+      { name: "Arxitektura dizaynı", status: "Plan", priority: "Yüksək", offsetDays: 5, durationDays: 5 },
+      { name: "Backend inkişafı", status: "Plan", priority: "Yüksək", offsetDays: 10, durationDays: 20 },
+      { name: "Frontend inkişafı", status: "Plan", priority: "Normal", offsetDays: 10, durationDays: 20 },
+      { name: "Unit testlər", status: "Plan", priority: "Normal", offsetDays: 25, durationDays: 7 },
+      { name: "İnteqrasiya testləri", status: "Plan", priority: "Yüksək", offsetDays: 30, durationDays: 5 },
+      { name: "UAT və müştəri qəbulu", status: "Plan", priority: "Yüksək", offsetDays: 35, durationDays: 5 },
+      { name: "Production deployment", status: "Plan", priority: "Kritik", offsetDays: 40, durationDays: 2 },
+      { name: "Sənədləşmə", status: "Plan", priority: "Aşağı", offsetDays: 38, durationDays: 7 }
+    ]
+  },
+  {
+    id: "infrastructure",
+    name: "IT İnfrastruktur",
+    description: "Server, şəbəkə, avadanlıq layihəsi",
+    category: "IT",
+    tasks: [
+      { name: "Mövcud infrastruktur audit", status: "Plan", priority: "Yüksək", offsetDays: 0, durationDays: 5 },
+      { name: "Texniki dizayn sənədi", status: "Plan", priority: "Yüksək", offsetDays: 5, durationDays: 7 },
+      { name: "Avadanlıq satınalma", status: "Plan", priority: "Normal", offsetDays: 10, durationDays: 14 },
+      { name: "Server otağı hazırlığı", status: "Plan", priority: "Normal", offsetDays: 14, durationDays: 7 },
+      { name: "Avadanlıq qurulumu", status: "Plan", priority: "Yüksək", offsetDays: 24, durationDays: 10 },
+      { name: "Şəbəkə konfiqurasiyası", status: "Plan", priority: "Yüksək", offsetDays: 30, durationDays: 7 },
+      { name: "Sistem testləri", status: "Plan", priority: "Yüksək", offsetDays: 37, durationDays: 5 },
+      { name: "İstifadəçi təlimi", status: "Plan", priority: "Normal", offsetDays: 40, durationDays: 3 },
+      { name: "Təhvilat", status: "Plan", priority: "Normal", offsetDays: 43, durationDays: 2 }
+    ]
+  },
+  {
+    id: "marketing",
+    name: "Marketinq Kampaniyası",
+    description: "Brendinq, kontent, launch tsikli",
+    category: "Marketing",
+    tasks: [
+      { name: "Bazar araşdırması", status: "Plan", priority: "Yüksək", offsetDays: 0, durationDays: 7 },
+      { name: "Kampaniya strategiyası", status: "Plan", priority: "Yüksək", offsetDays: 7, durationDays: 5 },
+      { name: "Kreativ brief", status: "Plan", priority: "Normal", offsetDays: 10, durationDays: 3 },
+      { name: "Kontent istehsalı", status: "Plan", priority: "Normal", offsetDays: 14, durationDays: 14 },
+      { name: "Dizayn materialları", status: "Plan", priority: "Normal", offsetDays: 14, durationDays: 10 },
+      { name: "Media planlaması", status: "Plan", priority: "Yüksək", offsetDays: 20, durationDays: 5 },
+      { name: "Soft launch", status: "Plan", priority: "Yüksək", offsetDays: 28, durationDays: 3 },
+      { name: "Tam başlanğıc", status: "Plan", priority: "Kritik", offsetDays: 31, durationDays: 1 },
+      { name: "Performans analizi", status: "Plan", priority: "Normal", offsetDays: 32, durationDays: 7 }
+    ]
+  },
+  {
+    id: "basic",
+    name: "Sadə Layihə",
+    description: "Ümumi məqsədli boş layihə şablonu",
+    category: "General",
+    tasks: [
+      { name: "Layihə başlanğıcı", status: "Plan", priority: "Normal", offsetDays: 0, durationDays: 3 },
+      { name: "Planlaşdırma", status: "Plan", priority: "Normal", offsetDays: 3, durationDays: 5 },
+      { name: "İcra", status: "Plan", priority: "Normal", offsetDays: 8, durationDays: 14 },
+      { name: "Yekun", status: "Plan", priority: "Normal", offsetDays: 22, durationDays: 3 }
+    ]
+  }
+];
 
 function hashPassword(plain) {
   const salt = randomBytes(16).toString("hex");
@@ -426,6 +504,63 @@ async function ensureSchema() {
       INDEX idx_audit_actor (actor)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS schema_version (
+      version INT NOT NULL PRIMARY KEY
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS password_resets (
+      id VARCHAR(128) NOT NULL PRIMARY KEY,
+      user_id VARCHAR(128) NOT NULL,
+      token_hash VARCHAR(64) NOT NULL,
+      expires_at DATETIME NOT NULL,
+      used TINYINT(1) NOT NULL DEFAULT 0,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_pr_user (user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+}
+
+async function runMigrations() {
+  const [versionRows] = await pool.execute("SELECT COALESCE(MAX(version), 0) AS v FROM schema_version");
+  let currentVersion = Number(versionRows[0]?.v ?? 0);
+
+  if (currentVersion < 1) {
+    const [ccol] = await pool.execute(
+      "SELECT COUNT(*) AS cnt FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'comments' AND CONSTRAINT_NAME = 'fk_comments_task_id'"
+    );
+    if (!ccol[0].cnt) {
+      await pool.execute("ALTER TABLE comments ADD CONSTRAINT fk_comments_task_id FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE");
+    }
+    const [acol] = await pool.execute(
+      "SELECT COUNT(*) AS cnt FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'attachments' AND CONSTRAINT_NAME = 'fk_attachments_task_id'"
+    );
+    if (!acol[0].cnt) {
+      await pool.execute("ALTER TABLE attachments ADD CONSTRAINT fk_attachments_task_id FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE");
+    }
+    const [pmcol] = await pool.execute(
+      "SELECT COUNT(*) AS cnt FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'project_members' AND CONSTRAINT_NAME = 'fk_pm_project_id'"
+    );
+    if (!pmcol[0].cnt) {
+      await pool.execute("ALTER TABLE project_members ADD CONSTRAINT fk_pm_project_id FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE");
+    }
+    const [tmcol] = await pool.execute(
+      "SELECT COUNT(*) AS cnt FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'team_members' AND CONSTRAINT_NAME = 'fk_tm_team_id'"
+    );
+    if (!tmcol[0].cnt) {
+      await pool.execute("ALTER TABLE team_members ADD CONSTRAINT fk_tm_team_id FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE");
+    }
+    const [pidcol] = await pool.execute(
+      "SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tasks' AND COLUMN_NAME = 'project_id'"
+    );
+    if (!pidcol[0].cnt) {
+      await pool.execute("ALTER TABLE tasks ADD COLUMN project_id VARCHAR(128) NULL, ADD INDEX idx_tasks_project_id (project_id)");
+    }
+    await pool.execute("INSERT IGNORE INTO schema_version (version) VALUES (1)");
+    currentVersion = 1;
+    console.log("[migration] v1: FK constraints and project_id column added");
+  }
 }
 
 async function readState() {
@@ -434,7 +569,7 @@ async function readState() {
   return JSON.parse(rows[0].state_json);
 }
 
-async function writeState(payload) {
+async function writeState(payload, broadcastCompanyId = null) {
   const nextState = {
     ...payload,
     version: Number(payload.version) || 1,
@@ -447,6 +582,7 @@ async function writeState(payload) {
     [JSON.stringify(nextState)]
   );
   await syncRelationalState(nextState);
+  if (broadcastCompanyId) broadcastStateChange(broadcastCompanyId);
   return nextState;
 }
 
@@ -1513,7 +1649,160 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/health" && request.method === "GET") {
-    sendJson(response, 200, { ok: true });
+    sendJson(response, 200, { ok: true, clients: sseClients.size });
+    return true;
+  }
+
+  if (pathname === "/api/events" && request.method === "GET") {
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
+    response.writeHead(200, {
+      "content-type": "text/event-stream",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "x-accel-buffering": "no",
+      "access-control-allow-origin": corsOrigin
+    });
+    response.flushHeaders();
+    response.write(": connected\n\n");
+    const client = { response, companyId: actorCompanyId(actor) };
+    sseClients.add(client);
+    const heartbeat = setInterval(() => { try { response.write(": ping\n\n"); } catch {} }, 25000);
+    request.on("close", () => { clearInterval(heartbeat); sseClients.delete(client); });
+    return true;
+  }
+
+  if (pathname === "/api/project-templates" && request.method === "GET") {
+    if (!requireAuth(request, response)) return true;
+    sendJson(response, 200, PROJECT_TEMPLATES);
+    return true;
+  }
+
+  if (pathname === "/api/upload" && request.method === "POST") {
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
+    try {
+      const body = JSON.parse(await readBody(request));
+      const name = String(body.name || "file").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200);
+      const type = String(body.type || "application/octet-stream");
+      const dataUrl = String(body.data || "");
+      if (!dataUrl.startsWith("data:")) {
+        sendJson(response, 400, { error: "data must be a base64 data URL" });
+        return true;
+      }
+      const base64Data = dataUrl.split(",")[1] || "";
+      const buffer = Buffer.from(base64Data, "base64");
+      if (buffer.length > 20 * 1024 * 1024) {
+        sendJson(response, 413, { error: "File exceeds 20 MB limit" });
+        return true;
+      }
+      const fileId = createId("file");
+      const filename = `${fileId}_${name}`;
+      await mkdir(uploadsDir, { recursive: true });
+      await writeFile(join(uploadsDir, filename), buffer);
+      sendJson(response, 201, {
+        id: fileId,
+        name,
+        type,
+        size: buffer.length,
+        url: `/api/uploads/${encodeURIComponent(filename)}`
+      });
+    } catch {
+      sendJson(response, 500, { error: "Could not save file" });
+    }
+    return true;
+  }
+
+  const uploadFileMatch = pathname.match(/^\/api\/uploads\/([^/]+)$/);
+  if (uploadFileMatch && request.method === "GET") {
+    const filename = decodeURIComponent(uploadFileMatch[1]).replace(/[/\\]/g, "");
+    const filePath = join(uploadsDir, filename);
+    if (!filePath.startsWith(uploadsDir)) {
+      sendJson(response, 403, { error: "Forbidden" });
+      return true;
+    }
+    try {
+      const fileStat = await stat(filePath);
+      if (!fileStat.isFile()) throw new Error();
+      const ext = extname(filename).toLowerCase();
+      const mimeMap = { ".pdf": "application/pdf", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".svg": "image/svg+xml", ".txt": "text/plain", ".csv": "text/csv", ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" };
+      response.writeHead(200, {
+        "content-type": mimeMap[ext] || "application/octet-stream",
+        "content-length": fileStat.size,
+        "cache-control": "private, max-age=86400"
+      });
+      createReadStream(filePath).pipe(response);
+    } catch {
+      sendJson(response, 404, { error: "File not found" });
+    }
+    return true;
+  }
+
+  if (pathname === "/api/auth/forgot-password" && request.method === "POST") {
+    try {
+      const { username } = JSON.parse(await readBody(request));
+      const cleanUsername = String(username || "").trim();
+      const state = ensureStateShape(await readState());
+      const user = state.users.find((u) => u.username === cleanUsername && u.role !== "super_admin");
+      if (!user || !user.profile?.email) {
+        sendJson(response, 200, { ok: true, sent: false, reason: "User not found or no email configured" });
+        return true;
+      }
+      const token = passwordChangeToken();
+      const tokenHash = md5(token);
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      await pool.execute(
+        "INSERT INTO password_resets (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
+        [createId("pr"), user.id, tokenHash, expiresAt]
+      );
+      const baseUrl = `${request.headers["x-forwarded-proto"] || "http"}://${request.headers.host}`;
+      const resetLink = `${baseUrl}/#reset-password?token=${encodeURIComponent(token)}&uid=${encodeURIComponent(user.id)}`;
+      const settings = await readSettings();
+      const mail = companyMailSettings(settings, actorCompanyId(user));
+      const result = await sendMailWithSettings(mail, {
+        subject: "Şifrə sıfırlama — Project Manager",
+        text: `Şifrənizi sıfırlamaq üçün aşağıdakı linki açın:\n\n${resetLink}\n\nLink 1 saat ərzində etibarlıdır.`
+      });
+      await recordAuditLog(cleanUsername, "auth.forgot_password", "user", user.id, { sent: !result.skipped });
+      sendJson(response, 200, { ok: true, sent: !result.skipped && result.ok !== false, reason: result.reason || "" });
+    } catch {
+      sendJson(response, 500, { error: "Could not process request" });
+    }
+    return true;
+  }
+
+  if (pathname === "/api/auth/reset-password" && request.method === "POST") {
+    try {
+      const { token, userId, newPassword } = JSON.parse(await readBody(request));
+      const cleanPassword = String(newPassword || "");
+      if (cleanPassword.length < 8) {
+        sendJson(response, 400, { error: "Password is too short" });
+        return true;
+      }
+      const tokenHash = md5(String(token || "").trim());
+      const [rows] = await pool.execute(
+        "SELECT * FROM password_resets WHERE user_id = ? AND token_hash = ? AND used = 0 AND expires_at > NOW()",
+        [String(userId || ""), tokenHash]
+      );
+      if (!rows.length) {
+        sendJson(response, 400, { error: "Invalid or expired reset token" });
+        return true;
+      }
+      const state = ensureStateShape(await readState());
+      const userIndex = state.users.findIndex((u) => u.id === userId && u.role !== "super_admin");
+      if (userIndex < 0) {
+        sendJson(response, 404, { error: "User not found" });
+        return true;
+      }
+      state.users[userIndex] = { ...state.users[userIndex], passwordHash: hashPassword(cleanPassword) };
+      delete state.users[userIndex].passwordChange;
+      await writeState({ ...state, savedBy: `system:password-reset:${state.users[userIndex].username}` });
+      await pool.execute("UPDATE password_resets SET used = 1 WHERE id = ?", [rows[0].id]);
+      await recordAuditLog(state.users[userIndex].username, "auth.password_reset", "user", userId, {});
+      sendJson(response, 200, { ok: true });
+    } catch {
+      sendJson(response, 500, { error: "Could not reset password" });
+    }
     return true;
   }
 
@@ -1655,7 +1944,7 @@ async function handleApi(request, response) {
           progress: 0
         }));
       }
-      await writeState({ ...state, savedBy: actor.username });
+      await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       const settings = await readSettings();
       const registry = companyRegistryFromState(ensureStateShape(await readState()), settings).map((company) => company.id === companyId ? {
         ...company,
@@ -1851,7 +2140,7 @@ async function handleApi(request, response) {
           expiresAt: Date.now() + 30 * 60 * 1000
         }
       };
-      await writeState({ ...state, savedBy: actor.username });
+      await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       const settings = await readSettings();
       const result = await sendPasswordConfirmation(companyMailSettings(settings, actorCompanyId(actor)), state.users[userIndex], token);
       await pool.execute(
@@ -1890,7 +2179,7 @@ async function handleApi(request, response) {
       }
       const { passwordChange, ...nextUser } = user;
       state.users[userIndex] = { ...nextUser, passwordHash: requestState.passwordHash };
-      await writeState({ ...state, savedBy: actor.username });
+      await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       await recordAuditLog(actor.username, "user.password_confirmed", "user", actor.sub, { companyId: actorCompanyId(actor) });
       sendJson(response, 200, { ok: true });
     } catch {
@@ -1924,7 +2213,7 @@ async function handleApi(request, response) {
       target.passwordHash = hashPassword(cleanPassword);
       delete target.password;
       delete target.passwordChange;
-      await writeState({ ...state, savedBy: actor.username });
+      await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       await recordAuditLog(actor.username, "user.password_changed", "user", target.id, { companyId: actorCompanyId(actor), targetUsername: target.username });
       sendJson(response, 200, { ok: true });
     } catch {
@@ -2026,9 +2315,14 @@ async function handleApi(request, response) {
     if (!actor) return true;
     const state = ensureStateShape(await readState());
     const q = (url.searchParams.get("q") || "").toLowerCase().trim();
+    const page = Math.max(1, Number(url.searchParams.get("page") || 1));
+    const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") || 50)));
     let projects = stateForActor(state, actor).projects || [];
     if (q) projects = projects.filter((p) => p.name.toLowerCase().includes(q) || (p.status || "").toLowerCase().includes(q));
-    sendJson(response, 200, projects);
+    const total = projects.length;
+    const items = projects.slice((page - 1) * limit, page * limit);
+    const isPaged = url.searchParams.has("page") || url.searchParams.has("limit");
+    sendJson(response, 200, isPaged ? { items, total, page, limit, pages: Math.ceil(total / limit) } : projects);
     return true;
   }
 
@@ -2043,7 +2337,7 @@ async function handleApi(request, response) {
         return true;
       }
       state.projects.push(project);
-      await writeState({ ...state, savedBy: actor.username });
+      await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       sendJson(response, 201, project);
     } catch {
       sendJson(response, 400, { error: "Could not create project" });
@@ -2067,7 +2361,7 @@ async function handleApi(request, response) {
       state.trash.push({ id: createId("trash"), type: "projectRecord", data: project, deletedAt: new Date().toISOString(), deletedBy: actor.username });
       state.tasks = state.tasks.map((task) => task.project === project.name ? { ...task, project: "" } : task);
       state.projectLinks = state.projectLinks.filter((link) => link.project !== project.name);
-      await writeState({ ...state, savedBy: actor.username });
+      await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       sendJson(response, 200, { ok: true });
       return true;
     }
@@ -2083,7 +2377,7 @@ async function handleApi(request, response) {
         state.tasks = state.tasks.map((task) => task.project === previous.name ? { ...task, project: nextProject.name } : task);
         state.projectLinks = state.projectLinks.map((link) => link.project === previous.name ? { ...link, project: nextProject.name } : link);
       }
-      await writeState({ ...state, savedBy: actor.username });
+      await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       sendJson(response, 200, nextProject);
     } catch {
       sendJson(response, 400, { error: "Could not update project" });
@@ -2098,9 +2392,18 @@ async function handleApi(request, response) {
     const scoped = stateForActor(state, actor);
     const project = url.searchParams.get("project");
     const q = (url.searchParams.get("q") || "").toLowerCase().trim();
+    const status = url.searchParams.get("status");
+    const priority = url.searchParams.get("priority");
+    const page = Math.max(1, Number(url.searchParams.get("page") || 1));
+    const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") || 100)));
     let tasks = project ? (scoped.tasks || []).filter((task) => task.project === project) : scoped.tasks || [];
     if (q) tasks = tasks.filter((task) => task.name.toLowerCase().includes(q) || task.project.toLowerCase().includes(q) || (task.owner || "").toLowerCase().includes(q));
-    sendJson(response, 200, tasks);
+    if (status) tasks = tasks.filter((task) => task.status === status);
+    if (priority) tasks = tasks.filter((task) => task.priority === priority);
+    const total = tasks.length;
+    const isPaged = url.searchParams.has("page") || url.searchParams.has("limit");
+    const items = isPaged ? tasks.slice((page - 1) * limit, page * limit) : tasks;
+    sendJson(response, 200, isPaged ? { items, total, page, limit, pages: Math.ceil(total / limit) } : tasks);
     return true;
   }
 
@@ -2115,7 +2418,7 @@ async function handleApi(request, response) {
         return true;
       }
       state.tasks.push(task);
-      await writeState({ ...state, savedBy: actor.username });
+      await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       sendJson(response, 201, task);
     } catch {
       sendJson(response, 400, { error: "Could not create task" });
@@ -2140,7 +2443,7 @@ async function handleApi(request, response) {
       sendJson(response, 404, { error: "Comment not found or not allowed" });
       return true;
     }
-    await writeState({ ...state, savedBy: actor.username });
+    await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
     sendJson(response, 200, { ok: true });
     return true;
   }
@@ -2184,7 +2487,7 @@ async function handleApi(request, response) {
         ...fullState.tasks[taskIndex],
         comments: [...(fullState.tasks[taskIndex].comments || []), comment]
       };
-      await writeState({ ...fullState, savedBy: actor.username });
+      await writeState({ ...fullState, savedBy: actor.username }, actorCompanyId(actor));
       sendJson(response, 201, comment);
       return true;
     }
@@ -2224,7 +2527,7 @@ async function handleApi(request, response) {
         parentTaskId: item.parentTaskId === task.id ? "" : item.parentTaskId,
         dependencyIds: (item.dependencyIds || []).filter((id) => id !== task.id)
       }));
-      await writeState({ ...state, savedBy: actor.username });
+      await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       sendJson(response, 200, { ok: true });
       return true;
     }
@@ -2236,7 +2539,7 @@ async function handleApi(request, response) {
         return true;
       }
       state.tasks[taskIndex] = task;
-      await writeState({ ...state, savedBy: actor.username });
+      await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       sendJson(response, 200, task);
     } catch {
       sendJson(response, 400, { error: "Could not update task" });
@@ -2297,8 +2600,8 @@ async function handleApi(request, response) {
       }
       const currentState = ensureStateShape(await readState());
       const nextState = actor.role === "super_admin"
-        ? await writeState({ ...ensureStateShape(payload), savedBy: actor.username })
-        : await writeState(mergeActorState(currentState, payload, actor));
+        ? await writeState({ ...ensureStateShape(payload), savedBy: actor.username }, "platform")
+        : await writeState(mergeActorState(currentState, payload, actor), actorCompanyId(actor));
       sendJson(response, 200, { ok: true, savedAt: nextState.savedAt });
     } catch (error) {
       sendJson(response, error.statusCode || 400, { error: "Could not save state" });
@@ -2340,6 +2643,8 @@ async function serveStatic(request, response) {
 }
 
 await ensureSchema();
+await runMigrations();
+await mkdir(uploadsDir, { recursive: true });
 
 const server = createServer(async (request, response) => {
   if (await handleApi(request, response)) return;
