@@ -544,6 +544,11 @@ async function syncRelationalState(state) {
 
 function defaultSettings() {
   return {
+    appName: "Project Manager",
+    appLogo: "PM",
+    defaultLanguage: "az",
+    defaultTheme: "light",
+    maintenanceMode: false,
     emailEnabled: false,
     emailRecipients: "",
     emailProvider: "",
@@ -567,6 +572,11 @@ function defaultSettings() {
 function publicSettings(settings, options = {}) {
   const merged = { ...defaultSettings(), ...(settings || {}) };
   return {
+    appName: merged.appName || "Project Manager",
+    appLogo: merged.appLogo || "PM",
+    defaultLanguage: merged.defaultLanguage || "az",
+    defaultTheme: merged.defaultTheme || "light",
+    maintenanceMode: Boolean(merged.maintenanceMode),
     emailEnabled: Boolean(merged.emailEnabled),
     emailRecipients: merged.emailRecipients || "",
     emailProvider: merged.emailProvider || "",
@@ -1076,6 +1086,8 @@ function companyRegistryFromState(state, settings = {}) {
       projectCount: projectsByCompany.get(companyId) || 0,
       lastLoginAt: existing.get(companyId)?.lastLoginAt || "",
       createdAt: existing.get(companyId)?.createdAt || new Date().toISOString(),
+      trialEndsAt: existing.get(companyId)?.trialEndsAt || "",
+      subscriptionEndsAt: existing.get(companyId)?.subscriptionEndsAt || "",
       statusChangedAt: existing.get(companyId)?.statusChangedAt || existing.get(companyId)?.createdAt || new Date().toISOString(),
       activatedAt: existing.get(companyId)?.activatedAt || existing.get(companyId)?.createdAt || new Date().toISOString(),
       suspendedAt: existing.get(companyId)?.suspendedAt || "",
@@ -1484,7 +1496,7 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/notifications" && request.method === "GET") {
-    if (!requireAuth(request, response, ["admin", "manager"])) return true;
+    if (!requireAuth(request, response, ["super_admin", "admin", "manager"])) return true;
     const [rows] = await pool.execute("SELECT type, recipient, subject, status, created_at, payload_json FROM notifications ORDER BY id DESC LIMIT 100");
     sendJson(response, 200, rows);
     return true;
@@ -1530,6 +1542,84 @@ async function handleApi(request, response) {
     return true;
   }
 
+  if (pathname === "/api/platform/companies" && request.method === "POST") {
+    const actor = requireAuth(request, response, ["super_admin"]);
+    if (!actor) return true;
+    try {
+      const payload = JSON.parse(await readBody(request) || "{}");
+      const name = String(payload.name || "").trim();
+      const subdomain = slugFromName(payload.subdomain || name);
+      const username = String(payload.adminUsername || `admin${subdomain}`).trim();
+      const password = String(payload.adminPassword || `${username}123`);
+      if (!name || !username || !password) {
+        sendJson(response, 400, { error: "Company name, admin username and password are required" });
+        return true;
+      }
+      const companyId = `company-${subdomain}`;
+      const state = ensureStateShape(await readState());
+      if (state.users.some((user) => user.username.toLowerCase() === username.toLowerCase())) {
+        sendJson(response, 409, { error: "Username already exists" });
+        return true;
+      }
+      if (state.users.some((user) => user.companyId === companyId)) {
+        sendJson(response, 409, { error: "Company already exists" });
+        return true;
+      }
+      const adminUser = {
+        id: createId("user"),
+        username,
+        passwordHash: md5(password),
+        role: "admin",
+        managerId: "",
+        companyId,
+        profile: {
+          fullName: payload.adminFullName || username,
+          email: payload.adminEmail || "",
+          fatherName: "",
+          position: "Company Admin",
+          phone: "",
+          address: "",
+          company: name
+        }
+      };
+      state.users.push(adminUser);
+      if (payload.template && payload.template !== "empty") {
+        const projectName = `${name} Başlanğıc layihəsi`;
+        state.projects.push(normalizeProjectPayload({
+          id: createId("project"),
+          companyId,
+          name: projectName,
+          customerId: "",
+          managerIds: [adminUser.id],
+          start: new Date().toISOString().slice(0, 10),
+          end: "",
+          status: "Plan",
+          priority: "Normal",
+          progress: 0
+        }));
+      }
+      await writeState({ ...state, savedBy: actor.username });
+      const settings = await readSettings();
+      const registry = companyRegistryFromState(ensureStateShape(await readState()), settings).map((company) => company.id === companyId ? {
+        ...company,
+        plan: ["standard", "pro", "enterprise"].includes(payload.plan) ? payload.plan : "standard",
+        trialEndsAt: payload.trialEndsAt || "",
+        subscriptionEndsAt: payload.subscriptionEndsAt || "",
+        createdAt: new Date().toISOString(),
+        statusChangedAt: new Date().toISOString(),
+        activatedAt: new Date().toISOString(),
+        statusChangedBy: actor.username,
+        statusReason: "Company created"
+      } : company);
+      await writeSettings({ ...settings, companyRegistry: registry });
+      await recordAuditLog(actor.username, "workspace.registered", "company", companyId, { name, subdomain, plan: payload.plan || "standard" });
+      sendJson(response, 201, registry.find((company) => company.id === companyId));
+    } catch {
+      sendJson(response, 400, { error: "Could not create company" });
+    }
+    return true;
+  }
+
   const companyMatch = pathname.match(/^\/api\/platform\/companies\/([^/]+)$/);
   if (companyMatch && request.method === "PATCH") {
     const actor = requireAuth(request, response, ["super_admin"]);
@@ -1553,6 +1643,8 @@ async function handleApi(request, response) {
         subdomain: payload.subdomain ? slugFromName(payload.subdomain) : registry[index].subdomain,
         status: nextStatus,
         plan: payload.plan ? String(payload.plan).trim() : registry[index].plan,
+        trialEndsAt: payload.trialEndsAt !== undefined ? String(payload.trialEndsAt || "").trim() : registry[index].trialEndsAt || "",
+        subscriptionEndsAt: payload.subscriptionEndsAt !== undefined ? String(payload.subscriptionEndsAt || "").trim() : registry[index].subscriptionEndsAt || "",
         statusChangedAt: statusChanged ? now : registry[index].statusChangedAt,
         activatedAt: statusChanged && nextStatus === "active" ? now : registry[index].activatedAt,
         suspendedAt: statusChanged && nextStatus === "suspended" ? now : registry[index].suspendedAt,
@@ -1584,9 +1676,11 @@ async function handleApi(request, response) {
         const settings = await readSettings();
         const company = localUser.role === "super_admin" ? null : companyRegistryEntry(settings, actorCompanyId(localUser));
         if (company?.status === "suspended") {
+          await recordAuditLog(cleanUsername, "auth.login_blocked", "company", actorCompanyId(localUser), { reason: "Company suspended" });
           sendJson(response, 403, { ok: false, error: "Company suspended" });
           return true;
         }
+        await recordAuditLog(cleanUsername, "auth.login_success", "user", localUser.id, { role: localUser.role, companyId: actorCompanyId(localUser) });
         const { passwordHash: _h1, passwordChange: _pc1, ...safeLocalUser } = localUser;
         sendJson(response, 200, { ok: true, token: tokenForUser(localUser), user: safeLocalUser });
         return true;
@@ -1594,6 +1688,7 @@ async function handleApi(request, response) {
       const settings = await readSettings();
       const ldapUser = await authenticateLdap(cleanUsername, cleanPassword, settings);
       if (!ldapUser) {
+        await recordAuditLog(cleanUsername || "anonymous", "auth.login_failed", "user", cleanUsername || "-", {});
         sendJson(response, 401, { ok: false, error: "Invalid credentials" });
         return true;
       }
@@ -1615,6 +1710,7 @@ async function handleApi(request, response) {
         }
       };
       const { passwordHash: _h2, passwordChange: _pc2, ...safeUser } = user;
+      await recordAuditLog(cleanUsername, "auth.login_success", "user", user.id, { role: user.role, provider: "ldap" });
       sendJson(response, 200, {
         ok: true,
         token: tokenForUser(user),
@@ -2005,7 +2101,7 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/state" && request.method === "PUT") {
-    const actor = requireAuth(request, response, ["admin", "manager"]);
+    const actor = requireAuth(request, response, ["super_admin", "admin", "manager"]);
     if (!actor) return true;
     try {
       const payload = JSON.parse(await readBody(request));
@@ -2014,7 +2110,9 @@ async function handleApi(request, response) {
         return true;
       }
       const currentState = ensureStateShape(await readState());
-      const nextState = await writeState(mergeActorState(currentState, payload, actor));
+      const nextState = actor.role === "super_admin"
+        ? await writeState({ ...ensureStateShape(payload), savedBy: actor.username })
+        : await writeState(mergeActorState(currentState, payload, actor));
       sendJson(response, 200, { ok: true, savedAt: nextState.savedAt });
     } catch (error) {
       sendJson(response, error.statusCode || 400, { error: "Could not save state" });

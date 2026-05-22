@@ -395,11 +395,115 @@ body.admin-role .manager-only {
   line-height: 1.35;
 }
 
+.platform-management-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+.platform-lifecycle-card,
+.platform-form,
+.platform-table,
+.platform-alert-list {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.platform-lifecycle-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.platform-lifecycle-card strong,
+.platform-table strong {
+  overflow-wrap: anywhere;
+}
+
+.platform-lifecycle-card small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.platform-lifecycle-card label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.platform-card-actions,
+.platform-backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.platform-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 16px;
+}
+
+.platform-form .toggle-row {
+  min-height: 42px;
+}
+
+.platform-table {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.platform-table > div {
+  display: grid;
+  grid-template-columns: 1.3fr repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--soft) 68%, var(--panel));
+}
+
+.platform-table span,
+.platform-alert-list span {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.platform-backup-actions {
+  padding: 16px 16px 0;
+}
+
+.platform-alert-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px;
+}
+
+.platform-alert-list span {
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--amber) 32%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--amber) 9%, var(--panel));
+  color: var(--ink);
+  font-weight: 800;
+}
+
 .platform-section {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: #ffffff;
   box-shadow: var(--shadow);
+  margin-bottom: 18px;
 }
 
 .platform-section-head {
@@ -2982,6 +3086,7 @@ button:disabled {
   .report-summary,
   .platform-stats,
   .platform-ops,
+  .platform-management-grid,
   .insight-grid,
   .dashboard-calendar-grid,
   .resource-panel,
@@ -3049,6 +3154,11 @@ button:disabled {
   }
 
   .platform-ops {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-form,
+  .platform-table > div {
     grid-template-columns: 1fr;
   }
 

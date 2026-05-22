@@ -1779,6 +1779,13 @@ const companyRegistryList = document.querySelector("#companyRegistryList");
 const platformConsole = document.querySelector("#platformConsole");
 const platformStats = document.querySelector("#platformStats");
 const platformOps = document.querySelector("#platformOps");
+const platformLifecycle = document.querySelector("#platformLifecycle");
+const platformCreateWizard = document.querySelector("#platformCreateWizard");
+const platformMonitoring = document.querySelector("#platformMonitoring");
+const platformBackupCenter = document.querySelector("#platformBackupCenter");
+const platformGlobalSettings = document.querySelector("#platformGlobalSettings");
+const platformSecurityCenter = document.querySelector("#platformSecurityCenter");
+const platformNotificationCenter = document.querySelector("#platformNotificationCenter");
 const platformCompanyGrid = document.querySelector("#platformCompanyGrid");
 const platformTimeline = document.querySelector("#platformTimeline");
 const refreshPlatformCompaniesButton = document.querySelector("#refreshPlatformCompanies");
@@ -2488,6 +2495,8 @@ function companyRegistryFromLocalState() {
       projectCount: projectCounts.get(companyId) || 0,
       lastLoginAt: existing.get(companyId)?.lastLoginAt || "",
       createdAt: existing.get(companyId)?.createdAt || new Date().toISOString(),
+      trialEndsAt: existing.get(companyId)?.trialEndsAt || "",
+      subscriptionEndsAt: existing.get(companyId)?.subscriptionEndsAt || "",
       statusChangedAt: existing.get(companyId)?.statusChangedAt || existing.get(companyId)?.createdAt || new Date().toISOString(),
       activatedAt: existing.get(companyId)?.activatedAt || existing.get(companyId)?.createdAt || new Date().toISOString(),
       suspendedAt: existing.get(companyId)?.suspendedAt || ""
@@ -2527,6 +2536,11 @@ function renderNotificationBadge() {
 
 function defaultSettings() {
   return {
+    appName: "Project Manager",
+    appLogo: "PM",
+    defaultLanguage: "az",
+    defaultTheme: "light",
+    maintenanceMode: false,
     themeMode: "light",
     backgroundStyle: "calm",
     accentColor: "teal",
@@ -2811,6 +2825,35 @@ function platformOpsSummary(registry) {
     lastAudit,
     mailReady: Boolean(appSettings.emailEnabled && appSettings.emailProvider)
   };
+}
+
+function companyBackupPayload(companyId = "") {
+  const projectScope = companyId ? projects.filter((project) => (project.companyId || "company-default") === companyId) : projects;
+  const projectNames = new Set(projectScope.map((project) => project.name));
+  return {
+    version: backupVersion,
+    exportedAt: new Date().toISOString(),
+    companyId: companyId || "platform",
+    company: companyId ? (companyRegistryFromLocalState().find((item) => item.id === companyId)?.name || companyId) : "All tenants",
+    tasks: tasks.filter((task) => projectNames.has(task.project) || (!companyId && task.project)),
+    projects: projectScope,
+    members: companyId ? members.filter((member) => !member.companyId || member.companyId === companyId) : members,
+    teams: companyId ? teams.filter((team) => !team.companyId || team.companyId === companyId) : teams,
+    customers: companyId ? customers.filter((customer) => !customer.companyId || customer.companyId === companyId) : customers,
+    managedFiles: companyId ? managedFiles.filter((file) => !file.companyId || file.companyId === companyId) : managedFiles,
+    projectLinks: projectLinks.filter((link) => projectNames.has(link.project) || !companyId),
+    registers: registers.filter((item) => projectNames.has(item.project) || !companyId),
+    users: companyId ? users.filter((user) => user.companyId === companyId) : users,
+    companyRegistry: companyId ? companyRegistryFromLocalState().filter((company) => company.id === companyId) : companyRegistryFromLocalState()
+  };
+}
+
+function storageSizeLabel(value) {
+  return fileSizeLabel(new Blob([JSON.stringify(value || {})]).size);
+}
+
+function platformAuditRows(actions = []) {
+  return [...auditLogs, ...localAuditLogs].filter((item) => !actions.length || actions.some((action) => String(item.action || "").includes(action)));
 }
 
 function todayStart() {
@@ -5022,8 +5065,8 @@ function renderPlatformConsole() {
     ["Layihə", projectsTotal],
     ["Son status", formatDateTime(lastStatusChange) || "-"]
   ].map(([label, value]) => `<article class="${typeof value === "string" && value.length > 8 ? "compact-stat" : ""}"><span>${value}</span><p>${label}</p></article>`).join("");
+  const ops = platformOpsSummary(registry);
   if (platformOps) {
-    const ops = platformOpsSummary(registry);
     platformOps.innerHTML = `
       <article>
         <span>Tenant health</span>
@@ -5052,6 +5095,110 @@ function renderPlatformConsole() {
       </article>
     `;
   }
+  if (platformLifecycle) {
+    platformLifecycle.innerHTML = registry.map((company) => `
+      <article class="platform-lifecycle-card" data-company-id="${escapeHtml(company.id)}">
+        <div>
+          <strong>${escapeHtml(company.name)}</strong>
+          <small>${escapeHtml(company.status || "active")} · ${escapeHtml(company.plan || "standard")}</small>
+        </div>
+        <select data-lifecycle-field="plan">
+          ${["standard", "pro", "enterprise"].map((plan) => `<option value="${plan}" ${company.plan === plan ? "selected" : ""}>${plan}</option>`).join("")}
+        </select>
+        <label><span>Trial bitir</span><input type="date" data-lifecycle-field="trialEndsAt" value="${escapeHtml(company.trialEndsAt || "")}"></label>
+        <label><span>Abonement bitir</span><input type="date" data-lifecycle-field="subscriptionEndsAt" value="${escapeHtml(company.subscriptionEndsAt || "")}"></label>
+        <input data-lifecycle-field="statusReason" type="text" placeholder="Status səbəbi">
+        <div class="platform-card-actions">
+          <button type="button" data-lifecycle-action="save">Yadda saxla</button>
+          <button type="button" data-lifecycle-action="${company.status === "suspended" ? "activate" : "suspend"}">${company.status === "suspended" ? text("activateCompany") : text("suspendCompany")}</button>
+        </div>
+      </article>
+    `).join("");
+  }
+  if (platformCreateWizard) {
+    platformCreateWizard.innerHTML = `
+      <div class="platform-section-head"><div><p class="kicker">Workspace wizard</p><h3>Şirkət yarat</h3></div></div>
+      <form id="platformCreateCompanyForm" class="platform-form">
+        <input name="name" placeholder="Şirkət adı" required>
+        <input name="subdomain" placeholder="subdomain">
+        <input name="adminUsername" placeholder="admin username">
+        <input name="adminPassword" placeholder="admin password">
+        <select name="plan"><option value="standard">standard</option><option value="pro">pro</option><option value="enterprise">enterprise</option></select>
+        <select name="template"><option value="starter">İlkin template</option><option value="empty">Boş workspace</option></select>
+        <button type="submit">Yarat</button>
+      </form>
+    `;
+  }
+  if (platformMonitoring) {
+    platformMonitoring.innerHTML = `
+      <div class="platform-section-head"><div><p class="kicker">Tenant monitorinq</p><h3>İstifadə, resurs və sessiyalar</h3></div></div>
+      <div class="platform-table">
+        ${registry.map((company) => {
+          const opsMeta = companyOperationsMeta(company);
+          const payload = companyBackupPayload(company.id);
+          return `<div>
+            <strong>${escapeHtml(company.name)}</strong>
+            <span>${Number(company.projectCount) || 0} layihə</span>
+            <span>${opsMeta.taskCount} task</span>
+            <span>${storageSizeLabel(payload)} DB/export</span>
+            <span>${mailHistory.filter((item) => JSON.stringify(item).includes(company.id)).length} mail</span>
+            <span>${opsMeta.lastLoginAt ? "aktiv sessiya" : "passiv"}</span>
+          </div>`;
+        }).join("")}
+      </div>
+    `;
+  }
+  if (platformBackupCenter) {
+    platformBackupCenter.innerHTML = `
+      <div class="platform-section-head"><div><p class="kicker">Backup mərkəzi</p><h3>Export, download və restore</h3></div></div>
+      <div class="platform-backup-actions">
+        <button type="button" data-platform-backup="all">Bütün şirkətləri export et</button>
+        <label class="import-button">Restore JSON<input id="platformRestoreInput" type="file" accept="application/json,.json"></label>
+      </div>
+      <div class="platform-table">
+        ${registry.map((company) => `<div>
+          <strong>${escapeHtml(company.name)}</strong>
+          <span>${storageSizeLabel(companyBackupPayload(company.id))}</span>
+          <span>Son backup: ${escapeHtml(formatDateTime(appSettings.backups?.find((item) => item.companyId === company.id)?.createdAt) || "-")}</span>
+          <button type="button" data-platform-backup="${escapeHtml(company.id)}">Download</button>
+        </div>`).join("")}
+      </div>
+    `;
+  }
+  if (platformGlobalSettings) {
+    platformGlobalSettings.innerHTML = `
+      <div class="platform-section-head"><div><p class="kicker">Global ayarlar</p><h3>Sistem davranışı</h3></div></div>
+      <form id="platformGlobalSettingsForm" class="platform-form">
+        <input name="appName" value="${escapeHtml(appSettings.appName || "Project Manager")}" placeholder="App adı">
+        <input name="appLogo" value="${escapeHtml(appSettings.appLogo || "PM")}" placeholder="Logo mətni">
+        <select name="defaultLanguage"><option value="az" ${appSettings.defaultLanguage === "az" ? "selected" : ""}>AZ</option><option value="en" ${appSettings.defaultLanguage === "en" ? "selected" : ""}>EN</option><option value="ru" ${appSettings.defaultLanguage === "ru" ? "selected" : ""}>RU</option></select>
+        <select name="defaultTheme"><option value="light" ${appSettings.defaultTheme === "light" ? "selected" : ""}>Light</option><option value="dark" ${appSettings.defaultTheme === "dark" ? "selected" : ""}>Dark</option><option value="system" ${appSettings.defaultTheme === "system" ? "selected" : ""}>System</option></select>
+        <input name="emailProvider" value="${escapeHtml(appSettings.emailProvider || "")}" placeholder="Mail provider">
+        <label class="toggle-row"><input name="maintenanceMode" type="checkbox" ${appSettings.maintenanceMode ? "checked" : ""}><span>Maintenance mode</span></label>
+        <button type="submit">Saxla</button>
+      </form>
+    `;
+  }
+  if (platformSecurityCenter) {
+    const securityRows = platformAuditRows(["auth.", "password", "company.updated"]);
+    platformSecurityCenter.innerHTML = `
+      <div class="platform-section-head"><div><p class="kicker">Audit və təhlükəsizlik</p><h3>Login, parol və lifecycle izləri</h3></div></div>
+      <div class="platform-table">${securityRows.slice(0, 12).map((item) => `<div><strong>${escapeHtml(item.action || "-")}</strong><span>${escapeHtml(item.actor || "-")}</span><span>${escapeHtml(formatDateTime(item.created_at || item.createdAt) || "-")}</span></div>`).join("") || `<div class="empty">${text("empty")}</div>`}</div>
+    `;
+  }
+  if (platformNotificationCenter) {
+    const alerts = [
+      ...registry.filter((company) => company.status === "suspended").map((company) => `${company.name}: dayandırılıb`),
+      ...(ops.overdueTotal ? [`${ops.overdueTotal} gecikən task var`] : []),
+      ...(ops.blockedTotal ? [`${ops.blockedTotal} bloklanmış task var`] : []),
+      ...(!ops.mailReady ? ["Mail provider yoxlanılmalıdır"] : []),
+      ...(!ops.backupCount ? ["Backup yaradılmayıb"] : [])
+    ];
+    platformNotificationCenter.innerHTML = `
+      <div class="platform-section-head"><div><p class="kicker">Bildiriş mərkəzi</p><h3>Sistem xəbərdarlıqları</h3></div></div>
+      <div class="platform-alert-list">${alerts.length ? alerts.map((item) => `<span>${escapeHtml(item)}</span>`).join("") : "<span>Aktiv sistem xəbərdarlığı yoxdur</span>"}</div>
+    `;
+  }
   platformCompanyGrid.innerHTML = registry.length ? registry.map((company) => {
     const statusMeta = companyStatusMeta(company);
     const opsMeta = companyOperationsMeta(company);
@@ -5077,6 +5224,8 @@ function renderPlatformConsole() {
           <div><dt>Gecikən</dt><dd>${opsMeta.overdue}</dd></div>
           <div><dt>Blok</dt><dd>${opsMeta.blocked}</dd></div>
           <div><dt>Son login</dt><dd>${escapeHtml(formatDateTime(opsMeta.lastLoginAt) || "-")}</dd></div>
+          <div><dt>Trial</dt><dd>${escapeHtml(formatDateTime(company.trialEndsAt) || "-")}</dd></div>
+          <div><dt>Abonement</dt><dd>${escapeHtml(formatDateTime(company.subscriptionEndsAt) || "-")}</dd></div>
           <div><dt>${statusMeta.label}</dt><dd>${escapeHtml(formatDateTime(statusMeta.changedAt) || "-")}</dd></div>
           <div><dt>Bu statusda</dt><dd>${escapeHtml(statusMeta.duration)}</dd></div>
           <div><dt>${text("statusChangedBy")}</dt><dd>${escapeHtml(statusMeta.changedBy || "-")}</dd></div>
@@ -5425,6 +5574,11 @@ async function saveBackendSettings() {
         emailEnabled: appSettings.emailEnabled,
         emailRecipients: appSettings.emailRecipients,
         emailProvider: appSettings.emailProvider,
+        appName: appSettings.appName,
+        appLogo: appSettings.appLogo,
+        defaultLanguage: appSettings.defaultLanguage,
+        defaultTheme: appSettings.defaultTheme,
+        maintenanceMode: appSettings.maintenanceMode,
         mailSubjectTemplate: appSettings.mailSubjectTemplate,
         mailBodyTemplate: appSettings.mailBodyTemplate,
         testMailBody: appSettings.testMailBody,
@@ -5458,6 +5612,11 @@ async function syncBackendSettings() {
       mailSubjectTemplate: serverSettings.mailSubjectTemplate || appSettings.mailSubjectTemplate || "Project Manager deadline alerts",
       mailBodyTemplate: serverSettings.mailBodyTemplate || appSettings.mailBodyTemplate || "{{alerts}}",
       testMailBody: serverSettings.testMailBody || appSettings.testMailBody || "Project Manager mail ayarları test edildi.",
+      appName: serverSettings.appName || appSettings.appName || "Project Manager",
+      appLogo: serverSettings.appLogo || appSettings.appLogo || "PM",
+      defaultLanguage: serverSettings.defaultLanguage || appSettings.defaultLanguage || "az",
+      defaultTheme: serverSettings.defaultTheme || appSettings.defaultTheme || "light",
+      maintenanceMode: Boolean(serverSettings.maintenanceMode),
       ldapEnabled: Boolean(serverSettings.ldapEnabled),
       ldapUrl: serverSettings.ldapUrl || "",
       ldapBaseDn: serverSettings.ldapBaseDn || "",
@@ -5551,7 +5710,7 @@ async function fetchAuditLogs() {
 }
 
 async function fetchMailHistory() {
-  if (!canUseBackend() || !isAdmin()) return;
+  if (!canUseBackend() || (!isAdmin() && !isSuperAdmin())) return;
   try {
     const response = await fetch(backendUrl("/api/notifications"), { cache: "no-store", headers: authHeaders() });
     mailHistory = response.ok ? await response.json() : [];
@@ -5948,6 +6107,40 @@ async function updateBackendCompany(companyId, payload) {
   return response.json();
 }
 
+async function createBackendCompany(payload) {
+  if (!canUseBackend()) return null;
+  const response = await fetch(backendUrl("/api/platform/companies"), {
+    method: "POST",
+    headers: authHeaders({ "content-type": "application/json" }),
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error("Company create failed");
+  return response.json();
+}
+
+async function savePlatformState() {
+  if (!canUseBackend() || !isSuperAdmin()) return { skipped: true };
+  const response = await fetch(backendUrl("/api/state"), {
+    method: "PUT",
+    headers: authHeaders({ "content-type": "application/json" }),
+    body: JSON.stringify({
+      version: backupVersion,
+      tasks,
+      projects,
+      members,
+      teams,
+      customers,
+      managedFiles,
+      projectLinks,
+      registers,
+      users,
+      trash
+    })
+  });
+  if (!response.ok) throw new Error("Platform state save failed");
+  return response.json();
+}
+
 async function changeBackendUserPassword(userId, password) {
   if (!canUseBackend()) return { skipped: true };
   const response = await fetch(backendUrl(`/api/users/${encodeURIComponent(userId)}/password`), {
@@ -6272,6 +6465,7 @@ refreshMailHistoryButton?.addEventListener("click", fetchMailHistory);
 refreshPlatformCompaniesButton?.addEventListener("click", () => {
   fetchPlatformCompanies();
   fetchAuditLogs();
+  fetchMailHistory();
 });
 
 dateRequestList?.addEventListener("click", (event) => {
@@ -6875,6 +7069,117 @@ platformCompanyGrid?.addEventListener("click", async (event) => {
     saveBackendSettings();
   }
   render();
+});
+
+platformConsole?.addEventListener("click", async (event) => {
+  if (!isSuperAdmin()) return;
+  const lifecycleButton = event.target.closest("button[data-lifecycle-action]");
+  if (lifecycleButton) {
+    const card = lifecycleButton.closest("[data-company-id]");
+    const companyId = card?.dataset.companyId;
+    const company = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).find((item) => item.id === companyId);
+    if (!company) return;
+    const payload = {
+      plan: card.querySelector('[data-lifecycle-field="plan"]')?.value || company.plan || "standard",
+      trialEndsAt: card.querySelector('[data-lifecycle-field="trialEndsAt"]')?.value || "",
+      subscriptionEndsAt: card.querySelector('[data-lifecycle-field="subscriptionEndsAt"]')?.value || "",
+      statusReason: card.querySelector('[data-lifecycle-field="statusReason"]')?.value || "Lifecycle update"
+    };
+    if (lifecycleButton.dataset.lifecycleAction === "activate") payload.status = "active";
+    if (lifecycleButton.dataset.lifecycleAction === "suspend") payload.status = "suspended";
+    try {
+      const updated = await updateBackendCompany(company.id, payload);
+      companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? updated : item);
+    } catch (error) {
+      companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? { ...item, ...payload, status: payload.status || item.status } : item);
+      appSettings.companyRegistry = companyRegistry;
+      saveAppSettings();
+    }
+    render();
+    return;
+  }
+  const backupButton = event.target.closest("button[data-platform-backup]");
+  if (backupButton) {
+    const companyId = backupButton.dataset.platformBackup === "all" ? "" : backupButton.dataset.platformBackup;
+    const payload = companyBackupPayload(companyId);
+    const filename = companyId ? `project-manager-${companyId}-backup-${isoDate(new Date())}.json` : `project-manager-all-tenants-${isoDate(new Date())}.json`;
+    appSettings.backups = [{ id: createId("backup"), companyId: companyId || "all", createdAt: new Date().toISOString(), taskCount: payload.tasks.length, projectCount: payload.projects.length }, ...(appSettings.backups || [])].slice(0, 30);
+    saveAppSettings();
+    await saveBackendSettings();
+    downloadText(filename, JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
+    render();
+  }
+});
+
+platformConsole?.addEventListener("submit", async (event) => {
+  if (!isSuperAdmin()) return;
+  const createForm = event.target.closest("#platformCreateCompanyForm");
+  const settingsForm = event.target.closest("#platformGlobalSettingsForm");
+  if (!createForm && !settingsForm) return;
+  event.preventDefault();
+  if (createForm) {
+    const formData = new FormData(createForm);
+    const payload = Object.fromEntries(formData.entries());
+    payload.adminUsername = payload.adminUsername || `admin${slugFromName(payload.subdomain || payload.name)}`;
+    payload.adminPassword = payload.adminPassword || `${payload.adminUsername}123`;
+    try {
+      const created = await createBackendCompany(payload);
+      if (created) companyRegistry = [...companyRegistry.filter((item) => item.id !== created.id), created].sort((a, b) => a.name.localeCompare(b.name));
+    } catch (error) {
+      const companyId = companyIdFromName(payload.name);
+      users.push(normalizeUser({ id: createId(), username: payload.adminUsername, passwordHash: md5(payload.adminPassword), role: "admin", managerId: "", companyId, profile: { fullName: payload.adminUsername, email: "", position: "Company Admin", company: payload.name } }));
+      companyRegistry = [...companyRegistry.filter((item) => item.id !== companyId), { id: companyId, name: payload.name, subdomain: slugFromName(payload.subdomain || payload.name), status: "active", plan: payload.plan || "standard", adminUsername: payload.adminUsername, userCount: 1, projectCount: 0, createdAt: new Date().toISOString(), activatedAt: new Date().toISOString(), statusChangedAt: new Date().toISOString() }];
+      saveUsers();
+      appSettings.companyRegistry = companyRegistry;
+      saveAppSettings();
+    }
+    createForm.reset();
+    await fetchPlatformCompanies();
+    render();
+  }
+  if (settingsForm) {
+    const formData = new FormData(settingsForm);
+    appSettings = {
+      ...appSettings,
+      appName: String(formData.get("appName") || "Project Manager").trim(),
+      appLogo: String(formData.get("appLogo") || "PM").trim(),
+      defaultLanguage: String(formData.get("defaultLanguage") || "az"),
+      defaultTheme: String(formData.get("defaultTheme") || "light"),
+      emailProvider: String(formData.get("emailProvider") || "").trim(),
+      maintenanceMode: Boolean(formData.get("maintenanceMode"))
+    };
+    saveAppSettings();
+    await saveBackendSettings();
+    render();
+  }
+});
+
+platformConsole?.addEventListener("change", async (event) => {
+  if (!isSuperAdmin() || event.target.id !== "platformRestoreInput") return;
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const payload = JSON.parse(await file.text());
+    tasks = Array.isArray(payload.tasks) ? payload.tasks.map(normalizeTask) : tasks;
+    projects = Array.isArray(payload.projects) ? payload.projects.map(normalizeProject) : projects;
+    members = Array.isArray(payload.members) ? payload.members.map(normalizeMember) : members;
+    teams = Array.isArray(payload.teams) ? payload.teams.map(normalizeTeam) : teams;
+    customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : customers;
+    managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : managedFiles;
+    projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
+    registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : registers;
+    users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
+    companyRegistry = Array.isArray(payload.companyRegistry) ? payload.companyRegistry : companyRegistry;
+    saveTasks(); saveResources(); saveUsers(); saveRegisters();
+    appSettings.companyRegistry = companyRegistry;
+    saveAppSettings();
+    await savePlatformState();
+    render();
+  } catch {
+    alert(text("backupError"));
+  } finally {
+    event.target.value = "";
+  }
 });
 
 userList.addEventListener("submit", (event) => {
