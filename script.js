@@ -5508,6 +5508,34 @@ function backendUrl(path) {
   return `http://localhost:3000${path}`;
 }
 
+let _sseSource = null;
+let _sseReconnectTimer = null;
+
+function connectSSE() {
+  if (!canUseBackend() || !authToken || _sseSource) return;
+  const url = backendUrl("/api/events") + "?token=" + encodeURIComponent(authToken);
+  try {
+    _sseSource = new EventSource(url);
+    _sseSource.addEventListener("message", (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "state_updated") {
+          syncFromBackend().catch(() => {});
+        }
+      } catch {}
+    });
+    _sseSource.addEventListener("error", () => {
+      disconnectSSE();
+      _sseReconnectTimer = setTimeout(connectSSE, 15000);
+    });
+  } catch {}
+}
+
+function disconnectSSE() {
+  clearTimeout(_sseReconnectTimer);
+  if (_sseSource) { try { _sseSource.close(); } catch {} _sseSource = null; }
+}
+
 function authHeaders(extraHeaders = {}) {
   return {
     ...extraHeaders,
@@ -5669,6 +5697,7 @@ async function backendLogin(username, password) {
     if (payload.token) {
       authToken = payload.token;
       localStorage.setItem(authTokenKey, authToken);
+      setTimeout(connectSSE, 500);
     }
     return payload.user ? normalizeUser(payload.user) : null;
   } catch (error) {
@@ -6646,7 +6675,11 @@ registerSubdomainInput?.addEventListener("input", () => {
   if (!registerPasswordInput.value.trim()) registerPasswordInput.placeholder = `admin${subdomain}123`;
 });
 
-logoutButton.addEventListener("click", () => {
+logoutButton.addEventListener("click", async () => {
+  disconnectSSE();
+  if (canUseBackend() && authToken) {
+    fetch(backendUrl("/api/auth/logout"), { method: "POST", headers: authHeaders() }).catch(() => {});
+  }
   currentUser = null;
   authToken = "";
   localStorage.removeItem(sessionKey);

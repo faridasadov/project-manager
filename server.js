@@ -586,6 +586,45 @@ async function writeState(payload, broadcastCompanyId = null) {
   return nextState;
 }
 
+function recalcProjectProgress(state, projectName) {
+  if (!projectName) return state;
+  const idx = state.projects.findIndex((p) => p.name === projectName);
+  if (idx < 0) return state;
+  const projectTasks = state.tasks.filter((t) => t.project === projectName);
+  if (!projectTasks.length) return state;
+  const avg = Math.round(projectTasks.reduce((sum, t) => sum + (Number(t.progress) || 0), 0) / projectTasks.length);
+  state.projects[idx] = { ...state.projects[idx], progress: avg };
+  return state;
+}
+
+function validateTaskDates(task) {
+  if (task.start && task.end && task.start > task.end) {
+    return "Start date cannot be after end date";
+  }
+  return null;
+}
+
+function validateTaskOwner(task, state) {
+  if (!task.owner || !task.owner.startsWith("user:")) return null;
+  const userId = task.owner.slice(5);
+  const inState = state.users.some((u) => u.id === userId);
+  const inBootstrap = bootstrapUsers.some((u) => u.id === userId);
+  if (!inState && !inBootstrap) return `Owner user '${userId}' not found`;
+  return null;
+}
+
+function validateTaskDependencies(task, state) {
+  const depIds = task.dependencyIds || [];
+  if (!depIds.length || task.status === "Plan") return null;
+  const incomplete = depIds.filter((id) => {
+    const dep = state.tasks.find((t) => t.id === id);
+    return dep && dep.status !== "Bitib";
+  });
+  if (!incomplete.length) return null;
+  const names = incomplete.map((id) => state.tasks.find((t) => t.id === id)?.name || id);
+  return `Dependencies not complete: ${names.join(", ")}`;
+}
+
 function sqlDate(value) {
   return value || null;
 }
@@ -1654,8 +1693,9 @@ async function handleApi(request, response) {
   }
 
   if (pathname === "/api/events" && request.method === "GET") {
-    const actor = requireAuth(request, response);
-    if (!actor) return true;
+    const queryToken = url.searchParams.get("token") || "";
+    const actor = queryToken ? verifyToken(queryToken) : authPayload(request);
+    if (!actor) { sendJson(response, 401, { error: "Unauthorized" }); return true; }
     response.writeHead(200, {
       "content-type": "text/event-stream",
       "cache-control": "no-cache",
@@ -2317,7 +2357,10 @@ async function handleApi(request, response) {
     const q = (url.searchParams.get("q") || "").toLowerCase().trim();
     const page = Math.max(1, Number(url.searchParams.get("page") || 1));
     const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") || 50)));
+    const archivedParam = url.searchParams.get("archived");
     let projects = stateForActor(state, actor).projects || [];
+    if (archivedParam === "false") projects = projects.filter((p) => !p.archived);
+    else if (archivedParam === "true") projects = projects.filter((p) => p.archived);
     if (q) projects = projects.filter((p) => p.name.toLowerCase().includes(q) || (p.status || "").toLowerCase().includes(q));
     const total = projects.length;
     const items = projects.slice((page - 1) * limit, page * limit);
@@ -2417,11 +2460,93 @@ async function handleApi(request, response) {
         sendJson(response, 400, { error: "Invalid task" });
         return true;
       }
+      const dateErr = validateTaskDates(task);
+      if (dateErr) { sendJson(response, 400, { error: dateErr }); return true; }
+      const ownerErr = validateTaskOwner(task, state);
+      if (ownerErr) { sendJson(response, 400, { error: ownerErr }); return true; }
       state.tasks.push(task);
+      recalcProjectProgress(state, task.project);
       await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       sendJson(response, 201, task);
     } catch {
       sendJson(response, 400, { error: "Could not create task" });
+    }
+    return true;
+  }
+
+  const applyTemplateMatch = pathname.match(/^\/api\/projects\/([^/]+)\/apply-template$/);
+  if (applyTemplateMatch && request.method === "POST") {
+    const actor = requireAuth(request, response, ["admin", "manager"]);
+    if (!actor) return true;
+    try {
+      const projectId = decodeURIComponent(applyTemplateMatch[1]);
+      const body = JSON.parse(await readBody(request));
+      const templateId = String(body.templateId || "");
+      const template = PROJECT_TEMPLATES.find((t) => t.id === templateId);
+      if (!template) { sendJson(response, 404, { error: "Template not found" }); return true; }
+      const state = ensureStateShape(await readState());
+      const project = state.projects.find((p) => p.id === projectId && sameCompany(p, actorCompanyId(actor)));
+      if (!project) { sendJson(response, 404, { error: "Project not found" }); return true; }
+      const startDate = body.startDate || project.start || new Date().toISOString().slice(0, 10);
+      const base = new Date(startDate);
+      const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r.toISOString().slice(0, 10); };
+      const createdTasks = template.tasks.map((tmpl) => ({
+        id: createId("task"),
+        name: tmpl.name,
+        project: project.name,
+        projectResource: "",
+        start: addDays(base, tmpl.offsetDays),
+        end: addDays(base, tmpl.offsetDays + tmpl.durationDays),
+        status: tmpl.status || "Plan",
+        priority: tmpl.priority || "Normal",
+        owner: "",
+        progress: 0,
+        plannedHours: 0,
+        actualHours: 0,
+        notes: "",
+        parentTaskId: "",
+        dependencyIds: [],
+        comments: [],
+        attachments: []
+      }));
+      state.tasks.push(...createdTasks);
+      recalcProjectProgress(state, project.name);
+      await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
+      sendJson(response, 201, { ok: true, count: createdTasks.length, tasks: createdTasks });
+    } catch {
+      sendJson(response, 400, { error: "Could not apply template" });
+    }
+    return true;
+  }
+
+  const taskAttachmentsMatch = pathname.match(/^\/api\/tasks\/([^/]+)\/attachments$/);
+  if (taskAttachmentsMatch && request.method === "POST") {
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
+    try {
+      const taskId = decodeURIComponent(taskAttachmentsMatch[1]);
+      const body = JSON.parse(await readBody(request));
+      const state = ensureStateShape(await readState());
+      const taskIndex = state.tasks.findIndex((t) => t.id === taskId);
+      if (taskIndex < 0) { sendJson(response, 404, { error: "Task not found" }); return true; }
+      const attachment = {
+        id: createId("att"),
+        name: String(body.name || "file"),
+        type: String(body.type || "application/octet-stream"),
+        size: Number(body.size) || 0,
+        url: String(body.url || ""),
+        dataUrl: String(body.dataUrl || body.url || ""),
+        addedAt: new Date().toISOString(),
+        addedBy: actor.username
+      };
+      state.tasks[taskIndex] = {
+        ...state.tasks[taskIndex],
+        attachments: [...(state.tasks[taskIndex].attachments || []), attachment]
+      };
+      await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
+      sendJson(response, 201, attachment);
+    } catch {
+      sendJson(response, 400, { error: "Could not add attachment" });
     }
     return true;
   }
@@ -2527,6 +2652,7 @@ async function handleApi(request, response) {
         parentTaskId: item.parentTaskId === task.id ? "" : item.parentTaskId,
         dependencyIds: (item.dependencyIds || []).filter((id) => id !== task.id)
       }));
+      recalcProjectProgress(state, task.project);
       await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       sendJson(response, 200, { ok: true });
       return true;
@@ -2538,7 +2664,15 @@ async function handleApi(request, response) {
         sendJson(response, 400, { error: "Invalid task" });
         return true;
       }
+      const dateErr = validateTaskDates(task);
+      if (dateErr) { sendJson(response, 400, { error: dateErr }); return true; }
+      const ownerErr = validateTaskOwner(task, state);
+      if (ownerErr) { sendJson(response, 400, { error: ownerErr }); return true; }
+      const depErr = validateTaskDependencies(task, state);
+      if (depErr) { sendJson(response, 422, { error: depErr }); return true; }
       state.tasks[taskIndex] = task;
+      recalcProjectProgress(state, task.project);
+      if (previous.project !== task.project) recalcProjectProgress(state, previous.project);
       await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
       sendJson(response, 200, task);
     } catch {
