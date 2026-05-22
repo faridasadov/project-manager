@@ -356,6 +356,45 @@ body.admin-role .manager-only {
   color: var(--muted);
 }
 
+.platform-ops {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+.platform-ops article {
+  display: grid;
+  gap: 5px;
+  min-height: 116px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--teal) 8%, transparent), transparent 58%),
+    var(--panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.platform-ops span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.platform-ops strong {
+  font-size: clamp(18px, 1.55vw, 26px);
+  line-height: 1.16;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.platform-ops small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
 .platform-section {
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -426,6 +465,46 @@ body.admin-role .manager-only {
 .platform-company-card span {
   color: var(--muted);
   overflow-wrap: anywhere;
+}
+
+.platform-company-health {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--soft) 72%, var(--panel));
+}
+
+.platform-company-health span,
+.platform-company-health strong {
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.platform-company-health div {
+  grid-column: 1 / -1;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 70%, var(--panel));
+}
+
+.platform-company-health i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--teal);
+}
+
+.platform-company-health.warn i {
+  background: var(--amber);
+}
+
+.platform-company-health.bad i {
+  background: var(--red);
 }
 
 .platform-company-card dl {
@@ -2902,6 +2981,7 @@ button:disabled {
   .summary,
   .report-summary,
   .platform-stats,
+  .platform-ops,
   .insight-grid,
   .dashboard-calendar-grid,
   .resource-panel,
@@ -2965,6 +3045,10 @@ button:disabled {
   }
 
   .tools {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-ops {
     grid-template-columns: 1fr;
   }
 

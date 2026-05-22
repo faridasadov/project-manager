@@ -106,6 +106,7 @@ const ids = [
   "newUserRole", "addUser", "userList", "userCount", "trashList", "trashCount",
   "dateRequestList", "dateRequestCount", "taskDetailModal", "taskDetailTitle", "taskDetailBody", "closeTaskDetail",
   "notificationModal", "notificationTitle", "notificationList", "closeNotificationPanel",
+  "platformOps",
   "refreshPlatformCompanies"
 ];
 

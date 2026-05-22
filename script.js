@@ -1778,6 +1778,7 @@ const companyCount = document.querySelector("#companyCount");
 const companyRegistryList = document.querySelector("#companyRegistryList");
 const platformConsole = document.querySelector("#platformConsole");
 const platformStats = document.querySelector("#platformStats");
+const platformOps = document.querySelector("#platformOps");
 const platformCompanyGrid = document.querySelector("#platformCompanyGrid");
 const platformTimeline = document.querySelector("#platformTimeline");
 const refreshPlatformCompaniesButton = document.querySelector("#refreshPlatformCompanies");
@@ -2760,6 +2761,55 @@ function companyStatusMeta(company) {
     changedBy: company.statusChangedBy || "",
     reason: company.statusReason || "",
     duration: statusDurationLabel(changedAt)
+  };
+}
+
+function companyProjectNames(companyId) {
+  return new Set(projects.filter((project) => (project.companyId || "company-default") === companyId).map((project) => project.name));
+}
+
+function companyOperationsMeta(company) {
+  const projectNames = companyProjectNames(company.id);
+  const companyTasks = tasks.filter((task) => {
+    if (task.companyId) return task.companyId === company.id;
+    return projectNames.has(task.project);
+  });
+  const activeTasks = companyTasks.filter((task) => task.status !== "Bitib");
+  const overdue = activeTasks.filter((task) => daysUntil(task.end) < 0).length;
+  const blocked = activeTasks.filter(isTaskBlocked).length;
+  const statusPenalty = company.status === "suspended" ? 25 : 0;
+  const adminPenalty = company.adminUsername ? 0 : 15;
+  const projectPenalty = Number(company.projectCount) ? 0 : 8;
+  const healthScore = Math.max(0, Math.min(100, 100 - statusPenalty - adminPenalty - projectPenalty - overdue * 8 - blocked * 7));
+  return {
+    healthScore,
+    taskCount: companyTasks.length,
+    activeTasks: activeTasks.length,
+    overdue,
+    blocked,
+    lastLoginAt: company.lastLoginAt || "",
+    riskLevel: healthScore >= 85 ? "Stabil" : healthScore >= 65 ? "Nəzarət" : "Risk"
+  };
+}
+
+function platformOpsSummary(registry) {
+  const metas = registry.map((company) => companyOperationsMeta(company));
+  const averageHealth = metas.length ? Math.round(metas.reduce((sum, item) => sum + item.healthScore, 0) / metas.length) : 100;
+  const overdueTotal = metas.reduce((sum, item) => sum + item.overdue, 0);
+  const blockedTotal = metas.reduce((sum, item) => sum + item.blocked, 0);
+  const riskCompanies = metas.filter((item) => item.healthScore < 85 || item.overdue || item.blocked).length;
+  const backups = Array.isArray(appSettings.backups) ? appSettings.backups : [];
+  const lastBackup = backups[0]?.createdAt || "";
+  const lastAudit = [...auditLogs, ...localAuditLogs].map((item) => item.created_at || item.createdAt).filter(Boolean).sort().at(-1);
+  return {
+    averageHealth,
+    overdueTotal,
+    blockedTotal,
+    riskCompanies,
+    lastBackup,
+    backupCount: backups.length,
+    lastAudit,
+    mailReady: Boolean(appSettings.emailEnabled && appSettings.emailProvider)
   };
 }
 
@@ -4972,19 +5022,61 @@ function renderPlatformConsole() {
     ["Layihə", projectsTotal],
     ["Son status", formatDateTime(lastStatusChange) || "-"]
   ].map(([label, value]) => `<article class="${typeof value === "string" && value.length > 8 ? "compact-stat" : ""}"><span>${value}</span><p>${label}</p></article>`).join("");
+  if (platformOps) {
+    const ops = platformOpsSummary(registry);
+    platformOps.innerHTML = `
+      <article>
+        <span>Tenant health</span>
+        <strong>${ops.averageHealth}%</strong>
+        <small>${ops.riskCompanies} şirkət nəzarət tələb edir</small>
+      </article>
+      <article>
+        <span>Risk siqnalları</span>
+        <strong>${ops.overdueTotal + ops.blockedTotal}</strong>
+        <small>${ops.overdueTotal} gecikən · ${ops.blockedTotal} blok</small>
+      </article>
+      <article>
+        <span>Backup readiness</span>
+        <strong>${ops.backupCount}</strong>
+        <small>Son backup: ${escapeHtml(formatDateTime(ops.lastBackup) || "-")}</small>
+      </article>
+      <article>
+        <span>Mail gateway</span>
+        <strong>${ops.mailReady ? "Hazır" : "Yoxlanılmalıdır"}</strong>
+        <small>${ops.mailReady ? "SMTP/API aktivdir" : "Provider və aktivlik yoxlanmalıdır"}</small>
+      </article>
+      <article>
+        <span>Audit izi</span>
+        <strong>${auditLogs.length + localAuditLogs.length}</strong>
+        <small>Son hadisə: ${escapeHtml(formatDateTime(ops.lastAudit) || "-")}</small>
+      </article>
+    `;
+  }
   platformCompanyGrid.innerHTML = registry.length ? registry.map((company) => {
     const statusMeta = companyStatusMeta(company);
+    const opsMeta = companyOperationsMeta(company);
+    const healthTone = opsMeta.healthScore >= 85 ? "good" : opsMeta.healthScore >= 65 ? "warn" : "bad";
     return `
       <article class="platform-company-card ${company.status === "suspended" ? "suspended" : ""}">
         <div>
           <strong>${escapeHtml(company.name)}</strong>
           <span>${escapeHtml(company.subdomain)} · ${escapeHtml(company.plan || "standard")}</span>
         </div>
+        <div class="platform-company-health ${healthTone}">
+          <span>Health ${opsMeta.healthScore}%</span>
+          <strong>${escapeHtml(opsMeta.riskLevel)}</strong>
+          <div><i style="width:${opsMeta.healthScore}%"></i></div>
+        </div>
         <dl>
           <div><dt>Admin</dt><dd>${escapeHtml(company.adminUsername || "-")}</dd></div>
           <div><dt>Status</dt><dd>${escapeHtml(company.status || "active")}</dd></div>
           <div><dt>User</dt><dd>${Number(company.userCount) || 0}</dd></div>
           <div><dt>Project</dt><dd>${Number(company.projectCount) || 0}</dd></div>
+          <div><dt>Task</dt><dd>${opsMeta.taskCount}</dd></div>
+          <div><dt>Aktiv task</dt><dd>${opsMeta.activeTasks}</dd></div>
+          <div><dt>Gecikən</dt><dd>${opsMeta.overdue}</dd></div>
+          <div><dt>Blok</dt><dd>${opsMeta.blocked}</dd></div>
+          <div><dt>Son login</dt><dd>${escapeHtml(formatDateTime(opsMeta.lastLoginAt) || "-")}</dd></div>
           <div><dt>${statusMeta.label}</dt><dd>${escapeHtml(formatDateTime(statusMeta.changedAt) || "-")}</dd></div>
           <div><dt>Bu statusda</dt><dd>${escapeHtml(statusMeta.duration)}</dd></div>
           <div><dt>${text("statusChangedBy")}</dt><dd>${escapeHtml(statusMeta.changedBy || "-")}</dd></div>
