@@ -1858,6 +1858,9 @@ let authToken = localStorage.getItem(authTokenKey) || "";
 let supabaseSession = loadSupabaseSession();
 let supabaseWorkspaceId = localStorage.getItem(supabaseWorkspaceKey) || "";
 let supabaseSaveTimer = null;
+let supabaseSettingsSaveTimer = null;
+let supabaseAuditSyncedIds = new Set();
+let supabaseNotificationSyncedIds = new Set();
 let auditLogs = [];
 let mailHistory = [];
 let localAuditLogs = loadLocalAuditLogs();
@@ -2471,11 +2474,13 @@ function loadNotifications() {
 
 function saveLocalAuditLogs() {
   localStorage.setItem(localAuditKey, JSON.stringify(localAuditLogs.slice(0, 200)));
+  syncSupabaseAuditLogs().catch((error) => console.warn("Supabase audit sync failed", error));
 }
 
 function saveNotifications() {
   localStorage.setItem(notificationsKey, JSON.stringify(notifications.slice(0, 200)));
   renderNotificationBadge();
+  syncSupabaseNotifications().catch((error) => console.warn("Supabase notification sync failed", error));
 }
 
 function currentCompanyId() {
@@ -2614,6 +2619,7 @@ function loadSettings() {
 function saveAppSettings() {
   const key = currentUser ? `${settingsKey}-${currentUser.id}` : settingsKey;
   localStorage.setItem(key, JSON.stringify(appSettings));
+  scheduleSupabaseSettingsSave();
 }
 
 function loadSession() {
@@ -5583,7 +5589,11 @@ function backupPayload() {
 }
 
 function canUseBackend() {
-  return typeof fetch === "function" && window.location?.protocol !== "file:";
+  const host = window.location?.hostname || "";
+  return typeof fetch === "function"
+    && window.location?.protocol !== "file:"
+    && host !== "faridasadov.github.io"
+    && !host.endsWith(".github.io");
 }
 
 function backendUrl(path) {
@@ -5754,6 +5764,115 @@ function applySupabaseWorkspaceSession({ userId, email, username, fullName, comp
   return normalized;
 }
 
+async function supabaseLoadSettings(workspaceId = supabaseWorkspaceId) {
+  if (!workspaceId || !supabaseSession?.access_token) return null;
+  const rows = await supabaseRequest(`/rest/v1/app_settings?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=settings_json&limit=1`);
+  const settings = Array.isArray(rows) ? rows[0]?.settings_json : null;
+  if (settings) {
+    appSettings = { ...defaultSettings(), ...settings };
+    companyRegistry = Array.isArray(appSettings.companyRegistry) ? appSettings.companyRegistry : companyRegistry;
+    statuses = normalizeWorkflowStatuses(appSettings.workflowStatuses);
+    localStorage.setItem(currentUser ? `${settingsKey}-${currentUser.id}` : settingsKey, JSON.stringify(appSettings));
+  }
+  return settings;
+}
+
+function scheduleSupabaseSettingsSave() {
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin()) return;
+  clearTimeout(supabaseSettingsSaveTimer);
+  supabaseSettingsSaveTimer = setTimeout(() => {
+    supabaseSaveSettings().catch((error) => console.warn("Supabase settings save failed", error));
+  }, 600);
+}
+
+async function supabaseSaveSettings() {
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin()) return;
+  await supabaseRequest("/rest/v1/app_settings?on_conflict=workspace_id", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates" },
+    body: JSON.stringify({
+      workspace_id: supabaseWorkspaceId,
+      settings_json: appSettings,
+      updated_by: currentUser?.id || null,
+      updated_at: new Date().toISOString()
+    })
+  });
+}
+
+async function syncSupabaseAuditLogs() {
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId) return;
+  const pending = localAuditLogs
+    .filter((entry) => entry?.id && !supabaseAuditSyncedIds.has(entry.id))
+    .slice(0, 25);
+  if (!pending.length) return;
+  await supabaseRequest("/rest/v1/audit_logs", {
+    method: "POST",
+    body: JSON.stringify(pending.map((entry) => ({
+      workspace_id: supabaseWorkspaceId,
+      actor_id: currentUser?.id || null,
+      actor_label: entry.actor || currentUser?.username || "system",
+      action: entry.action || "local.audit",
+      entity_type: entry.entity_type || entry.entityType || "",
+      entity_id: String(entry.entity_id || entry.entityId || "").match(/^[0-9a-f-]{36}$/i) ? entry.entity_id || entry.entityId : null,
+      details_json: { ...entry, legacy_id: entry.id, detail: entry.detail || "" },
+      created_at: entry.created_at || entry.createdAt || new Date().toISOString()
+    })))
+  });
+  pending.forEach((entry) => supabaseAuditSyncedIds.add(entry.id));
+}
+
+async function syncSupabaseNotifications() {
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId) return;
+  const pending = notifications
+    .filter((entry) => entry?.id && !supabaseNotificationSyncedIds.has(entry.id))
+    .slice(0, 25);
+  if (!pending.length) return;
+  await supabaseRequest("/rest/v1/notifications", {
+    method: "POST",
+    body: JSON.stringify(pending.map((entry) => ({
+      workspace_id: supabaseWorkspaceId,
+      type: entry.type || "app",
+      recipient: entry.targetUserId || "",
+      subject: entry.message || "Project Manager",
+      body: entry.message || "",
+      status: entry.read ? "read" : "unread",
+      payload_json: { ...entry, legacy_id: entry.id },
+      created_at: entry.createdAt || new Date().toISOString()
+    })))
+  });
+  pending.forEach((entry) => supabaseNotificationSyncedIds.add(entry.id));
+}
+
+async function supabaseFetchAuditLogs() {
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId) return false;
+  const rows = await supabaseRequest(`/rest/v1/audit_logs?workspace_id=eq.${encodeURIComponent(supabaseWorkspaceId)}&select=actor_label,action,entity_type,entity_id,created_at,details_json&order=created_at.desc&limit=100`);
+  auditLogs = (Array.isArray(rows) ? rows : []).map((row) => ({
+    actor: row.actor_label,
+    action: row.action,
+    entity_type: row.entity_type,
+    entity_id: row.entity_id,
+    created_at: row.created_at,
+    details_json: row.details_json
+  }));
+  renderActivityLists();
+  return true;
+}
+
+async function supabaseFetchNotifications() {
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId) return false;
+  const rows = await supabaseRequest(`/rest/v1/notifications?workspace_id=eq.${encodeURIComponent(supabaseWorkspaceId)}&select=type,recipient,subject,status,created_at,payload_json&order=created_at.desc&limit=100`);
+  mailHistory = (Array.isArray(rows) ? rows : []).map((row) => ({
+    type: row.type,
+    recipient: row.recipient,
+    subject: row.subject,
+    status: row.status,
+    created_at: row.created_at,
+    payload_json: row.payload_json
+  }));
+  renderActivityLists();
+  return true;
+}
+
 async function supabaseRegisterWorkspace({ companyName, subdomain, username, password, fullName, email }) {
   if (!canUseSupabase()) throw new Error("Supabase config aktiv deyil");
   const companyId = companyIdFromName(companyName);
@@ -5829,6 +5948,9 @@ async function supabaseLoginWorkspace(email, password) {
     workspaceId: workspace.id
   });
   await supabaseLoadWorkspaceState(workspace.id);
+  await supabaseLoadSettings(workspace.id);
+  await syncSupabaseAuditLogs();
+  await syncSupabaseNotifications();
   return currentUser;
 }
 
@@ -5881,6 +6003,9 @@ async function supabaseCompleteSession(session) {
     workspaceId: workspace.id
   });
   await supabaseLoadWorkspaceState(workspace.id);
+  await supabaseLoadSettings(workspace.id);
+  await syncSupabaseAuditLogs();
+  await syncSupabaseNotifications();
   return currentUser;
 }
 
@@ -6150,6 +6275,11 @@ function downloadText(filename, body, type = "text/plain;charset=utf-8") {
 }
 
 async function fetchAuditLogs() {
+  try {
+    if (await supabaseFetchAuditLogs()) return;
+  } catch (error) {
+    console.warn("Supabase audit fetch failed", error);
+  }
   if (!canUseBackend() || (!isAdmin() && !isSuperAdmin())) return;
   try {
     const response = await fetch(backendUrl("/api/audit-logs"), { cache: "no-store", headers: authHeaders() });
@@ -6162,6 +6292,11 @@ async function fetchAuditLogs() {
 }
 
 async function fetchMailHistory() {
+  try {
+    if (await supabaseFetchNotifications()) return;
+  } catch (error) {
+    console.warn("Supabase notification fetch failed", error);
+  }
   if (!canUseBackend() || (!isAdmin() && !isSuperAdmin())) return;
   try {
     const response = await fetch(backendUrl("/api/notifications"), { cache: "no-store", headers: authHeaders() });
