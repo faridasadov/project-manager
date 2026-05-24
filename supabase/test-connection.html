@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="az">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Manager Supabase Test</title>
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    body { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+    .test-card { width: min(720px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 24px; box-shadow: var(--shadow); }
+    pre { white-space: pre-wrap; background: var(--soft); border: 1px solid var(--line); border-radius: 12px; padding: 14px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <main class="test-card">
+    <p class="kicker">Supabase sandbox</p>
+    <h1>Project Manager connection test</h1>
+    <p class="muted">This page only checks the free Supabase backend. It does not change the current MariaDB service.</p>
+    <button id="runTest" class="primary" type="button">Check connection</button>
+    <pre id="result">Waiting...</pre>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script>
+    const result = document.querySelector("#result");
+    document.querySelector("#runTest").addEventListener("click", async () => {
+      const cfg = window.PROJECT_MANAGER_SUPABASE || {};
+      if (!cfg.url || !cfg.anonKey || cfg.url.includes("YOUR_PROJECT_REF")) {
+        result.textContent = "Copy supabase/config.example.js to supabase/supabase-config.js and fill url/anonKey.";
+        return;
+      }
+      const client = window.supabase.createClient(cfg.url, cfg.anonKey);
+      const checks = {};
+      checks.auth = await client.auth.getSession();
+      checks.health = await client.from("supabase_health").select("app_name,schema_version,created_at").single();
+      checks.workspaces = await client.from("workspaces").select("id,name,status").limit(3);
+      checks.projects = await client.from("projects").select("id,name,status,progress").limit(3);
+      result.textContent = JSON.stringify(checks, null, 2);
+    });
+  </script>
+</body>
+</html>

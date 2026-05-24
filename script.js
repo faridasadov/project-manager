@@ -14,6 +14,8 @@ const settingsKey = "project-manager-settings-v1";
 const registersKey = "project-manager-registers-v1";
 const localAuditKey = "project-manager-local-audit-v1";
 const notificationsKey = "project-manager-notifications-v1";
+const supabaseSessionKey = "project-manager-supabase-session-v1";
+const supabaseWorkspaceKey = "project-manager-supabase-workspace-v1";
 const backupVersion = 1;
 const defaultWorkflowStatuses = ["Plan", "Davam edir", "Bitib"];
 const protectedWorkflowStatuses = new Set(defaultWorkflowStatuses);
@@ -1853,6 +1855,9 @@ let calendarRange = { start: "2026-05-01", end: "2026-05-31" };
 let backendSyncReady = false;
 let backendSaveTimer = 0;
 let authToken = localStorage.getItem(authTokenKey) || "";
+let supabaseSession = loadSupabaseSession();
+let supabaseWorkspaceId = localStorage.getItem(supabaseWorkspaceKey) || "";
+let supabaseSaveTimer = null;
 let auditLogs = [];
 let mailHistory = [];
 let localAuditLogs = loadLocalAuditLogs();
@@ -3158,22 +3163,24 @@ function projectGovernanceAudit(project) {
 }
 
 function projectGovernancePayloadFromForm() {
+  const fieldValue = (input) => input?.value || "";
+  const trimmedValue = (input) => fieldValue(input).trim();
   return {
-    name: projectNameInput.value || "",
-    lifecycle: projectLifecycleInput.value,
+    name: fieldValue(projectNameInput),
+    lifecycle: fieldValue(projectLifecycleInput) || "Initiation",
     charter: {
-      goal: projectGoalInput.value.trim(),
-      scope: projectScopeInput.value.trim(),
-      successCriteria: projectSuccessCriteriaInput.value.trim(),
-      gateChecklist: parseGovernanceLines(projectGateChecklistInput.value),
-      closureNotes: projectClosureNotesInput.value.trim(),
-      stakeholders: parseGovernanceLines(projectStakeholdersInput.value),
-      communicationPlan: parseGovernanceLines(projectCommunicationPlanInput.value),
-      decisionLog: parseGovernanceLines(projectDecisionLogInput.value),
-      changeControl: parseGovernanceLines(projectChangeControlInput.value),
-      riskOpportunity: parseGovernanceLines(projectRiskOpportunityInput.value),
-      qualityChecklist: parseGovernanceLines(projectQualityChecklistInput.value),
-      competenceMatrix: parseGovernanceLines(projectCompetenceMatrixInput.value),
+      goal: trimmedValue(projectGoalInput),
+      scope: trimmedValue(projectScopeInput),
+      successCriteria: trimmedValue(projectSuccessCriteriaInput),
+      gateChecklist: parseGovernanceLines(fieldValue(projectGateChecklistInput)),
+      closureNotes: trimmedValue(projectClosureNotesInput),
+      stakeholders: parseGovernanceLines(fieldValue(projectStakeholdersInput)),
+      communicationPlan: parseGovernanceLines(fieldValue(projectCommunicationPlanInput)),
+      decisionLog: parseGovernanceLines(fieldValue(projectDecisionLogInput)),
+      changeControl: parseGovernanceLines(fieldValue(projectChangeControlInput)),
+      riskOpportunity: parseGovernanceLines(fieldValue(projectRiskOpportunityInput)),
+      qualityChecklist: parseGovernanceLines(fieldValue(projectQualityChecklistInput)),
+      competenceMatrix: parseGovernanceLines(fieldValue(projectCompetenceMatrixInput)),
       gateApprovals: activeProjectEditId ? (projects.find((item) => item.id === activeProjectEditId)?.charter?.gateApprovals || {}) : {}
     }
   };
@@ -3795,11 +3802,12 @@ function visibleTasks() {
 }
 
 function renderProjectContextBar() {
+  if (!projectContextBar) return;
   const selected = projectFilter.value;
   const inProjectView = ["list", "kanban", "calendar", "gantt"].includes(currentView);
   const hasProject = selected && selected !== "Hamısı";
   projectContextBar.hidden = !(inProjectView && hasProject);
-  if (hasProject) contextProjectName.textContent = selected;
+  if (hasProject && contextProjectName) contextProjectName.textContent = selected;
 }
 
 function renderProjectFilter() {
@@ -5587,6 +5595,344 @@ function backendUrl(path) {
 let _sseSource = null;
 let _sseReconnectTimer = null;
 
+function supabaseConfig() {
+  const cfg = window.PROJECT_MANAGER_SUPABASE || {};
+  if (!cfg.url || !cfg.anonKey || String(cfg.anonKey).includes("YOUR_PUBLIC_ANON_KEY")) return null;
+  return {
+    url: String(cfg.url).replace(/\/+$/, ""),
+    anonKey: cfg.anonKey,
+    redirectTo: cfg.redirectTo || "https://faridasadov.github.io/project-manager/"
+  };
+}
+
+function canUseSupabase() {
+  return Boolean(supabaseConfig()) && typeof fetch === "function";
+}
+
+function loadSupabaseSession() {
+  try {
+    const value = JSON.parse(localStorage.getItem(supabaseSessionKey) || "null");
+    return value && value.access_token ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSupabaseSession(session) {
+  supabaseSession = session || null;
+  if (supabaseSession) localStorage.setItem(supabaseSessionKey, JSON.stringify(supabaseSession));
+  else localStorage.removeItem(supabaseSessionKey);
+}
+
+function supabaseUserFromAccessToken(accessToken) {
+  try {
+    const body = String(accessToken || "").split(".")[1];
+    if (!body) return null;
+    return JSON.parse(atob(body.replace(/-/g, "+").replace(/_/g, "/")));
+  } catch {
+    return null;
+  }
+}
+
+async function supabaseRequest(path, options = {}) {
+  const cfg = supabaseConfig();
+  if (!cfg) throw new Error("Supabase config yoxdur");
+  const headers = {
+    apikey: cfg.anonKey,
+    "content-type": "application/json",
+    ...(options.auth === false ? {} : { authorization: `Bearer ${options.token || supabaseSession?.access_token || cfg.anonKey}` }),
+    ...(options.headers || {})
+  };
+  const response = await fetch(`${cfg.url}${path}`, { ...options, headers });
+  const textBody = await response.text();
+  const payload = textBody ? JSON.parse(textBody) : null;
+  if (!response.ok) {
+    const message = payload?.msg || payload?.message || payload?.error_description || payload?.error || `Supabase xətası (${response.status})`;
+    throw new Error(message);
+  }
+  return payload;
+}
+
+async function supabaseSignUp(email, password, metadata) {
+  const cfg = supabaseConfig();
+  const redirect = encodeURIComponent(cfg?.redirectTo || "https://faridasadov.github.io/project-manager/");
+  return supabaseRequest(`/auth/v1/signup?redirect_to=${redirect}`, {
+    method: "POST",
+    auth: false,
+    body: JSON.stringify({
+      email,
+      password,
+      data: metadata
+    })
+  });
+}
+
+async function supabasePasswordLogin(email, password) {
+  const payload = await supabaseRequest("/auth/v1/token?grant_type=password", {
+    method: "POST",
+    auth: false,
+    body: JSON.stringify({ email, password })
+  });
+  if (!payload?.access_token) throw new Error("Supabase sessiyası alınmadı");
+  saveSupabaseSession(payload);
+  return payload;
+}
+
+async function supabaseCreateWorkspaceProfile({ userId, companyName, companyId, subdomain, username, fullName, email }) {
+  const workspaceRows = await supabaseRequest("/rest/v1/workspaces", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      company_key: companyId,
+      name: companyName,
+      owner_id: userId,
+      status: "active"
+    })
+  });
+  const workspace = Array.isArray(workspaceRows) ? workspaceRows[0] : workspaceRows;
+  if (!workspace?.id) throw new Error("Workspace yaradılmadı");
+  await supabaseRequest("/rest/v1/profiles", {
+    method: "POST",
+    body: JSON.stringify({
+      id: userId,
+      workspace_id: workspace.id,
+      role: "admin",
+      username,
+      full_name: fullName,
+      email,
+      profile_json: { company: companyName, subdomain, position: "Company Admin" },
+      status: "active"
+    })
+  });
+  supabaseWorkspaceId = workspace.id;
+  localStorage.setItem(supabaseWorkspaceKey, supabaseWorkspaceId);
+  return workspace;
+}
+
+function applySupabaseWorkspaceSession({ userId, email, username, fullName, companyName, companyId, workspaceId }) {
+  const normalized = normalizeUser({
+    id: userId,
+    username,
+    passwordHash: "",
+    role: "admin",
+    managerId: "",
+    companyId,
+    profile: {
+      fullName,
+      email,
+      position: "Company Admin",
+      company: companyName
+    }
+  });
+  users = [
+    ...users.filter((user) => user.id !== normalized.id && user.username !== normalized.username),
+    normalized
+  ];
+  companyRegistry = [
+    ...companyRegistry.filter((company) => company.id !== companyId),
+    {
+      id: companyId,
+      name: companyName,
+      subdomain: slugFromName(companyName),
+      status: "active",
+      plan: "standard",
+      adminUsername: username,
+      userCount: 1,
+      projectCount: 0,
+      createdAt: new Date().toISOString(),
+      activatedAt: new Date().toISOString(),
+      statusChangedAt: new Date().toISOString()
+    }
+  ];
+  appSettings.companyRegistry = companyRegistry;
+  supabaseWorkspaceId = workspaceId;
+  localStorage.setItem(supabaseWorkspaceKey, workspaceId);
+  currentUser = normalized;
+  localStorage.setItem(sessionKey, normalized.id);
+  saveUsers();
+  saveAppSettings();
+  return normalized;
+}
+
+async function supabaseRegisterWorkspace({ companyName, subdomain, username, password, fullName, email }) {
+  if (!canUseSupabase()) throw new Error("Supabase config aktiv deyil");
+  const companyId = companyIdFromName(companyName);
+  const signup = await supabaseSignUp(email, password, {
+    full_name: fullName,
+    username,
+    company_name: companyName,
+    company_key: companyId
+  });
+  const session = signup.session || signup;
+  if (!session?.access_token) {
+    throw new Error("Qeydiyyat yaradıldı. Supabase email təsdiqini tamamlayın, sonra email ilə daxil olun.");
+  }
+  saveSupabaseSession(session);
+  const userId = signup.user?.id || session.user?.id;
+  const workspace = await supabaseCreateWorkspaceProfile({ userId, companyName, companyId, subdomain, username, fullName, email });
+  applySupabaseWorkspaceSession({ userId, email, username, fullName, companyName, companyId, workspaceId: workspace.id });
+  await supabaseSaveState();
+  recordAudit("workspace.supabase_registered", "company", companyId, companyName);
+  return currentUser;
+}
+
+async function supabaseLoadWorkspaceState(workspaceId) {
+  const rows = await supabaseRequest(`/rest/v1/app_state?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=state_json&limit=1`);
+  const state = Array.isArray(rows) ? rows[0]?.state_json : null;
+  if (state?.tasks) importBackup(state);
+}
+
+async function supabaseLoginWorkspace(email, password) {
+  if (!canUseSupabase()) return null;
+  const session = await supabasePasswordLogin(email, password);
+  const userId = session.user?.id;
+  if (!userId) throw new Error("Supabase istifadəçisi tapılmadı");
+  const profiles = await supabaseRequest(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id,workspace_id,username,full_name,email,role,profile_json`);
+  let profile = Array.isArray(profiles) ? profiles[0] : null;
+  if (!profile?.workspace_id) {
+    const meta = session.user?.user_metadata || {};
+    const companyName = meta.company_name || "Workspace";
+    const companyId = meta.company_key || companyIdFromName(companyName);
+    const username = meta.username || email.split("@")[0];
+    const fullName = meta.full_name || username;
+    const workspace = await supabaseCreateWorkspaceProfile({
+      userId,
+      companyName,
+      companyId,
+      subdomain: slugFromName(companyName),
+      username,
+      fullName,
+      email
+    });
+    profile = {
+      id: userId,
+      workspace_id: workspace.id,
+      username,
+      full_name: fullName,
+      email,
+      role: "admin",
+      profile_json: { company: companyName }
+    };
+  }
+  const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(profile.workspace_id)}&select=id,company_key,name,status`);
+  const workspace = Array.isArray(workspaces) ? workspaces[0] : null;
+  if (!workspace?.id) throw new Error("Workspace oxunmadı");
+  const companyName = workspace.name || profile.profile_json?.company || profile.username;
+  const companyId = workspace.company_key || companyIdFromName(companyName);
+  applySupabaseWorkspaceSession({
+    userId,
+    email: profile.email || email,
+    username: profile.username || email,
+    fullName: profile.full_name || profile.username || email,
+    companyName,
+    companyId,
+    workspaceId: workspace.id
+  });
+  await supabaseLoadWorkspaceState(workspace.id);
+  return currentUser;
+}
+
+async function supabaseCompleteSession(session) {
+  if (!session?.access_token) return null;
+  const tokenUser = session.user || supabaseUserFromAccessToken(session.access_token);
+  const userId = tokenUser?.id || tokenUser?.sub;
+  const email = tokenUser?.email || "";
+  if (!userId || !email) throw new Error("Supabase təsdiq sessiyası oxunmadı");
+  saveSupabaseSession({ ...session, user: tokenUser });
+  const profiles = await supabaseRequest(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id,workspace_id,username,full_name,email,role,profile_json`);
+  let profile = Array.isArray(profiles) ? profiles[0] : null;
+  if (!profile?.workspace_id) {
+    const meta = tokenUser.user_metadata || {};
+    const companyName = meta.company_name || meta.company || "Project Manager";
+    const companyId = meta.company_key || companyIdFromName(companyName);
+    const username = meta.username || email.split("@")[0];
+    const fullName = meta.full_name || username;
+    const workspace = await supabaseCreateWorkspaceProfile({
+      userId,
+      companyName,
+      companyId,
+      subdomain: slugFromName(companyName),
+      username,
+      fullName,
+      email
+    });
+    profile = {
+      id: userId,
+      workspace_id: workspace.id,
+      username,
+      full_name: fullName,
+      email,
+      role: "admin",
+      profile_json: { company: companyName }
+    };
+  }
+  const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(profile.workspace_id)}&select=id,company_key,name,status`);
+  const workspace = Array.isArray(workspaces) ? workspaces[0] : null;
+  if (!workspace?.id) throw new Error("Workspace oxunmadı");
+  const companyName = workspace.name || profile.profile_json?.company || "Project Manager";
+  const companyId = workspace.company_key || companyIdFromName(companyName);
+  applySupabaseWorkspaceSession({
+    userId,
+    email: profile.email || email,
+    username: profile.username || email.split("@")[0],
+    fullName: profile.full_name || profile.username || email,
+    companyName,
+    companyId,
+    workspaceId: workspace.id
+  });
+  await supabaseLoadWorkspaceState(workspace.id);
+  return currentUser;
+}
+
+async function handleSupabaseAuthRedirect() {
+  if (!canUseSupabase() || !window.location?.hash?.includes("access_token=")) return false;
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const session = {
+    access_token: params.get("access_token"),
+    refresh_token: params.get("refresh_token"),
+    expires_at: Number(params.get("expires_at")) || 0,
+    expires_in: Number(params.get("expires_in")) || 0,
+    token_type: params.get("token_type") || "bearer",
+    type: params.get("type") || ""
+  };
+  window.history?.replaceState?.(null, document.title, window.location.pathname + window.location.search);
+  try {
+    await supabaseCompleteSession(session);
+    loginError.textContent = "";
+    registerError.textContent = "";
+    render();
+    return true;
+  } catch (error) {
+    loginError.textContent = error.message;
+    registerError.textContent = error.message;
+    render();
+    return false;
+  }
+}
+
+function scheduleSupabaseSave() {
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin()) return;
+  clearTimeout(supabaseSaveTimer);
+  supabaseSaveTimer = setTimeout(() => {
+    supabaseSaveState().catch((error) => console.warn("Supabase save failed", error));
+  }, 500);
+}
+
+async function supabaseSaveState() {
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin()) return;
+  const payload = backupPayload();
+  await supabaseRequest("/rest/v1/app_state?on_conflict=workspace_id", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates" },
+    body: JSON.stringify({
+      workspace_id: supabaseWorkspaceId,
+      state_json: payload,
+      saved_by: currentUser?.id || null,
+      updated_at: new Date().toISOString()
+    })
+  });
+}
+
 function connectSSE() {
   if (!canUseBackend() || !authToken || _sseSource) return;
   const url = backendUrl("/api/events") + "?token=" + encodeURIComponent(authToken);
@@ -5620,6 +5966,7 @@ function authHeaders(extraHeaders = {}) {
 }
 
 function scheduleBackendSave() {
+  scheduleSupabaseSave();
   if (!backendSyncReady || !canUseBackend()) return;
   clearTimeout(backendSaveTimer);
   backendSaveTimer = setTimeout(() => {
@@ -6610,7 +6957,7 @@ summaryCards.forEach((card) => {
 searchInput.addEventListener("input", render);
 projectFilter.addEventListener("change", render);
 
-backToProjectsBtn.addEventListener("click", () => {
+backToProjectsBtn?.addEventListener("click", () => {
   const projectName = projectFilter.value;
   setView("projects");
   requestAnimationFrame(() => {
@@ -6619,11 +6966,11 @@ backToProjectsBtn.addEventListener("click", () => {
   });
 });
 
-contextAddTaskBtn.addEventListener("click", () => {
+contextAddTaskBtn?.addEventListener("click", () => {
   openTaskComposerForProject(projectFilter.value);
 });
 
-contextEditProjectBtn.addEventListener("click", () => {
+contextEditProjectBtn?.addEventListener("click", () => {
   openProjectEditor(projectFilter.value);
 });
 function handleCalendarClick(event) {
@@ -6672,6 +7019,22 @@ loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const username = loginUsername.value.trim();
   const password = loginPassword.value;
+  if (canUseSupabase() && username.includes("@")) {
+    try {
+      const user = await supabaseLoginWorkspace(username, password);
+      if (user) {
+        loginError.textContent = "";
+        loginPassword.value = "";
+        appSettings = loadSettings();
+        ensureTenantSeedData();
+        render();
+        return;
+      }
+    } catch (error) {
+      loginError.textContent = error.message;
+      return;
+    }
+  }
   const localUser = users.find((item) => item.username === username && item.passwordHash === md5(password));
   let user = canUseBackend() ? await backendLogin(username, password) : null;
   if (!user) user = localUser;
@@ -6707,7 +7070,7 @@ loginForm.addEventListener("submit", async (event) => {
   }
 });
 
-registerForm?.addEventListener("submit", (event) => {
+registerForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const companyName = registerCompanyInput.value.trim();
   const subdomain = slugFromName(registerSubdomainInput?.value || companyName);
@@ -6716,6 +7079,20 @@ registerForm?.addEventListener("submit", (event) => {
   const fullName = registerFullNameInput.value.trim() || username;
   const email = registerEmailInput.value.trim();
   if (!companyName || !username || !password) return;
+  if (canUseSupabase() && email && password) {
+    try {
+      registerError.textContent = "Supabase qeydiyyatı yaradılır...";
+      await supabaseRegisterWorkspace({ companyName, subdomain, username, password, fullName, email });
+      registerError.textContent = "";
+      if (registerSubdomainInput) registerSubdomainInput.value = "";
+      registerPasswordInput.value = "";
+      render();
+      return;
+    } catch (error) {
+      registerError.textContent = error.message;
+      return;
+    }
+  }
   if (users.some((user) => user.username.toLowerCase() === username.toLowerCase())) {
     registerError.textContent = "Bu istifadəçi adı artıq var.";
     return;
@@ -6770,6 +7147,9 @@ registerSubdomainInput?.addEventListener("input", () => {
 
 logoutButton.addEventListener("click", async () => {
   disconnectSSE();
+  saveSupabaseSession(null);
+  supabaseWorkspaceId = "";
+  localStorage.removeItem(supabaseWorkspaceKey);
   if (canUseBackend() && authToken) {
     fetch(backendUrl("/api/auth/logout"), { method: "POST", headers: authHeaders() }).catch(() => {});
   }
@@ -7431,15 +7811,15 @@ projectForm.addEventListener("submit", (event) => {
   const governancePayload = projectGovernancePayloadFromForm();
   const payload = {
     name: projectNameInput.value,
-    description: projectDescriptionInput.value,
-    customerId: projectCustomerInput.value,
-    managerId: projectLeaderInput.value,
+    description: projectDescriptionInput?.value || "",
+    customerId: projectCustomerInput?.value || "",
+    managerId: projectLeaderInput?.value || "",
     teamMemberIds: selectedProjectTeamMemberIds,
     start: projectStartDateInput.value,
     end: projectEndDateInput.value,
     status: projectStatusInput.value,
     priority: projectPriorityInput.value,
-    budget: Number(projectBudgetInput.value) || 0,
+    budget: Number(projectBudgetInput?.value) || 0,
     progress,
     lifecycle: governancePayload.lifecycle,
     charter: governancePayload.charter
@@ -7454,7 +7834,7 @@ projectForm.addEventListener("submit", (event) => {
     ? createProject(projectNameInput.value, payload)
     : updateProject(activeProjectEditId, payload);
   if (!project) return;
-  const selectedTemplate = isNew ? projectTemplateInput.value : "";
+  const selectedTemplate = isNew ? projectTemplateInput?.value || "" : "";
   closeProjectComposer();
   if (selectedTemplate && canUseBackend() && authToken) {
     fetch(backendUrl(`/api/projects/${encodeURIComponent(project.id)}/apply-template`), {
@@ -7505,16 +7885,16 @@ projectComposerModal.addEventListener("click", (event) => {
 ].forEach((input) => input?.addEventListener("input", updateGovernanceScorePreview));
 projectLifecycleInput?.addEventListener("change", updateGovernanceScorePreview);
 
-toggleQuickCustomerBtn.addEventListener("click", () => {
+toggleQuickCustomerBtn?.addEventListener("click", () => {
   quickCustomerForm.hidden = !quickCustomerForm.hidden;
   if (!quickCustomerForm.hidden) quickCustomerNameInput.focus();
 });
-quickCustomerCancelBtn.addEventListener("click", () => {
+quickCustomerCancelBtn?.addEventListener("click", () => {
   quickCustomerForm.hidden = true;
   quickCustomerNameInput.value = "";
   quickCustomerContactInput.value = "";
 });
-quickCustomerSaveBtn.addEventListener("click", () => {
+quickCustomerSaveBtn?.addEventListener("click", () => {
   const name = quickCustomerNameInput.value.trim();
   if (!name) { quickCustomerNameInput.focus(); return; }
   if (customers.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
@@ -7540,17 +7920,17 @@ quickCustomerSaveBtn.addEventListener("click", () => {
   quickCustomerContactInput.value = "";
 });
 
-toggleQuickManagerBtn.addEventListener("click", () => {
+toggleQuickManagerBtn?.addEventListener("click", () => {
   quickManagerForm.hidden = !quickManagerForm.hidden;
   if (!quickManagerForm.hidden) quickManagerFullNameInput.focus();
 });
-quickManagerCancelBtn.addEventListener("click", () => {
+quickManagerCancelBtn?.addEventListener("click", () => {
   quickManagerForm.hidden = true;
   quickManagerFullNameInput.value = "";
   quickManagerUsernameInput.value = "";
   quickManagerPasswordInput.value = "";
 });
-quickManagerSaveBtn.addEventListener("click", () => {
+quickManagerSaveBtn?.addEventListener("click", () => {
   if (!isAdmin()) { alert("Manager yaratmaq üçün admin icazəsi tələb olunur."); return; }
   const username = quickManagerUsernameInput.value.trim();
   const password = quickManagerPasswordInput.value;
@@ -7839,6 +8219,13 @@ clearDone.addEventListener("click", () => {
   render();
 });
 
-render();
-syncBackendState();
-syncBackendSettings();
+if (window.location?.hash?.includes("access_token=")) {
+  handleSupabaseAuthRedirect().then(() => {
+    syncBackendState();
+    syncBackendSettings();
+  });
+} else {
+  render();
+  syncBackendState();
+  syncBackendSettings();
+}

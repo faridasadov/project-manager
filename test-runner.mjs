@@ -199,6 +199,8 @@ const context = {
   Math,
   Number,
   String,
+  setTimeout: () => 0,
+  clearTimeout: () => {},
   alert: (message) => {
     lastAlert = message;
   },

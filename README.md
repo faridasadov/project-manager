@@ -113,3 +113,11 @@ Admin panel backup/restore:
 ## GitHub Pages
 
 The `.github/workflows/pages.yml` workflow deploys the static site from the `main` branch. In the GitHub repository, enable Pages with **GitHub Actions** as the source.
+
+## Supabase free backend test
+
+The `supabase/` folder contains a safe test layer for trying GitHub Pages + Supabase without replacing the current MariaDB backend.
+
+- `supabase/schema.sql` creates workspaces, profiles, projects, tasks, comments, attachments, notifications, audit logs and RLS policies.
+- `supabase/test-connection.html` checks a Supabase URL and anon key from `supabase/supabase-config.js`.
+- `supabase/supabase-config.js` is ignored by Git so real keys do not get committed.
