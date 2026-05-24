@@ -2487,8 +2487,18 @@ function currentCompanyId() {
   return currentUser?.companyId || "company-default";
 }
 
+function projectCompanyId(project) {
+  return project?.companyId || "company-default";
+}
+
+function taskCompanyId(task) {
+  if (task?.companyId) return task.companyId;
+  const project = projects.find((item) => item.name === task?.project);
+  return projectCompanyId(project);
+}
+
 function isSameCompany(item) {
-  return !item?.companyId || item.companyId === currentCompanyId();
+  return projectCompanyId(item) === currentCompanyId();
 }
 
 function recordAudit(action, entityType, entityId, detail = "") {
@@ -3215,7 +3225,7 @@ function customerLabel(customerId) {
 function canSeeProject(project) {
   if (!currentUser) return true;
   if (isSuperAdmin()) return false;
-  if (project.companyId && project.companyId !== currentCompanyId()) return false;
+  if (projectCompanyId(project) !== currentCompanyId()) return false;
   if (isAdmin()) return true;
   return projectHasRoleAccess(project)
     || projectHasResourceAccess(project.name)
@@ -3229,8 +3239,8 @@ function visibleProjects() {
 function canSeeTask(task) {
   if (!currentUser) return true;
   if (isSuperAdmin()) return false;
+  if (taskCompanyId(task) !== currentCompanyId()) return false;
   const project = projects.find((item) => item.name === task.project);
-  if (project?.companyId && project.companyId !== currentCompanyId()) return false;
   if (isAdmin() && (!project || isSameCompany(project))) return true;
   return projectHasRoleAccess(project)
     || taskHasDirectAccess(task)
@@ -3340,7 +3350,7 @@ function teamMemberOptions(selectedIds = []) {
 }
 
 function taskOptionItems(selectedIds = [], excludedId = "") {
-  return tasks
+  return accessibleTasks()
     .filter((task) => task.id !== excludedId)
     .map((task) => `<option value="${task.id}" ${selectedIds.includes(task.id) ? "selected" : ""}>${escapeHtml(task.name)} (${escapeHtml(getProject(task))})</option>`)
     .join("");
@@ -3818,7 +3828,10 @@ function renderProjectContextBar() {
 
 function renderProjectFilter() {
   const selected = projectFilter.value || "Hamısı";
-  const projectNames = [...new Set([...visibleProjects().map((project) => project.name), ...tasks.filter((task) => isAdmin()).map(getProject)])].sort();
+  const projectNames = [...new Set([
+    ...visibleProjects().map((project) => project.name),
+    ...accessibleTasks().map(getProject)
+  ])].sort();
   projectFilter.innerHTML = [
     `<option value="Hamısı">${text("allProjects")}</option>`,
     ...projectNames.map((project) => `<option value="${escapeHtml(project)}">${escapeHtml(project)}</option>`)
@@ -3882,29 +3895,45 @@ function renderResourceControls() {
     return;
   }
   const options = allResourceOptions();
-  userCount.textContent = users.length;
-  projectCount.textContent = projects.length;
-  customerCount.textContent = customers.length;
-  fileCount.textContent = managedFiles.length;
-  teamCount.textContent = teams.length;
-  linkCount.textContent = projectLinks.length;
-  trashCount.textContent = trash.length;
+  const scopedProjects = projects.filter(canSeeProject);
+  const scopedVisibleProjects = scopedProjects.filter((project) => !project.archived);
+  const scopedProjectNames = new Set(scopedProjects.map((project) => project.name));
+  const scopedTasks = accessibleTasks();
+  const scopedCustomers = customers.filter(isSameCompany);
+  const scopedFiles = managedFiles.filter(isSameCompany);
+  const scopedTeams = teams.filter(isSameCompany);
+  const scopedLinks = projectLinks.filter((link) => (
+    link.companyId ? isSameCompany(link) : scopedProjectNames.has(link.project)
+  ));
+  const scopedRegisters = registers.filter((item) => scopedProjectNames.has(item.project));
+  const scopedTrash = trash.filter(isSameCompany);
+  const scopedUsers = isAdmin()
+    ? users.filter((user) => user.role !== "super_admin" && user.companyId === currentCompanyId())
+    : users.filter((user) => user.companyId === currentCompanyId() && (currentUser?.role === "manager" || user.managerId === currentUser?.id || user.id === currentUser?.id));
+
+  userCount.textContent = scopedUsers.length;
+  projectCount.textContent = scopedProjects.length;
+  customerCount.textContent = scopedCustomers.length;
+  fileCount.textContent = scopedFiles.length;
+  teamCount.textContent = scopedTeams.length;
+  linkCount.textContent = scopedLinks.length;
+  trashCount.textContent = scopedTrash.length;
   if (adminLaunchCounts.dateRequests) adminLaunchCounts.dateRequests.textContent = pendingDateRequests().length;
   if (adminLaunchCounts.companies) adminLaunchCounts.companies.textContent = companyRegistry.length || companyRegistryFromLocalState().length;
-  if (adminLaunchCounts.projects) adminLaunchCounts.projects.textContent = projects.length;
-  if (adminLaunchCounts.users) adminLaunchCounts.users.textContent = users.length;
-  if (adminLaunchCounts.customers) adminLaunchCounts.customers.textContent = customers.length;
-  if (adminLaunchCounts.files) adminLaunchCounts.files.textContent = managedFiles.length;
-  if (adminLaunchCounts.teams) adminLaunchCounts.teams.textContent = teams.length;
-  if (adminLaunchCounts.links) adminLaunchCounts.links.textContent = projectLinks.length;
-  if (adminLaunchCounts.registers) adminLaunchCounts.registers.textContent = registers.length;
-  if (adminLaunchCounts.trash) adminLaunchCounts.trash.textContent = trash.length;
+  if (adminLaunchCounts.projects) adminLaunchCounts.projects.textContent = scopedProjects.length;
+  if (adminLaunchCounts.users) adminLaunchCounts.users.textContent = scopedUsers.length;
+  if (adminLaunchCounts.customers) adminLaunchCounts.customers.textContent = scopedCustomers.length;
+  if (adminLaunchCounts.files) adminLaunchCounts.files.textContent = scopedFiles.length;
+  if (adminLaunchCounts.teams) adminLaunchCounts.teams.textContent = scopedTeams.length;
+  if (adminLaunchCounts.links) adminLaunchCounts.links.textContent = scopedLinks.length;
+  if (adminLaunchCounts.registers) adminLaunchCounts.registers.textContent = scopedRegisters.length;
+  if (adminLaunchCounts.trash) adminLaunchCounts.trash.textContent = scopedTrash.length;
   const currentProject = projectInput.value;
   projectInput.innerHTML = [
     `<option value="">${text("selectProject")}</option>`,
-    ...visibleProjects().map((project) => `<option value="${escapeHtml(project.name)}">${escapeHtml(project.name)}</option>`)
+    ...scopedVisibleProjects.map((project) => `<option value="${escapeHtml(project.name)}">${escapeHtml(project.name)}</option>`)
   ].join("");
-  projectInput.value = projects.some((project) => project.name === currentProject) ? currentProject : "";
+  projectInput.value = scopedVisibleProjects.some((project) => project.name === currentProject) ? currentProject : "";
 
   const currentOwner = ownerInput.value;
   ownerInput.innerHTML = [
@@ -3938,9 +3967,9 @@ function renderResourceControls() {
   const currentCustomer = projectCustomerInput.value;
   projectCustomerInput.innerHTML = [
     `<option value="">${text("empty")}</option>`,
-    ...customers.map((customer) => `<option value="${escapeHtml(customer.id)}">${escapeHtml(customer.name)}</option>`)
+    ...scopedCustomers.map((customer) => `<option value="${escapeHtml(customer.id)}">${escapeHtml(customer.name)}</option>`)
   ].join("");
-  projectCustomerInput.value = customers.some((customer) => customer.id === currentCustomer) ? currentCustomer : "";
+  projectCustomerInput.value = scopedCustomers.some((customer) => customer.id === currentCustomer) ? currentCustomer : "";
   projectLeaderInput.innerHTML = managerOptions(currentLeader);
   projectLeaderInput.value = users.some((user) => user.id === currentLeader && user.role === "manager") ? currentLeader : "";
   projectTeamMembersInput.innerHTML = teamMemberOptions();
@@ -3951,8 +3980,8 @@ function renderResourceControls() {
   )).join("");
 
   const currentRegisterProject = registerProjectInput.value;
-  registerProjectInput.innerHTML = visibleProjects().map((project) => `<option value="${escapeHtml(project.name)}">${escapeHtml(project.name)}</option>`).join("");
-  registerProjectInput.value = projects.some((project) => project.name === currentRegisterProject) ? currentRegisterProject : visibleProjects()[0]?.name || "";
+  registerProjectInput.innerHTML = scopedVisibleProjects.map((project) => `<option value="${escapeHtml(project.name)}">${escapeHtml(project.name)}</option>`).join("");
+  registerProjectInput.value = scopedVisibleProjects.some((project) => project.name === currentRegisterProject) ? currentRegisterProject : scopedVisibleProjects[0]?.name || "";
 
   const currentRegisterOwner = registerOwnerInput.value;
   registerOwnerInput.innerHTML = [
@@ -3960,10 +3989,10 @@ function renderResourceControls() {
     ...options.map((option) => `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`)
   ].join("");
   registerOwnerInput.value = options.some((option) => option.value === currentRegisterOwner) ? currentRegisterOwner : "";
-  registerCount.textContent = registers.length;
+  registerCount.textContent = scopedRegisters.length;
 
-  projectList.innerHTML = projects.length ? projects.map((project) => {
-    const taskCount = tasks.filter((task) => task.project === project.name).length;
+  projectList.innerHTML = scopedProjects.length ? scopedProjects.map((project) => {
+    const taskCount = scopedTasks.filter((task) => task.project === project.name).length;
     const managerNames = projectManagers(project).map((user) => user.username);
     const memberNames = (project.teamMemberIds || []).map(resourceLabel).filter(Boolean);
     return `
@@ -3980,7 +4009,7 @@ function renderResourceControls() {
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
 
-  teamList.innerHTML = teams.length ? teams.map((team) => {
+  teamList.innerHTML = scopedTeams.length ? scopedTeams.map((team) => {
     const values = (team.memberIds || []).map((id) => id.includes(":") ? id : resourceValue("member", id));
     const names = values.map(resourceLabel).filter(Boolean);
     return `
@@ -4004,14 +4033,14 @@ function renderResourceControls() {
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
 
-  projectLinksList.innerHTML = projectLinks.length ? projectLinks.map((link) => `
+  projectLinksList.innerHTML = scopedLinks.length ? scopedLinks.map((link) => `
     <div class="resource-item">
       <span><strong>${escapeHtml(link.project)}</strong>${resourceTypeLabel(link.resource)}: ${escapeHtml(resourceLabel(link.resource))}</span>
       <button type="button" data-resource-action="delete-link" data-id="${link.id}">${text("remove")}</button>
     </div>
   `).join("") : `<div class="empty">${text("empty")}</div>`;
 
-  registerList.innerHTML = registers.length ? registers.map((item) => `
+  registerList.innerHTML = scopedRegisters.length ? scopedRegisters.map((item) => `
     <div class="resource-item register-item ${escapeHtml(item.type)}">
       <span>
         <strong>${escapeHtml(item.title)}</strong>
@@ -4023,12 +4052,7 @@ function renderResourceControls() {
     </div>
   `).join("") : `<div class="empty">${text("empty")}</div>`;
 
-  const shownUsers = isSuperAdmin()
-    ? users.filter((user) => user.role === "super_admin")
-    : isAdmin()
-      ? users.filter((user) => user.role !== "super_admin" && user.companyId === currentCompanyId())
-    : users.filter((user) => user.companyId === currentCompanyId() && (currentUser?.role === "manager" || user.managerId === currentUser?.id || user.id === currentUser?.id));
-  userList.innerHTML = shownUsers.map((user) => `
+  userList.innerHTML = scopedUsers.map((user) => `
     <details class="user-profile-card">
       <summary>
         <span><strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>${escapeHtml(user.profile?.position || roleLabel(user.role))} · ${escapeHtml(user.username)}${user.managerId ? ` · ${escapeHtml(users.find((item) => item.id === user.managerId)?.username || "")}` : ""}</span>
@@ -4064,7 +4088,7 @@ function renderResourceControls() {
     </details>
   `).join("");
 
-  trashList.innerHTML = trash.length ? trash.map((item) => {
+  trashList.innerHTML = scopedTrash.length ? scopedTrash.map((item) => {
     const title = item.type === "task" ? item.data.name : (item.data.project || item.data.name);
     const subtitle = item.type === "task"
       ? text("deletedTask")
@@ -4112,7 +4136,8 @@ function renderDateRequests() {
 }
 
 function renderCustomerList() {
-  customerList.innerHTML = customers.length ? customers.map((customer) => `
+  const scopedCustomers = customers.filter(isSameCompany);
+  customerList.innerHTML = scopedCustomers.length ? scopedCustomers.map((customer) => `
     <div class="resource-item">
       <span><strong>${escapeHtml(customer.name)}</strong>${escapeHtml([customer.contact, customer.email].filter(Boolean).join(" · "))}</span>
       <div class="mini-actions">
@@ -4123,7 +4148,8 @@ function renderCustomerList() {
 }
 
 function renderManagedFileList() {
-  managedFileList.innerHTML = managedFiles.length ? managedFiles.map((file) => `
+  const scopedFiles = managedFiles.filter(isSameCompany);
+  managedFileList.innerHTML = scopedFiles.length ? scopedFiles.map((file) => `
     <div class="resource-item">
       <span><strong>${escapeHtml(file.name)}</strong>${fileSizeLabel(Number(file.size) || 0)} · ${escapeHtml(formatDateTime(file.createdAt))}</span>
       <div class="mini-actions">

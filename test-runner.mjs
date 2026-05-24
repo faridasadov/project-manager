@@ -286,6 +286,9 @@ elements["#loginUsername"].value = "adminklinika";
 elements["#loginPassword"].value = "adminklinika123";
 elements["#loginForm"].dispatch("submit", { preventDefault: () => {} });
 assert.match(elements["#currentUserBadge"].textContent, /admin/, "admin can login");
+assert.doesNotMatch(elements["#projectFilter"].innerHTML, /Digital CRM Rollout|Logistika WMS|Campus Helpdesk|Retail POS/, "clinic admin project filter is tenant scoped");
+assert.doesNotMatch(elements["#projectList"].innerHTML, /Digital CRM Rollout|Logistika WMS|Campus Helpdesk|Retail POS/, "clinic admin project list is tenant scoped");
+assert.doesNotMatch(elements["#taskList"].innerHTML, /Tenant CRM scope|Barcode pilot|Pilot store rollout/, "clinic admin task list is tenant scoped");
 elements["#adminModal"].dispatch("click", {
   target: {
     dataset: {},
