@@ -596,43 +596,45 @@
             <div class="resource-body settings-grid">
               <div class="settings-card">
                 <h3 data-i18n="appearanceSettings">Görünüş</h3>
-                <label>
-                  <span data-i18n="themeMode">Görünüş modu</span>
-                  <select id="themeMode">
-                    <option value="light" data-i18n="lightMode">Light</option>
-                    <option value="dark" data-i18n="darkMode">Dark</option>
-                    <option value="system" data-i18n="systemMode">System</option>
-                  </select>
-                </label>
-                <label>
-                  <span data-i18n="backgroundStyle">Fon</span>
-                  <select id="backgroundStyle">
-                    <option value="calm" data-i18n="backgroundCalm">Sakit</option>
-                    <option value="grid" data-i18n="backgroundGrid">Grid</option>
-                    <option value="plain" data-i18n="backgroundPlain">Sadə</option>
-                    <option value="focus" data-i18n="backgroundFocus">Focus</option>
-                    <option value="paper" data-i18n="backgroundPaper">Kağız</option>
-                    <option value="steel" data-i18n="backgroundSteel">Steel</option>
-                    <option value="sunrise" data-i18n="backgroundSunrise">Sunrise</option>
-                    <option value="aurora" data-i18n="backgroundAurora">Aurora</option>
-                    <option value="circuit" data-i18n="backgroundCircuit">Circuit</option>
-                    <option value="mist" data-i18n="backgroundMist">Mist</option>
-                    <option value="carbon" data-i18n="backgroundCarbon">Carbon</option>
-                    <option value="canopy" data-i18n="backgroundCanopy">Canopy</option>
-                  </select>
-                </label>
-                <label>
-                  <span data-i18n="accentColor">Əsas rəng</span>
-                  <select id="accentColor">
-                    <option value="teal" data-i18n="accentTeal">Teal</option>
-                    <option value="blue" data-i18n="accentBlue">Blue</option>
-                    <option value="green" data-i18n="accentGreen">Green</option>
-                    <option value="amber" data-i18n="accentAmber">Amber</option>
-                    <option value="red" data-i18n="accentRed">Red</option>
-                    <option value="violet" data-i18n="accentViolet">Violet</option>
-                    <option value="slate" data-i18n="accentSlate">Slate</option>
-                  </select>
-                </label>
+                <div class="appearance-fields">
+                  <label>
+                    <span data-i18n="themeMode">Görünüş modu</span>
+                    <select id="themeMode">
+                      <option value="light" data-i18n="lightMode">Light</option>
+                      <option value="dark" data-i18n="darkMode">Dark</option>
+                      <option value="system" data-i18n="systemMode">System</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span data-i18n="backgroundStyle">Fon</span>
+                    <select id="backgroundStyle">
+                      <option value="calm" data-i18n="backgroundCalm">Sakit</option>
+                      <option value="grid" data-i18n="backgroundGrid">Grid</option>
+                      <option value="plain" data-i18n="backgroundPlain">Sadə</option>
+                      <option value="focus" data-i18n="backgroundFocus">Focus</option>
+                      <option value="paper" data-i18n="backgroundPaper">Kağız</option>
+                      <option value="steel" data-i18n="backgroundSteel">Steel</option>
+                      <option value="sunrise" data-i18n="backgroundSunrise">Sunrise</option>
+                      <option value="aurora" data-i18n="backgroundAurora">Aurora</option>
+                      <option value="circuit" data-i18n="backgroundCircuit">Circuit</option>
+                      <option value="mist" data-i18n="backgroundMist">Mist</option>
+                      <option value="carbon" data-i18n="backgroundCarbon">Carbon</option>
+                      <option value="canopy" data-i18n="backgroundCanopy">Canopy</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span data-i18n="accentColor">Əsas rəng</span>
+                    <select id="accentColor">
+                      <option value="teal" data-i18n="accentTeal">Teal</option>
+                      <option value="blue" data-i18n="accentBlue">Blue</option>
+                      <option value="green" data-i18n="accentGreen">Green</option>
+                      <option value="amber" data-i18n="accentAmber">Amber</option>
+                      <option value="red" data-i18n="accentRed">Red</option>
+                      <option value="violet" data-i18n="accentViolet">Violet</option>
+                      <option value="slate" data-i18n="accentSlate">Slate</option>
+                    </select>
+                  </label>
+                </div>
               </div>
               <div class="settings-card admin-only">
                 <h3 data-i18n="workflowSettings">Workflow</h3>
@@ -660,22 +662,27 @@
                   <input id="emailRecipients" type="email" multiple placeholder="admin@example.com" data-i18n-placeholder="emailRecipientsPlaceholder">
                 </label>
                 <label>
-                  <span data-i18n="emailProvider">SMTP və ya API endpoint</span>
-                  <input id="emailProvider" type="text" placeholder="smtps://user:app-password@smtp.gmail.com:465" data-i18n-placeholder="emailProviderPlaceholder">
+                  <span data-i18n="emailProvider">SMTP endpoint</span>
+                  <input id="emailProvider" type="text" placeholder="smtps://user:pass@smtp.gmail.com:465" data-i18n-placeholder="emailProviderPlaceholder">
                 </label>
                 <small class="field-hint" data-i18n="emailProviderHint">Gmail üçün App Password yaradın və smtps://user:app-password@smtp.gmail.com:465 formatında yazın.</small>
-                <label>
-                  <span data-i18n="mailSubjectTemplate">Deadline mövzusu</span>
-                  <input id="mailSubjectTemplate" type="text" placeholder="Project Manager deadline alerts">
-                </label>
-                <label>
-                  <span data-i18n="mailBodyTemplate">Deadline şablonu</span>
-                  <textarea id="mailBodyTemplate" rows="4" placeholder="{{alerts}}"></textarea>
-                </label>
-                <label>
-                  <span data-i18n="testMailBody">Test mail mətni</span>
-                  <textarea id="testMailBody" rows="3" placeholder="Project Manager mail ayarları test edildi."></textarea>
-                </label>
+                <details class="settings-detail-block">
+                  <summary>Şablon ayarları</summary>
+                  <div class="settings-detail-inner">
+                    <label>
+                      <span data-i18n="mailSubjectTemplate">Deadline mövzusu</span>
+                      <input id="mailSubjectTemplate" type="text" placeholder="Project Manager deadline alerts">
+                    </label>
+                    <label>
+                      <span data-i18n="mailBodyTemplate">Deadline şablonu</span>
+                      <textarea id="mailBodyTemplate" rows="4" placeholder="{{alerts}}"></textarea>
+                    </label>
+                    <label>
+                      <span data-i18n="testMailBody">Test mail mətni</span>
+                      <textarea id="testMailBody" rows="3" placeholder="Project Manager mail ayarları test edildi."></textarea>
+                    </label>
+                  </div>
+                </details>
                 <button id="testMail" type="button" data-i18n="testMail">Mail test et</button>
               </div>
               <div class="settings-card admin-only">
@@ -745,18 +752,22 @@
               <span data-i18n="backupPanel">Backup / Restore</span>
               <small id="backupCount">0</small>
             </summary>
-            <div class="resource-body backup-grid">
-              <div class="backup-quick-actions admin-only">
-                <button id="exportDataBtn" type="button" class="primary">⬇ JSON Backup</button>
-                <button id="exportExcelBtn" type="button">📊 Excel export</button>
-                <button id="exportPdfBtn" type="button">📄 PDF export</button>
-                <button id="clearDoneBtn" type="button">🧹 Bitənləri sil</button>
+            <div class="resource-body">
+              <div class="section-add-card backup-actions-card">
+                <p class="section-add-title">Əməliyyatlar</p>
+                <div class="backup-action-row">
+                  <button id="exportDataBtn" type="button">⬇ JSON</button>
+                  <button id="exportExcelBtn" type="button">📊 Excel</button>
+                  <button id="exportPdfBtn" type="button">📄 PDF</button>
+                  <button id="clearDoneBtn" type="button">🧹 Bitənləri sil</button>
+                  <span class="backup-divider"></span>
+                  <button id="createManualBackup" class="primary" type="button" data-i18n="createBackup">💾 Backup yarat</button>
+                  <label class="import-button">
+                    <span data-i18n="restoreBackup">⬆ Restore</span>
+                    <input id="restoreBackupInput" type="file" accept="application/json,.json">
+                  </label>
+                </div>
               </div>
-              <button id="createManualBackup" class="primary" type="button" data-i18n="createBackup">Backup yarat</button>
-              <label class="import-button">
-                <span data-i18n="restoreBackup">Restore backup</span>
-                <input id="restoreBackupInput" type="file" accept="application/json,.json">
-              </label>
               <div id="backupList" class="resource-list"></div>
             </div>
           </details>
@@ -884,19 +895,24 @@
               <small id="customerCount">0</small>
             </summary>
             <div class="resource-body">
-              <label>
-                <span data-i18n="customerName">Sifarişçi adı</span>
-                <input id="customerName" type="text" placeholder="Şirkət adı" data-i18n-placeholder="customerNamePlaceholder">
-              </label>
-              <label>
-                <span data-i18n="contactPerson">Əlaqədar şəxs</span>
-                <input id="customerContact" type="text" placeholder="Ad soyad">
-              </label>
-              <label>
-                <span data-i18n="email">Mail</span>
-                <input id="customerEmail" type="email" placeholder="client@example.com">
-              </label>
-              <button id="addCustomer" type="button" data-i18n="addCustomer">Sifarişçi əlavə et</button>
+              <div class="section-add-card">
+                <p class="section-add-title" data-i18n="addCustomer">Yeni sifarişçi əlavə et</p>
+                <div class="section-add-fields cols-3">
+                  <label>
+                    <span data-i18n="customerName">Sifarişçi adı</span>
+                    <input id="customerName" type="text" placeholder="Şirkət adı" data-i18n-placeholder="customerNamePlaceholder">
+                  </label>
+                  <label>
+                    <span data-i18n="contactPerson">Əlaqədar şəxs</span>
+                    <input id="customerContact" type="text" placeholder="Ad soyad">
+                  </label>
+                  <label>
+                    <span data-i18n="email">Mail</span>
+                    <input id="customerEmail" type="email" placeholder="client@example.com">
+                  </label>
+                </div>
+                <button id="addCustomer" class="primary" type="button" data-i18n="addCustomer">Sifarişçi əlavə et</button>
+              </div>
               <div id="customerList" class="resource-list"></div>
             </div>
           </details>
@@ -907,12 +923,17 @@
               <small id="fileCount">0</small>
             </summary>
             <div class="resource-body">
-              <label class="file-picker">
-                <span data-i18n="chooseFiles">Fayl seç</span>
-                <input id="managedFileInput" type="file" multiple>
-              </label>
-              <small id="managedFileStatus" class="file-picker-status" data-i18n="noFilesSelected">Fayl seçilməyib</small>
-              <button id="addManagedFiles" type="button" data-i18n="addFiles">Fayl əlavə et</button>
+              <div class="section-add-card section-add-file">
+                <p class="section-add-title" data-i18n="addFiles">Fayl yüklə</p>
+                <div class="file-add-row">
+                  <label class="file-picker">
+                    <span data-i18n="chooseFiles">Fayl seç</span>
+                    <input id="managedFileInput" type="file" multiple>
+                  </label>
+                  <small id="managedFileStatus" class="file-picker-status" data-i18n="noFilesSelected">Fayl seçilməyib</small>
+                  <button id="addManagedFiles" class="primary" type="button" data-i18n="addFiles">Fayl əlavə et</button>
+                </div>
+              </div>
               <div id="managedFileList" class="resource-list"></div>
             </div>
           </details>
@@ -923,15 +944,20 @@
               <small id="teamCount">0</small>
             </summary>
             <div class="resource-body">
-              <label>
-                <span data-i18n="newTeam">Yeni komanda</span>
-                <input id="teamName" type="text" placeholder="Komanda adı" data-i18n-placeholder="teamNamePlaceholder">
-              </label>
-              <label>
-                <span data-i18n="teamMembers">Komanda üzvləri</span>
-                <select id="teamMembers" multiple size="4"></select>
-              </label>
-              <button id="addTeam" type="button" data-i18n="addTeam">Komanda əlavə et</button>
+              <div class="section-add-card">
+                <p class="section-add-title">Yeni komanda</p>
+                <div class="section-add-fields cols-2">
+                  <label>
+                    <span data-i18n="newTeam">Komanda adı</span>
+                    <input id="teamName" type="text" placeholder="Komanda adı" data-i18n-placeholder="teamNamePlaceholder">
+                  </label>
+                  <label>
+                    <span data-i18n="teamMembers">Komanda üzvləri</span>
+                    <select id="teamMembers" multiple size="4"></select>
+                  </label>
+                </div>
+                <button id="addTeam" class="primary" type="button" data-i18n="addTeam">Komanda əlavə et</button>
+              </div>
               <div id="teamList" class="resource-list"></div>
             </div>
           </details>
@@ -942,15 +968,20 @@
               <small id="linkCount">0</small>
             </summary>
             <div class="resource-body">
-              <label>
-                <span data-i18n="linkProject">Layihəyə bağla</span>
-                <input id="linkProject" type="text" placeholder="Layihə adı" data-i18n-placeholder="linkProjectPlaceholder">
-              </label>
-              <label>
-                <span data-i18n="resource">Resurs</span>
-                <select id="linkResource"></select>
-              </label>
-              <button id="addProjectLink" type="button" data-i18n="addProjectLink">Bağla</button>
+              <div class="section-add-card">
+                <p class="section-add-title">Layihəyə resurs bağla</p>
+                <div class="section-add-fields cols-2">
+                  <label>
+                    <span data-i18n="linkProject">Layihə adı</span>
+                    <input id="linkProject" type="text" placeholder="Layihə adı" data-i18n-placeholder="linkProjectPlaceholder">
+                  </label>
+                  <label>
+                    <span data-i18n="resource">Resurs</span>
+                    <select id="linkResource"></select>
+                  </label>
+                </div>
+                <button id="addProjectLink" class="primary" type="button" data-i18n="addProjectLink">Bağla</button>
+              </div>
               <div id="projectLinks" class="resource-list"></div>
             </div>
           </details>
@@ -960,52 +991,57 @@
               <span data-i18n="projectRegisters">Layihə registerləri</span>
               <small id="registerCount">0</small>
             </summary>
-            <div class="resource-body register-grid">
-              <label>
-                <span data-i18n="project">Layihə</span>
-                <select id="registerProject"></select>
-              </label>
-              <label>
-                <span data-i18n="registerType">Tip</span>
-                <select id="registerType">
-                  <option value="risk" data-i18n="riskRegister">Risk</option>
-                  <option value="issue" data-i18n="issueRegister">Issue</option>
-                  <option value="milestone" data-i18n="milestoneRegister">Milestone</option>
-                </select>
-              </label>
-              <label>
-                <span data-i18n="registerTitle">Başlıq</span>
-                <input id="registerTitle" type="text" placeholder="Go-live risk" data-i18n-placeholder="registerTitlePlaceholder">
-              </label>
-              <label>
-                <span data-i18n="owner">Məsul şəxs</span>
-                <select id="registerOwner"></select>
-              </label>
-              <label>
-                <span data-i18n="status">Status</span>
-                <select id="registerStatus">
-                  <option value="Open" data-i18n="registerOpen">Open</option>
-                  <option value="Monitoring" data-i18n="registerMonitoring">Monitoring</option>
-                  <option value="Resolved" data-i18n="registerResolved">Resolved</option>
-                </select>
-              </label>
-              <label>
-                <span data-i18n="impact">Impact</span>
-                <select id="registerImpact">
-                  <option value="Low" data-i18n="impactLow">Low</option>
-                  <option value="Medium" data-i18n="impactMedium">Medium</option>
-                  <option value="High" data-i18n="impactHigh">High</option>
-                </select>
-              </label>
-              <label>
-                <span data-i18n="dueDate">Due date</span>
-                <input id="registerDueDate" type="date">
-              </label>
-              <label>
-                <span data-i18n="mitigation">Mitigation / qeyd</span>
-                <textarea id="registerMitigation" rows="3"></textarea>
-              </label>
-              <button id="addRegisterItem" type="button" data-i18n="addRegisterItem">Registerə əlavə et</button>
+            <div class="resource-body">
+              <div class="section-add-card">
+                <p class="section-add-title">Yeni register əlavə et</p>
+                <div class="section-add-fields cols-3">
+                  <label>
+                    <span data-i18n="project">Layihə</span>
+                    <select id="registerProject"></select>
+                  </label>
+                  <label>
+                    <span data-i18n="registerType">Tip</span>
+                    <select id="registerType">
+                      <option value="risk" data-i18n="riskRegister">Risk</option>
+                      <option value="issue" data-i18n="issueRegister">Issue</option>
+                      <option value="milestone" data-i18n="milestoneRegister">Milestone</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span data-i18n="registerTitle">Başlıq</span>
+                    <input id="registerTitle" type="text" placeholder="Go-live risk" data-i18n-placeholder="registerTitlePlaceholder">
+                  </label>
+                  <label>
+                    <span data-i18n="owner">Məsul şəxs</span>
+                    <select id="registerOwner"></select>
+                  </label>
+                  <label>
+                    <span data-i18n="status">Status</span>
+                    <select id="registerStatus">
+                      <option value="Open" data-i18n="registerOpen">Open</option>
+                      <option value="Monitoring" data-i18n="registerMonitoring">Monitoring</option>
+                      <option value="Resolved" data-i18n="registerResolved">Resolved</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span data-i18n="impact">Impact</span>
+                    <select id="registerImpact">
+                      <option value="Low" data-i18n="impactLow">Low</option>
+                      <option value="Medium" data-i18n="impactMedium">Medium</option>
+                      <option value="High" data-i18n="impactHigh">High</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span data-i18n="dueDate">Due date</span>
+                    <input id="registerDueDate" type="date">
+                  </label>
+                  <label class="field-span-2">
+                    <span data-i18n="mitigation">Mitigation / qeyd</span>
+                    <textarea id="registerMitigation" rows="3"></textarea>
+                  </label>
+                </div>
+                <button id="addRegisterItem" class="primary" type="button" data-i18n="addRegisterItem">Registerə əlavə et</button>
+              </div>
               <div id="registerList" class="resource-list register-list"></div>
             </div>
           </details>

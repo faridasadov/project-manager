@@ -4389,7 +4389,7 @@ function renderResourceControls() {
     return `
     <details class="user-profile-card">
       <summary data-initials="${escapeHtml(initials)}">
-        <span><strong>${escapeHtml(displayName)}</strong>${escapeHtml(user.profile?.position || roleLabel(user.role))} · ${escapeHtml(user.username)}${user.managerId ? ` · ${escapeHtml(users.find((item) => item.id === user.managerId)?.username || "")}` : ""}</span>
+        <span><strong>${escapeHtml(displayName)}</strong> · ${escapeHtml(user.profile?.position || roleLabel(user.role))} · ${escapeHtml(user.username)}${user.managerId ? ` · ${escapeHtml(users.find((item) => item.id === user.managerId)?.username || "")}` : ""}</span>
       </summary>
       <form class="user-profile-form" data-user-id="${user.id}">
         <label><span>${text("login")}</span><input name="username" value="${escapeHtml(user.username)}" ${isOrgAdmin() ? "" : "readonly"}></label>
