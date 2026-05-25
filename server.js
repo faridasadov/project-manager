@@ -1637,6 +1637,16 @@ function applyMailTemplate(template, values) {
   return String(template || "{{alerts}}").replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => String(values[key] ?? ""));
 }
 
+// Platform mail — only uses .env SMTP, never org settings
+function platformMailSettings() {
+  return {
+    emailEnabled: Boolean(process.env.SMTP_URL),
+    emailProvider: process.env.SMTP_URL || "",
+    emailRecipients: "",
+    mailFrom: process.env.MAIL_FROM || "project-manager@localhost"
+  };
+}
+
 async function sendMailWithSettings(settings, message) {
   if (!settings.emailEnabled) return { skipped: true, reason: "Email disabled" };
   const to = recipientsFrom(message.to || settings.emailRecipients);
@@ -1824,9 +1834,7 @@ async function handleApi(request, response) {
       );
       const baseUrl = `${request.headers["x-forwarded-proto"] || "http"}://${request.headers.host}`;
       const resetLink = `${baseUrl}/#reset-password?token=${encodeURIComponent(token)}&uid=${encodeURIComponent(user.id)}`;
-      const settings = await readSettings();
-      const mail = companyMailSettings(settings, actorCompanyId(user));
-      const result = await sendMailWithSettings(mail, {
+      const result = await sendMailWithSettings(platformMailSettings(), {
         subject: "Şifrə sıfırlama — Project Manager",
         text: `Şifrənizi sıfırlamaq üçün aşağıdakı linki açın:\n\n${resetLink}\n\nLink 1 saat ərzində etibarlıdır.`
       });
@@ -2026,6 +2034,28 @@ async function handleApi(request, response) {
       } : company);
       await writeSettings({ ...settings, companyRegistry: registry });
       await recordAuditLog(actor.username, "workspace.registered", "company", companyId, { name, subdomain, plan: payload.plan || "standard" });
+      // Welcome email to new workspace admin via platform mail
+      if (adminUser.profile.email) {
+        const baseUrl = `${request.headers["x-forwarded-proto"] || "http"}://${request.headers.host}`;
+        await sendMailWithSettings(platformMailSettings(), {
+          to: adminUser.profile.email,
+          subject: `Project Manager — "${name}" workspace hazırdır`,
+          text: [
+            `Salam, ${adminUser.profile.fullName || username}!`,
+            "",
+            `"${name}" workspace-iniz uğurla yaradıldı.`,
+            "",
+            `Giriş məlumatları:`,
+            `  İstifadəçi adı : ${username}`,
+            `  Şifrə          : ${password}`,
+            `  Link           : ${baseUrl}/`,
+            "",
+            "Daxil olduqdan sonra şifrənizi dəyişməyinizi tövsiyə edirik.",
+            "",
+            "— Project Manager platformu"
+          ].join("\n")
+        }).catch(() => {});
+      }
       sendJson(response, 201, registry.find((company) => company.id === companyId));
     } catch {
       sendJson(response, 400, { error: "Could not create company" });
@@ -2208,8 +2238,7 @@ async function handleApi(request, response) {
         }
       };
       await writeState({ ...state, savedBy: actor.username }, actorCompanyId(actor));
-      const settings = await readSettings();
-      const result = await sendPasswordConfirmation(companyMailSettings(settings, actorCompanyId(actor)), state.users[userIndex], token);
+      const result = await sendPasswordConfirmation(platformMailSettings(), state.users[userIndex], token);
       await pool.execute(
         "INSERT INTO notifications (type, recipient, subject, body, status, payload_json) VALUES ('password_change', ?, ?, ?, ?, ?)",
         [
@@ -2285,6 +2314,53 @@ async function handleApi(request, response) {
       sendJson(response, 200, { ok: true });
     } catch {
       sendJson(response, 400, { error: "Could not change password" });
+    }
+    return true;
+  }
+
+  // Send welcome email to a newly created user (org admin → platform mail)
+  if (pathname === "/api/auth/send-welcome" && request.method === "POST") {
+    const actor = requireAuth(request, response);
+    if (!actor) return true;
+    if (!["admin", "super_admin"].includes(actor.role)) {
+      sendJson(response, 403, { error: "Only admins can send welcome emails" });
+      return true;
+    }
+    try {
+      const { userId, password } = JSON.parse(await readBody(request));
+      const state = ensureStateShape(await readState());
+      const user = state.users.find((u) => u.id === userId && u.companyId === actorCompanyId(actor));
+      if (!user) {
+        sendJson(response, 404, { error: "User not found" });
+        return true;
+      }
+      const email = String(user.profile?.email || "").trim();
+      if (!email) {
+        sendJson(response, 200, { ok: false, skipped: true, reason: "User has no email address" });
+        return true;
+      }
+      const baseUrl = `${request.headers["x-forwarded-proto"] || "http"}://${request.headers.host}`;
+      const result = await sendMailWithSettings(platformMailSettings(), {
+        to: email,
+        subject: "Project Manager — Hesabınız hazırdır",
+        text: [
+          `Salam, ${user.profile?.fullName || user.username}!`,
+          "",
+          "Sizin üçün Project Manager hesabı yaradılmışdır.",
+          "",
+          `  İstifadəçi adı : ${user.username}`,
+          `  Şifrə          : ${password || "(admin tərəfindən verildi)"}`,
+          `  Link           : ${baseUrl}/`,
+          "",
+          "Daxil olduqdan sonra Profil bölməsindən şifrənizi dəyişin.",
+          "",
+          "— Project Manager platformu"
+        ].join("\n")
+      });
+      await recordAuditLog(actor.username, "user.welcome_sent", "user", userId, { email, sent: !result.skipped });
+      sendJson(response, 200, { ok: !result.skipped && result.ok !== false, skipped: Boolean(result.skipped), reason: result.reason || "" });
+    } catch {
+      sendJson(response, 500, { error: "Could not send welcome email" });
     }
     return true;
   }

@@ -8266,6 +8266,18 @@ addUserButton.addEventListener("click", () => {
   saveUsers();
   recordAudit("user.created", "user", user.id, username);
   render();
+  // Send welcome email via platform mail if user has an email address
+  if (user.profile?.email && canUseBackend()) {
+    fetch(backendUrl("/api/auth/send-welcome"), {
+      method: "POST",
+      headers: authHeaders({ "content-type": "application/json" }),
+      body: JSON.stringify({ userId: user.id, password: finalPassword })
+    }).then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (data.ok) console.info(`Welcome email sent to ${user.profile.email}`);
+      else console.info(`Welcome email skipped: ${data.reason || "unknown"}`);
+    }).catch(() => {});
+  }
 });
 
 userList.addEventListener("click", async (event) => {
