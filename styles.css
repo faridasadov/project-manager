@@ -4115,6 +4115,16 @@ textarea:focus {
   padding: 14px 16px;
 }
 
+@keyframes highlightFlash {
+  0%   { box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 55%, transparent); background: color-mix(in srgb, var(--panel) 80%, var(--teal) 12%); }
+  70%  { box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 55%, transparent); background: color-mix(in srgb, var(--panel) 80%, var(--teal) 12%); }
+  100% { box-shadow: none; background: inherit; }
+}
+
+.task-card.highlight-flash {
+  animation: highlightFlash 1.8s ease forwards;
+}
+
 .task-actions {
   display: flex;
   flex-direction: row;

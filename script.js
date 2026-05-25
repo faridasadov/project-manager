@@ -5295,7 +5295,7 @@ function renderTaskList() {
       timeEntryCount ? `⏱ ${timeEntryCount} giriş` : "",
     ].filter(Boolean);
     return `
-    <article class="task-card ${blocked ? "blocked-task" : ""}">
+    <article class="task-card ${blocked ? "blocked-task" : ""}" data-task-card-id="${escapeHtml(task.id)}">
       ${projectName ? `<div class="task-project-tag">📁 ${escapeHtml(projectName)}</div>` : ""}
       <h3>${escapeHtml(task.name)}</h3>
       <div class="task-meta">
@@ -6911,8 +6911,58 @@ async function supabaseCompleteSession(session) {
   return currentUser;
 }
 
+function isSupabaseTokenExpired(session) {
+  if (!session?.access_token) return true;
+  // expires_at is Unix timestamp in seconds; refresh 60s before actual expiry
+  if (session.expires_at) return Date.now() / 1000 > session.expires_at - 60;
+  // Fallback: decode JWT exp claim
+  try {
+    const body = JSON.parse(atob(session.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return body.exp ? Date.now() / 1000 > body.exp - 60 : false;
+  } catch { return false; }
+}
+
+async function refreshSupabaseToken() {
+  const token = supabaseSession?.refresh_token;
+  if (!token) return false;
+  try {
+    const payload = await supabaseRequest("/auth/v1/token?grant_type=refresh_token", {
+      method: "POST",
+      auth: false,
+      body: JSON.stringify({ refresh_token: token })
+    });
+    if (!payload?.access_token) return false;
+    saveSupabaseSession(payload);
+    return true;
+  } catch (err) {
+    console.warn("Token refresh failed:", err.message);
+    return false;
+  }
+}
+
 async function resumeSupabaseSession() {
-  if (!canUseSupabase() || !supabaseSession?.access_token || !supabaseWorkspaceId || !currentUser) return false;
+  if (!canUseSupabase() || !supabaseSession?.access_token) return false;
+
+  // Refresh expired token before doing anything else
+  if (isSupabaseTokenExpired(supabaseSession)) {
+    const refreshed = await refreshSupabaseToken();
+    if (!refreshed) {
+      saveSupabaseSession(null);
+      return false;
+    }
+  }
+
+  // If user/workspace not in memory yet, reload profile from Supabase
+  if (!currentUser || !supabaseWorkspaceId) {
+    try {
+      await supabaseCompleteSession(supabaseSession);
+    } catch (err) {
+      console.warn("Session profile reload failed:", err.message);
+      return false;
+    }
+    return true;
+  }
+
   await supabaseLoadWorkspaceState(supabaseWorkspaceId);
   await supabaseLoadSettings(supabaseWorkspaceId);
   await syncSupabaseAuditLogs();
@@ -8007,11 +8057,26 @@ smartFilters?.addEventListener("click", (event) => {
   render();
 });
 
-// Shared handler: open task from any dashboard panel using data-open-task
+// Shared handler: navigate to task list and scroll/highlight the task card
 function handleDashboardTaskClick(event) {
   const btn = event.target.closest("button[data-open-task]");
   if (!btn) return false;
-  openTaskDetail(btn.dataset.openTask);
+  const taskId = btn.dataset.openTask;
+  // Reset filters so the task is visible
+  currentFilter = "Hamısı";
+  currentPriorityFilter = "Hamısı";
+  currentSmartFilter = "Hamısı";
+  currentOwnerFilter = "";
+  setView("list");
+  // After render, scroll to and briefly highlight the card
+  requestAnimationFrame(() => {
+    const card = document.querySelector(`[data-task-card-id="${CSS.escape(taskId)}"]`);
+    if (card) {
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      card.classList.add("highlight-flash");
+      setTimeout(() => card.classList.remove("highlight-flash"), 1800);
+    }
+  });
   return true;
 }
 
@@ -9622,7 +9687,8 @@ clearDone.addEventListener("click", () => {
 async function bootApp() {
   if (window.location?.hash?.includes("access_token=")) {
     await handleSupabaseAuthRedirect();
-  } else if (isSupabasePrimaryMode() && supabaseSession?.access_token) {
+  } else if (isSupabasePrimaryMode() && loadSupabaseSession()?.access_token) {
+    // Always attempt session restore; resumeSupabaseSession handles token refresh internally
     await resumeSupabaseSession().catch((error) => console.warn("Supabase resume failed", error));
   }
   render();
