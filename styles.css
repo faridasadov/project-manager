@@ -29,20 +29,17 @@ body {
 }
 
 body.dark-mode {
-  --bg: #0d0f1e;
-  --ink: #e8eaf6;
-  --muted: #9fa8da;
-  --panel: #141629;
-  --line: #2a2d4a;
-  --field: #0f1125;
-  --soft: #1a1e3a;
-  --sidebar: #09091a;
+  --bg: #0d1420;
+  --ink: #f5f8fb;
+  --muted: #b8c4d2;
+  --panel: #162132;
+  --line: #304158;
+  --field: #0f1928;
+  --soft: #1d2b3f;
+  --sidebar: #0a101b;
   --sidebar-muted: #818cf8;
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.3);
-}
-
-body.dark-mode {
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.32);
   background:
     radial-gradient(ellipse 70% 50% at 80% -10%, rgba(99, 102, 241, 0.14), transparent),
     radial-gradient(ellipse 60% 40% at 0% 30%, rgba(124, 58, 237, 0.10), transparent),
@@ -657,7 +654,7 @@ body.admin-role .manager-only {
 .platform-console {
   min-height: calc(100vh - 96px);
   padding: 28px;
-  background: #f4f7fb;
+  background: var(--bg);
 }
 
 .platform-console.active {
@@ -931,8 +928,8 @@ body.admin-role .manager-only {
 }
 
 .platform-company-card.suspended {
-  border-color: #fecaca;
-  background: #fff7f7;
+  border-color: color-mix(in srgb, var(--red) 40%, var(--line));
+  background: color-mix(in srgb, var(--red) 8%, var(--panel));
 }
 
 .platform-company-card strong {
@@ -2361,9 +2358,9 @@ form {
   letter-spacing: 0.04em;
   flex-shrink: 0;
 }
-.reg-risk    { background: #fee2e2; color: #b91c1c; }
-.reg-issue   { background: #fef3c7; color: #92400e; }
-.reg-milestone { background: #dbeafe; color: #1d4ed8; }
+.reg-risk      { background: color-mix(in srgb, var(--red)   18%, var(--soft)); color: var(--red); }
+.reg-issue     { background: color-mix(in srgb, var(--amber) 18%, var(--soft)); color: var(--amber); }
+.reg-milestone { background: color-mix(in srgb, var(--blue)  14%, var(--soft)); color: var(--blue); }
 
 .register-meta {
   display: flex;
@@ -2404,9 +2401,9 @@ form {
   border: 1px solid var(--line);
   white-space: nowrap;
 }
-.reg-status-Open       { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
-.reg-status-Monitoring { background: #fef9c3; color: #a16207; border-color: #fef08a; }
-.reg-status-Resolved   { background: #f0f9ff; color: #0369a1; border-color: #bae6fd; }
+.reg-status-Open       { background: color-mix(in srgb, var(--green) 16%, var(--soft)); color: var(--green);  border-color: color-mix(in srgb, var(--green) 30%, var(--line)); }
+.reg-status-Monitoring { background: color-mix(in srgb, var(--amber) 16%, var(--soft)); color: var(--amber); border-color: color-mix(in srgb, var(--amber) 30%, var(--line)); }
+.reg-status-Resolved   { background: color-mix(in srgb, var(--teal)  14%, var(--soft)); color: var(--teal);  border-color: color-mix(in srgb, var(--teal)  30%, var(--line)); }
 
 .reg-mitigation-input {
   width: 100%;
@@ -4194,7 +4191,7 @@ textarea:focus {
   border: 0;
   border-radius: 6px;
   padding: 0 11px;
-  background: #64748b;
+  background: var(--muted);
   color: #fff;
   font-size: 0.80rem;
   font-weight: 600;
@@ -4312,12 +4309,12 @@ textarea:focus {
 
 .badge.active {
   color: var(--blue);
-  background: #dbeafe;
+  background: color-mix(in srgb, var(--blue) 14%, var(--soft));
 }
 
 .badge.blocked {
-  color: #9f1239;
-  background: #ffe4e6;
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 14%, var(--soft));
 }
 
 .blocked-task {
@@ -4340,7 +4337,7 @@ button:disabled {
   max-width: 260px;
   margin-top: 10px;
   border-radius: 999px;
-  background: #e5ecef;
+  background: var(--line);
   overflow: hidden;
 }
 
@@ -5240,20 +5237,6 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 }
 
-body.dark-mode {
-  --bg: #0d1420;
-  --ink: #f5f8fb;
-  --muted: #b8c4d2;
-  --panel: #162132;
-  --line: #304158;
-  --field: #0f1928;
-  --soft: #1d2b3f;
-  --sidebar: #0a101b;
-  background:
-    linear-gradient(135deg, rgba(20, 184, 166, 0.14), transparent 34%),
-    linear-gradient(225deg, rgba(37, 99, 235, 0.16), transparent 32%),
-    var(--bg);
-}
 
 .login-card,
 .top-shell,
