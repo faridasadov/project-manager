@@ -5385,14 +5385,20 @@ function renderTaskInlineComments(task) {
     : "";
   const formHtml = task.status === "Bitib" ? "" : `
     <form class="comment-form task-inline-comment-form" data-task-id="${task.id}">
-      <textarea name="comment" rows="2" placeholder="${text("commentPlaceholder")}" required></textarea>
-      <div class="inline-comment-tools">
-        <label class="file-picker">
-          <span>${text("chooseFiles")}</span>
-          <input class="comment-attachment-input" name="attachments" type="file" multiple aria-label="${text("attachments")}">
-        </label>
-        <small class="file-picker-status">${text("noFilesSelected")}</small>
-        <button type="submit">${text("addComment")}</button>
+      <button class="comment-compose-trigger" type="button" data-action="expand-comment" aria-label="${text("commentPlaceholder")}">
+        <span>💬</span> ${text("commentPlaceholder")}…
+      </button>
+      <div class="comment-body">
+        <textarea name="comment" rows="2" placeholder="${text("commentPlaceholder")}" required></textarea>
+        <div class="inline-comment-actions">
+          <button class="comment-send-btn" type="submit">${text("addComment")}</button>
+          <button class="comment-cancel-btn" type="button" data-action="collapse-comment">${text("cancel")}</button>
+          <label class="comment-attach-btn" title="${text("attachments")}">
+            📎
+            <input class="comment-attachment-input" name="attachments" type="file" multiple aria-label="${text("attachments")}">
+          </label>
+          <small class="file-picker-status"></small>
+        </div>
       </div>
     </form>
   `;
@@ -7764,6 +7770,27 @@ form.addEventListener("submit", async (event) => {
     if (!button) return;
     if (button.dataset.action === "delete-comment") {
       if (deleteTaskComment(button.dataset.taskId, button.dataset.commentId)) render();
+      return;
+    }
+    if (button.dataset.action === "expand-comment") {
+      const form = button.closest(".task-inline-comment-form");
+      if (form) {
+        form.classList.add("is-expanded");
+        form.querySelector("textarea")?.focus();
+      }
+      return;
+    }
+    if (button.dataset.action === "collapse-comment") {
+      const form = button.closest(".task-inline-comment-form");
+      if (form) {
+        form.classList.remove("is-expanded");
+        const ta = form.querySelector("textarea");
+        if (ta) ta.value = "";
+        const fileInput = form.querySelector(".comment-attachment-input");
+        if (fileInput) fileInput.value = "";
+        const status = form.querySelector(".file-picker-status");
+        if (status) status.textContent = "";
+      }
       return;
     }
     handleTaskAction(button.dataset.action, button.dataset.id);

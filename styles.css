@@ -4447,39 +4447,176 @@ button:disabled {
   min-height: 86px;
 }
 
+/* ── Task inline comments (task list cards) ───────────── */
 .task-inline-comments {
-  margin-top: 10px;
-  padding: 10px;
-  border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--field) 72%, transparent);
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
 }
 
 .task-inline-comments-head {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
+  margin-bottom: 6px;
 }
 
 .task-inline-comment {
-  padding: 7px 9px;
+  display: grid;
+  gap: 3px;
+  padding: 5px 0 5px 10px;
+  border-left: 2px solid var(--line);
+  background: none;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 0;
+  margin-bottom: 4px;
+}
+
+/* Compose trigger — looks like a faded input placeholder */
+.comment-compose-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 11px;
+  border-radius: 7px;
+  border: 1px dashed var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.83rem;
+  font-family: inherit;
+  cursor: text;
+  text-align: left;
+  transition: border-color 0.15s, color 0.15s;
+  box-sizing: border-box;
+}
+
+.comment-compose-trigger:hover {
+  border-color: var(--teal);
+  color: var(--ink);
+}
+
+/* Hidden until expanded */
+.task-inline-comment-form .comment-body {
+  display: none;
+}
+
+.task-inline-comment-form.is-expanded .comment-body {
+  display: grid;
+  gap: 6px;
+  animation: fadeSlideIn 0.12s ease;
+}
+
+.task-inline-comment-form.is-expanded .comment-compose-trigger {
+  display: none;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .task-inline-comment-form {
   grid-template-columns: minmax(0, 1fr);
+  margin-top: 6px;
 }
 
 .task-inline-comment-form textarea {
-  min-height: 58px;
+  min-height: 60px;
   resize: vertical;
+  padding: 8px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--field);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
 }
 
-.inline-comment-tools {
+.task-inline-comment-form textarea:focus {
+  border-color: var(--teal);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 12%, transparent);
+}
+
+/* Action row inside expanded form */
+.inline-comment-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
+}
+
+.comment-send-btn {
+  min-height: 30px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: var(--teal);
+  color: #fff;
+  border: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.comment-send-btn:hover { filter: brightness(0.88); }
+
+.comment-cancel-btn {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.comment-cancel-btn:hover {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--ink) 35%, var(--line));
+}
+
+/* Paperclip file-attach icon button */
+.comment-attach-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  min-width: 32px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.comment-attach-btn:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+.comment-attach-btn input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
 }
 
 .inline-comment-tools .file-picker {
