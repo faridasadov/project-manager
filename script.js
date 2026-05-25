@@ -5997,7 +5997,58 @@ function renderReports() {
       </article>
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
-  reports.innerHTML = summary + reports.innerHTML;
+  // ── Weekly hours bar chart ─────────────────────────────────────────
+  const weekStart = (() => {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // Monday
+    return d;
+  })();
+  const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
+
+  // Collect per-owner hours: prefer timeEntries (entry_date in current week),
+  // fall back to task.actual if task.end falls this week
+  const ownerHours = {};
+  reportTasks.forEach((task) => {
+    const entries = task.timeEntries || [];
+    if (entries.length) {
+      entries.forEach((entry) => {
+        const d = new Date(entry.date || entry.entry_date || "");
+        if (d >= weekStart && d < weekEnd) {
+          const key = entry.userId || entry.user_id || task.owner || "?";
+          ownerHours[key] = (ownerHours[key] || 0) + Number(entry.hours || 0);
+        }
+      });
+    } else {
+      const end = parseDate(task.end);
+      if (end && end >= weekStart && end < weekEnd) {
+        const key = task.owner || "?";
+        ownerHours[key] = (ownerHours[key] || 0) + actualHoursForTask(task);
+      }
+    }
+  });
+
+  const chartRows = Object.entries(ownerHours).sort((a, b) => b[1] - a[1]);
+  const maxHours = chartRows.length ? Math.max(...chartRows.map((r) => r[1])) : 0;
+  const timeChartHtml = chartRows.length ? `
+    <section class="time-chart-section">
+      <h3 class="time-chart-title">⏱ ${text("timeChart")} — ${text("timeWeek")}</h3>
+      <div class="time-chart">
+        ${chartRows.map(([owner, hours]) => {
+          const pct = maxHours ? Math.round((hours / maxHours) * 100) : 0;
+          return `
+          <div class="time-chart-row">
+            <span class="time-chart-label">${escapeHtml(resourceLabel(owner))}</span>
+            <div class="time-chart-bar-wrap">
+              <div class="time-chart-bar" style="width:${pct}%"></div>
+            </div>
+            <span class="time-chart-val">${hours.toFixed(1)}h</span>
+          </div>`;
+        }).join("")}
+      </div>
+    </section>
+  ` : "";
+
+  reports.innerHTML = timeChartHtml + summary + reports.innerHTML;
 }
 
 function renderViews() {
