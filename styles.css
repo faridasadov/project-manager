@@ -1048,8 +1048,17 @@ body.admin-role .manager-only {
 }
 
 .auth-panel[data-auth-mode="login"] #registerForm,
-.auth-panel[data-auth-mode="register"] #loginForm {
+.auth-panel[data-auth-mode="login"] #resetPasswordForm,
+.auth-panel[data-auth-mode="register"] #loginForm,
+.auth-panel[data-auth-mode="register"] #resetPasswordForm,
+.auth-panel[data-auth-mode="reset"] #loginForm,
+.auth-panel[data-auth-mode="reset"] #registerForm {
   display: none;
+}
+
+.auth-panel[data-auth-mode="reset"] .auth-tabs {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .register-card {
@@ -5874,6 +5883,32 @@ body[data-view="dashboard"] .summary {
   background: var(--teal);
   color: #fff;
   border-color: transparent;
+}
+
+/* ── Pagination ──────────────────────────────────────────────────── */
+.task-list-count {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 4px 0 8px;
+}
+
+.load-more-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--teal);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.load-more-btn:hover {
+  background: color-mix(in srgb, var(--teal) 8%, var(--panel));
+  border-color: var(--teal);
 }
 
 /* ── Task project tag ────────────────────────────────────────────── */

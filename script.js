@@ -410,6 +410,29 @@ const translations = {
     roleMatrix: "Rol icazələri",
     fileTooLarge: "Fayl çox böyükdür. Hər fayl maksimum 800 KB ola bilər.",
     all: "Hamısı",
+    loadMore: "Daha çox yüklə",
+    showingOf: (n, t) => `${n} / ${t} task`,
+    resetPassword: "Şifrəni sıfırla",
+    resetPasswordEmail: "E-poçt ünvanı",
+    resetPasswordSend: "Sıfırlama linki göndər",
+    resetPasswordSent: "Sıfırlama linki e-poçtunuza göndərildi.",
+    resetPasswordError: "Göndərmə xətası. E-poçtu yoxlayın.",
+    backToLogin: "Loginə qayıt",
+    templates: "Şablonlar",
+    newTemplate: "Yeni şablon",
+    templateName: "Şablon adı",
+    saveTemplate: "Şablon saxla",
+    applyTemplate: "Şablon tətbiq et",
+    deleteTemplate: "Şablon sil",
+    noTemplates: "Şablon yoxdur. Mövcud taskları şablon kimi saxlaya bilərsiniz.",
+    templateTaskCount: (n) => `${n} task`,
+    templateApplied: "Şablon tətbiq edildi.",
+    timeWeek: "Bu həftə",
+    timeChart: "Vaxt analizi",
+    totalHours: "Cəmi saat",
+    realtimeConnected: "Canlı sinxronizasiya aktiv",
+    realtimeDisconnected: "Offline — dəyişikliklər avtomatik sinxronizasiya olunmayacaq",
+    autoSnapshotSaved: "Avtomatik snapshot saxlanıldı",
     statuses: { "Plan": "Plan", "Davam edir": "Davam edir", "Bitib": "Bitib" },
     priorities: { "Kritik": "Kritik", "Normal": "Normal", "Yüksək": "Yüksək", "Aşağı": "Aşağı" }
   },
@@ -802,6 +825,29 @@ const translations = {
     roleMatrix: "Права ролей",
     fileTooLarge: "Файл слишком большой. Максимум 800 KB на файл.",
     all: "Все",
+    loadMore: "Загрузить ещё",
+    showingOf: (n, t) => `${n} / ${t} задач`,
+    resetPassword: "Сбросить пароль",
+    resetPasswordEmail: "E-mail адрес",
+    resetPasswordSend: "Отправить ссылку для сброса",
+    resetPasswordSent: "Ссылка для сброса отправлена на ваш e-mail.",
+    resetPasswordError: "Ошибка отправки. Проверьте e-mail.",
+    backToLogin: "Назад к входу",
+    templates: "Шаблоны",
+    newTemplate: "Новый шаблон",
+    templateName: "Название шаблона",
+    saveTemplate: "Сохранить шаблон",
+    applyTemplate: "Применить шаблон",
+    deleteTemplate: "Удалить шаблон",
+    noTemplates: "Шаблонов нет. Можно сохранить текущие задачи как шаблон.",
+    templateTaskCount: (n) => `${n} задач`,
+    templateApplied: "Шаблон применён.",
+    timeWeek: "На этой неделе",
+    timeChart: "Анализ времени",
+    totalHours: "Всего часов",
+    realtimeConnected: "Синхронизация в реальном времени активна",
+    realtimeDisconnected: "Офлайн — изменения не синхронизируются автоматически",
+    autoSnapshotSaved: "Автоматический снимок сохранён",
     statuses: { "Plan": "План", "Davam edir": "В работе", "Bitib": "Выполнено" },
     priorities: { "Kritik": "Критический", "Normal": "Нормальный", "Yüksək": "Высокий", "Aşağı": "Низкий" }
   },
@@ -1194,6 +1240,29 @@ const translations = {
     roleMatrix: "Role permissions",
     fileTooLarge: "File is too large. Each file can be up to 800 KB.",
     all: "All",
+    loadMore: "Load more",
+    showingOf: (n, t) => `${n} / ${t} tasks`,
+    resetPassword: "Reset password",
+    resetPasswordEmail: "Email address",
+    resetPasswordSend: "Send reset link",
+    resetPasswordSent: "A password reset link has been sent to your email.",
+    resetPasswordError: "Failed to send. Check the email address.",
+    backToLogin: "Back to login",
+    templates: "Templates",
+    newTemplate: "New template",
+    templateName: "Template name",
+    saveTemplate: "Save template",
+    applyTemplate: "Apply template",
+    deleteTemplate: "Delete template",
+    noTemplates: "No templates yet. Save current tasks as a template.",
+    templateTaskCount: (n) => `${n} tasks`,
+    templateApplied: "Template applied.",
+    timeWeek: "This week",
+    timeChart: "Time analysis",
+    totalHours: "Total hours",
+    realtimeConnected: "Live sync active",
+    realtimeDisconnected: "Offline — changes won't sync automatically",
+    autoSnapshotSaved: "Auto-snapshot saved",
     statuses: { "Plan": "Plan", "Davam edir": "In progress", "Bitib": "Done" },
     priorities: { "Kritik": "Critical", "Normal": "Normal", "Yüksək": "High", "Aşağı": "Low" }
   }
@@ -1903,6 +1972,8 @@ let currentFilter = "Hamısı";
 let currentPriorityFilter = "Hamısı";
 let currentSmartFilter = "Hamısı";
 let currentOwnerFilter = ""; // set from workload click; "" means no filter
+let taskListPage = 1;
+const TASK_PAGE_SIZE = 20;
 let currentView = "dashboard";
 let currentLanguage = localStorage.getItem(languageKey) || "az";
 let activeManagerProjectId = "";
@@ -5283,7 +5354,14 @@ function renderTaskList() {
     return;
   }
 
-  taskList.innerHTML = ownerBanner + shown.map((task) => {
+  const paged = shown.slice(0, taskListPage * TASK_PAGE_SIZE);
+  const hasMore = paged.length < shown.length;
+  const countLabel = shown.length > TASK_PAGE_SIZE
+    ? `<div class="task-list-count">${text("showingOf")(paged.length, shown.length)}</div>` : "";
+  const loadMoreBtn = hasMore
+    ? `<button class="load-more-btn" type="button" id="taskLoadMore">${text("loadMore")} (${shown.length - paged.length})</button>` : "";
+
+  taskList.innerHTML = ownerBanner + countLabel + paged.map((task) => {
     const blocked = isTaskBlocked(task);
     const commentCount = (task.comments || []).length;
     const fileCount = (task.attachments || []).length;
@@ -5314,9 +5392,10 @@ function renderTaskList() {
       ${renderTaskActions(task)}
     </article>
   `;
-  }).join("");
+  }).join("") + loadMoreBtn;
 
-  document.querySelector("#clearOwnerFilter")?.addEventListener("click", () => { currentOwnerFilter = ""; render(); });
+  document.querySelector("#clearOwnerFilter")?.addEventListener("click", () => { currentOwnerFilter = ""; taskListPage = 1; render(); });
+  document.querySelector("#taskLoadMore")?.addEventListener("click", () => { taskListPage++; renderTaskList(); });
 }
 
 function renderAttachments(task) {
@@ -8037,6 +8116,7 @@ statusFilters.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-filter]");
   if (!button) return;
   currentFilter = button.dataset.filter;
+  taskListPage = 1;
   document.querySelectorAll("[data-filter]").forEach((item) => item.classList.toggle("active", item === button));
   render();
 });
@@ -8045,6 +8125,7 @@ priorityFilters?.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-priority-filter]");
   if (!button) return;
   currentPriorityFilter = button.dataset.priorityFilter;
+  taskListPage = 1;
   priorityFilterButtons.forEach((item) => item.classList.toggle("active", item === button));
   render();
 });
@@ -8053,6 +8134,7 @@ smartFilters?.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-smart-filter]");
   if (!button) return;
   currentSmartFilter = button.dataset.smartFilter || "Hamısı";
+  taskListPage = 1;
   smartFilterButtons.forEach((item) => item.classList.toggle("active", item === button));
   render();
 });
@@ -8067,6 +8149,7 @@ function handleDashboardTaskClick(event) {
   currentPriorityFilter = "Hamısı";
   currentSmartFilter = "Hamısı";
   currentOwnerFilter = "";
+  taskListPage = 1;
   setView("list");
   // After render, scroll to and briefly highlight the card
   requestAnimationFrame(() => {
@@ -8146,7 +8229,7 @@ summaryCards.forEach((card) => {
   });
 });
 
-searchInput.addEventListener("input", render);
+searchInput.addEventListener("input", () => { taskListPage = 1; render(); });
 projectFilter.addEventListener("change", render);
 
 backToProjectsBtn?.addEventListener("click", () => {
@@ -8235,6 +8318,44 @@ function closeAuthPanel() {
 document.querySelector("#heroLoginBtn")?.addEventListener("click", (e) => { e.stopPropagation(); openAuthPanel("login"); });
 document.querySelector("#heroRegisterBtn")?.addEventListener("click", (e) => { e.stopPropagation(); openAuthPanel("register"); });
 document.querySelector("#authBackBtn")?.addEventListener("click", closeAuthPanel);
+
+// ── Password reset ────────────────────────────────────────────────────────
+async function supabaseResetPassword(email) {
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON_KEY, "content-type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  return r.ok;
+}
+
+document.querySelector("#forgotPasswordLink")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  authPanel.dataset.authMode = "reset";
+  document.querySelector("#resetEmail").value = "";
+  document.querySelector("#resetMsg").textContent = "";
+});
+
+document.querySelector("#backToLoginLink")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  authPanel.dataset.authMode = "login";
+});
+
+document.querySelector("#resetPasswordForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.querySelector("#resetEmail").value.trim();
+  const msgEl = document.querySelector("#resetMsg");
+  msgEl.style.color = "var(--muted)";
+  msgEl.textContent = "…";
+  const ok = await supabaseResetPassword(email);
+  if (ok) {
+    msgEl.style.color = "var(--teal)";
+    msgEl.textContent = text("resetPasswordSent");
+  } else {
+    msgEl.style.color = "var(--danger)";
+    msgEl.textContent = text("resetPasswordError");
+  }
+});
 
 // Close auth panel when clicking the dimmed hero backdrop
 document.querySelector(".login-hero")?.addEventListener("click", () => {

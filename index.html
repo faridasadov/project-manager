@@ -143,6 +143,17 @@
         <button class="primary" type="submit" data-i18n="loginButton">Daxil ol</button>
         <a id="forgotPasswordLink" href="#" class="login-forgot" data-i18n="forgotPassword">Şifrəni unutdum</a>
       </form>
+      <form id="resetPasswordForm" class="login-card">
+        <p class="kicker" data-i18n="resetPasswordKicker">Şifrə yeniləmə</p>
+        <h1 data-i18n="resetPassword">Şifrəni sıfırla</h1>
+        <label>
+          <span data-i18n="emailLabel">Email</span>
+          <input id="resetEmail" type="email" autocomplete="email" required>
+        </label>
+        <p id="resetMsg" class="login-error"></p>
+        <button class="primary" type="submit" data-i18n="sendResetLink">Link göndər</button>
+        <a href="#" class="login-forgot" id="backToLoginLink" data-i18n="backToLogin">Girişə qayıt</a>
+      </form>
       <form id="registerForm" class="login-card register-card">
         <p class="kicker">Yeni workspace</p>
         <h1>Qeydiyyat</h1>
