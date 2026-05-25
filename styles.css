@@ -5882,14 +5882,27 @@ body[data-view="dashboard"] .summary {
 }
 
 /* ── Workload items as buttons ───────────────────────────────────── */
-button.workload-item {
+button.workload-item,
+button.compact-item {
   width: 100%;
   text-align: left;
   cursor: pointer;
   font: inherit;
+  border: none;
+  background: inherit;
+  transition: background 0.14s, border-color 0.14s;
 }
 
-button.workload-item:hover {
+button.workload-item:hover,
+button.compact-item:hover {
   border-color: color-mix(in srgb, var(--teal) 40%, var(--line));
   background: color-mix(in srgb, var(--panel) 88%, var(--teal) 6%);
+}
+
+button.compact-item.danger:hover {
+  background: color-mix(in srgb, var(--panel) 82%, var(--red) 10%);
+}
+
+button.compact-item.warning:hover {
+  background: color-mix(in srgb, var(--panel) 82%, var(--amber) 10%);
 }

@@ -4867,14 +4867,14 @@ function renderDashboard() {
     const urgency = days < 0 ? "danger" : days <= 3 ? "warning" : "";
     const daysLabel = days < 0 ? `${Math.abs(days)} gün gecikdi` : days === 0 ? "Bu gün" : `${days} gün qaldı`;
     return `
-    <div class="compact-item ${urgency}">
+    <button class="compact-item ${urgency}" type="button" data-open-task="${escapeHtml(task.id)}" title="${escapeHtml(task.name)}">
       <strong>${escapeHtml(task.name)}</strong>
       <div class="task-meta">
         <span>${escapeHtml(getProject(task))}</span>
         <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
         <span style="color:${urgency === 'danger' ? 'var(--red)' : urgency === 'warning' ? 'var(--amber)' : 'var(--muted)'}">${daysLabel}</span>
       </div>
-    </div>
+    </button>
   `;}).join("") : `<div class="empty">${text("noUpcoming")}</div>`;
 
   const rows = workloadRows().slice(0, 6);
@@ -4920,14 +4920,14 @@ function riskyTasks() {
 function renderDeadlineAlerts() {
   const alerts = riskyTasks().slice(0, 6);
   deadlineAlerts.innerHTML = alerts.length ? alerts.map(({ task, alert }) => `
-    <div class="compact-item ${alert.type}">
+    <button class="compact-item ${alert.type}" type="button" data-open-task="${escapeHtml(task.id)}" title="${escapeHtml(task.name)}">
       <strong>${escapeHtml(task.name)}</strong>
       <div class="task-meta">
         <span>${escapeHtml(getProject(task))}</span>
         <span>${shortDate(task.end)}</span>
         <span class="badge ${alert.type === "danger" ? "high" : ""}">${escapeHtml(alert.label)}</span>
       </div>
-    </div>
+    </button>
   `).join("") : `<div class="empty">${text("noDeadlineAlerts")}</div>`;
 }
 
@@ -4957,9 +4957,9 @@ function nextActionItems() {
     .flatMap((task) => {
       const actions = [];
       const days = daysUntil(task.end);
-      if (isTaskBlocked(task)) actions.push({ type: "blocked", priority: 1, label: text("actionBlocked"), title: task.name, meta: dependencyBlockedMessage(task), target: "blocked" });
-      if (days < 0) actions.push({ type: "danger", priority: 2, label: text("actionOverdue"), title: task.name, meta: `${getProject(task)} · ${shortDate(task.end)}`, target: "overdue" });
-      if (days >= 0 && days <= 3) actions.push({ type: "warning", priority: 3, label: text("actionDueSoon"), title: task.name, meta: `${getProject(task)} · ${shortDate(task.end)}`, target: "overdue" });
+      if (isTaskBlocked(task)) actions.push({ type: "blocked", priority: 1, label: text("actionBlocked"), title: task.name, meta: dependencyBlockedMessage(task), target: "blocked", taskId: task.id });
+      if (days < 0) actions.push({ type: "danger", priority: 2, label: text("actionOverdue"), title: task.name, meta: `${getProject(task)} · ${shortDate(task.end)}`, target: "overdue", taskId: task.id });
+      if (days >= 0 && days <= 3) actions.push({ type: "warning", priority: 3, label: text("actionDueSoon"), title: task.name, meta: `${getProject(task)} · ${shortDate(task.end)}`, target: "overdue", taskId: task.id });
       return actions;
     });
   const registerActions = visibleRegisters()
@@ -4972,7 +4972,8 @@ function renderNextActions() {
   if (!nextActions) return;
   const actions = nextActionItems();
   nextActions.innerHTML = actions.length ? actions.map((action) => `
-    <button class="compact-item action-item ${escapeHtml(action.type)}" type="button" data-action-filter="${escapeHtml(action.target)}">
+    <button class="compact-item action-item ${escapeHtml(action.type)}" type="button"
+      ${action.taskId ? `data-open-task="${escapeHtml(action.taskId)}"` : `data-action-filter="${escapeHtml(action.target)}"`}>
       <strong>${escapeHtml(action.label)}</strong>
       <span>${escapeHtml(action.title)}</span>
       <small>${escapeHtml(action.meta || "")}</small>
@@ -8006,7 +8007,19 @@ smartFilters?.addEventListener("click", (event) => {
   render();
 });
 
+// Shared handler: open task from any dashboard panel using data-open-task
+function handleDashboardTaskClick(event) {
+  const btn = event.target.closest("button[data-open-task]");
+  if (!btn) return false;
+  openTaskDetail(btn.dataset.openTask);
+  return true;
+}
+
+deadlineAlerts?.addEventListener("click", (event) => { handleDashboardTaskClick(event); });
+upcomingList?.addEventListener("click", (event) => { handleDashboardTaskClick(event); });
+
 nextActions?.addEventListener("click", (event) => {
+  if (handleDashboardTaskClick(event)) return;
   const button = event.target.closest("button[data-action-filter]");
   if (!button) return;
   currentSmartFilter = button.dataset.actionFilter || "Hamısı";
