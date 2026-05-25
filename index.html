@@ -831,44 +831,49 @@
               <small id="userCount">0</small>
             </summary>
             <div class="resource-body">
-              <label>
-                <span data-i18n="newUser">Yeni user</span>
-                <input id="newUsername" type="text" placeholder="username" data-i18n-placeholder="usernamePlaceholder">
-              </label>
-              <label>
-                <span data-i18n="password">Şifrə</span>
-                <input id="newUserPassword" type="password" placeholder="password" data-i18n-placeholder="passwordPlaceholder">
-              </label>
-              <label>
-                <span data-i18n="role">Rol</span>
-                <select id="newUserRole">
-                  <option value="user">User</option>
-                  <option value="contributor">Contributor</option>
-                  <option value="viewer">Viewer</option>
-                  <option value="sponsor">Sponsor</option>
-                  <option value="manager">Manager</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </label>
-              <div class="settings-grid">
-                <label>
-                  <span data-i18n="fullName">Ad soyad</span>
-                  <input id="newUserFullName" type="text">
-                </label>
-                <label>
-                  <span data-i18n="position">Vəzifə</span>
-                  <input id="newUserPosition" type="text">
-                </label>
-                <label>
-                  <span data-i18n="email">Mail</span>
-                  <input id="newUserEmail" type="email">
-                </label>
-                <label>
-                  <span data-i18n="address">Ünvan</span>
-                  <input id="newUserAddress" type="text">
-                </label>
+              <div class="new-user-card">
+                <p class="new-user-card-title">Yeni istifadəçi əlavə et</p>
+                <div class="new-user-fields">
+                  <label>
+                    <span data-i18n="newUser">İstifadəçi adı</span>
+                    <input id="newUsername" type="text" placeholder="username" data-i18n-placeholder="usernamePlaceholder">
+                  </label>
+                  <label>
+                    <span data-i18n="password">Şifrə</span>
+                    <input id="newUserPassword" type="password" placeholder="password" data-i18n-placeholder="passwordPlaceholder">
+                  </label>
+                  <label>
+                    <span data-i18n="role">Rol</span>
+                    <select id="newUserRole">
+                      <option value="user">User</option>
+                      <option value="contributor">Contributor</option>
+                      <option value="viewer">Viewer</option>
+                      <option value="sponsor">Sponsor</option>
+                      <option value="manager">Manager</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="settings-grid">
+                  <label>
+                    <span data-i18n="fullName">Ad soyad</span>
+                    <input id="newUserFullName" type="text">
+                  </label>
+                  <label>
+                    <span data-i18n="position">Vəzifə</span>
+                    <input id="newUserPosition" type="text">
+                  </label>
+                  <label>
+                    <span data-i18n="email">Mail</span>
+                    <input id="newUserEmail" type="email">
+                  </label>
+                  <label>
+                    <span data-i18n="address">Ünvan</span>
+                    <input id="newUserAddress" type="text">
+                  </label>
+                </div>
+                <button id="addUser" class="primary" type="button" data-i18n="addUser">İstifadəçi əlavə et</button>
               </div>
-              <button id="addUser" type="button" data-i18n="addUser">User əlavə et</button>
               <div id="userList" class="resource-list"></div>
             </div>
           </details>

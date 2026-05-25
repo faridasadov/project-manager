@@ -4383,10 +4383,13 @@ function renderResourceControls() {
     </div>`;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
 
-  userList.innerHTML = scopedUsers.map((user) => `
+  userList.innerHTML = scopedUsers.map((user) => {
+    const displayName = user.profile?.fullName || user.username;
+    const initials = displayName.split(" ").slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "?";
+    return `
     <details class="user-profile-card">
-      <summary>
-        <span><strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>${escapeHtml(user.profile?.position || roleLabel(user.role))} · ${escapeHtml(user.username)}${user.managerId ? ` · ${escapeHtml(users.find((item) => item.id === user.managerId)?.username || "")}` : ""}</span>
+      <summary data-initials="${escapeHtml(initials)}">
+        <span><strong>${escapeHtml(displayName)}</strong>${escapeHtml(user.profile?.position || roleLabel(user.role))} · ${escapeHtml(user.username)}${user.managerId ? ` · ${escapeHtml(users.find((item) => item.id === user.managerId)?.username || "")}` : ""}</span>
       </summary>
       <form class="user-profile-form" data-user-id="${user.id}">
         <label><span>${text("login")}</span><input name="username" value="${escapeHtml(user.username)}" ${isOrgAdmin() ? "" : "readonly"}></label>
@@ -4429,7 +4432,8 @@ function renderResourceControls() {
         </div>
       </form>
     </details>
-  `).join("");
+  `;
+  }).join("");
 
   trashList.innerHTML = scopedTrash.length ? scopedTrash.map((item) => {
     const title = item.type === "task" ? item.data.name : (item.data.project || item.data.name);
