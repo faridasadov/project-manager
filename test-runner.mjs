@@ -41,6 +41,7 @@ class Element {
   appendChild(child) {
     child.parentElement = this;
     this.child = child;
+    if (child.tagName === "OPTION") this.options.push(child);
     return child;
   }
 
@@ -225,6 +226,11 @@ const context = {
       if (selector === ".view-tab") return viewTabs;
       if (selector === ".view") return views;
       return [];
+    },
+    createElement: (tagName) => {
+      const node = new Element(tagName);
+      node.tagName = String(tagName).toUpperCase();
+      return node;
     },
     createComment: (value) => ({ value, replaceWith: () => {} }),
     addEventListener: () => {}

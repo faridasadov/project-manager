@@ -2736,9 +2736,20 @@ function normalizeTask(task) {
     ...task,
     plannedHours: Number(task.plannedHours) || 0,
     actualHours: Number(task.actualHours) || 0,
+    comments: Array.isArray(task.comments) ? task.comments.map(normalizeComment) : [],
     timeEntries: Array.isArray(task.timeEntries) ? task.timeEntries.map(normalizeTimeEntry).filter(Boolean) : [],
     dateChangeRequests: Array.isArray(task.dateChangeRequests) ? task.dateChangeRequests : [],
     dependencyIds: Array.isArray(task.dependencyIds) ? task.dependencyIds : []
+  };
+}
+
+function normalizeComment(comment) {
+  return {
+    id: comment?.id || createId(),
+    author: comment?.author || "",
+    text: comment?.text || "",
+    attachments: Array.isArray(comment?.attachments) ? comment.attachments : [],
+    createdAt: comment?.createdAt || new Date().toISOString()
   };
 }
 
@@ -3426,6 +3437,14 @@ function taskOptionItems(selectedIds = [], excludedId = "") {
     .filter((task) => task.id !== excludedId)
     .map((task) => `<option value="${task.id}" ${selectedIds.includes(task.id) ? "selected" : ""}>${escapeHtml(task.name)} (${escapeHtml(getProject(task))})</option>`)
     .join("");
+}
+
+function ensureSelectOption(select, value, label = "") {
+  if (!select || !value || [...select.options].some((option) => option.value === value)) return;
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = label || value;
+  select.appendChild(option);
 }
 
 function taskNameById(id) {
@@ -4299,7 +4318,9 @@ function renderResourceControls() {
     `<option value="">${text("noOwnerSelect")}</option>`,
     ...options.map((option) => `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`)
   ].join("");
+  ensureSelectOption(ownerInput, currentOwner, resourceLabel(currentOwner));
   ownerInput.value = options.some((option) => option.value === currentOwner) ? currentOwner : "";
+  if (currentOwner && ownerInput.value !== currentOwner) ownerInput.value = currentOwner;
 
   const selectedProject = projectInput.value.trim();
   const linked = selectedProject ? linkedResourcesForProject(selectedProject) : [];
@@ -4309,7 +4330,9 @@ function renderResourceControls() {
     `<option value="">${text("noResource")}</option>`,
     ...projectOptions.map((option) => `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`)
   ].join("");
+  ensureSelectOption(projectResourceInput, currentProjectResource, resourceLabel(currentProjectResource));
   projectResourceInput.value = projectOptions.some((option) => option.value === currentProjectResource) ? currentProjectResource : "";
+  if (currentProjectResource && projectResourceInput.value !== currentProjectResource) projectResourceInput.value = currentProjectResource;
 
   const editingTaskId = taskId.value;
   const currentParent = parentTaskInput.value;
@@ -5323,6 +5346,24 @@ function renderCommentAttachments(comment) {
   `;
 }
 
+function canDeleteTaskComment(task) {
+  return Boolean(task && currentUser && (isAdmin() || currentUser.role === "manager") && canSeeTask(task));
+}
+
+function renderCommentDeleteButton(task, comment) {
+  if (!canDeleteTaskComment(task)) return "";
+  return `<button class="comment-delete" type="button" data-action="delete-comment" data-task-id="${escapeHtml(task.id)}" data-comment-id="${escapeHtml(comment.id)}" aria-label="${text("delete")}">${text("delete")}</button>`;
+}
+
+function deleteTaskComment(taskId, commentId) {
+  const task = tasks.find((item) => item.id === taskId);
+  if (!task || !commentId || !canDeleteTaskComment(task)) return false;
+  task.comments = (task.comments || []).filter((comment) => comment.id !== commentId);
+  saveTasks();
+  flushSupabaseSave().catch((error) => console.warn("Supabase save failed", error));
+  return true;
+}
+
 function renderTaskInlineComments(task) {
   const comments = task.comments || [];
   const recent = comments.slice(-2);
@@ -5330,7 +5371,10 @@ function renderTaskInlineComments(task) {
     <div class="comment-item task-inline-comment">
       <div class="comment-head">
         <strong>${escapeHtml(comment.author)}</strong>
-        <time datetime="${escapeHtml(comment.createdAt || "")}">${escapeHtml(formatDateTime(comment.createdAt))}</time>
+        <span class="comment-tools">
+          <time datetime="${escapeHtml(comment.createdAt || "")}">${escapeHtml(formatDateTime(comment.createdAt))}</time>
+          ${renderCommentDeleteButton(task, comment)}
+        </span>
       </div>
       <span>${escapeHtml(comment.text)}</span>
       ${renderCommentAttachments(comment)}
@@ -5441,7 +5485,10 @@ function renderComments(task) {
     <div class="comment-item">
       <div class="comment-head">
         <strong>${escapeHtml(comment.author)}</strong>
-        <time datetime="${escapeHtml(comment.createdAt || "")}">${escapeHtml(formatDateTime(comment.createdAt))}</time>
+        <span class="comment-tools">
+          <time datetime="${escapeHtml(comment.createdAt || "")}">${escapeHtml(formatDateTime(comment.createdAt))}</time>
+          ${renderCommentDeleteButton(task, comment)}
+        </span>
       </div>
       <span>${escapeHtml(comment.text)}</span>
       ${renderCommentAttachments(comment)}
@@ -6197,6 +6244,8 @@ function handleTaskAction(action, id) {
     taskName.value = task.name;
     projectInput.value = task.project || "";
     renderResourceControls();
+    ensureSelectOption(projectResourceInput, task.projectResource, resourceLabel(task.projectResource));
+    ensureSelectOption(ownerInput, task.owner, resourceLabel(task.owner));
     projectResourceInput.value = task.projectResource || "";
     startDate.value = task.start;
     endDate.value = task.end;
@@ -6295,6 +6344,8 @@ function editTask(id, options = {}) {
   projectInput.value = task.project || "";
   renderResourceControls();
   projectInput.value = task.project || "";
+  ensureSelectOption(projectResourceInput, task.projectResource, resourceLabel(task.projectResource));
+  ensureSelectOption(ownerInput, task.owner, resourceLabel(task.owner));
   projectResourceInput.value = task.projectResource || "";
   startDate.value = task.start;
   endDate.value = task.end;
@@ -6561,18 +6612,18 @@ async function supabaseCreateWorkspaceProfile({ userId, companyName, companyId, 
   return workspace;
 }
 
-function applySupabaseWorkspaceSession({ userId, email, username, fullName, companyName, companyId, workspaceId }) {
+function applySupabaseWorkspaceSession({ userId, email, username, fullName, companyName, companyId, workspaceId, role = "admin" }) {
   const normalized = normalizeUser({
     id: userId,
     username,
     passwordHash: "",
-    role: "admin",
+    role,
     managerId: "",
     companyId,
     profile: {
       fullName,
       email,
-      position: "Company Admin",
+      position: role === "admin" ? "Company Admin" : roleLabel(role),
       company: companyName
     }
   });
@@ -6787,7 +6838,8 @@ async function supabaseLoginWorkspace(email, password) {
     fullName: profile.full_name || profile.username || email,
     companyName,
     companyId,
-    workspaceId: workspace.id
+    workspaceId: workspace.id,
+    role: profile.role || "admin"
   });
   await supabaseLoadWorkspaceState(workspace.id);
   await supabaseLoadSettings(workspace.id);
@@ -6842,13 +6894,23 @@ async function supabaseCompleteSession(session) {
     fullName: profile.full_name || profile.username || email,
     companyName,
     companyId,
-    workspaceId: workspace.id
+    workspaceId: workspace.id,
+    role: profile.role || "admin"
   });
   await supabaseLoadWorkspaceState(workspace.id);
   await supabaseLoadSettings(workspace.id);
   await syncSupabaseAuditLogs();
   await syncSupabaseNotifications();
   return currentUser;
+}
+
+async function resumeSupabaseSession() {
+  if (!canUseSupabase() || !supabaseSession?.access_token || !supabaseWorkspaceId || !currentUser) return false;
+  await supabaseLoadWorkspaceState(supabaseWorkspaceId);
+  await supabaseLoadSettings(supabaseWorkspaceId);
+  await syncSupabaseAuditLogs();
+  await syncSupabaseNotifications();
+  return true;
 }
 
 async function handleSupabaseAuthRedirect() {
@@ -6883,6 +6945,12 @@ function scheduleSupabaseSave() {
   supabaseSaveTimer = setTimeout(() => {
     supabaseSaveState().catch((error) => console.warn("Supabase save failed", error));
   }, 500);
+}
+
+async function flushSupabaseSave() {
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin()) return;
+  clearTimeout(supabaseSaveTimer);
+  await supabaseSaveState();
 }
 
 async function supabaseSaveState() {
@@ -7682,6 +7750,9 @@ form.addEventListener("submit", async (event) => {
 
   rescheduleDependentTasks(task);
   saveTasks();
+  if (supabaseSession?.access_token && supabaseWorkspaceId) {
+    await flushSupabaseSave().catch((error) => console.warn("Supabase save failed", error));
+  }
   resetForm();
   closeTaskComposer();
   render();
@@ -7691,6 +7762,10 @@ form.addEventListener("submit", async (event) => {
   container.addEventListener("click", (event) => {
     const button = event.target.closest("button");
     if (!button) return;
+    if (button.dataset.action === "delete-comment") {
+      if (deleteTaskComment(button.dataset.taskId, button.dataset.commentId)) render();
+      return;
+    }
     handleTaskAction(button.dataset.action, button.dataset.id);
   });
 
@@ -7715,6 +7790,9 @@ form.addEventListener("submit", async (event) => {
       });
       task.actualHours = actualHoursForTask(task);
       saveTasks();
+      if (supabaseSession?.access_token && supabaseWorkspaceId) {
+        await flushSupabaseSave().catch((error) => console.warn("Supabase save failed", error));
+      }
       render();
       return;
     }
@@ -7748,6 +7826,9 @@ form.addEventListener("submit", async (event) => {
     input.value = "";
     if (attachmentInput) attachmentInput.value = "";
     saveTasks();
+    if (supabaseSession?.access_token && supabaseWorkspaceId) {
+      await flushSupabaseSave().catch((error) => console.warn("Supabase save failed", error));
+    }
     render();
   });
 
@@ -9202,6 +9283,14 @@ quickManagerSaveBtn?.addEventListener("click", () => {
 
 closeTaskDetailButton?.addEventListener("click", closeTaskDetail);
 taskDetailModal?.addEventListener("click", (event) => {
+  const deleteButton = event.target.closest("button[data-action='delete-comment']");
+  if (deleteButton) {
+    if (deleteTaskComment(deleteButton.dataset.taskId, deleteButton.dataset.commentId)) {
+      openTaskDetail(deleteButton.dataset.taskId);
+      render();
+    }
+    return;
+  }
   if (event.target.closest("[data-task-detail-close]")) closeTaskDetail();
 });
 
@@ -9490,13 +9579,15 @@ clearDone.addEventListener("click", () => {
   render();
 });
 
-if (window.location?.hash?.includes("access_token=")) {
-  handleSupabaseAuthRedirect().then(() => {
-    syncBackendState();
-    syncBackendSettings();
-  });
-} else {
+async function bootApp() {
+  if (window.location?.hash?.includes("access_token=")) {
+    await handleSupabaseAuthRedirect();
+  } else if (isSupabasePrimaryMode() && supabaseSession?.access_token) {
+    await resumeSupabaseSession().catch((error) => console.warn("Supabase resume failed", error));
+  }
   render();
   syncBackendState();
   syncBackendSettings();
 }
+
+bootApp();

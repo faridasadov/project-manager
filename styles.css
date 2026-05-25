@@ -4346,6 +4346,31 @@ button:disabled {
   align-items: center;
 }
 
+.comment-tools {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.comment-delete {
+  min-height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--muted);
+  padding: 0 9px;
+  font-size: 0.76rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.comment-delete:hover {
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--line));
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 7%, var(--panel));
+}
+
 .comment-item strong {
   color: var(--teal);
   font-size: 0.82rem;
