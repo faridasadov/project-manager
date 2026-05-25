@@ -4422,6 +4422,55 @@ button:disabled {
   min-height: 86px;
 }
 
+.task-inline-comments {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--field) 72%, transparent);
+}
+
+.task-inline-comments-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.task-inline-comment {
+  padding: 7px 9px;
+}
+
+.task-inline-comment-form {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.task-inline-comment-form textarea {
+  min-height: 58px;
+  resize: vertical;
+}
+
+.inline-comment-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-comment-tools .file-picker {
+  min-height: 32px;
+}
+
+.inline-link {
+  border: 0;
+  background: transparent;
+  color: var(--teal);
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+  padding: 0;
+}
+
 .kanban {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

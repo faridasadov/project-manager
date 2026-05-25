@@ -5286,6 +5286,7 @@ function renderTaskList() {
       ${renderTaskRelations(task)}
       ${task.notes ? `<p class="task-notes-preview">${escapeHtml(task.notes)}</p>` : ""}
       <div class="progress-mini"><span style="width:${Number(task.progress) || 0}%"></span></div>
+      ${renderTaskInlineComments(task)}
       ${renderTaskActions(task)}
     </article>
   `;
@@ -5318,6 +5319,47 @@ function renderCommentAttachments(comment) {
           <span>${escapeHtml(attachment.name)}</span>
         </a>
       `).join("")}
+    </div>
+  `;
+}
+
+function renderTaskInlineComments(task) {
+  const comments = task.comments || [];
+  const recent = comments.slice(-2);
+  const items = recent.length ? recent.map((comment) => `
+    <div class="comment-item task-inline-comment">
+      <div class="comment-head">
+        <strong>${escapeHtml(comment.author)}</strong>
+        <time datetime="${escapeHtml(comment.createdAt || "")}">${escapeHtml(formatDateTime(comment.createdAt))}</time>
+      </div>
+      <span>${escapeHtml(comment.text)}</span>
+      ${renderCommentAttachments(comment)}
+    </div>
+  `).join("") : "";
+  const more = comments.length > recent.length
+    ? `<button class="inline-link" type="button" data-action="view" data-id="${task.id}">${comments.length} ${text("comments")}</button>`
+    : "";
+  const formHtml = task.status === "Bitib" ? "" : `
+    <form class="comment-form task-inline-comment-form" data-task-id="${task.id}">
+      <textarea name="comment" rows="2" placeholder="${text("commentPlaceholder")}" required></textarea>
+      <div class="inline-comment-tools">
+        <label class="file-picker">
+          <span>${text("chooseFiles")}</span>
+          <input class="comment-attachment-input" name="attachments" type="file" multiple aria-label="${text("attachments")}">
+        </label>
+        <small class="file-picker-status">${text("noFilesSelected")}</small>
+        <button type="submit">${text("addComment")}</button>
+      </div>
+    </form>
+  `;
+  return `
+    <div class="comments task-inline-comments">
+      <div class="task-inline-comments-head">
+        <h4>${text("comments")}</h4>
+        ${more}
+      </div>
+      ${items}
+      ${formHtml}
     </div>
   `;
 }
