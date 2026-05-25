@@ -34,3 +34,21 @@ For GitHub Pages, set Supabase Authentication -> URL Configuration:
 3. Attachments through Supabase Storage.
 4. Normalized project/task reads.
 5. Mail notifications through Edge Functions or an external mail API.
+
+## Current online backend mode
+
+GitHub Pages is the public frontend. Supabase is the primary online backend for auth, workspace state, settings, audit/notification history and Storage uploads.
+
+The local Node/MariaDB backend remains in the repository for development, backup and fallback only. When `supabase/supabase-config.js` has `primaryBackend: true`, the browser does not use the local Node API as its primary backend.
+
+Run these online-safe SQL files in order:
+
+1. `supabase/migrations/20260525_online_sync.sql`
+2. `supabase/migrations/20260525_storage_mail.sql`
+
+Mail uses the Edge Function in `supabase/functions/project-manager-mail`. Deploy it and set secrets:
+
+```bash
+supabase functions deploy project-manager-mail
+supabase secrets set RESEND_API_KEY=... MAIL_FROM="Project Manager <mail@example.com>"
+```

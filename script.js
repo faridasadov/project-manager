@@ -3012,8 +3012,17 @@ function readFileAsAttachment(file) {
   });
 }
 
+function safeStorageName(name) {
+  return String(name || "file")
+    .normalize("NFKD")
+    .replace(/[^\w.\-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120) || "file";
+}
+
 function readSelectedAttachments(input) {
   if (!input?.files?.length) return Promise.resolve([]);
+  if (canUseSupabaseStorage()) return Promise.all([...input.files].map(uploadSupabaseAttachment));
   return Promise.all([...input.files].map(readFileAsAttachment));
 }
 
@@ -6285,6 +6294,8 @@ function backupPayload() {
 }
 
 function canUseBackend() {
+  const cfg = supabaseConfig();
+  if (cfg?.primaryBackend !== false && canUseSupabase()) return false;
   const host = window.location?.hostname || "";
   return typeof fetch === "function"
     && window.location?.protocol !== "file:"
@@ -6307,7 +6318,10 @@ function supabaseConfig() {
   return {
     url: String(cfg.url).replace(/\/+$/, ""),
     anonKey: cfg.anonKey,
-    redirectTo: cfg.redirectTo || "https://faridasadov.github.io/project-manager/"
+    redirectTo: cfg.redirectTo || "https://faridasadov.github.io/project-manager/",
+    primaryBackend: cfg.primaryBackend !== false,
+    storageBucket: cfg.storageBucket || "project-attachments",
+    mailFunction: cfg.mailFunction || "project-manager-mail"
   };
 }
 
@@ -6345,7 +6359,7 @@ async function supabaseRequest(path, options = {}) {
   if (!cfg) throw new Error("Supabase config yoxdur");
   const headers = {
     apikey: cfg.anonKey,
-    "content-type": "application/json",
+    ...(options.skipJsonContentType ? {} : { "content-type": "application/json" }),
     ...(options.auth === false ? {} : { authorization: `Bearer ${options.token || supabaseSession?.access_token || cfg.anonKey}` }),
     ...(options.headers || {})
   };
@@ -6357,6 +6371,88 @@ async function supabaseRequest(path, options = {}) {
     throw new Error(message);
   }
   return payload;
+}
+
+function canUseSupabaseStorage() {
+  return Boolean(supabaseConfig()?.storageBucket && supabaseSession?.access_token && supabaseWorkspaceId && typeof fetch === "function");
+}
+
+async function createSupabaseSignedUrl(path, expiresIn = 604800) {
+  const cfg = supabaseConfig();
+  const payload = await supabaseRequest(`/storage/v1/object/sign/${encodeURIComponent(cfg.storageBucket)}/${path}`, {
+    method: "POST",
+    body: JSON.stringify({ expiresIn })
+  });
+  const signedPath = payload?.signedURL || payload?.signedUrl || "";
+  return signedPath ? `${cfg.url}${signedPath}` : "";
+}
+
+async function uploadSupabaseAttachment(file) {
+  const maxFileSize = 10 * 1024 * 1024;
+  if (file.size > maxFileSize) throw new Error(text("fileTooLarge"));
+  const cfg = supabaseConfig();
+  const id = createId();
+  const path = `${supabaseWorkspaceId}/${id}-${safeStorageName(file.name)}`;
+  const response = await fetch(`${cfg.url}/storage/v1/object/${encodeURIComponent(cfg.storageBucket)}/${path}`, {
+    method: "POST",
+    headers: {
+      apikey: cfg.anonKey,
+      authorization: `Bearer ${supabaseSession.access_token}`,
+      "content-type": file.type || "application/octet-stream",
+      "x-upsert": "true"
+    },
+    body: file
+  });
+  if (!response.ok) {
+    let message = "Supabase Storage upload failed";
+    try {
+      const payload = await response.json();
+      message = payload?.message || payload?.error || message;
+    } catch {}
+    throw new Error(message);
+  }
+  const signedUrl = await createSupabaseSignedUrl(path);
+  return {
+    id,
+    name: file.name,
+    type: file.type || "application/octet-stream",
+    size: file.size,
+    storageProvider: "supabase",
+    storageBucket: cfg.storageBucket,
+    storagePath: path,
+    dataUrl: signedUrl,
+    addedAt: new Date().toISOString()
+  };
+}
+
+async function deleteSupabaseObject(path) {
+  const cfg = supabaseConfig();
+  if (!cfg || !path || !supabaseSession?.access_token) return;
+  await fetch(`${cfg.url}/storage/v1/object/${encodeURIComponent(cfg.storageBucket)}/${path}`, {
+    method: "DELETE",
+    headers: {
+      apikey: cfg.anonKey,
+      authorization: `Bearer ${supabaseSession.access_token}`
+    }
+  });
+}
+
+async function callSupabaseFunction(name, payload) {
+  const cfg = supabaseConfig();
+  if (!cfg || !supabaseSession?.access_token) return { skipped: true, reason: "Supabase session yoxdur" };
+  const response = await fetch(`${cfg.url}/functions/v1/${name}`, {
+    method: "POST",
+    headers: {
+      apikey: cfg.anonKey,
+      authorization: `Bearer ${supabaseSession.access_token}`,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+  const textBody = await response.text();
+  const body = textBody ? JSON.parse(textBody) : {};
+  if (!response.ok) throw new Error(body?.error || body?.message || `Supabase function xətası (${response.status})`);
+  return body;
 }
 
 async function supabaseSignUp(email, password, metadata) {
@@ -7305,42 +7401,60 @@ function sendDeadlineNotifications() {
       });
     });
   }
-  sendBackendDeadlineEmail(alerts);
+  sendOnlineDeadlineEmail(alerts);
 }
 
-async function sendBackendDeadlineEmail(alerts) {
-  if (!canUseBackend() || !appSettings.emailEnabled) return;
+async function sendOnlineDeadlineEmail(alerts) {
+  if (!appSettings.emailEnabled) return;
   try {
     const alertLines = alerts.slice(0, 10).map(({ task, alert }) => `${alert.label}: ${task.name} (${getProject(task)}, ${task.end})`).join("\n");
+    const payload = {
+      type: "deadline-alerts",
+      workspaceId: supabaseWorkspaceId || "",
+      companyId: currentCompanyId(),
+      recipients: appSettings.emailRecipients || "",
+      subject: appSettings.mailSubjectTemplate || "Project Manager deadline alerts",
+      template: appSettings.mailBodyTemplate || "{{alerts}}",
+      text: alertLines,
+      alerts: alerts.slice(0, 10).map(({ task, alert }) => ({
+        label: alert.label,
+        taskName: task.name,
+        project: getProject(task),
+        end: task.end
+      }))
+    };
+    if (canUseSupabase() && supabaseSession?.access_token) {
+      await callSupabaseFunction(supabaseConfig().mailFunction, payload);
+      return;
+    }
+    if (!canUseBackend()) return;
     await fetch(backendUrl("/api/mail/deadline-alerts"), {
       method: "POST",
       headers: authHeaders({ "content-type": "application/json" }),
-      body: JSON.stringify({
-        subject: appSettings.mailSubjectTemplate || "Project Manager deadline alerts",
-        template: appSettings.mailBodyTemplate || "{{alerts}}",
-        alerts: alerts.slice(0, 10).map(({ task, alert }) => ({
-          label: alert.label,
-          taskName: task.name,
-          project: getProject(task),
-          end: task.end
-        })),
-        alertLines
-      })
+      body: JSON.stringify({ ...payload, alertLines })
     });
   } catch (error) {
     console.warn("Deadline email failed", error);
   }
 }
 
-async function sendBackendTestMail() {
+async function sendOnlineTestMail() {
+  const payload = {
+    type: "test",
+    workspaceId: supabaseWorkspaceId || "",
+    companyId: currentCompanyId(),
+    recipients: appSettings.emailRecipients || "",
+    subject: mailSubjectTemplateInput.value.trim() || "Project Manager test email",
+    text: testMailBodyInput.value.trim() || "Project Manager mail ayarları test edildi."
+  };
+  if (canUseSupabase() && supabaseSession?.access_token) {
+    return callSupabaseFunction(supabaseConfig().mailFunction, payload);
+  }
   if (!canUseBackend()) return { skipped: true };
   const response = await fetch(backendUrl("/api/mail/test"), {
     method: "POST",
     headers: authHeaders({ "content-type": "application/json" }),
-    body: JSON.stringify({
-      subject: mailSubjectTemplateInput.value.trim() || "Project Manager test email",
-      text: testMailBodyInput.value.trim() || "Project Manager mail ayarları test edildi."
-    })
+    body: JSON.stringify(payload)
   });
   if (!response.ok) throw new Error("Mail test failed");
   return response.json();
@@ -8418,7 +8532,7 @@ testMailButton.addEventListener("click", async () => {
   saveAppSettings();
   await saveBackendSettings();
   try {
-    const result = await sendBackendTestMail();
+    const result = await sendOnlineTestMail();
     settingsStatus.textContent = result.skipped || result.ok === false ? text("mailTestSkipped") : text("mailTestSent");
   } catch {
     settingsStatus.textContent = text("mailTestSkipped");
@@ -8839,9 +8953,13 @@ addManagedFilesButton.addEventListener("click", async () => {
   }
 });
 
-managedFileList.addEventListener("click", (event) => {
+managedFileList.addEventListener("click", async (event) => {
   const button = event.target.closest("button[data-file-action]");
   if (!button || !isAdmin()) return;
+  const file = managedFiles.find((item) => item.id === button.dataset.id);
+  if (file?.storageProvider === "supabase") {
+    deleteSupabaseObject(file.storagePath).catch((error) => console.warn("Supabase file delete failed", error));
+  }
   managedFiles = managedFiles.filter((file) => file.id !== button.dataset.id);
   saveResources();
   render();
