@@ -1734,6 +1734,9 @@ const closeNotificationPanelButton = document.querySelector("#closeNotificationP
 const openAdminPanelButton = document.querySelector("#openAdminPanel");
 const closeAdminPanelButton = document.querySelector("#closeAdminPanel");
 const adminModal = document.querySelector("#adminModal");
+const openManagerPanelButton = document.querySelector("#openManagerPanel");
+const closeManagerPanelButton = document.querySelector("#closeManagerPanel");
+const managerPanelModal = document.querySelector("#managerPanelModal");
 const adminSectionModal = document.querySelector("#adminSectionModal");
 const adminSectionTitle = document.querySelector("#adminSectionTitle");
 const adminSectionBody = document.querySelector("#adminSectionBody");
@@ -3617,6 +3620,202 @@ function closeAdminPanel() {
   adminModal.classList.remove("open");
   adminModal.setAttribute("aria-hidden", "true");
 }
+
+// ─── Manager Paneli ───────────────────────────────────────────────────────────
+function openManagerPanel() {
+  if (!currentUser || currentUser.role !== "manager") return;
+  renderManagerPanel();
+  raiseModal(managerPanelModal);
+  managerPanelModal.classList.add("open");
+  managerPanelModal.setAttribute("aria-hidden", "false");
+  closeManagerPanelButton?.focus();
+}
+
+function closeManagerPanel() {
+  managerPanelModal.classList.remove("open");
+  managerPanelModal.setAttribute("aria-hidden", "true");
+}
+
+function renderManagerPanel() {
+  const companyId = currentCompanyId();
+  const myProjects = visibleProjects().filter((p) =>
+    (p.managerIds || []).includes(currentUser.id)
+  );
+  const myTeam = users.filter(
+    (u) => u.managerId === currentUser.id && u.companyId === companyId
+  );
+  const myRegisters = visibleRegisters().filter((r) => r.status !== "Resolved");
+  const myTeamGroups = teams.filter((t) => isSameCompany(t));
+  const myCustomers = customers.filter((c) => !c.companyId || c.companyId === companyId);
+  const myLinks = projectLinks.filter((l) => isSameCompany(l));
+  const myTrash = trash.filter((t) => !t.companyId || t.companyId === companyId);
+  const myDateRequests = (appSettings.dateRequests || []).filter(
+    (r) => r.status === "pending"
+  );
+
+  // Badge-ləri yenilə
+  const setCount = (id, count) => {
+    const el = document.querySelector(`#${id}`);
+    if (el) el.textContent = count;
+  };
+  setCount("mgrProjectCount", `${myProjects.length} layihə`);
+  setCount("mgrTeamCount", `${myTeam.length} üzv`);
+  setCount("mgrDateRequestCount", myDateRequests.length);
+  setCount("mgrRegisterCount", myRegisters.length);
+  setCount("mgrTeamGroupCount", myTeamGroups.length);
+  setCount("mgrCustomerCount", myCustomers.length);
+  setCount("mgrLinkCount", myLinks.length);
+  setCount("mgrTrashCount", myTrash.length);
+  setCount("mgrProjectCountBadge", myProjects.length);
+  setCount("mgrTeamCountBadge", myTeam.length);
+  setCount("mgrDateRequestCountBadge", myDateRequests.length);
+  setCount("mgrRegisterCountBadge", myRegisters.length);
+  setCount("mgrTeamGroupCountBadge", myTeamGroups.length);
+  setCount("mgrCustomerCountBadge", myCustomers.length);
+  setCount("mgrLinkCountBadge", myLinks.length);
+  setCount("mgrTrashCountBadge", myTrash.length);
+
+  // Layihələrim
+  const mgrProjectList = document.querySelector("#mgrProjectList");
+  if (mgrProjectList) {
+    mgrProjectList.innerHTML = myProjects.length
+      ? myProjects.map((p) => `
+          <div class="resource-item">
+            <span>
+              <strong>${escapeHtml(p.name)}</strong>
+              ${escapeHtml(p.status || "")} · ${p.progress || 0}% · ${shortDate(p.start)} → ${shortDate(p.end)}
+            </span>
+            <button type="button" data-mgr-open-project="${escapeHtml(p.name)}">Aç</button>
+          </div>`).join("")
+      : `<div class="empty">Sizə aid layihə yoxdur</div>`;
+  }
+
+  // Komanda üzvlərim
+  const mgrTeamList = document.querySelector("#mgrTeamList");
+  if (mgrTeamList) {
+    mgrTeamList.innerHTML = myTeam.length
+      ? myTeam.map((u) => `
+          <div class="resource-item">
+            <span>
+              <strong>${escapeHtml(u.profile?.fullName || u.username)}</strong>
+              ${escapeHtml(roleLabel(u.role))} · ${escapeHtml(u.username)}
+              ${u.profile?.position ? ` · ${escapeHtml(u.profile.position)}` : ""}
+            </span>
+          </div>`).join("")
+      : `<div class="empty">Komanda üzvü yoxdur</div>`;
+  }
+
+  // Tarix sorğuları
+  const mgrDateRequestList = document.querySelector("#mgrDateRequestList");
+  if (mgrDateRequestList) {
+    mgrDateRequestList.innerHTML = myDateRequests.length
+      ? myDateRequests.map((r) => `
+          <div class="resource-item">
+            <span>
+              <strong>${escapeHtml(r.taskName || r.taskId)}</strong>
+              ${escapeHtml(r.requester || "")} · ${shortDate(r.newEnd)}
+              ${r.reason ? `<small>${escapeHtml(r.reason)}</small>` : ""}
+            </span>
+            <div class="mini-actions">
+              <button type="button" data-mgr-date-approve="${r.id}">Təsdiqlə</button>
+              <button type="button" data-mgr-date-reject="${r.id}" class="danger">Rədd et</button>
+            </div>
+          </div>`).join("")
+      : `<div class="empty">Gözləyən sorğu yoxdur</div>`;
+  }
+
+  // Registerlar
+  const mgrRegisterList = document.querySelector("#mgrRegisterList");
+  if (mgrRegisterList) {
+    mgrRegisterList.innerHTML = myRegisters.length
+      ? myRegisters.map((r) => `
+          <div class="resource-item register-item ${escapeHtml(r.type)}">
+            <span>
+              <strong>${escapeHtml(r.title)}</strong>
+              ${escapeHtml(r.project)} · ${registerTypeLabel(r.type)} · ${escapeHtml(registerStatusLabel(r.status))}
+              ${r.mitigation ? `<small>${escapeHtml(r.mitigation)}</small>` : ""}
+            </span>
+            <button type="button" data-mgr-register-delete="${r.id}">${text("remove")}</button>
+          </div>`).join("")
+      : `<div class="empty">Aktiv register yoxdur</div>`;
+  }
+
+  // Register project seçimi
+  const mgrRegisterProject = document.querySelector("#mgrRegisterProject");
+  if (mgrRegisterProject) {
+    mgrRegisterProject.innerHTML = myProjects.map((p) =>
+      `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`
+    ).join("");
+  }
+
+  // Komandalar
+  const mgrTeamGroupList = document.querySelector("#mgrTeamGroupList");
+  if (mgrTeamGroupList) {
+    mgrTeamGroupList.innerHTML = myTeamGroups.length
+      ? myTeamGroups.map((t) => `
+          <div class="resource-item">
+            <span>
+              <strong>${escapeHtml(t.name)}</strong>
+              ${(t.memberIds || []).length} üzv
+            </span>
+            <button type="button" data-mgr-team-delete="${t.id}">${text("remove")}</button>
+          </div>`).join("")
+      : `<div class="empty">Komanda yoxdur</div>`;
+  }
+
+  // Team members for new team select
+  const mgrNewTeamMembers = document.querySelector("#mgrNewTeamMembers");
+  if (mgrNewTeamMembers) {
+    mgrNewTeamMembers.innerHTML = users
+      .filter((u) => !["admin", "super_admin"].includes(u.role) && u.companyId === companyId)
+      .map((u) => `<option value="${u.id}">${escapeHtml(u.profile?.fullName || u.username)}</option>`)
+      .join("");
+  }
+
+  // Sifarişçilər
+  const mgrCustomerList = document.querySelector("#mgrCustomerList");
+  if (mgrCustomerList) {
+    mgrCustomerList.innerHTML = myCustomers.length
+      ? myCustomers.map((c) => `
+          <div class="resource-item">
+            <span><strong>${escapeHtml(c.name)}</strong>${c.contact ? ` · ${escapeHtml(c.contact)}` : ""}</span>
+          </div>`).join("")
+      : `<div class="empty">Sifarişçi yoxdur</div>`;
+  }
+
+  // Layihə bağlantıları
+  const mgrLinkList = document.querySelector("#mgrLinkList");
+  if (mgrLinkList) {
+    mgrLinkList.innerHTML = myLinks.length
+      ? myLinks.map((l) => `
+          <div class="resource-item">
+            <span>
+              <strong>${escapeHtml(l.project)}</strong> → ${escapeHtml(resourceLabel(l.resource))}
+            </span>
+            <button type="button" data-mgr-link-delete="${l.id}">${text("remove")}</button>
+          </div>`).join("")
+      : `<div class="empty">Bağlantı yoxdur</div>`;
+  }
+
+  // Zibil qutusu
+  const mgrTrashList = document.querySelector("#mgrTrashList");
+  if (mgrTrashList) {
+    mgrTrashList.innerHTML = myTrash.length
+      ? myTrash.map((t) => {
+          const title = t.type === "task" ? t.data.name : (t.data.project || t.data.name);
+          return `
+            <div class="resource-item">
+              <span><strong>${escapeHtml(title)}</strong>${t.type === "task" ? " — tapşırıq" : " — layihə"}</span>
+              <div class="mini-actions">
+                <button type="button" data-mgr-trash-restore="${t.id}">${text("restore")}</button>
+                <button type="button" data-mgr-trash-delete="${t.id}" class="danger">${text("deleteForever")}</button>
+              </div>
+            </div>`;
+        }).join("")
+      : `<div class="empty">Zibil qutusu boşdur</div>`;
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 function adminSectionLabel(section) {
   const title = section?.dataset.adminTitle || section?.querySelector("summary span")?.textContent || text("adminPanel");
@@ -7354,6 +7553,7 @@ logoutButton.addEventListener("click", async () => {
   localStorage.removeItem(authTokenKey);
   appSettings = loadSettings();
   closeAdminPanel();
+  closeManagerPanel();
   closeManagerAssign();
   closeTaskComposer();
   render();
@@ -7389,6 +7589,142 @@ adminModal.addEventListener("click", (event) => {
   const button = event.target.closest("[data-admin-open-section]");
   if (button) openAdminSection(button.dataset.adminOpenSection);
 });
+
+// ─── Manager Panel listeners ─────────────────────────────────────────────────
+openManagerPanelButton?.addEventListener("click", openManagerPanel);
+closeManagerPanelButton?.addEventListener("click", closeManagerPanel);
+managerPanelModal?.addEventListener("click", (event) => {
+  // Backdrop-a basılsa bağla
+  if (event.target.dataset.mgrPanelClose) { closeManagerPanel(); return; }
+
+  // Layihəni aç
+  const openBtn = event.target.closest("[data-mgr-open-project]");
+  if (openBtn) {
+    closeManagerPanel();
+    projectFilter.value = openBtn.dataset.mgrOpenProject;
+    setView("list");
+    return;
+  }
+
+  // Tarix sorğusu: təsdiqlə
+  const approveBtn = event.target.closest("[data-mgr-date-approve]");
+  if (approveBtn) {
+    const id = approveBtn.dataset.mgrDateApprove;
+    const req = (appSettings.dateRequests || []).find((r) => r.id === id);
+    if (req) {
+      const task = tasks.find((t) => t.id === req.taskId);
+      if (task) { task.end = req.newEnd; saveTasks(); }
+      appSettings.dateRequests = (appSettings.dateRequests || []).map((r) =>
+        r.id === id ? { ...r, status: "approved" } : r
+      );
+      saveAppSettings();
+      renderManagerPanel();
+    }
+    return;
+  }
+
+  // Tarix sorğusu: rədd et
+  const rejectBtn = event.target.closest("[data-mgr-date-reject]");
+  if (rejectBtn) {
+    const id = rejectBtn.dataset.mgrDateReject;
+    appSettings.dateRequests = (appSettings.dateRequests || []).map((r) =>
+      r.id === id ? { ...r, status: "rejected" } : r
+    );
+    saveAppSettings();
+    renderManagerPanel();
+    return;
+  }
+
+  // Register sil
+  const regDeleteBtn = event.target.closest("[data-mgr-register-delete]");
+  if (regDeleteBtn) {
+    const id = regDeleteBtn.dataset.mgrRegisterDelete;
+    registers = registers.filter((r) => r.id !== id);
+    saveResources();
+    renderManagerPanel();
+    render();
+    return;
+  }
+
+  // Komanda sil
+  const teamDeleteBtn = event.target.closest("[data-mgr-team-delete]");
+  if (teamDeleteBtn) {
+    const id = teamDeleteBtn.dataset.mgrTeamDelete;
+    teams = teams.filter((t) => t.id !== id);
+    saveResources();
+    renderManagerPanel();
+    render();
+    return;
+  }
+
+  // Link sil
+  const linkDeleteBtn = event.target.closest("[data-mgr-link-delete]");
+  if (linkDeleteBtn) {
+    const id = linkDeleteBtn.dataset.mgrLinkDelete;
+    projectLinks = projectLinks.filter((l) => l.id !== id);
+    saveResources();
+    renderManagerPanel();
+    render();
+    return;
+  }
+
+  // Zibil: bərpa et
+  const trashRestoreBtn = event.target.closest("[data-mgr-trash-restore]");
+  if (trashRestoreBtn) {
+    const id = trashRestoreBtn.dataset.mgrTrashRestore;
+    const item = trash.find((t) => t.id === id);
+    if (item) {
+      if (item.type === "task") tasks.push(item.data);
+      else if (item.type === "projectRecord") projectLinks.push(item.data);
+      else projects.push(item.data);
+      trash = trash.filter((t) => t.id !== id);
+      saveResources();
+      saveTasks();
+      renderManagerPanel();
+      render();
+    }
+    return;
+  }
+
+  // Zibil: həmişəlik sil
+  const trashDeleteBtn = event.target.closest("[data-mgr-trash-delete]");
+  if (trashDeleteBtn) {
+    const id = trashDeleteBtn.dataset.mgrTrashDelete;
+    trash = trash.filter((t) => t.id !== id);
+    saveResources();
+    renderManagerPanel();
+    return;
+  }
+});
+
+// Register əlavə et
+document.querySelector("#mgrAddRegister")?.addEventListener("click", () => {
+  const title = document.querySelector("#mgrRegisterTitle")?.value.trim();
+  const type = document.querySelector("#mgrRegisterType")?.value || "risk";
+  const project = document.querySelector("#mgrRegisterProject")?.value;
+  if (!title || !project) return;
+  const reg = { id: createId("reg"), title, type, project, status: "Open", impact: "Medium", mitigation: "", owner: "", dueDate: "" };
+  registers.push(reg);
+  saveResources();
+  document.querySelector("#mgrRegisterTitle").value = "";
+  renderManagerPanel();
+  render();
+});
+
+// Komanda əlavə et
+document.querySelector("#mgrAddTeam")?.addEventListener("click", () => {
+  const name = document.querySelector("#mgrNewTeamName")?.value.trim();
+  const memberSelect = document.querySelector("#mgrNewTeamMembers");
+  const memberIds = memberSelect ? [...memberSelect.selectedOptions].map((o) => o.value) : [];
+  if (!name) return;
+  const team = { id: createId("team"), name, memberIds, companyId: currentCompanyId() };
+  teams.push(team);
+  saveResources();
+  document.querySelector("#mgrNewTeamName").value = "";
+  renderManagerPanel();
+  render();
+});
+// ─────────────────────────────────────────────────────────────────────────────
 closeAdminSectionButton.addEventListener("click", closeAdminSection);
 adminSectionModal.addEventListener("click", (event) => {
   if (event.target.dataset.adminSectionClose) closeAdminSection();

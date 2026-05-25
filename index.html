@@ -109,6 +109,7 @@
           <span data-i18n="notify">Bildirişlər</span>
           <span id="notifyUnreadCount" class="notify-badge" hidden>0</span>
         </button>
+        <button id="openManagerPanel" type="button">Manager paneli</button>
         <button id="openAdminPanel" type="button" data-i18n="adminPanel">Admin panel</button>
       </div>
     </header>
@@ -1007,6 +1008,135 @@
           </section>
         </section>
       </div>
+
+      <!-- ═══════════════════════ MANAGER PANELİ ═══════════════════════ -->
+      <div id="managerPanelModal" class="modal-shell" aria-hidden="true">
+        <div class="modal-backdrop" data-mgr-panel-close="true"></div>
+        <section class="admin-modal manager-panel-modal" role="dialog" aria-modal="true" aria-labelledby="managerPanelTitle">
+          <div class="modal-head">
+            <div>
+              <p class="kicker">Manager paneli</p>
+              <h2 id="managerPanelTitle">İdarəetmə mərkəzi</h2>
+            </div>
+            <button id="closeManagerPanel" class="icon-button" type="button" aria-label="Bağla">×</button>
+          </div>
+
+          <!-- Launch grid -->
+          <section class="admin-launch-grid manager-launch-grid" aria-label="Manager bölmələri">
+            <button type="button" data-mgr-section="mgr-projects">
+              <strong>📋 Layihələrim</strong>
+              <span id="mgrProjectCount">0 layihə</span>
+            </button>
+            <button type="button" data-mgr-section="mgr-team">
+              <strong>👥 Komanda</strong>
+              <span id="mgrTeamCount">0 üzv</span>
+            </button>
+            <button type="button" data-mgr-section="mgr-date-requests">
+              <strong>📅 Tarix sorğuları</strong>
+              <span id="mgrDateRequestCount">0</span>
+            </button>
+            <button type="button" data-mgr-section="mgr-registers">
+              <strong>⚠️ Registerlar</strong>
+              <span id="mgrRegisterCount">0 aktiv</span>
+            </button>
+            <button type="button" data-mgr-section="mgr-teams">
+              <strong>🏆 Komandalar</strong>
+              <span id="mgrTeamGroupCount">0</span>
+            </button>
+            <button type="button" data-mgr-section="mgr-customers">
+              <strong>🏢 Sifarişçilər</strong>
+              <span id="mgrCustomerCount">0</span>
+            </button>
+            <button type="button" data-mgr-section="mgr-links">
+              <strong>🔗 Layihə bağlantıları</strong>
+              <span id="mgrLinkCount">0</span>
+            </button>
+            <button type="button" data-mgr-section="mgr-trash">
+              <strong>🗑️ Zibil qutusu</strong>
+              <span id="mgrTrashCount">0</span>
+            </button>
+          </section>
+
+          <!-- Sections -->
+          <section class="resource-panel">
+
+            <details class="resource-block admin-wide" id="mgr-projects" open>
+              <summary><span>📋 Layihələrim</span><small id="mgrProjectCountBadge">0</small></summary>
+              <div class="resource-body">
+                <div id="mgrProjectList" class="resource-list"></div>
+              </div>
+            </details>
+
+            <details class="resource-block admin-wide" id="mgr-team">
+              <summary><span>👥 Komanda üzvlərim</span><small id="mgrTeamCountBadge">0</small></summary>
+              <div class="resource-body">
+                <div id="mgrTeamList" class="resource-list"></div>
+              </div>
+            </details>
+
+            <details class="resource-block admin-wide" id="mgr-date-requests">
+              <summary><span>📅 Tarix dəyişiklik sorğuları</span><small id="mgrDateRequestCountBadge">0</small></summary>
+              <div class="resource-body">
+                <div id="mgrDateRequestList" class="resource-list activity-list"></div>
+              </div>
+            </details>
+
+            <details class="resource-block admin-wide" id="mgr-registers">
+              <summary><span>⚠️ Layihə registerləri</span><small id="mgrRegisterCountBadge">0</small></summary>
+              <div class="resource-body">
+                <div class="register-form">
+                  <input id="mgrRegisterTitle" type="text" placeholder="Başlıq">
+                  <select id="mgrRegisterType">
+                    <option value="risk">Risk</option>
+                    <option value="issue">Problem</option>
+                    <option value="milestone">Milestone</option>
+                  </select>
+                  <select id="mgrRegisterProject"></select>
+                  <button id="mgrAddRegister" type="button">+ Əlavə et</button>
+                </div>
+                <div id="mgrRegisterList" class="resource-list"></div>
+              </div>
+            </details>
+
+            <details class="resource-block" id="mgr-teams">
+              <summary><span>🏆 Komandalar</span><small id="mgrTeamGroupCountBadge">0</small></summary>
+              <div class="resource-body">
+                <label><span>Komanda adı</span>
+                  <input id="mgrNewTeamName" type="text" placeholder="Komanda adı">
+                </label>
+                <label><span>Üzvlər</span>
+                  <select id="mgrNewTeamMembers" multiple style="min-height:80px"></select>
+                </label>
+                <button id="mgrAddTeam" type="button">+ Komanda yarat</button>
+                <div id="mgrTeamGroupList" class="resource-list"></div>
+              </div>
+            </details>
+
+            <details class="resource-block" id="mgr-customers">
+              <summary><span>🏢 Sifarişçilər</span><small id="mgrCustomerCountBadge">0</small></summary>
+              <div class="resource-body">
+                <div id="mgrCustomerList" class="resource-list"></div>
+              </div>
+            </details>
+
+            <details class="resource-block" id="mgr-links">
+              <summary><span>🔗 Layihə bağlantıları</span><small id="mgrLinkCountBadge">0</small></summary>
+              <div class="resource-body">
+                <div id="mgrLinkList" class="resource-list"></div>
+              </div>
+            </details>
+
+            <details class="resource-block admin-wide" id="mgr-trash">
+              <summary><span>🗑️ Zibil qutusu</span><small id="mgrTrashCountBadge">0</small></summary>
+              <div class="resource-body">
+                <div id="mgrTrashList" class="resource-list"></div>
+              </div>
+            </details>
+
+          </section>
+        </section>
+      </div>
+      <!-- ════════════════════════════════════════════════════════════════ -->
 
       <div id="adminSectionModal" class="modal-shell admin-section-shell" aria-hidden="true">
         <div class="modal-backdrop" data-admin-section-close="true"></div>
