@@ -8,6 +8,77 @@
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
+
+      <!-- ── Left: marketing / hero panel ───────────────────────────────── -->
+      <div class="login-hero" aria-hidden="true">
+        <div class="login-hero-brand">
+          <span class="brand-mark">PM</span>
+          <div>
+            <strong>Project Manager</strong>
+            <small>Professional Edition</small>
+          </div>
+        </div>
+
+        <div class="login-hero-body">
+          <h2 class="login-hero-title">Layihələrinizi tam nəzarət altına alın</h2>
+          <p class="login-hero-sub">Komandanız, tapşırıqlarınız, müddətləriniz — hamısı bir platformada. Şəffaf, sürətli, etibarlı.</p>
+
+          <ul class="login-feature-list">
+            <li>
+              <span class="lf-icon">📊</span>
+              <div>
+                <strong>Çoxlu görünüş</strong>
+                <span>Gantt, Kanban, Kalendar və Cədvəl — seçim sizindir</span>
+              </div>
+            </li>
+            <li>
+              <span class="lf-icon">👥</span>
+              <div>
+                <strong>Rol sistemi</strong>
+                <span>Admin, Manager, Contributor, Viewer, Sponsor — hər kəsə öz icazəsi</span>
+              </div>
+            </li>
+            <li>
+              <span class="lf-icon">🔔</span>
+              <div>
+                <strong>Avtomatik bildirişlər</strong>
+                <span>Deadline yaxınlaşanda komanda mail alır, heç nə atlanmır</span>
+              </div>
+            </li>
+            <li>
+              <span class="lf-icon">🏢</span>
+              <div>
+                <strong>Çox şirkətli platforma</strong>
+                <span>Hər workspace tamamilə izolyasiyalı, öz adminliyi ilə</span>
+              </div>
+            </li>
+            <li>
+              <span class="lf-icon">🔒</span>
+              <div>
+                <strong>Öz serveriniz</strong>
+                <span>Məlumatlarınız heç bir üçüncü tərəflə paylaşılmır</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="login-hero-stats">
+          <div class="login-stat">
+            <strong>∞</strong>
+            <span>Layihə &amp; tapşırıq</span>
+          </div>
+          <div class="login-stat">
+            <strong>6</strong>
+            <span>Rol səviyyəsi</span>
+          </div>
+          <div class="login-stat">
+            <strong>100%</strong>
+            <span>Öz serverinizdə</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Right: auth panel ────────────────────────────────────────────── -->
       <div id="authPanel" class="auth-panel" data-auth-mode="login">
       <div class="auth-tabs" role="tablist" aria-label="Auth">
         <button id="showLoginTab" class="auth-tab active" type="button" data-auth-tab="login">Daxil ol</button>
@@ -33,6 +104,7 @@
         </label>
         <p id="loginError" class="login-error"></p>
         <button class="primary" type="submit" data-i18n="loginButton">Daxil ol</button>
+        <a id="forgotPasswordLink" href="#" class="login-forgot" data-i18n="forgotPassword">Şifrəni unutdum</a>
       </form>
       <form id="registerForm" class="login-card register-card">
         <p class="kicker">Yeni workspace</p>
@@ -46,7 +118,7 @@
           <input id="registerSubdomain" type="text" autocomplete="off" placeholder="klinika">
         </label>
         <label>
-          <span>Manager adı</span>
+          <span>Admin adı</span>
           <input id="registerFullName" type="text" autocomplete="name" required>
         </label>
         <label>
