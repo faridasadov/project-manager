@@ -325,6 +325,10 @@ const translations = {
     heroF3Title: "Avtomatik bildirişlər", heroF3Desc: "Deadline yaxınlaşanda komanda mail alır, heç nə atlanmır",
     heroF4Title: "Çox şirkətli platforma", heroF4Desc: "Hər workspace tamamilə izolyasiyalı, öz adminliyi ilə",
     heroF5Title: "Öz serveriniz", heroF5Desc: "Məlumatlarınız heç bir üçüncü tərəflə paylaşılmır",
+    heroIpmaTitle: "IPMA standartı ilə uyğun",
+    heroIpmaDesc: "Platforma IPMA ICB 4.0 kompetensiya çərçivəsinə uyğun qurulub: hər layihənin öz Gate yoxlaması, IPMA balı, Governance bölməsi və sponsor nəzarəti mövcuddur.",
+    heroIpmaP1: "Gate / Milestone nəzarəti", heroIpmaP2: "Sponsor, Manager, Contributor rolları",
+    heroIpmaP3: "IPMA Balı & Hesabat", heroIpmaP4: "Governance & Risk izləmə",
     heroStat1: "Layihə & tapşırıq", heroStat2: "Rol səviyyəsi", heroStat3: "Öz serverinizdə",
     logout: "Çıxış",
     loginError: "İstifadəçi adı və ya şifrə yanlışdır.",
@@ -713,6 +717,10 @@ const translations = {
     heroF3Title: "Автоматические уведомления", heroF3Desc: "Когда дедлайн близко — команда получает email, ничего не упускается",
     heroF4Title: "Мультитенантная платформа", heroF4Desc: "Каждый workspace полностью изолирован, со своим администратором",
     heroF5Title: "Ваш сервер", heroF5Desc: "Данные не передаются третьим лицам",
+    heroIpmaTitle: "Соответствие стандарту IPMA",
+    heroIpmaDesc: "Платформа построена по стандарту IPMA ICB 4.0: Gate-проверки по каждому проекту, оценка IPMA, раздел Governance и контроль спонсора.",
+    heroIpmaP1: "Контроль Gate / Milestone", heroIpmaP2: "Роли Sponsor, Manager, Contributor",
+    heroIpmaP3: "IPMA-балл и отчёт", heroIpmaP4: "Governance и мониторинг рисков",
     heroStat1: "Проекты & задачи", heroStat2: "Уровней ролей", heroStat3: "На вашем сервере",
     logout: "Выйти",
     loginError: "Неверное имя пользователя или пароль.",
@@ -1101,6 +1109,10 @@ const translations = {
     heroF3Title: "Automatic notifications", heroF3Desc: "When a deadline approaches, your team gets an email — nothing is missed",
     heroF4Title: "Multi-tenant platform", heroF4Desc: "Every workspace is fully isolated with its own administration",
     heroF5Title: "Your own server", heroF5Desc: "Your data is never shared with any third parties",
+    heroIpmaTitle: "Aligned with IPMA standard",
+    heroIpmaDesc: "The platform is built around IPMA ICB 4.0: every project has its own Gate review, IPMA score, Governance section and sponsor oversight.",
+    heroIpmaP1: "Gate / Milestone control", heroIpmaP2: "Sponsor, Manager, Contributor roles",
+    heroIpmaP3: "IPMA Score & Report", heroIpmaP4: "Governance & Risk tracking",
     heroStat1: "Projects & tasks", heroStat2: "Role levels", heroStat3: "On your server",
     logout: "Logout",
     loginError: "Username or password is incorrect.",
@@ -5108,27 +5120,30 @@ function renderTaskList() {
 
   taskList.innerHTML = shown.map((task) => {
     const blocked = isTaskBlocked(task);
+    const commentCount = (task.comments || []).length;
+    const fileCount = (task.attachments || []).length;
+    const timeEntryCount = (task.timeEntries || []).length;
+    const infoChips = [
+      commentCount ? `💬 ${commentCount}` : "",
+      fileCount ? `📎 ${fileCount}` : "",
+      timeEntryCount ? `⏱ ${timeEntryCount} giriş` : "",
+    ].filter(Boolean);
     return `
     <article class="task-card ${blocked ? "blocked-task" : ""}">
-      <div>
-        <h3>${escapeHtml(task.name)}</h3>
-        <div class="task-meta">
-          <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
-          <span class="badge ${priorityClass(task.priority)}">${priorityLabel(task.priority)}</span>
-          ${blocked ? `<span class="badge blocked">${text("blocked")}</span>` : ""}
-          <span>${escapeHtml(getProject(task))}</span>
-          <span>${shortDate(task.start)} - ${shortDate(task.end)}</span>
-          <span>${escapeHtml(resourceLabel(task.owner))}</span>
-          <span>${text("plannedHours")}: ${plannedHoursForTask(task)}</span>
-          <span>${text("actualHours")}: ${actualHoursForTask(task)}</span>
-        </div>
-        ${renderTaskRelations(task)}
-        ${task.notes ? `<p>${escapeHtml(task.notes)}</p>` : ""}
-        <div class="progress-mini"><span style="width:${Number(task.progress) || 0}%"></span></div>
-        ${renderAttachments(task)}
-        ${renderTimeEntries(task)}
-        ${renderComments(task)}
+      <h3>${escapeHtml(task.name)}</h3>
+      <div class="task-meta">
+        <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
+        <span class="badge ${priorityClass(task.priority)}">${priorityLabel(task.priority)}</span>
+        ${blocked ? `<span class="badge blocked">${text("blocked")}</span>` : ""}
+        <span>${escapeHtml(getProject(task))}</span>
+        <span>${shortDate(task.start)} – ${shortDate(task.end)}</span>
+        <span>${escapeHtml(resourceLabel(task.owner))}</span>
+        <span>${text("plannedHours")}: ${plannedHoursForTask(task)} / ${text("actualHours")}: ${actualHoursForTask(task)}</span>
+        ${infoChips.length ? `<span class="task-info-chips">${infoChips.join(" &nbsp;")}</span>` : ""}
       </div>
+      ${renderTaskRelations(task)}
+      ${task.notes ? `<p class="task-notes-preview">${escapeHtml(task.notes)}</p>` : ""}
+      <div class="progress-mini"><span style="width:${Number(task.progress) || 0}%"></span></div>
       ${renderTaskActions(task)}
     </article>
   `;
@@ -5313,8 +5328,6 @@ function renderKanban() {
           <span>${Number(task.progress) || 0}%</span>
         </div>
         ${renderTaskRelations(task)}
-        ${renderComments(task)}
-        ${renderAttachments(task)}
         ${renderKanbanActions(task)}
       </article>
     `;
