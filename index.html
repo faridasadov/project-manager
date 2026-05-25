@@ -807,12 +807,11 @@
           <details class="resource-block admin-wide admin-only" data-admin-section="roles" data-admin-title="Rol icazələri">
             <summary>
               <span data-i18n="roleMatrix">Rol icazələri</span>
-              <small>Admin / Manager / User</small>
+              <small id="roleUserCount">—</small>
             </summary>
-            <div class="resource-body role-matrix">
-              <div><strong>Admin</strong><span>Hamısını idarə edir, istifadəçi və ayarları dəyişir, tarix sorğularını təsdiqləyir.</span></div>
-              <div><strong>Manager</strong><span>Öz layihələrini və tasklarını idarə edir, user tarix sorğularını təsdiqləyir.</span></div>
-              <div><strong>User</strong><span>Layihə və tasklara baxır, komment yazır, Gantt tarix dəyişikliyi üçün sorğu göndərir.</span></div>
+            <div class="resource-body role-panel-body">
+              <div id="roleMatrixTable" class="perm-matrix-wrap"></div>
+              <div id="roleUserMgmt" class="role-user-mgmt-wrap"></div>
             </div>
           </details>
 

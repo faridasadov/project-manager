@@ -4398,6 +4398,18 @@ function renderResourceControls() {
         <label><span>${text("address")}</span><input name="address" value="${escapeHtml(user.profile?.address || "")}" ${isOrgAdmin() ? "" : "readonly"}></label>
         <label><span>${text("company")}</span><input name="company" value="${escapeHtml(user.profile?.company || "")}" ${isOrgAdmin() ? "" : "readonly"}></label>
         <label class="admin-only"><span>${text("manager")}</span><select name="managerId">${managerOptions(user.managerId || "")}</select></label>
+        ${isOrgAdmin() && user.id !== currentUser?.id ? `
+        <label><span>Rol</span>
+          <select name="role">
+            <option value="user" ${user.role === "user" ? "selected" : ""}>${roleLabel("user")}</option>
+            <option value="contributor" ${user.role === "contributor" ? "selected" : ""}>${roleLabel("contributor")}</option>
+            <option value="viewer" ${user.role === "viewer" ? "selected" : ""}>${roleLabel("viewer")}</option>
+            <option value="sponsor" ${user.role === "sponsor" ? "selected" : ""}>${roleLabel("sponsor")}</option>
+            <option value="manager" ${user.role === "manager" ? "selected" : ""}>${roleLabel("manager")}</option>
+            <option value="admin" ${user.role === "admin" ? "selected" : ""}>${roleLabel("admin")}</option>
+          </select>
+        </label>
+        ` : ""}
         <div class="user-actions">
         ${user.id === currentUser?.id ? `
           <div class="password-form" data-user-id="${user.id}">
@@ -4489,6 +4501,105 @@ function renderManagedFileList() {
       </div>
     </div>
   `).join("") : `<div class="empty">${text("empty")}</div>`;
+}
+
+function renderRoleMatrix() {
+  const matrixContainer = document.querySelector("#roleMatrixTable");
+  const userMgmtContainer = document.querySelector("#roleUserMgmt");
+  const roleUserCount = document.querySelector("#roleUserCount");
+  if (!matrixContainer || !userMgmtContainer) return;
+
+  // ─── İcazə cədvəli ──────────────────────────────────────────────────────────
+  const displayRoles = ["admin", "manager", "contributor", "sponsor", "viewer", "user"];
+  const roleColors = { admin: "var(--teal)", manager: "var(--blue, #2563eb)", contributor: "#16a34a", sponsor: "#7c3aed", viewer: "var(--muted)", user: "var(--text)" };
+  const perms = [
+    { label: "Bütün layihələri idarə et",   roles: ["admin"] },
+    { label: "Öz layihələrini idarə et",     roles: ["admin", "manager"] },
+    { label: "Tapşırıqları idarə et",        roles: ["admin", "manager"] },
+    { label: "İstifadəçiləri idarə et",      roles: ["admin"] },
+    { label: "Rol dəyişdir",                 roles: ["admin"] },
+    { label: "Müştəriləri idarə et",         roles: ["admin"] },
+    { label: "Register idarə et",            roles: ["admin", "manager"] },
+    { label: "Müştəri sorğuları",            roles: ["admin", "manager"] },
+    { label: "Hesabata bax",                 roles: ["admin", "manager", "sponsor"] },
+    { label: "Layihə/taskə bax",             roles: ["admin", "manager", "contributor", "sponsor", "viewer", "user"] },
+    { label: "Komment yaz",                  roles: ["admin", "manager", "contributor", "user"] },
+    { label: "Tarix sorğusu göndər",         roles: ["user", "contributor", "viewer"] },
+    { label: "Şirkət ayarları",              roles: ["admin"] },
+    { label: "Fayl/backup idarəsi",          roles: ["admin"] },
+  ];
+
+  matrixContainer.innerHTML = `
+    <h3 class="role-section-head">İcazə cədvəli</h3>
+    <div class="perm-table-wrap">
+      <table class="perm-table">
+        <thead>
+          <tr>
+            <th class="perm-th-perm">İcazə</th>
+            ${displayRoles.map((r) => `<th style="color:${roleColors[r]}">${roleLabel(r)}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${perms.map((p) => `
+            <tr>
+              <td class="perm-td-label">${p.label}</td>
+              ${displayRoles.map((r) => `<td class="perm-cell ${p.roles.includes(r) ? "perm-yes" : "perm-no"}">${p.roles.includes(r) ? "✓" : "—"}</td>`).join("")}
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // ─── İstifadəçi rol idarəsi ──────────────────────────────────────────────────
+  if (!isOrgAdmin()) {
+    userMgmtContainer.innerHTML = "";
+    return;
+  }
+
+  const companyId = currentCompanyId();
+  const scopedUsers = users.filter((u) => u.companyId === companyId && u.role !== "super_admin");
+  if (roleUserCount) roleUserCount.textContent = scopedUsers.length;
+
+  const roleOptions = ["admin", "manager", "contributor", "sponsor", "viewer", "user"];
+
+  userMgmtContainer.innerHTML = `
+    <h3 class="role-section-head">İstifadəçi rolları</h3>
+    <div class="role-user-list">
+      ${scopedUsers.map((user) => `
+        <div class="role-user-row" data-uid="${user.id}">
+          <div class="role-user-info">
+            <strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>
+            <span class="muted">${escapeHtml(user.username)}</span>
+          </div>
+          ${user.id === currentUser?.id ? `
+            <span class="role-badge-inline role-badge-${user.role}">${roleLabel(user.role)}</span>
+            <span class="role-self-note">Özünüz</span>
+          ` : `
+            <select class="role-change-select" data-user-id="${user.id}">
+              ${roleOptions.map((r) => `<option value="${r}" ${user.role === r ? "selected" : ""}>${roleLabel(r)}</option>`).join("")}
+            </select>
+            <button type="button" class="role-save-btn" data-user-id="${user.id}">Yadda saxla</button>
+          `}
+        </div>
+      `).join("")}
+    </div>
+  `;
+
+  userMgmtContainer.querySelectorAll(".role-save-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const userId = btn.dataset.userId;
+      const select = userMgmtContainer.querySelector(`.role-change-select[data-user-id="${userId}"]`);
+      if (!select) return;
+      const newRole = select.value;
+      const targetUser = users.find((u) => u.id === userId);
+      if (!targetUser || targetUser.id === currentUser?.id) return;
+      targetUser.role = newRole;
+      saveUsers();
+      renderRoleMatrix();
+      render();
+    });
+  });
 }
 
 function renderSummary() {
@@ -5749,6 +5860,7 @@ function render() {
   renderActivityLists();
   renderPlatformConsole();
   renderViews();
+  renderRoleMatrix();
 }
 
 function taskFormFields() {
@@ -8366,6 +8478,9 @@ userList.addEventListener("submit", (event) => {
     user.username = nextUsername;
   }
   user.managerId = profileForm.elements.managerId?.value || "";
+  if (isOrgAdmin() && user.id !== currentUser?.id && profileForm.elements.role?.value) {
+    user.role = profileForm.elements.role.value;
+  }
   user.profile = {
     fullName: profileForm.elements.fullName.value.trim(),
     fatherName: profileForm.elements.fatherName.value.trim(),
