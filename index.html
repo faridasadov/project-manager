@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
   <link rel="stylesheet" href="styles.css?v=20260522-platform-ops">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   </head>
   <body>
     <section id="loginScreen" class="login-screen">
@@ -288,6 +292,15 @@
 
         <form id="taskForm">
           <input id="taskId" type="hidden">
+
+          <div id="templateSelectorRow" class="template-selector-row" style="display:none">
+            <label style="margin:0">
+              <span>📋 Şablon</span>
+              <select id="templateSelect">
+                <option value="">— şablon seç —</option>
+              </select>
+            </label>
+          </div>
 
           <label>
             <span data-i18n="taskName">Task adı</span>
@@ -714,6 +727,11 @@
               <small data-i18n="new">Yeni</small>
             </summary>
             <div class="resource-body settings-grid">
+              <div class="settings-card">
+                <h3>🗂 Snapshotlar</h3>
+                <p class="field-hint" style="margin:0 0 10px">Hər sessiyada avtomatik 5 snapshot saxlanılır. Bərpa etmək üçün seçin.</p>
+                <div id="snapshotList" class="snapshot-list"><em style="color:var(--muted);font-size:.83rem">Snapshot yoxdur</em></div>
+              </div>
               <div class="settings-card">
                 <h3 data-i18n="appearanceSettings">Görünüş</h3>
                 <div class="appearance-fields">
@@ -1608,6 +1626,13 @@
               </div>
               <button id="openTaskComposer" class="primary" type="button" data-i18n="addTaskToProject">Task əlavə et</button>
             </div>
+            <div id="bulkBar" class="bulk-bar" style="display:none" aria-live="polite">
+              <span id="bulkCount" class="bulk-count">0 seçildi</span>
+              <button type="button" id="bulkStatus" class="bulk-btn">Status dəyiş</button>
+              <button type="button" id="bulkOwner" class="bulk-btn">Sahib dəyiş</button>
+              <button type="button" id="bulkDelete" class="bulk-btn bulk-btn-danger">Sil</button>
+              <button type="button" id="bulkClear" class="bulk-btn bulk-btn-ghost">✕ Ləğv et</button>
+            </div>
             <div id="taskList" class="task-list"></div>
           </div>
         </section>
@@ -1674,7 +1699,8 @@
     </main>
     </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="supabase/supabase-config.js"></script>
-  <script src="script.js?v=20260525-owner-comments"></script>
+  <script src="script.js?v=20260526-features"></script>
 </body>
 </html>

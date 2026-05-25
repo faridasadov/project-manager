@@ -1995,6 +1995,7 @@ let currentSmartFilter = "Hamısı";
 let currentOwnerFilter = ""; // set from workload click; "" means no filter
 let taskListPage = 1;
 const TASK_PAGE_SIZE = 20;
+let selectedTaskIds = new Set();
 let currentView = "dashboard";
 let currentLanguage = localStorage.getItem(languageKey) || "az";
 let activeManagerProjectId = "";
@@ -5398,6 +5399,9 @@ function renderTaskList() {
     ].filter(Boolean);
     return `
     <article class="task-card ${blocked ? "blocked-task" : ""}" data-task-card-id="${escapeHtml(task.id)}">
+      <label class="task-cb-wrap" title="Seç" aria-label="Seç">
+        <input type="checkbox" class="task-select-cb" data-task-id="${escapeHtml(task.id)}" ${selectedTaskIds.has(task.id) ? "checked" : ""}>
+      </label>
       ${projectName ? `<div class="task-project-tag">📁 ${escapeHtml(projectName)}</div>` : ""}
       <h3>${escapeHtml(task.name)}</h3>
       <div class="task-meta">
@@ -6647,7 +6651,18 @@ async function supabaseRequest(path, options = {}) {
     ...(options.auth === false ? {} : { authorization: `Bearer ${options.token || supabaseSession?.access_token || cfg.anonKey}` }),
     ...(options.headers || {})
   };
-  const response = await fetch(`${cfg.url}${path}`, { ...options, headers });
+  let response;
+  try {
+    response = await fetch(`${cfg.url}${path}`, { ...options, headers });
+  } catch (networkErr) {
+    // Offline — return cached local state for read-only GET requests
+    if (!options.method || options.method === "GET") {
+      console.warn("Offline — supabaseRequest falling back to local state:", path);
+      if (path.includes("/app_state")) return [{ state_json: backupPayload() }];
+      return [];
+    }
+    throw new Error("Offline: " + networkErr.message);
+  }
   const textBody = await response.text();
   const payload = textBody ? JSON.parse(textBody) : null;
   if (!response.ok) {
@@ -7033,52 +7048,55 @@ async function supabaseLoginWorkspace(email, password) {
 }
 
 // ── Supabase Realtime — live workspace sync ──────────────────────────────
-let _realtimeWs = null;
+// ── Supabase Realtime via official JS client (@supabase/supabase-js v2) ──
+let _supabaseClient = null;
+let _realtimeChannel = null;
+
+function getSupabaseClient() {
+  if (_supabaseClient) return _supabaseClient;
+  const cfg = supabaseConfig();
+  if (!cfg || typeof supabase === "undefined") return null;
+  _supabaseClient = supabase.createClient(cfg.url, cfg.anonKey, {
+    auth: { persistSession: false },
+    realtime: { params: { eventsPerSecond: 2 } }
+  });
+  return _supabaseClient;
+}
 
 function supabaseRealtimeConnect(workspaceId) {
   if (!canUseSupabase() || !workspaceId) return;
-  const cfg = supabaseConfig();
-  const wsUrl = cfg.url.replace(/^https/, "wss").replace(/^http/, "ws");
-  const token = supabaseSession?.access_token || cfg.anonKey;
+  const client = getSupabaseClient();
+  if (!client) return;
 
-  // Close any previous connection
-  if (_realtimeWs) { try { _realtimeWs.close(); } catch (_) {} }
+  // Set auth token so Realtime respects RLS
+  if (supabaseSession?.access_token) {
+    client.realtime.setAuth(supabaseSession.access_token);
+  }
 
-  const ws = new WebSocket(
-    `${wsUrl}/realtime/v1/websocket?apikey=${encodeURIComponent(cfg.anonKey)}&vsn=1.0.0`
-  );
-  _realtimeWs = ws;
+  // Remove previous subscription
+  if (_realtimeChannel) { client.removeChannel(_realtimeChannel); _realtimeChannel = null; }
 
-  ws.addEventListener("open", () => {
-    // Join channel filtered to this workspace's app_state row
-    ws.send(JSON.stringify({
-      topic: `realtime:public:app_state:workspace_id=eq.${workspaceId}`,
-      event: "phx_join",
-      payload: { user_token: token },
-      ref: "1"
-    }));
-  });
-
-  ws.addEventListener("message", (ev) => {
-    let msg;
-    try { msg = JSON.parse(ev.data); } catch { return; }
-    if (msg.event !== "UPDATE" && msg.event !== "postgres_changes") return;
-    const record = msg.payload?.record || msg.payload?.data?.record;
-    if (!record?.state_json?.tasks) return;
-    // Only apply if the remote version is newer (avoid overwriting local edits)
-    const remoteTs = record.state_json.meta?.savedAt || 0;
-    const localTs  = (appData.meta?.savedAt) || 0;
-    if (remoteTs > localTs) {
-      importBackup(record.state_json);
-      render();
-      showToast(text("realtimeConnected") || "↺ Realtime sync");
-    }
-  });
-
-  ws.addEventListener("close", () => {
-    // Reconnect after 8s if still logged in
-    if (supabaseWorkspaceId) setTimeout(() => supabaseRealtimeConnect(supabaseWorkspaceId), 8000);
-  });
+  _realtimeChannel = client
+    .channel("pm-workspace-" + workspaceId)
+    .on("postgres_changes", {
+      event: "UPDATE",
+      schema: "public",
+      table: "app_state",
+      filter: `workspace_id=eq.${workspaceId}`
+    }, (payload) => {
+      const record = payload.new;
+      if (!record?.state_json?.tasks) return;
+      const remoteTs = record.state_json.meta?.savedAt || 0;
+      const localTs  = appData?.meta?.savedAt || 0;
+      if (remoteTs > localTs) {
+        importBackup(record.state_json);
+        render();
+        showToast(text("realtimeConnected") || "↺ Realtime sync");
+      }
+    })
+    .subscribe((status) => {
+      if (status === "SUBSCRIBED") console.log("Realtime: subscribed to workspace", workspaceId);
+    });
 }
 
 async function supabaseCompleteSession(session) {
@@ -9989,3 +10007,323 @@ async function bootApp() {
 }
 
 bootApp();
+
+// ════════════════════════════════════════════════════════════════════
+// #4 — Bulk operations
+// ════════════════════════════════════════════════════════════════════
+
+function updateBulkBar() {
+  const bar = document.querySelector("#bulkBar");
+  const countEl = document.querySelector("#bulkCount");
+  if (!bar) return;
+  const n = selectedTaskIds.size;
+  bar.style.display = n > 0 ? "flex" : "none";
+  if (countEl) countEl.textContent = `${n} seçildi`;
+}
+
+document.querySelector("#taskList")?.addEventListener("change", (e) => {
+  const cb = e.target.closest(".task-select-cb");
+  if (!cb) return;
+  const id = cb.dataset.taskId;
+  if (cb.checked) selectedTaskIds.add(id); else selectedTaskIds.delete(id);
+  updateBulkBar();
+});
+
+document.querySelector("#bulkClear")?.addEventListener("click", () => {
+  selectedTaskIds.clear();
+  document.querySelectorAll(".task-select-cb").forEach(cb => cb.checked = false);
+  updateBulkBar();
+});
+
+document.querySelector("#bulkDelete")?.addEventListener("click", () => {
+  if (!selectedTaskIds.size) return;
+  if (!confirm(`${selectedTaskIds.size} task silinsin?`)) return;
+  tasks = tasks.filter(t => !selectedTaskIds.has(t.id));
+  selectedTaskIds.clear();
+  saveState(); render(); updateBulkBar();
+});
+
+document.querySelector("#bulkStatus")?.addEventListener("click", () => {
+  if (!selectedTaskIds.size) return;
+  const opts = statuses.map(s => s.name);
+  const chosen = prompt(`Yeni status seçin:\n${opts.map((s,i)=>`${i+1}. ${s}`).join("\n")}`);
+  const idx = parseInt(chosen) - 1;
+  if (isNaN(idx) || !opts[idx]) return;
+  tasks.forEach(t => { if (selectedTaskIds.has(t.id)) t.status = opts[idx]; });
+  selectedTaskIds.clear(); saveState(); render(); updateBulkBar();
+});
+
+document.querySelector("#bulkOwner")?.addEventListener("click", () => {
+  if (!selectedTaskIds.size) return;
+  const opts = members.map(m => m.name || m.username || m.id);
+  const ids  = members.map(m => m.id);
+  const chosen = prompt(`Sahib seçin:\n${opts.map((n,i)=>`${i+1}. ${n}`).join("\n")}`);
+  const idx = parseInt(chosen) - 1;
+  if (isNaN(idx) || !ids[idx]) return;
+  tasks.forEach(t => { if (selectedTaskIds.has(t.id)) t.owner = ids[idx]; });
+  selectedTaskIds.clear(); saveState(); render(); updateBulkBar();
+});
+
+// ════════════════════════════════════════════════════════════════════
+// #5 — Keyboard shortcuts
+// ════════════════════════════════════════════════════════════════════
+document.addEventListener("keydown", (e) => {
+  const active = document.activeElement;
+  const typing = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.tagName === "SELECT" || active.isContentEditable);
+  if (typing) return;
+
+  const key = e.key;
+
+  // View switching: 1–7
+  const viewMap = { "1":"dashboard","2":"projects","3":"list","4":"kanban","5":"calendar","6":"gantt","7":"reports" };
+  if (viewMap[key] && !e.ctrlKey && !e.metaKey) { e.preventDefault(); setView(viewMap[key]); return; }
+
+  switch (key) {
+    case "n": case "N":
+      e.preventDefault();
+      document.querySelector("#openTaskComposer")?.click();
+      break;
+    case "Escape":
+      document.querySelector(".modal-shell.active")?.querySelector(".modal-close")?.click();
+      document.querySelector("#bulkClear")?.click();
+      break;
+    case "/":
+      e.preventDefault();
+      document.querySelector("#searchInput")?.focus();
+      break;
+    case "?":
+      showKeyboardHelp();
+      break;
+    case "d": case "D":
+      if (!e.ctrlKey) { e.preventDefault(); setView("dashboard"); }
+      break;
+  }
+});
+
+let _kbHelpVisible = false;
+function showKeyboardHelp() {
+  if (_kbHelpVisible) { document.querySelector("#kbHelp")?.remove(); _kbHelpVisible = false; return; }
+  _kbHelpVisible = true;
+  const el = document.createElement("div");
+  el.id = "kbHelp";
+  el.className = "kb-help-overlay";
+  el.innerHTML = `
+    <div class="kb-help-box">
+      <h3>⌨️ Qısa yollar</h3>
+      <div class="kb-grid">
+        <kbd>1</kbd><span>Dashboard</span>
+        <kbd>2</kbd><span>Layihələr</span>
+        <kbd>3</kbd><span>Tasklar</span>
+        <kbd>4</kbd><span>Kanban</span>
+        <kbd>5</kbd><span>Təqvim</span>
+        <kbd>6</kbd><span>Gantt</span>
+        <kbd>7</kbd><span>Hesabat</span>
+        <kbd>N</kbd><span>Yeni task</span>
+        <kbd>/</kbd><span>Axtarış</span>
+        <kbd>Esc</kbd><span>Bağla / Ləğv</span>
+        <kbd>?</kbd><span>Bu panel</span>
+      </div>
+      <button class="primary" style="margin-top:14px;width:100%" id="kbClose">Bağla</button>
+    </div>`;
+  document.body.appendChild(el);
+  el.addEventListener("click", (ev) => { if (ev.target === el || ev.target.id === "kbClose") { el.remove(); _kbHelpVisible = false; } });
+}
+
+// ════════════════════════════════════════════════════════════════════
+// #2 — Snapshot restore UI
+// ════════════════════════════════════════════════════════════════════
+function renderSnapshotList() {
+  const container = document.querySelector("#snapshotList");
+  if (!container) return;
+  const snaps = listAutoSnapshots();
+  if (!snaps.length) { container.innerHTML = '<em style="color:var(--muted);font-size:.83rem">Snapshot yoxdur</em>'; return; }
+  container.innerHTML = snaps.map((s, i) => `
+    <div class="snapshot-item">
+      <span class="snapshot-date">${new Date(s.savedAt).toLocaleString("az-AZ")}</span>
+      <span class="snapshot-meta">${(s.payload?.tasks?.length || 0)} task · ${(s.payload?.projects?.length || 0)} layihə</span>
+      <button class="snapshot-restore-btn" data-snap="${i}" type="button">Bərpa et</button>
+    </div>`).join("");
+  container.addEventListener("click", (e) => {
+    const btn = e.target.closest(".snapshot-restore-btn");
+    if (!btn) return;
+    const snap = snaps[parseInt(btn.dataset.snap)];
+    if (!snap?.payload) return;
+    if (!confirm("Bu snapshot bərpa edilsin? Cari data əvəz olunacaq.")) return;
+    importBackup(snap.payload);
+    saveState(); render();
+    showToast("✅ Snapshot bərpa edildi");
+  }, { once: true });
+}
+
+// Re-render snapshot list whenever settings view opens
+const _origSetView = setView;
+// Patch setView to refresh snapshot list when settings is opened
+const _patchedSetView = function(view) {
+  _origSetView(view);
+  if (view === "settings") setTimeout(renderSnapshotList, 50);
+};
+// Override global
+window.setView = _patchedSetView;
+
+// ════════════════════════════════════════════════════════════════════
+// #6 — Task templates
+// ════════════════════════════════════════════════════════════════════
+function getTaskTemplates() {
+  return appSettings.taskTemplates || [];
+}
+
+function renderTemplateSelector() {
+  const sel = document.querySelector("#templateSelect");
+  const row = document.querySelector("#templateSelectorRow");
+  if (!sel || !row) return;
+  const tpls = getTaskTemplates();
+  if (!tpls.length) { row.style.display = "none"; return; }
+  row.style.display = "";
+  sel.innerHTML = '<option value="">— şablon seç —</option>' +
+    tpls.map((t, i) => `<option value="${i}">${escapeHtml(t.name)}</option>`).join("");
+}
+
+document.querySelector("#templateSelect")?.addEventListener("change", (e) => {
+  const idx = parseInt(e.target.value);
+  if (isNaN(idx)) return;
+  const tpl = getTaskTemplates()[idx];
+  if (!tpl) return;
+  const f = (id) => document.querySelector(`#${id}`);
+  if (tpl.name)         f("taskName").value         = tpl.name;
+  if (tpl.status)       f("statusInput").value       = tpl.status;
+  if (tpl.priority)     f("priorityInput").value     = tpl.priority;
+  if (tpl.plannedHours) f("plannedHours").value      = tpl.plannedHours;
+  if (tpl.notes)        f("taskNotes").value         = tpl.notes;
+  e.target.value = ""; // reset selector
+  showToast("📋 Şablon tətbiq edildi");
+});
+
+// Expose template add from admin settings (called from settings save handler)
+function addTaskTemplate(tpl) {
+  if (!tpl?.name) return;
+  appSettings.taskTemplates = [...(appSettings.taskTemplates || []), tpl];
+  saveAppSettings();
+  renderTemplateSelector();
+}
+
+// ════════════════════════════════════════════════════════════════════
+// #7 — PDF & Excel export
+// ════════════════════════════════════════════════════════════════════
+function exportToExcel() {
+  if (typeof XLSX === "undefined") { showToast("⏳ Excel kitabxanası yüklənir…"); return; }
+  const shown = visibleTasks();
+  const rows = shown.map(t => ({
+    "Ad":          t.name,
+    "Status":      statusLabel(t.status),
+    "Prioritet":   priorityLabel(t.priority),
+    "Sahib":       resourceLabel(t.owner),
+    "Layihə":      t.project || "",
+    "Başlanğıc":   shortDate(t.start),
+    "Bitmə":       shortDate(t.end),
+    "İrəliləyiş":  `${t.progress || 0}%`,
+    "Plan saat":   plannedHoursForTask(t),
+    "Fakt saat":   actualHoursForTask(t),
+    "Qeydlər":     t.notes || ""
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Tasklar");
+  XLSX.writeFile(wb, `pm-tasklar-${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportToPDF() {
+  if (typeof window.jspdf === "undefined" && typeof jsPDF === "undefined") {
+    showToast("⏳ PDF kitabxanası yüklənir…"); return;
+  }
+  const { jsPDF: PDF } = window.jspdf || { jsPDF };
+  const doc = new PDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const shown = visibleTasks();
+  doc.setFont("helvetica");
+  doc.setFontSize(14);
+  doc.text("Project Manager — Task Hesabatı", 14, 14);
+  doc.setFontSize(9);
+  doc.text(new Date().toLocaleString(), 14, 20);
+
+  const cols = ["Ad","Status","Prioritet","Sahib","Layihə","Başlanğıc","Bitmə","Irəliləyiş"];
+  const rows = shown.map(t => [
+    (t.name || "").slice(0,40),
+    statusLabel(t.status), priorityLabel(t.priority),
+    resourceLabel(t.owner), (t.project||"").slice(0,20),
+    shortDate(t.start), shortDate(t.end), `${t.progress||0}%`
+  ]);
+
+  let y = 28, rowH = 7;
+  const colW = [60,22,20,28,28,20,20,18];
+  // Header
+  doc.setFillColor(79,70,229); doc.setTextColor(255,255,255);
+  let x = 14;
+  cols.forEach((c,i) => { doc.rect(x,y,colW[i],rowH,"F"); doc.text(c, x+2, y+5); x+=colW[i]; });
+  y += rowH;
+  doc.setTextColor(20,20,20);
+  rows.forEach((row, ri) => {
+    if (y > 185) { doc.addPage(); y = 14; }
+    doc.setFillColor(ri%2===0?245:255,ri%2===0?246:255,ri%2===0?255:255);
+    x = 14;
+    row.forEach((cell,i) => {
+      doc.rect(x,y,colW[i],rowH,"F");
+      doc.text(String(cell).slice(0,30), x+2, y+5);
+      x+=colW[i];
+    });
+    y += rowH;
+  });
+  doc.save(`pm-hesabat-${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+// Load export libraries lazily on first use
+function lazyLoadExportLibs(cb) {
+  const loaded = () => typeof XLSX !== "undefined" && (typeof window.jspdf !== "undefined" || typeof jsPDF !== "undefined");
+  if (loaded()) { cb(); return; }
+  const xlsxSrc = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
+  const pdfSrc  = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+  let pending = 2;
+  const done = () => { if (--pending === 0) cb(); };
+  [xlsxSrc, pdfSrc].forEach(src => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = done; s.onerror = done;
+    document.head.appendChild(s);
+  });
+}
+
+// Wire export buttons (added dynamically to reports header)
+function injectExportButtons() {
+  const reports = document.querySelector("#reportsView .section-head, #reportsView h2, #reportsView");
+  if (!reports || document.querySelector("#exportExcelBtn")) return;
+  const wrap = document.createElement("div");
+  wrap.className = "export-btn-row";
+  wrap.innerHTML = `
+    <button type="button" id="exportExcelBtn" class="export-btn">📊 Excel</button>
+    <button type="button" id="exportPdfBtn"   class="export-btn">📄 PDF</button>`;
+  reports.prepend(wrap);
+  document.querySelector("#exportExcelBtn").addEventListener("click", () => lazyLoadExportLibs(exportToExcel));
+  document.querySelector("#exportPdfBtn").addEventListener("click",   () => lazyLoadExportLibs(exportToPDF));
+}
+
+// ════════════════════════════════════════════════════════════════════
+// #9 — Service Worker registration
+// ════════════════════════════════════════════════════════════════════
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js", { scope: "./" })
+    .then(r => console.log("SW registered:", r.scope))
+    .catch(e => console.warn("SW registration failed:", e));
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Boot hooks: render template selector + export buttons on view change
+// ════════════════════════════════════════════════════════════════════
+(function patchRender() {
+  // Patch render() to inject export buttons after reports render
+  const _r = render;
+  window.render = function() {
+    _r();
+    if (currentView === "reports") injectExportButtons();
+    if (currentView === "list" || currentView === "settings") {
+      if (currentView === "list") renderTemplateSelector();
+      if (currentView === "settings") renderSnapshotList();
+    }
+  };
+})();

@@ -6098,3 +6098,95 @@ button.compact-item.warning:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   #4 Bulk action bar
+   ═══════════════════════════════════════════════════════════════════ */
+.bulk-bar {
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--teal) 12%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--teal) 30%, var(--line));
+  border-radius: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.bulk-count { font-size: .85rem; font-weight: 600; color: var(--ink); margin-right: 4px; }
+.bulk-btn {
+  padding: 5px 12px; border-radius: 7px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink); font-size: .82rem; cursor: pointer;
+  transition: background .14s;
+}
+.bulk-btn:hover { background: var(--soft); }
+.bulk-btn-danger { color: var(--red); border-color: color-mix(in srgb, var(--red) 30%, var(--line)); }
+.bulk-btn-danger:hover { background: color-mix(in srgb, var(--red) 10%, var(--panel)); }
+.bulk-btn-ghost { color: var(--muted); }
+.task-cb-wrap {
+  position: absolute; top: 10px; right: 10px;
+  display: flex; align-items: center; cursor: pointer; z-index: 2;
+}
+.task-cb-wrap input[type="checkbox"] {
+  width: 16px; height: 16px; accent-color: var(--teal); cursor: pointer;
+}
+.task-card { position: relative; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   #5 Keyboard shortcut overlay
+   ═══════════════════════════════════════════════════════════════════ */
+.kb-help-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55);
+  display: flex; align-items: center; justify-content: center; z-index: 9999;
+}
+.kb-help-box {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  padding: 24px 28px; min-width: 300px; max-width: 420px; width: 90%;
+  box-shadow: var(--shadow);
+}
+.kb-help-box h3 { margin: 0 0 16px; font-size: 1rem; color: var(--ink); }
+.kb-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: center; }
+kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--field); border: 1px solid var(--line); border-bottom-width: 2px;
+  border-radius: 5px; padding: 2px 8px; font-family: monospace; font-size: .8rem;
+  color: var(--ink); min-width: 28px; white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   #2 Snapshot list
+   ═══════════════════════════════════════════════════════════════════ */
+.snapshot-list { display: flex; flex-direction: column; gap: 6px; }
+.snapshot-item {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--field); font-size: .82rem;
+}
+.snapshot-date { color: var(--ink); font-weight: 600; flex-shrink: 0; }
+.snapshot-meta { color: var(--muted); flex: 1; }
+.snapshot-restore-btn {
+  padding: 3px 10px; border-radius: 6px; border: 1px solid var(--teal);
+  background: transparent; color: var(--teal); font-size: .78rem; cursor: pointer;
+  transition: background .14s;
+}
+.snapshot-restore-btn:hover { background: var(--teal); color: #fff; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   #6 Template selector row
+   ═══════════════════════════════════════════════════════════════════ */
+.template-selector-row {
+  margin-bottom: 10px; padding: 8px 12px;
+  background: color-mix(in srgb, var(--teal) 7%, var(--field));
+  border: 1px dashed color-mix(in srgb, var(--teal) 30%, var(--line));
+  border-radius: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   #7 Export buttons
+   ═══════════════════════════════════════════════════════════════════ */
+.export-btn-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.export-btn {
+  padding: 6px 14px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink); font-size: .84rem; cursor: pointer;
+  transition: background .14s, border-color .14s;
+}
+.export-btn:hover { background: var(--soft); border-color: var(--teal); color: var(--teal); }
