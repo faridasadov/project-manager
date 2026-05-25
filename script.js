@@ -4763,18 +4763,23 @@ function renderDashboard() {
   `).join("") : `<div class="empty">${text("noUpcoming")}</div>`;
 
   const rows = workloadRows().slice(0, 6);
-  workloadList.innerHTML = rows.length ? rows.map((row) => `
-    <div class="compact-item">
-      <strong>${escapeHtml(resourceLabel(row.owner))}</strong>
+  workloadList.innerHTML = rows.length ? rows.map((row) => {
+    const loadClass = row.load > 85 ? "danger" : row.load > 60 ? "warning" : "";
+    const barColor = row.load > 85 ? "var(--red)" : row.load > 60 ? "var(--amber)" : "var(--green)";
+    return `
+    <div class="compact-item workload-item ${loadClass}">
+      <div class="workload-row">
+        <strong>${escapeHtml(resourceLabel(row.owner))}</strong>
+        <span class="workload-pct" style="color:${barColor}">${row.load}%</span>
+      </div>
+      <div class="progress-mini workload-bar"><span style="width:${Math.min(100, row.load)}%; background:${barColor}"></span></div>
       <div class="task-meta">
         <span>${row.count} ${text("tasks")}</span>
-        <span>${text("plannedHours")}: ${row.planned}</span>
-        <span>${text("actualHours")}: ${row.actual}</span>
-        <span>${row.load}%</span>
+        <span>${text("plannedHours")}: ${row.planned} / ${row.actual}</span>
       </div>
-      <div class="progress-mini"><span style="width:${Math.min(100, row.load)}%"></span></div>
     </div>
-  `).join("") : `<div class="empty">${text("empty")}</div>`;
+  `;
+  }).join("") : `<div class="empty">${text("empty")}</div>`;
 
   renderDeadlineAlerts();
   renderPortfolioHealth();
@@ -5011,38 +5016,41 @@ function renderProjectsView() {
     const fallbackPercent = projectTasks.length ? Math.round((done / projectTasks.length) * 100) : 0;
     const percent = Number.isFinite(Number(project.progress)) ? Number(project.progress) : fallbackPercent;
     const managerNames = projectManagers(project).map((user) => user.profile?.fullName || user.username);
-    const memberNames = (project.teamMemberIds || []).map(resourceLabel).filter(Boolean);
     const counts = registerCounts(project.name);
     const nextGate = nextGateForProject(project);
+    const lifecycle = project.lifecycle || "Initiation";
+    const hasAlerts = counts.risks > 0 || counts.issues > 0;
     return `
       <article class="project-card">
-        <div>
-          <h3>${escapeHtml(project.name)}</h3>
-          <div class="task-meta">
-            <span>${text("projectLeader")}: ${escapeHtml(managerNames.join(", ") || text("noOwner"))}</span>
-            <span>${text("customer")}: ${escapeHtml(customerLabel(project.customerId))}</span>
-            <span>${text("projectTeamMembers")}: ${escapeHtml(memberNames.join(", ") || text("empty"))}</span>
-            <span>${shortDate(project.start)} - ${shortDate(project.end)}</span>
-            <span>Lifecycle: ${escapeHtml(project.lifecycle || "Initiation")}</span>
-            <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
-            <span class="badge ${priorityClass(project.priority)}">${priorityLabel(project.priority)}</span>
-            <span>${percent}%</span>
-            <span>${projectTasks.length} ${text("tasks")}</span>
-            <span>${active} ${text("activeTasks")}</span>
-            <span>${text("riskRegister")}: ${counts.risks}</span>
-            <span>${text("issueRegister")}: ${counts.issues}</span>
-            <span>${text("milestoneRegister")}: ${counts.milestones}</span>
+        <div class="project-card-header">
+          <div class="project-card-titlerow">
+            <h3>${escapeHtml(project.name)}</h3>
+            <div class="project-card-badges">
+              <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
+              <span class="badge ${priorityClass(project.priority)}">${priorityLabel(project.priority)}</span>
+              <span class="lifecycle-tag lifecycle-${lifecycle.toLowerCase()}">${lifecycle}</span>
+            </div>
           </div>
-          <div class="progress-mini"><span style="width:${percent}%"></span></div>
-          ${renderProjectGovernance(project)}
+          <div class="project-card-pct">
+            <strong>${percent}%</strong>
+            <span>tamamlandı</span>
+          </div>
         </div>
+        <div class="project-card-meta">
+          <span>👤 ${escapeHtml(managerNames.join(", ") || text("noOwner"))}</span>
+          <span>📅 ${shortDate(project.start)} – ${shortDate(project.end)}</span>
+          <span>📋 ${projectTasks.length} task · ${active} aktiv · ${done} bitmiş</span>
+          ${hasAlerts ? `<span class="proj-meta-alert">⚠ Risk: ${counts.risks} &nbsp; Issue: ${counts.issues}</span>` : ""}
+        </div>
+        <div class="progress-mini project-progress"><span style="width:${percent}%"></span></div>
+        ${renderProjectGovernance(project)}
         <div class="project-card-actions">
-          <button type="button" data-project-action="open" data-project="${escapeHtml(project.name)}">${text("openProject")}</button>
-          <button type="button" data-project-action="edit" data-project="${escapeHtml(project.name)}">${text("editProject")}</button>
-          <button type="button" data-project-action="archive" data-project="${escapeHtml(project.name)}">${text("archiveProject")}</button>
-          <button type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>
-          ${nextGate ? `<button type="button" data-project-action="approve-gate" data-gate="${escapeHtml(nextGate)}" data-project="${escapeHtml(project.name)}">Gate təsdiq et: ${escapeHtml(nextGate)}</button>` : ""}
-          <button class="primary" type="button" data-project-action="add-task" data-project="${escapeHtml(project.name)}">${text("addTaskToProject")}</button>
+          <button class="proj-btn proj-primary" type="button" data-project-action="open" data-project="${escapeHtml(project.name)}">${text("openProject")}</button>
+          <button class="proj-btn proj-add" type="button" data-project-action="add-task" data-project="${escapeHtml(project.name)}">${text("addTaskToProject")}</button>
+          <button class="proj-btn proj-secondary" type="button" data-project-action="edit" data-project="${escapeHtml(project.name)}">${text("editProject")}</button>
+          ${nextGate ? `<button class="proj-btn proj-gate" type="button" data-project-action="approve-gate" data-gate="${escapeHtml(nextGate)}" data-project="${escapeHtml(project.name)}">✓ Gate: ${escapeHtml(nextGate)}</button>` : ""}
+          <button class="proj-btn proj-archive" type="button" data-project-action="archive" data-project="${escapeHtml(project.name)}">${text("archiveProject")}</button>
+          <button class="proj-btn proj-danger" type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>
         </div>
       </article>
     `;
@@ -5063,26 +5071,50 @@ function renderProjectGovernance(project) {
     [text("competenceMatrix"), project.charter?.competenceMatrix]
   ];
   const hasModules = modules.some(([, rows]) => rows?.length);
-  if (!project.charter?.goal && !project.charter?.scope && !project.charter?.successCriteria && !checklist.length && !project.charter?.closureNotes && !hasModules) return "";
+  if (!project.charter?.goal && !project.charter?.scope && !project.charter?.successCriteria && !checklist.length && !project.charter?.closureNotes && !hasModules) {
+    // Still show gate status even without charter data
+    const approvals = project.charter?.gateApprovals || {};
+    const gates = ["Initiation", "Planning", "Execution", "Closing"];
+    const approvedCount = gates.filter(g => approvals[g]?.approvedAt).length;
+    return `
+      <details class="governance-summary">
+        <summary class="governance-score-line">
+          <span class="gov-pill">IPMA</span>
+          <strong>Governance</strong>
+          <span class="gov-score">${audit.score}%</span>
+          <span class="gov-gates">${approvedCount}/4 gate</span>
+          ${audit.missing.length ? `<span class="governance-warning-pill">${audit.missing.length} çatışmır</span>` : ""}
+        </summary>
+        <div class="governance-detail">
+          <div class="gate-status-row">
+            ${gates.map(gate => `<span class="gate-chip ${approvals[gate]?.approvedAt ? "gate-ok" : "gate-pending"}">${gate}</span>`).join("")}
+          </div>
+        </div>
+      </details>
+    `;
+  }
   const approvals = project.charter?.gateApprovals || {};
+  const gates = ["Initiation", "Planning", "Execution", "Closing"];
+  const approvedCount = gates.filter(g => approvals[g]?.approvedAt).length;
   return `
-    <div class="governance-summary">
-      <div class="governance-score-line">
-        <strong>${text("ipmaGovernance")}</strong>
-        <span>${text("ipmaScore")}: ${audit.score}%</span>
-        <span>${audit.done}/${audit.total}</span>
+    <details class="governance-summary">
+      <summary class="governance-score-line">
+        <span class="gov-pill">IPMA</span>
+        <strong>Governance</strong>
+        <span class="gov-score">${audit.score}%</span>
+        <span class="gov-gates">${approvedCount}/4 gate</span>
+        ${audit.missing.length ? `<span class="governance-warning-pill">${audit.missing.length} çatışmır</span>` : ""}
+      </summary>
+      <div class="governance-detail">
+        <div class="gate-status-row">
+          ${gates.map(gate => `<span class="gate-chip ${approvals[gate]?.approvedAt ? "gate-ok" : "gate-pending"}">${gate}${approvals[gate]?.approvedAt ? " ✓" : ""}</span>`).join("")}
+        </div>
+        ${audit.missing.length ? `<div class="governance-warning">⚠ ${escapeHtml(audit.missing.slice(0, 4).join(" · "))}${audit.missing.length > 4 ? " ..." : ""}</div>` : ""}
+        ${project.charter?.goal ? `<div><strong>${text("projectCharter")}:</strong> ${escapeHtml(project.charter.goal)}</div>` : ""}
+        ${project.charter?.scope ? `<div><strong>${text("projectScope")}:</strong> ${escapeHtml(project.charter.scope)}</div>` : ""}
+        ${modules.map(([label, rows]) => rows?.length ? `<div><strong>${label}:</strong> ${escapeHtml(rows.slice(0, 3).join(", "))}${rows.length > 3 ? " …" : ""}</div>` : "").join("")}
       </div>
-      ${audit.missing.length ? `<span class="governance-warning"><strong>${text("governanceMissing")}:</strong> ${escapeHtml(audit.missing.slice(0, 5).join(" · "))}${audit.missing.length > 5 ? " ..." : ""}</span>` : ""}
-      ${audit.openGovernanceRisks.length ? `<span class="governance-warning"><strong>${text("openGovernanceRisk")}:</strong> ${audit.openGovernanceRisks.length}</span>` : ""}
-      ${project.charter?.goal ? `<span><strong>${text("projectCharter")}:</strong> ${escapeHtml(project.charter.goal)}</span>` : ""}
-      ${project.charter?.scope ? `<span><strong>${text("projectScope")}:</strong> ${escapeHtml(project.charter.scope)}</span>` : ""}
-      ${project.charter?.successCriteria ? `<span><strong>${text("successCriteria")}:</strong> ${escapeHtml(project.charter.successCriteria)}</span>` : ""}
-      ${checklist.length ? `<span><strong>${text("planningGateChecklist")}:</strong> ${escapeHtml(checklist.join(" · "))}</span>` : ""}
-      ${project.charter?.closureNotes ? `<span><strong>${text("closureLessons")}:</strong> ${escapeHtml(project.charter.closureNotes)}</span>` : ""}
-      ${modules.map(([label, rows]) => rows?.length ? `<span><strong>${label}:</strong> ${escapeHtml(rows.slice(0, 3).join(" · "))}${rows.length > 3 ? " ..." : ""}</span>` : "").join("")}
-      <span><strong>${text("gateApprovals")}:</strong> ${["Initiation", "Planning", "Execution", "Closing"].map((gate) => `${gate}: ${approvals[gate]?.approvedAt ? `${approvals[gate].approvedBy || "OK"} ${formatDateTime(approvals[gate].approvedAt)}` : "Gözləyir"}`).join(" · ")}</span>
-      ${nextGateForProject(project) ? `<span><strong>${text("governanceMissing")} (${nextGateForProject(project)}):</strong> ${escapeHtml(gateRequirementMissing(project, nextGateForProject(project)).join(" · ") || "-")}</span>` : ""}
-    </div>
+    </details>
   `;
 }
 
@@ -5095,17 +5127,19 @@ function renderArchivedProjects() {
   const archived = projects.filter((project) => project.archived).filter(canSeeProject);
   archivedProjectCards.innerHTML = archived.length ? archived.map((project) => `
     <article class="project-card archived-project-card">
-      <div>
-        <h3>${escapeHtml(project.name)}</h3>
-        <div class="task-meta">
-          <span>${shortDate(project.start)} - ${shortDate(project.end)}</span>
-          <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
-          <span>${Number(project.progress) || 0}%</span>
+      <div class="project-card-header">
+        <div class="project-card-titlerow">
+          <h3>${escapeHtml(project.name)}</h3>
+          <div class="project-card-badges">
+            <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
+            <span>${shortDate(project.start)} – ${shortDate(project.end)}</span>
+          </div>
         </div>
+        <div class="project-card-pct"><strong>${Number(project.progress) || 0}%</strong></div>
       </div>
       <div class="project-card-actions">
-        <button type="button" data-project-action="restore-archive" data-project="${escapeHtml(project.name)}">${text("restoreProject")}</button>
-        <button type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>
+        <button class="proj-btn proj-secondary" type="button" data-project-action="restore-archive" data-project="${escapeHtml(project.name)}">${text("restoreProject")}</button>
+        <button class="proj-btn proj-danger" type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>
       </div>
     </article>
   `).join("") : `<div class="empty">${text("empty")}</div>`;

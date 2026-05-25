@@ -1778,23 +1778,106 @@ button.small {
 }
 
 .governance-summary {
-  display: grid;
-  gap: 6px;
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: color-mix(in srgb, var(--panel) 88%, var(--soft));
-  color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
+  overflow: hidden;
 }
 
-.governance-summary strong {
+.governance-score-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+  color: var(--muted);
+  list-style: none;
+  user-select: none;
+}
+
+.governance-score-line::-webkit-details-marker { display: none; }
+
+.governance-score-line:hover { background: color-mix(in srgb, var(--soft) 60%, transparent); }
+
+.governance-score-line strong {
   color: var(--ink);
+  font-size: 0.82rem;
+  flex: 1;
+}
+
+.gov-pill {
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #1a1000;
+  letter-spacing: 0.04em;
+}
+
+.gov-score {
+  font-weight: 700;
+  color: var(--teal);
+  font-size: 0.82rem;
+}
+
+.gov-gates {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.governance-warning-pill {
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--red) 12%, var(--panel));
+  color: var(--red);
+  font-weight: 700;
+}
+
+.governance-detail {
+  padding: 10px 12px 12px;
+  display: grid;
+  gap: 7px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.80rem;
+  line-height: 1.5;
+}
+
+.governance-detail strong { color: var(--ink); font-size: 0.80rem; }
+
+.gate-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gate-chip {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid;
+}
+
+.gate-ok {
+  background: color-mix(in srgb, var(--green) 12%, var(--panel));
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 28%, var(--line));
+}
+
+.gate-pending {
+  background: var(--soft);
+  color: var(--muted);
+  border-color: var(--line);
 }
 
 .governance-warning {
-  color: #991b1b;
+  color: var(--red);
+  font-size: 0.80rem;
 }
 
 .task-detail-shell {
@@ -3532,10 +3615,16 @@ textarea:focus {
 
 .compact-list,
 .task-list,
-.project-cards,
 .calendar-grid {
   display: grid;
   gap: 10px;
+}
+
+.project-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
+  gap: 14px;
+  align-items: start;
 }
 
 .calendar-grid {
@@ -3599,23 +3688,159 @@ textarea:focus {
 }
 
 .project-card {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 14px;
+  display: block;
+  padding: 16px;
+}
+
+/* ── Project card header row ── */
+.project-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.project-card-titlerow {
+  flex: 1;
+  min-width: 0;
+}
+
+.project-card-titlerow h3 {
+  margin: 0 0 6px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.project-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
   align-items: center;
-  padding: 14px;
 }
 
-.project-card h3 {
-  margin-bottom: 7px;
+.project-card-pct {
+  text-align: right;
+  flex-shrink: 0;
 }
 
+.project-card-pct strong {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--teal);
+  line-height: 1;
+}
+
+.project-card-pct span {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ── Meta row ── */
+.project-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.proj-meta-alert {
+  color: var(--red) !important;
+  font-weight: 600;
+}
+
+/* ── Progress bar ── */
+.project-progress {
+  margin-bottom: 12px;
+}
+
+/* ── Lifecycle badge ── */
+.lifecycle-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue) 14%, var(--panel));
+  color: var(--blue);
+  border: 1px solid color-mix(in srgb, var(--blue) 22%, var(--line));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lifecycle-closing { background: color-mix(in srgb, var(--red) 12%, var(--panel)); color: var(--red); border-color: color-mix(in srgb, var(--red) 20%, var(--line)); }
+.lifecycle-execution { background: color-mix(in srgb, var(--green) 12%, var(--panel)); color: var(--green); border-color: color-mix(in srgb, var(--green) 20%, var(--line)); }
+.lifecycle-planning { background: color-mix(in srgb, var(--amber) 14%, var(--panel)); color: color-mix(in srgb, var(--amber) 80%, var(--ink)); border-color: color-mix(in srgb, var(--amber) 22%, var(--line)); }
+
+/* ── Action buttons (project cards) ── */
 .project-card-actions {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
+
+.proj-btn {
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--panel);
+  color: var(--muted);
+  transition: background 140ms, border-color 140ms, color 140ms;
+}
+
+.proj-btn:hover { background: var(--soft); color: var(--ink); border-color: color-mix(in srgb, var(--teal) 30%, var(--line)); }
+
+.proj-primary {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+  font-weight: 700;
+}
+.proj-primary:hover { background: color-mix(in srgb, var(--teal) 85%, #000); border-color: transparent; }
+
+.proj-add {
+  background: color-mix(in srgb, var(--blue) 14%, var(--panel));
+  color: var(--blue);
+  border-color: color-mix(in srgb, var(--blue) 25%, var(--line));
+  font-weight: 700;
+}
+.proj-add:hover { background: var(--blue); color: #fff; border-color: transparent; }
+
+.proj-secondary {
+  background: var(--soft);
+  color: var(--ink);
+}
+
+.proj-gate {
+  background: color-mix(in srgb, var(--amber) 14%, var(--panel));
+  color: color-mix(in srgb, var(--amber) 80%, var(--ink));
+  border-color: color-mix(in srgb, var(--amber) 30%, var(--line));
+  font-weight: 700;
+}
+.proj-gate:hover { background: var(--amber); color: #fff; border-color: transparent; }
+
+.proj-archive {
+  margin-left: auto;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+.proj-danger {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 22%, var(--line));
+}
+.proj-danger:hover { background: var(--red); color: #fff; border-color: transparent; }
 
 .project-archive-section {
   margin-top: 18px;
@@ -3696,24 +3921,56 @@ textarea:focus {
 }
 
 .compact-item {
-  padding: 12px;
+  padding: 11px 12px 11px 14px;
+  border-left: 3px solid transparent;
 }
 
 .compact-item strong,
 .task-card h3,
 .kanban-card strong {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
+}
+
+.compact-item strong {
+  font-size: 0.88rem;
+  color: var(--ink);
 }
 
 .compact-item.danger {
-  border-color: color-mix(in srgb, var(--red) 34%, var(--line));
-  background: color-mix(in srgb, var(--panel) 88%, var(--red) 7%);
+  border-left-color: var(--red);
+  background: color-mix(in srgb, var(--panel) 90%, var(--red) 6%);
 }
 
 .compact-item.warning {
-  border-color: color-mix(in srgb, var(--amber) 36%, var(--line));
-  background: color-mix(in srgb, var(--panel) 88%, var(--amber) 9%);
+  border-left-color: var(--amber);
+  background: color-mix(in srgb, var(--panel) 90%, var(--amber) 7%);
+}
+
+/* workload items */
+.workload-item { border-left-color: var(--line); }
+.workload-item.danger { border-left-color: var(--red); }
+.workload-item.warning { border-left-color: var(--amber); }
+
+.workload-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.workload-pct {
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.workload-bar {
+  margin-bottom: 6px;
+  height: 6px;
+}
+
+.workload-bar span {
+  border-radius: inherit;
 }
 
 .health-panel {
@@ -4471,7 +4728,8 @@ button:disabled {
   .insight-grid,
   .dashboard-calendar-grid,
   .resource-panel,
-  .kanban {
+  .kanban,
+  .project-cards {
     grid-template-columns: 1fr;
   }
 
