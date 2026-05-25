@@ -3,16 +3,18 @@
 This folder is a safe Supabase test layer for the Project Manager repository.
 The current Node/MariaDB backend stays unchanged.
 
-## Test steps
+## Online-safe steps
 
 1. Create a free Supabase project.
 2. Open Supabase Dashboard -> SQL Editor.
-3. Run `supabase/schema.sql`.
+3. For an online project with existing data, run `supabase/migrations/20260525_online_sync.sql`.
 4. Copy `supabase/config.example.js` to `supabase/supabase-config.js`.
 5. Fill `url` and `anonKey` from Project Settings -> API.
 6. Open `supabase/test-connection.html`.
 
 If the schema was applied correctly, the test page returns `supabase_health` with `app_name: project-manager`.
+
+`supabase/schema.sql` is a reset/test file. It drops and recreates Project Manager objects, so do not run it against an online project that has real data.
 
 For GitHub Pages, set Supabase Authentication -> URL Configuration:
 

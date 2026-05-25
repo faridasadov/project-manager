@@ -77,7 +77,9 @@ const ids = [
   "kanban", "dashboardCalendar", "calendarBoard", "calendarDetails", "dashboardCalendarStart",
   "dashboardCalendarEnd", "calendarStart", "calendarEnd", "taskList", "searchInput", "projectFilter", "statusFilters", "smartFilters", "statusBars", "upcomingList",
   "deadlineAlerts", "workloadList", "portfolioHealth", "nextActions", "projectCards", "archivedProjectCards", "notifyButton", "notifyUnreadCount", "openTaskComposer", "closeTaskComposer", "taskComposerModal",
-  "openAdminPanel", "closeAdminPanel", "adminModal", "managerAssignModal", "closeManagerAssign",
+  "openAdminPanel", "closeAdminPanel", "adminModal", "openManagerPanel", "closeManagerPanel", "managerPanelModal",
+  "managerAssignModal", "closeManagerAssign",
+  "managerSectionModal", "managerSectionTitle", "managerSectionBody", "closeManagerSection",
   "adminSectionModal", "adminSectionTitle", "adminSectionBody", "closeAdminSection",
   "cancelManagerAssign", "saveProjectManagers", "managerAssignTitle", "managerAssignList", "selectedManagersPreview",
   "exportData", "exportExcel", "exportPdf", "importData", "saveImportMapping", "importProjectColumn", "importTaskColumn", "importOwnerColumn", "importDependencyColumn",
@@ -352,8 +354,8 @@ assert.match(elements["#projectCards"].innerHTML, /15%/, "project metadata rende
 assert.match(elements["#projectCards"].innerHTML, /Planning/, "project lifecycle renders");
 assert.match(elements["#projectCards"].innerHTML, /IPMA charter goal/, "project charter renders");
 assert.match(elements["#projectCards"].innerHTML, /Maraqlı tərəflər/, "project stakeholder register renders");
-assert.match(elements["#projectCards"].innerHTML, /Gate təsdiqləri/, "project gate approvals render");
-assert.match(elements["#projectCards"].innerHTML, /IPMA balı: 100%/, "project governance score renders");
+assert.match(elements["#projectCards"].innerHTML, /data-project-action="approve-gate"/, "project gate approvals render");
+assert.match(elements["#projectCards"].innerHTML, /<span class="gov-score">100%<\/span>/, "project governance score renders");
 assert.match(elements["#registerList"].innerHTML, /Opportunity/, "IPMA risk lines sync into register");
 elements["#newUserRole"].value = "viewer";
 elements["#newUsername"].value = "viewer1";
@@ -414,7 +416,10 @@ elements["#taskList"].dispatch("click", {
   target: { closest: () => ({ dataset: { action: "next", id: editedId } }) }
 });
 assert.match(elements["#taskList"].innerHTML, /Davam edir|Bitib/, "status moves forward");
-assert.match(elements["#taskList"].innerHTML, /<textarea name="comment"/, "active tasks have comment textarea");
+elements["#taskList"].dispatch("click", {
+  target: { closest: () => ({ dataset: { action: "view", id: editedId } }) }
+});
+assert.match(elements["#taskDetailBody"].innerHTML, /<textarea name="comment"/, "active tasks have comment textarea");
 
 elements["#logoutButton"].dispatch("click");
 elements["#loginUsername"].value = "commenter";
@@ -428,8 +433,11 @@ elements["#taskList"].dispatch("submit", {
     closest: () => ({ dataset: { taskId: editedId }, elements: { comment: commentInput } })
   }
 });
-assert.match(elements["#taskList"].innerHTML, /User comment/, "user can add comments");
-assert.match(elements["#taskList"].innerHTML, /<time datetime="/, "comment date is rendered");
+elements["#taskList"].dispatch("click", {
+  target: { closest: () => ({ dataset: { action: "view", id: editedId } }) }
+});
+assert.match(elements["#taskDetailBody"].innerHTML, /User comment/, "user can add comments");
+assert.match(elements["#taskDetailBody"].innerHTML, /<time datetime="/, "comment date is rendered");
 const secondCommentInput = { value: "Second user comment" };
 elements["#taskList"].dispatch("submit", {
   preventDefault: () => {},
@@ -437,7 +445,10 @@ elements["#taskList"].dispatch("submit", {
     closest: () => ({ dataset: { taskId: editedId }, elements: { comment: secondCommentInput } })
   }
 });
-assert.match(elements["#taskList"].innerHTML, /Second user comment/, "same user can add multiple comments");
+elements["#taskList"].dispatch("click", {
+  target: { closest: () => ({ dataset: { action: "view", id: editedId } }) }
+});
+assert.match(elements["#taskDetailBody"].innerHTML, /Second user comment/, "same user can add multiple comments");
 const userTask = JSON.parse(store.get("project-manager-tasks-v2")).find((task) => task.id === editedId);
 context.applyGanttDateChange({ type: "task", id: editedId, mode: "move", start: userTask.start, end: userTask.end }, 2);
 const requestedTask = JSON.parse(store.get("project-manager-tasks-v2")).find((task) => task.id === editedId);
