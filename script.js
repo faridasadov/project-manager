@@ -6452,6 +6452,28 @@ function editTask(id, options = {}) {
   openTaskComposer();
 }
 
+// ── Auto-snapshot (localStorage, max 5 kept) ─────────────────────────────
+const AUTO_SNAP_KEY = "pm_auto_snapshots";
+const AUTO_SNAP_MAX = 5;
+
+function saveAutoSnapshot() {
+  if (!tasks.length && !projects.length) return; // nothing to save
+  try {
+    const snaps = JSON.parse(localStorage.getItem(AUTO_SNAP_KEY) || "[]");
+    snaps.unshift({ savedAt: new Date().toISOString(), payload: backupPayload() });
+    if (snaps.length > AUTO_SNAP_MAX) snaps.length = AUTO_SNAP_MAX;
+    localStorage.setItem(AUTO_SNAP_KEY, JSON.stringify(snaps));
+    showToast(text("autoSnapshotSaved"));
+  } catch (e) {
+    console.warn("Auto-snapshot failed:", e.message);
+  }
+}
+
+function listAutoSnapshots() {
+  try { return JSON.parse(localStorage.getItem(AUTO_SNAP_KEY) || "[]"); }
+  catch { return []; }
+}
+
 function backupPayload() {
   const companyId = currentCompanyId();
   const scopedProjects = isSuperAdmin() ? [] : projects.filter((project) => !project.companyId || project.companyId === companyId);
@@ -6931,7 +6953,57 @@ async function supabaseLoginWorkspace(email, password) {
   await supabaseLoadSettings(workspace.id);
   await syncSupabaseAuditLogs();
   await syncSupabaseNotifications();
+  supabaseRealtimeConnect(workspace.id);
   return currentUser;
+}
+
+// ── Supabase Realtime — live workspace sync ──────────────────────────────
+let _realtimeWs = null;
+
+function supabaseRealtimeConnect(workspaceId) {
+  if (!canUseSupabase() || !workspaceId) return;
+  const cfg = supabaseConfig();
+  const wsUrl = cfg.url.replace(/^https/, "wss").replace(/^http/, "ws");
+  const token = supabaseSession?.access_token || cfg.anonKey;
+
+  // Close any previous connection
+  if (_realtimeWs) { try { _realtimeWs.close(); } catch (_) {} }
+
+  const ws = new WebSocket(
+    `${wsUrl}/realtime/v1/websocket?apikey=${encodeURIComponent(cfg.anonKey)}&vsn=1.0.0`
+  );
+  _realtimeWs = ws;
+
+  ws.addEventListener("open", () => {
+    // Join channel filtered to this workspace's app_state row
+    ws.send(JSON.stringify({
+      topic: `realtime:public:app_state:workspace_id=eq.${workspaceId}`,
+      event: "phx_join",
+      payload: { user_token: token },
+      ref: "1"
+    }));
+  });
+
+  ws.addEventListener("message", (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch { return; }
+    if (msg.event !== "UPDATE" && msg.event !== "postgres_changes") return;
+    const record = msg.payload?.record || msg.payload?.data?.record;
+    if (!record?.state_json?.tasks) return;
+    // Only apply if the remote version is newer (avoid overwriting local edits)
+    const remoteTs = record.state_json.meta?.savedAt || 0;
+    const localTs  = (appData.meta?.savedAt) || 0;
+    if (remoteTs > localTs) {
+      importBackup(record.state_json);
+      render();
+      showToast(text("realtimeConnected") || "↺ Realtime sync");
+    }
+  });
+
+  ws.addEventListener("close", () => {
+    // Reconnect after 8s if still logged in
+    if (supabaseWorkspaceId) setTimeout(() => supabaseRealtimeConnect(supabaseWorkspaceId), 8000);
+  });
 }
 
 async function supabaseCompleteSession(session) {
@@ -6987,6 +7059,7 @@ async function supabaseCompleteSession(session) {
   await supabaseLoadSettings(workspace.id);
   await syncSupabaseAuditLogs();
   await syncSupabaseNotifications();
+  supabaseRealtimeConnect(workspace.id);
   return currentUser;
 }
 
@@ -7046,6 +7119,7 @@ async function resumeSupabaseSession() {
   await supabaseLoadSettings(supabaseWorkspaceId);
   await syncSupabaseAuditLogs();
   await syncSupabaseNotifications();
+  supabaseRealtimeConnect(supabaseWorkspaceId);
   return true;
 }
 
@@ -9815,6 +9889,8 @@ async function bootApp() {
   render();
   syncBackendState();
   syncBackendSettings();
+  // Auto-snapshot once per session after data is loaded
+  setTimeout(saveAutoSnapshot, 3000);
 }
 
 bootApp();
