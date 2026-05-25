@@ -1737,6 +1737,10 @@ const adminModal = document.querySelector("#adminModal");
 const openManagerPanelButton = document.querySelector("#openManagerPanel");
 const closeManagerPanelButton = document.querySelector("#closeManagerPanel");
 const managerPanelModal = document.querySelector("#managerPanelModal");
+const managerSectionModal = document.querySelector("#managerSectionModal");
+const managerSectionTitle = document.querySelector("#managerSectionTitle");
+const managerSectionBody = document.querySelector("#managerSectionBody");
+const closeManagerSectionButton = document.querySelector("#closeManagerSection");
 const adminSectionModal = document.querySelector("#adminSectionModal");
 const adminSectionTitle = document.querySelector("#adminSectionTitle");
 const adminSectionBody = document.querySelector("#adminSectionBody");
@@ -3632,8 +3636,41 @@ function openManagerPanel() {
 }
 
 function closeManagerPanel() {
+  closeManagerSection();
   managerPanelModal.classList.remove("open");
   managerPanelModal.setAttribute("aria-hidden", "true");
+}
+
+let activeMgrSection = null;
+let activeMgrSectionPlaceholder = null;
+
+function openManagerSection(id) {
+  if (!id || !managerSectionBody) return;
+  const section = document.getElementById(id);
+  if (!section) return;
+  // Əvvəlki section-ı bərpa et
+  closeManagerSection();
+  activeMgrSection = section;
+  activeMgrSectionPlaceholder = document.createComment(`mgr-section:${id}`);
+  section.before(activeMgrSectionPlaceholder);
+  section.open = true;
+  managerSectionTitle.textContent = section.querySelector("summary span")?.textContent || "Bölmə";
+  managerSectionBody.appendChild(section);
+  raiseModal(managerSectionModal);
+  managerSectionModal.classList.add("open");
+  managerSectionModal.setAttribute("aria-hidden", "false");
+  closeManagerSectionButton?.focus();
+}
+
+function closeManagerSection() {
+  if (!activeMgrSection || !activeMgrSectionPlaceholder) return;
+  activeMgrSectionPlaceholder.replaceWith(activeMgrSection);
+  activeMgrSectionPlaceholder = null;
+  activeMgrSection = null;
+  if (managerSectionModal) {
+    managerSectionModal.classList.remove("open");
+    managerSectionModal.setAttribute("aria-hidden", "true");
+  }
 }
 
 function renderManagerPanel() {
@@ -7597,6 +7634,10 @@ managerPanelModal?.addEventListener("click", (event) => {
   // Backdrop-a basılsa bağla
   if (event.target.dataset.mgrPanelClose) { closeManagerPanel(); return; }
 
+  // Bölmə kartına basılsa popup aç
+  const sectionBtn = event.target.closest("[data-mgr-open-section]");
+  if (sectionBtn) { openManagerSection(sectionBtn.dataset.mgrOpenSection); return; }
+
   // Layihəni aç
   const openBtn = event.target.closest("[data-mgr-open-project]");
   if (openBtn) {
@@ -7728,6 +7769,10 @@ document.querySelector("#mgrAddTeam")?.addEventListener("click", () => {
 closeAdminSectionButton.addEventListener("click", closeAdminSection);
 adminSectionModal.addEventListener("click", (event) => {
   if (event.target.dataset.adminSectionClose) closeAdminSection();
+});
+closeManagerSectionButton?.addEventListener("click", closeManagerSection);
+managerSectionModal?.addEventListener("click", (event) => {
+  if (event.target.dataset.mgrSectionClose) closeManagerSection();
 });
 closeManagerAssignButton.addEventListener("click", closeManagerAssign);
 cancelManagerAssignButton.addEventListener("click", closeManagerAssign);

@@ -526,66 +526,66 @@
             <button id="resetDemo" class="project-reset-button" type="button" data-i18n="resetDemo">Seçilmiş layihəni resetlə</button>
           </div>
 
-          <section class="admin-launch-grid" aria-label="Admin bölmələri">
-            <button type="button" data-admin-open-section="settings">
-              <strong data-i18n="settings">Settings</strong>
-              <span data-i18n="appearanceSettings">Görünüş</span>
+          <section class="panel-launch-grid" aria-label="Admin bölmələri">
+            <button type="button" data-admin-open-section="settings" data-card-color="slate">
+              <i>⚙️</i><strong data-i18n="settings">Settings</strong>
+              <span>Görünüş · Dil</span>
             </button>
-            <button type="button" data-admin-open-section="activity" class="admin-only">
-              <strong data-i18n="adminActivity">Admin aktivliyi</strong>
+            <button type="button" data-admin-open-section="activity" class="admin-only" data-card-color="amber">
+              <i>📊</i><strong data-i18n="adminActivity">Admin aktivliyi</strong>
               <span data-i18n="auditLogs">Audit logs</span>
             </button>
-            <button type="button" data-admin-open-section="backup" class="admin-only">
-              <strong data-i18n="backupPanel">Backup / Restore</strong>
+            <button type="button" data-admin-open-section="backup" class="admin-only" data-card-color="green">
+              <i>💾</i><strong data-i18n="backupPanel">Backup / Restore</strong>
               <span id="backupSummary">-</span>
             </button>
-            <button type="button" data-admin-open-section="companies" class="platform-only">
-              <strong data-i18n="platformCompanies">Şirkətlər</strong>
+            <button type="button" data-admin-open-section="companies" class="platform-only" data-card-color="purple">
+              <i>🏢</i><strong data-i18n="platformCompanies">Şirkətlər</strong>
               <span id="companyLaunchCount">0</span>
             </button>
-            <button type="button" data-admin-open-section="date-requests" class="manager-only">
-              <strong data-i18n="dateChangeRequests">Tarix dəyişiklik sorğuları</strong>
+            <button type="button" data-admin-open-section="date-requests" class="manager-only" data-card-color="orange">
+              <i>📅</i><strong data-i18n="dateChangeRequests">Tarix sorğuları</strong>
               <span id="dateRequestLaunchCount">0</span>
             </button>
-            <button type="button" data-admin-open-section="projects" class="admin-only">
-              <strong data-i18n="projects">Layihələr</strong>
+            <button type="button" data-admin-open-section="projects" class="admin-only" data-card-color="blue">
+              <i>📋</i><strong data-i18n="projects">Layihələr</strong>
               <span id="projectLaunchCount">0</span>
             </button>
-            <button type="button" data-admin-open-section="users">
-              <strong data-i18n="manageUsers">Userlər</strong>
+            <button type="button" data-admin-open-section="users" data-card-color="indigo">
+              <i>👥</i><strong data-i18n="manageUsers">İstifadəçilər</strong>
               <span id="userLaunchCount">0</span>
             </button>
-            <button type="button" data-admin-open-section="customers">
-              <strong data-i18n="customers">Sifarişçilər</strong>
+            <button type="button" data-admin-open-section="customers" data-card-color="teal">
+              <i>🤝</i><strong data-i18n="customers">Sifarişçilər</strong>
               <span id="customerLaunchCount">0</span>
             </button>
-            <button type="button" data-admin-open-section="files">
-              <strong data-i18n="fileManager">File manager</strong>
+            <button type="button" data-admin-open-section="files" data-card-color="cyan">
+              <i>📁</i><strong data-i18n="fileManager">File manager</strong>
               <span id="fileLaunchCount">0</span>
             </button>
-            <button type="button" data-admin-open-section="teams">
-              <strong data-i18n="addTeam">Komanda əlavə et</strong>
+            <button type="button" data-admin-open-section="teams" data-card-color="emerald">
+              <i>🏆</i><strong data-i18n="addTeam">Komandalar</strong>
               <span id="teamLaunchCount">0</span>
             </button>
-            <button type="button" data-admin-open-section="links">
-              <strong data-i18n="addProjectLink">Layihəyə bağla</strong>
+            <button type="button" data-admin-open-section="links" data-card-color="sky">
+              <i>🔗</i><strong data-i18n="addProjectLink">Layihə bağlantıları</strong>
               <span id="linkLaunchCount">0</span>
             </button>
-            <button type="button" data-admin-open-section="registers">
-              <strong data-i18n="projectRegisters">Layihə registerləri</strong>
+            <button type="button" data-admin-open-section="registers" data-card-color="red">
+              <i>⚠️</i><strong data-i18n="projectRegisters">Registerlar</strong>
               <span id="registerLaunchCount">0</span>
             </button>
-            <button type="button" data-admin-open-section="roles" class="admin-only">
-              <strong data-i18n="roleMatrix">Rol icazələri</strong>
-              <span>Admin / Manager / User</span>
+            <button type="button" data-admin-open-section="roles" class="admin-only" data-card-color="violet">
+              <i>🔐</i><strong data-i18n="roleMatrix">Rol icazələri</strong>
+              <span>Admin · Manager · User</span>
             </button>
-            <button type="button" data-admin-open-section="trash">
-              <strong data-i18n="trash">Zibil qutusu</strong>
+            <button type="button" data-admin-open-section="trash" data-card-color="rose">
+              <i>🗑️</i><strong data-i18n="trash">Zibil qutusu</strong>
               <span id="trashLaunchCount">0</span>
             </button>
-            <button type="button" data-admin-open-section="import" class="admin-only">
-              <strong data-i18n="projectImport">Proyekt import</strong>
-              <span>CSV / XML</span>
+            <button type="button" data-admin-open-section="import" class="admin-only" data-card-color="lime">
+              <i>📥</i><strong data-i18n="projectImport">Proyekt import</strong>
+              <span>CSV · XML · JSON</span>
             </button>
           </section>
 
@@ -1022,37 +1022,37 @@
           </div>
 
           <!-- Launch grid -->
-          <section class="admin-launch-grid manager-launch-grid" aria-label="Manager bölmələri">
-            <button type="button" data-mgr-section="mgr-projects">
-              <strong>📋 Layihələrim</strong>
+          <section class="panel-launch-grid" aria-label="Manager bölmələri">
+            <button type="button" data-mgr-open-section="mgr-projects" data-card-color="blue">
+              <i>📋</i><strong>Layihələrim</strong>
               <span id="mgrProjectCount">0 layihə</span>
             </button>
-            <button type="button" data-mgr-section="mgr-team">
-              <strong>👥 Komanda</strong>
+            <button type="button" data-mgr-open-section="mgr-team" data-card-color="indigo">
+              <i>👥</i><strong>Komanda</strong>
               <span id="mgrTeamCount">0 üzv</span>
             </button>
-            <button type="button" data-mgr-section="mgr-date-requests">
-              <strong>📅 Tarix sorğuları</strong>
+            <button type="button" data-mgr-open-section="mgr-date-requests" data-card-color="orange">
+              <i>📅</i><strong>Tarix sorğuları</strong>
               <span id="mgrDateRequestCount">0</span>
             </button>
-            <button type="button" data-mgr-section="mgr-registers">
-              <strong>⚠️ Registerlar</strong>
+            <button type="button" data-mgr-open-section="mgr-registers" data-card-color="red">
+              <i>⚠️</i><strong>Registerlar</strong>
               <span id="mgrRegisterCount">0 aktiv</span>
             </button>
-            <button type="button" data-mgr-section="mgr-teams">
-              <strong>🏆 Komandalar</strong>
+            <button type="button" data-mgr-open-section="mgr-teams" data-card-color="emerald">
+              <i>🏆</i><strong>Komandalar</strong>
               <span id="mgrTeamGroupCount">0</span>
             </button>
-            <button type="button" data-mgr-section="mgr-customers">
-              <strong>🏢 Sifarişçilər</strong>
+            <button type="button" data-mgr-open-section="mgr-customers" data-card-color="teal">
+              <i>🤝</i><strong>Sifarişçilər</strong>
               <span id="mgrCustomerCount">0</span>
             </button>
-            <button type="button" data-mgr-section="mgr-links">
-              <strong>🔗 Layihə bağlantıları</strong>
+            <button type="button" data-mgr-open-section="mgr-links" data-card-color="sky">
+              <i>🔗</i><strong>Layihə bağlantıları</strong>
               <span id="mgrLinkCount">0</span>
             </button>
-            <button type="button" data-mgr-section="mgr-trash">
-              <strong>🗑️ Zibil qutusu</strong>
+            <button type="button" data-mgr-open-section="mgr-trash" data-card-color="rose">
+              <i>🗑️</i><strong>Zibil qutusu</strong>
               <span id="mgrTrashCount">0</span>
             </button>
           </section>
@@ -1149,6 +1149,21 @@
             <button id="closeAdminSection" class="icon-button" type="button" aria-label="Bağla" data-i18n-aria="close">×</button>
           </div>
           <div id="adminSectionBody" class="admin-section-body"></div>
+        </section>
+      </div>
+
+      <!-- Manager section popup -->
+      <div id="managerSectionModal" class="modal-shell admin-section-shell" aria-hidden="true">
+        <div class="modal-backdrop" data-mgr-section-close="true"></div>
+        <section class="admin-modal admin-section-modal" role="dialog" aria-modal="true" aria-labelledby="managerSectionTitle">
+          <div class="modal-head">
+            <div>
+              <p class="kicker">Manager paneli</p>
+              <h2 id="managerSectionTitle">Bölmə</h2>
+            </div>
+            <button id="closeManagerSection" class="icon-button" type="button" aria-label="Bağla">×</button>
+          </div>
+          <div id="managerSectionBody" class="admin-section-body"></div>
         </section>
       </div>
 
