@@ -2638,18 +2638,172 @@ textarea:focus {
 
 /* ─── Permission matrix + role user management ─────────────────────────────── */
 .role-panel-body {
-  padding: 0 2px;
+  padding: 4px 2px 2px;
 }
 
 .role-section-head {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 18px 0 10px;
-  padding-bottom: 6px;
+  letter-spacing: 0.05em;
+  margin: 16px 0 8px;
+  padding-bottom: 5px;
   border-bottom: 1px solid var(--line);
+  list-style: none;
+  cursor: default;
+}
+
+/* ─── Role user list ──────────────────────────────────────────────────────── */
+.role-user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.role-user-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.role-user-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.role-user-info strong {
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.role-user-info .muted { font-size: 0.775rem; }
+
+/* ─── Role chip (clickable badge) ─────────────────────────────────────────── */
+.role-chip-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 5px 12px 5px 12px;
+  border-radius: 20px;
+  border: 1.5px solid color-mix(in srgb, var(--chip-color, var(--teal)) 40%, transparent);
+  background: color-mix(in srgb, var(--chip-color, var(--teal)) 10%, transparent);
+  color: var(--chip-color, var(--teal));
+  white-space: nowrap;
+  transition: border-color 140ms, box-shadow 140ms;
+}
+
+.role-chip-editable {
+  cursor: pointer;
+}
+
+.role-chip-editable:hover {
+  border-color: var(--chip-color, var(--teal));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--chip-color, var(--teal)) 15%, transparent);
+}
+
+.role-chip-locked {
+  opacity: 0.7;
+  cursor: default;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 4px 10px;
+  gap: 1px;
+}
+
+.role-chip-caret {
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.role-self-note {
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.85;
+}
+
+/* ─── Role dropdown ───────────────────────────────────────────────────────── */
+.role-chip-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.14);
+  min-width: 160px;
+  padding: 6px;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-chip-dropdown[hidden] { display: none !important; }
+
+.role-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  color: var(--opt-color, var(--text));
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms;
+}
+
+.role-opt:hover { background: color-mix(in srgb, var(--opt-color, var(--teal)) 10%, transparent); }
+
+.role-opt-active {
+  background: color-mix(in srgb, var(--opt-color, var(--teal)) 12%, transparent);
+  font-weight: 700;
+}
+
+/* ─── Permission matrix (collapsible, below user list) ───────────────────── */
+.perm-matrix-details { margin-top: 10px; }
+
+.perm-matrix-toggle {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.perm-matrix-toggle::after {
+  content: "▸";
+  font-size: 0.75rem;
+  transition: transform 160ms;
+}
+
+.perm-matrix-details[open] .perm-matrix-toggle::after {
+  transform: rotate(90deg);
 }
 
 .perm-matrix-wrap { overflow-x: auto; }
@@ -2659,6 +2813,7 @@ textarea:focus {
   border-collapse: collapse;
   font-size: 0.82rem;
   min-width: 560px;
+  margin-top: 8px;
 }
 
 .perm-table thead th {
@@ -2698,85 +2853,6 @@ textarea:focus {
 
 .perm-yes { color: #16a34a; font-weight: 700; }
 .perm-no  { color: var(--muted); opacity: 0.4; }
-
-/* ─── Role user list ─────────────────────────────────────────────────────────── */
-.role-user-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.role-user-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--panel);
-  transition: border-color 160ms;
-}
-
-.role-user-row:hover { border-color: var(--teal); }
-
-.role-user-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.role-user-info strong {
-  font-size: 0.875rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.role-user-info .muted {
-  font-size: 0.775rem;
-}
-
-.role-change-select {
-  font-size: 0.82rem;
-  padding: 5px 8px;
-  border-radius: 7px;
-  border: 1px solid var(--line);
-  background: var(--soft);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.role-save-btn {
-  font-size: 0.8rem;
-  padding: 5px 12px;
-  border-radius: 7px;
-  background: var(--teal);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.role-save-btn:hover { opacity: 0.85; }
-
-.role-badge-inline {
-  font-size: 0.78rem;
-  padding: 3px 9px;
-  border-radius: 20px;
-  border: 1px solid var(--line);
-  background: var(--soft);
-  color: var(--teal);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.role-self-note {
-  font-size: 0.75rem;
-  color: var(--muted);
-  white-space: nowrap;
-}
 
 .section-head {
   display: flex;

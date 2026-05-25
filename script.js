@@ -4509,97 +4509,137 @@ function renderRoleMatrix() {
   const roleUserCount = document.querySelector("#roleUserCount");
   if (!matrixContainer || !userMgmtContainer) return;
 
-  // ─── İcazə cədvəli ──────────────────────────────────────────────────────────
+  // ─── İstifadəçi rol siyahısı (əsas hissə — yuxarıda) ────────────────────────
+  if (!isOrgAdmin()) {
+    userMgmtContainer.innerHTML = "";
+  } else {
+    const companyId = currentCompanyId();
+    const scopedUsers = users.filter((u) => u.companyId === companyId && u.role !== "super_admin");
+    if (roleUserCount) roleUserCount.textContent = scopedUsers.length;
+
+    const roleOptions = ["admin", "manager", "contributor", "sponsor", "viewer", "user"];
+    const roleAccent = { admin: "var(--teal)", manager: "var(--blue,#2563eb)", contributor: "#16a34a", sponsor: "#7c3aed", viewer: "var(--muted)", user: "var(--text)" };
+
+    userMgmtContainer.innerHTML = `
+      <div class="role-user-list">
+        ${scopedUsers.map((user) => `
+          <div class="role-user-row" data-uid="${user.id}">
+            <div class="role-user-info">
+              <strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>
+              <span class="muted">${escapeHtml(user.username)}</span>
+            </div>
+            ${user.id === currentUser?.id
+              ? `<span class="role-chip role-chip-locked" style="--chip-color:${roleAccent[user.role] || "var(--teal)"}">
+                   ${roleLabel(user.role)}
+                   <small class="role-self-note">Özünüz</small>
+                 </span>`
+              : `<div class="role-chip-wrap" data-user-id="${user.id}">
+                   <button type="button" class="role-chip role-chip-editable" style="--chip-color:${roleAccent[user.role] || "var(--teal)"}" data-user-id="${user.id}" title="Rolu dəyiş">
+                     ${roleLabel(user.role)}
+                     <svg class="role-chip-caret" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+                   </button>
+                   <div class="role-chip-dropdown" hidden>
+                     ${roleOptions.map((r) => `
+                       <button type="button" class="role-opt ${user.role === r ? "role-opt-active" : ""}" data-set-role="${r}" style="--opt-color:${roleAccent[r] || "var(--text)"}">
+                         ${roleLabel(r)}
+                         ${user.role === r ? `<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ""}
+                       </button>
+                     `).join("")}
+                   </div>
+                 </div>`
+            }
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+    // Open/close dropdown on chip click
+    userMgmtContainer.querySelectorAll(".role-chip-editable").forEach((chip) => {
+      chip.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const wrap = chip.closest(".role-chip-wrap");
+        const dropdown = wrap?.querySelector(".role-chip-dropdown");
+        if (!dropdown) return;
+        // Close all others
+        userMgmtContainer.querySelectorAll(".role-chip-dropdown").forEach((d) => {
+          if (d !== dropdown) d.hidden = true;
+        });
+        dropdown.hidden = !dropdown.hidden;
+      });
+    });
+
+    // Role option click → auto-save
+    userMgmtContainer.querySelectorAll(".role-opt").forEach((opt) => {
+      opt.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const wrap = opt.closest(".role-chip-wrap");
+        const userId = wrap?.dataset.userId;
+        const newRole = opt.dataset.setRole;
+        if (!userId || !newRole) return;
+        const targetUser = users.find((u) => u.id === userId);
+        if (!targetUser || targetUser.id === currentUser?.id) return;
+        targetUser.role = newRole;
+        saveUsers();
+        renderRoleMatrix();
+        render();
+      });
+    });
+
+    // Close dropdown on outside click (each render rebinds once)
+    const closeDropdowns = (e) => {
+      if (!e.target.closest(".role-chip-wrap")) {
+        userMgmtContainer.querySelectorAll(".role-chip-dropdown").forEach((d) => { d.hidden = true; });
+      }
+    };
+    document.addEventListener("mousedown", closeDropdowns, { once: false });
+    // Remove listener when section closes or re-renders
+    userMgmtContainer._closeDropdowns && document.removeEventListener("mousedown", userMgmtContainer._closeDropdowns);
+    userMgmtContainer._closeDropdowns = closeDropdowns;
+  }
+
+  // ─── İcazə cədvəli (arayış üçün — aşağıda) ───────────────────────────────────
   const displayRoles = ["admin", "manager", "contributor", "sponsor", "viewer", "user"];
-  const roleColors = { admin: "var(--teal)", manager: "var(--blue, #2563eb)", contributor: "#16a34a", sponsor: "#7c3aed", viewer: "var(--muted)", user: "var(--text)" };
+  const roleColors = { admin: "var(--teal)", manager: "var(--blue,#2563eb)", contributor: "#16a34a", sponsor: "#7c3aed", viewer: "var(--muted)", user: "var(--text)" };
   const perms = [
-    { label: "Bütün layihələri idarə et",   roles: ["admin"] },
-    { label: "Öz layihələrini idarə et",     roles: ["admin", "manager"] },
-    { label: "Tapşırıqları idarə et",        roles: ["admin", "manager"] },
-    { label: "İstifadəçiləri idarə et",      roles: ["admin"] },
-    { label: "Rol dəyişdir",                 roles: ["admin"] },
-    { label: "Müştəriləri idarə et",         roles: ["admin"] },
-    { label: "Register idarə et",            roles: ["admin", "manager"] },
-    { label: "Müştəri sorğuları",            roles: ["admin", "manager"] },
-    { label: "Hesabata bax",                 roles: ["admin", "manager", "sponsor"] },
-    { label: "Layihə/taskə bax",             roles: ["admin", "manager", "contributor", "sponsor", "viewer", "user"] },
-    { label: "Komment yaz",                  roles: ["admin", "manager", "contributor", "user"] },
-    { label: "Tarix sorğusu göndər",         roles: ["user", "contributor", "viewer"] },
-    { label: "Şirkət ayarları",              roles: ["admin"] },
-    { label: "Fayl/backup idarəsi",          roles: ["admin"] },
+    { label: "Bütün layihələri idarə et",  roles: ["admin"] },
+    { label: "Öz layihələrini idarə et",   roles: ["admin", "manager"] },
+    { label: "Tapşırıqları idarə et",       roles: ["admin", "manager"] },
+    { label: "İstifadəçiləri idarə et",    roles: ["admin"] },
+    { label: "Rol dəyişdir",               roles: ["admin"] },
+    { label: "Müştəriləri idarə et",       roles: ["admin"] },
+    { label: "Register idarə et",          roles: ["admin", "manager"] },
+    { label: "Müştəri sorğuları",          roles: ["admin", "manager"] },
+    { label: "Hesabata bax",               roles: ["admin", "manager", "sponsor"] },
+    { label: "Layihə/taskə bax",           roles: ["admin", "manager", "contributor", "sponsor", "viewer", "user"] },
+    { label: "Komment yaz",                roles: ["admin", "manager", "contributor", "user"] },
+    { label: "Tarix sorğusu göndər",       roles: ["user", "contributor", "viewer"] },
+    { label: "Şirkət ayarları",            roles: ["admin"] },
+    { label: "Fayl/backup idarəsi",        roles: ["admin"] },
   ];
 
   matrixContainer.innerHTML = `
-    <h3 class="role-section-head">İcazə cədvəli</h3>
-    <div class="perm-table-wrap">
-      <table class="perm-table">
-        <thead>
-          <tr>
-            <th class="perm-th-perm">İcazə</th>
-            ${displayRoles.map((r) => `<th style="color:${roleColors[r]}">${roleLabel(r)}</th>`).join("")}
-          </tr>
-        </thead>
-        <tbody>
-          ${perms.map((p) => `
+    <details class="perm-matrix-details">
+      <summary class="role-section-head perm-matrix-toggle">İcazə cədvəli</summary>
+      <div class="perm-table-wrap">
+        <table class="perm-table">
+          <thead>
             <tr>
-              <td class="perm-td-label">${p.label}</td>
-              ${displayRoles.map((r) => `<td class="perm-cell ${p.roles.includes(r) ? "perm-yes" : "perm-no"}">${p.roles.includes(r) ? "✓" : "—"}</td>`).join("")}
+              <th class="perm-th-perm">İcazə</th>
+              ${displayRoles.map((r) => `<th style="color:${roleColors[r]}">${roleLabel(r)}</th>`).join("")}
             </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            ${perms.map((p) => `
+              <tr>
+                <td class="perm-td-label">${p.label}</td>
+                ${displayRoles.map((r) => `<td class="perm-cell ${p.roles.includes(r) ? "perm-yes" : "perm-no"}">${p.roles.includes(r) ? "✓" : "—"}</td>`).join("")}
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </details>
   `;
-
-  // ─── İstifadəçi rol idarəsi ──────────────────────────────────────────────────
-  if (!isOrgAdmin()) {
-    userMgmtContainer.innerHTML = "";
-    return;
-  }
-
-  const companyId = currentCompanyId();
-  const scopedUsers = users.filter((u) => u.companyId === companyId && u.role !== "super_admin");
-  if (roleUserCount) roleUserCount.textContent = scopedUsers.length;
-
-  const roleOptions = ["admin", "manager", "contributor", "sponsor", "viewer", "user"];
-
-  userMgmtContainer.innerHTML = `
-    <h3 class="role-section-head">İstifadəçi rolları</h3>
-    <div class="role-user-list">
-      ${scopedUsers.map((user) => `
-        <div class="role-user-row" data-uid="${user.id}">
-          <div class="role-user-info">
-            <strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>
-            <span class="muted">${escapeHtml(user.username)}</span>
-          </div>
-          ${user.id === currentUser?.id ? `
-            <span class="role-badge-inline role-badge-${user.role}">${roleLabel(user.role)}</span>
-            <span class="role-self-note">Özünüz</span>
-          ` : `
-            <select class="role-change-select" data-user-id="${user.id}">
-              ${roleOptions.map((r) => `<option value="${r}" ${user.role === r ? "selected" : ""}>${roleLabel(r)}</option>`).join("")}
-            </select>
-            <button type="button" class="role-save-btn" data-user-id="${user.id}">Yadda saxla</button>
-          `}
-        </div>
-      `).join("")}
-    </div>
-  `;
-
-  userMgmtContainer.querySelectorAll(".role-save-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const userId = btn.dataset.userId;
-      const select = userMgmtContainer.querySelector(`.role-change-select[data-user-id="${userId}"]`);
-      if (!select) return;
-      const newRole = select.value;
-      const targetUser = users.find((u) => u.id === userId);
-      if (!targetUser || targetUser.id === currentUser?.id) return;
-      targetUser.role = newRole;
-      saveUsers();
-      renderRoleMatrix();
-      render();
-    });
-  });
 }
 
 function renderSummary() {
