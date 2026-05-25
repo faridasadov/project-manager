@@ -807,6 +807,23 @@
                 <button id="testMail" type="button" data-i18n="testMail">Mail test et</button>
               </div>
               <div class="settings-card admin-only">
+                <h3 data-i18n="telegramSettings">Telegram bildirişləri</h3>
+                <label class="toggle-row">
+                  <input id="telegramEnabled" type="checkbox">
+                  <span data-i18n="telegramEnabled">Telegram aktiv</span>
+                </label>
+                <label>
+                  <span data-i18n="telegramBotToken">Bot Token</span>
+                  <input id="telegramBotToken" type="password" autocomplete="off" placeholder="123456:ABC-DEF…">
+                </label>
+                <label>
+                  <span data-i18n="telegramChatId">Chat ID</span>
+                  <input id="telegramChatId" type="text" autocomplete="off" placeholder="-100123456789">
+                </label>
+                <small class="field-hint" data-i18n="telegramHint">BotFather-dən token alın, bota /start göndərin, chat ID-ni @userinfobot ilə öyrənin.</small>
+                <button id="testTelegram" type="button" data-i18n="testTelegram">Telegram test et</button>
+              </div>
+              <div class="settings-card admin-only">
                 <h3 data-i18n="ldapSettings">LDAP</h3>
                 <label class="toggle-row">
                   <input id="ldapEnabled" type="checkbox">

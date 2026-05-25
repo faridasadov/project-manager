@@ -418,6 +418,12 @@ const translations = {
     resetPasswordSent: "Sıfırlama linki e-poçtunuza göndərildi.",
     resetPasswordError: "Göndərmə xətası. E-poçtu yoxlayın.",
     backToLogin: "Loginə qayıt",
+    telegramSettings: "Telegram bildirişləri",
+    telegramEnabled: "Telegram aktiv",
+    telegramBotToken: "Bot Token",
+    telegramChatId: "Chat ID",
+    telegramHint: "BotFather-dən token alın, bota /start göndərin, chat ID-ni @userinfobot ilə öyrənin.",
+    testTelegram: "Telegram test et",
     templates: "Şablonlar",
     newTemplate: "Yeni şablon",
     templateName: "Şablon adı",
@@ -833,6 +839,12 @@ const translations = {
     resetPasswordSent: "Ссылка для сброса отправлена на ваш e-mail.",
     resetPasswordError: "Ошибка отправки. Проверьте e-mail.",
     backToLogin: "Назад к входу",
+    telegramSettings: "Уведомления Telegram",
+    telegramEnabled: "Telegram включён",
+    telegramBotToken: "Bot Token",
+    telegramChatId: "Chat ID",
+    telegramHint: "Получите токен у BotFather, отправьте /start боту, узнайте chat ID через @userinfobot.",
+    testTelegram: "Тест Telegram",
     templates: "Шаблоны",
     newTemplate: "Новый шаблон",
     templateName: "Название шаблона",
@@ -1248,6 +1260,12 @@ const translations = {
     resetPasswordSent: "A password reset link has been sent to your email.",
     resetPasswordError: "Failed to send. Check the email address.",
     backToLogin: "Back to login",
+    telegramSettings: "Telegram notifications",
+    telegramEnabled: "Telegram enabled",
+    telegramBotToken: "Bot Token",
+    telegramChatId: "Chat ID",
+    telegramHint: "Get a token from BotFather, send /start to your bot, find chat ID via @userinfobot.",
+    testTelegram: "Test Telegram",
     templates: "Templates",
     newTemplate: "New template",
     templateName: "Template name",
@@ -1910,6 +1928,9 @@ const emailProviderInput = document.querySelector("#emailProvider");
 const mailSubjectTemplateInput = document.querySelector("#mailSubjectTemplate");
 const mailBodyTemplateInput = document.querySelector("#mailBodyTemplate");
 const testMailBodyInput = document.querySelector("#testMailBody");
+const telegramEnabledInput = document.querySelector("#telegramEnabled");
+const telegramBotTokenInput = document.querySelector("#telegramBotToken");
+const telegramChatIdInput = document.querySelector("#telegramChatId");
 const ldapEnabledInput = document.querySelector("#ldapEnabled");
 const ldapUrlInput = document.querySelector("#ldapUrl");
 const ldapBaseDnInput = document.querySelector("#ldapBaseDn");
@@ -2128,6 +2149,9 @@ function syncSettingsForm() {
   mailSubjectTemplateInput.value = appSettings.mailSubjectTemplate || "Project Manager deadline alerts";
   mailBodyTemplateInput.value = appSettings.mailBodyTemplate || "{{alerts}}";
   testMailBodyInput.value = appSettings.testMailBody || "Project Manager mail ayarları test edildi.";
+  if (telegramEnabledInput) telegramEnabledInput.checked = Boolean(appSettings.telegramEnabled);
+  if (telegramBotTokenInput) telegramBotTokenInput.value = appSettings.telegramBotToken || "";
+  if (telegramChatIdInput) telegramChatIdInput.value = appSettings.telegramChatId || "";
   ldapEnabledInput.checked = Boolean(appSettings.ldapEnabled);
   ldapUrlInput.value = appSettings.ldapUrl;
   ldapBaseDnInput.value = appSettings.ldapBaseDn;
@@ -8990,6 +9014,9 @@ saveSettingsButton.addEventListener("click", () => {
     mailSubjectTemplate: canManageMailSettings() ? mailSubjectTemplateInput.value.trim() || "Project Manager deadline alerts" : appSettings.mailSubjectTemplate,
     mailBodyTemplate: canManageMailSettings() ? mailBodyTemplateInput.value.trim() || "{{alerts}}" : appSettings.mailBodyTemplate,
     testMailBody: canManageMailSettings() ? testMailBodyInput.value.trim() || "Project Manager mail ayarları test edildi." : appSettings.testMailBody,
+    telegramEnabled: canManageMailSettings() ? telegramEnabledInput?.checked ?? appSettings.telegramEnabled : appSettings.telegramEnabled,
+    telegramBotToken: canManageMailSettings() ? telegramBotTokenInput?.value.trim() || appSettings.telegramBotToken : appSettings.telegramBotToken,
+    telegramChatId: canManageMailSettings() ? telegramChatIdInput?.value.trim() || appSettings.telegramChatId : appSettings.telegramChatId,
     ldapEnabled: canManagePlatformSettings() ? ldapEnabledInput.checked : appSettings.ldapEnabled,
     ldapUrl: canManagePlatformSettings() ? ldapUrlInput.value.trim() : appSettings.ldapUrl,
     ldapBaseDn: canManagePlatformSettings() ? ldapBaseDnInput.value.trim() : appSettings.ldapBaseDn,
@@ -9026,6 +9053,23 @@ testMailButton.addEventListener("click", async () => {
     settingsStatus.textContent = result.skipped || result.ok === false ? text("mailTestSkipped") : text("mailTestSent");
   } catch {
     settingsStatus.textContent = text("mailTestSkipped");
+  }
+});
+
+document.querySelector("#testTelegram")?.addEventListener("click", async () => {
+  if (!canManageMailSettings()) return;
+  const token = telegramBotTokenInput?.value.trim() || appSettings.telegramBotToken || "";
+  const chatId = telegramChatIdInput?.value.trim() || appSettings.telegramChatId || "";
+  if (!token || !chatId) { settingsStatus.textContent = "Token və Chat ID tələb olunur"; return; }
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text: "✅ Project Manager Telegram testi uğurludur." }),
+    });
+    settingsStatus.textContent = r.ok ? "✅ Telegram test göndərildi" : `❌ Telegram xəta: ${r.status}`;
+  } catch (e) {
+    settingsStatus.textContent = `❌ ${e.message}`;
   }
 });
 
