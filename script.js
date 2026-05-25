@@ -1902,6 +1902,7 @@ statuses = normalizeWorkflowStatuses(appSettings.workflowStatuses);
 let currentFilter = "Hamısı";
 let currentPriorityFilter = "Hamısı";
 let currentSmartFilter = "Hamısı";
+let currentOwnerFilter = ""; // set from workload click; "" means no filter
 let currentView = "dashboard";
 let currentLanguage = localStorage.getItem(languageKey) || "az";
 let activeManagerProjectId = "";
@@ -4153,6 +4154,7 @@ function visibleTasks() {
     .filter((task) => currentPriorityFilter === "Hamısı" || task.priority === currentPriorityFilter)
     .filter(taskMatchesSmartFilter)
     .filter((task) => selectedProject === "Hamısı" || getProject(task) === selectedProject)
+    .filter((task) => !currentOwnerFilter || task.owner === currentOwnerFilter || task.projectResource === currentOwnerFilter)
     .filter((task) => {
       if (!query) return true;
       return [task.name, task.project, resourceLabel(task.owner), task.notes]
@@ -4788,7 +4790,7 @@ function renderDashboard() {
         <span class="kpi-icon" style="background:color-mix(in srgb,#f59e0b 14%,var(--panel))">🏆</span>
         <div class="kpi-body">
           <strong class="kpi-num" style="color:#d97706">${metrics.governanceScore}%</strong>
-          <span class="kpi-label">IPMA skoru</span>
+          <span class="kpi-label">IPMA balı</span>
         </div>
       </div>
     `;
@@ -4844,7 +4846,7 @@ function renderDashboard() {
     const loadClass = row.load > 85 ? "danger" : row.load > 60 ? "warning" : "";
     const barColor = row.load > 85 ? "var(--red)" : row.load > 60 ? "var(--amber)" : "var(--green)";
     return `
-    <div class="compact-item workload-item ${loadClass}">
+    <button class="compact-item workload-item ${loadClass}" type="button" data-owner="${escapeHtml(row.owner)}" title="Tasklara bax: ${escapeHtml(resourceLabel(row.owner))}">
       <div class="workload-row">
         <strong>${escapeHtml(resourceLabel(row.owner))}</strong>
         <span class="workload-pct" style="color:${barColor}">${row.load}%</span>
@@ -4854,7 +4856,7 @@ function renderDashboard() {
         <span>${row.count} ${text("tasks")}</span>
         <span>${text("plannedHours")}: ${row.planned} / ${row.actual}</span>
       </div>
-    </div>
+    </button>
   `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
 
@@ -5229,16 +5231,27 @@ function renderArchivedProjects() {
 
 function renderTaskList() {
   const shown = visibleTasks();
+
+  // Owner filter active banner
+  const ownerBanner = currentOwnerFilter ? `
+    <div class="owner-filter-banner">
+      <span>👤 <strong>${escapeHtml(resourceLabel(currentOwnerFilter))}</strong> — tapşırıqları göstərilir</span>
+      <button type="button" class="owner-filter-clear" id="clearOwnerFilter">✕ Filtri sil</button>
+    </div>
+  ` : "";
+
   if (!shown.length) {
-    taskList.innerHTML = `<div class="empty">${text("noTask")}</div>`;
+    taskList.innerHTML = ownerBanner + `<div class="empty">${text("noTask")}</div>`;
+    document.querySelector("#clearOwnerFilter")?.addEventListener("click", () => { currentOwnerFilter = ""; render(); });
     return;
   }
 
-  taskList.innerHTML = shown.map((task) => {
+  taskList.innerHTML = ownerBanner + shown.map((task) => {
     const blocked = isTaskBlocked(task);
     const commentCount = (task.comments || []).length;
     const fileCount = (task.attachments || []).length;
     const timeEntryCount = (task.timeEntries || []).length;
+    const projectName = getProject(task);
     const infoChips = [
       commentCount ? `💬 ${commentCount}` : "",
       fileCount ? `📎 ${fileCount}` : "",
@@ -5246,15 +5259,15 @@ function renderTaskList() {
     ].filter(Boolean);
     return `
     <article class="task-card ${blocked ? "blocked-task" : ""}">
+      ${projectName ? `<div class="task-project-tag">📁 ${escapeHtml(projectName)}</div>` : ""}
       <h3>${escapeHtml(task.name)}</h3>
       <div class="task-meta">
         <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
         <span class="badge ${priorityClass(task.priority)}">${priorityLabel(task.priority)}</span>
         ${blocked ? `<span class="badge blocked">${text("blocked")}</span>` : ""}
-        <span>${escapeHtml(getProject(task))}</span>
-        <span>${shortDate(task.start)} – ${shortDate(task.end)}</span>
-        <span>${escapeHtml(resourceLabel(task.owner))}</span>
-        <span>${text("plannedHours")}: ${plannedHoursForTask(task)} / ${text("actualHours")}: ${actualHoursForTask(task)}</span>
+        <span>📅 ${shortDate(task.start)} – ${shortDate(task.end)}</span>
+        <span>👤 ${escapeHtml(resourceLabel(task.owner))}</span>
+        <span>⏱ ${plannedHoursForTask(task)}h plan · ${actualHoursForTask(task)}h fakt</span>
         ${infoChips.length ? `<span class="task-info-chips">${infoChips.join(" &nbsp;")}</span>` : ""}
       </div>
       ${renderTaskRelations(task)}
@@ -5264,6 +5277,8 @@ function renderTaskList() {
     </article>
   `;
   }).join("");
+
+  document.querySelector("#clearOwnerFilter")?.addEventListener("click", () => { currentOwnerFilter = ""; render(); });
 }
 
 function renderAttachments(task) {
@@ -6027,6 +6042,7 @@ function setView(view) {
 
 function applyStatusFilter(status) {
   currentFilter = status || "Hamısı";
+  currentOwnerFilter = ""; // clear owner drill-down when status filter changes
   renderStatusControls();
 }
 
@@ -7725,6 +7741,17 @@ nextActions?.addEventListener("click", (event) => {
   currentView = currentSmartFilter === "risk" ? "reports" : "list";
   viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === currentView));
   render();
+});
+
+workloadList?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-owner]");
+  if (!button) return;
+  const owner = button.dataset.owner;
+  currentOwnerFilter = owner;
+  currentFilter = "Hamısı";
+  currentPriorityFilter = "Hamısı";
+  currentSmartFilter = "Hamısı";
+  setView("list");
 });
 
 refreshAuditLogsButton?.addEventListener("click", fetchAuditLogs);

@@ -5572,3 +5572,63 @@ body[data-view="dashboard"] .summary {
   }
   .kpi-num { font-size: 1.3rem; }
 }
+
+/* ── Owner filter banner ─────────────────────────────────────────── */
+.owner-filter-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--teal) 8%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--teal) 25%, var(--line));
+  border-radius: 8px;
+  font-size: 0.84rem;
+  color: var(--ink);
+}
+
+.owner-filter-clear {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--teal) 30%, var(--line));
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.owner-filter-clear:hover {
+  background: var(--teal);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* ── Task project tag ────────────────────────────────────────────── */
+.task-project-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 9%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--teal) 20%, var(--line));
+  border-radius: 5px;
+  padding: 2px 7px;
+  margin-bottom: 6px;
+}
+
+/* ── Workload items as buttons ───────────────────────────────────── */
+button.workload-item {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+button.workload-item:hover {
+  border-color: color-mix(in srgb, var(--teal) 40%, var(--line));
+  background: color-mix(in srgb, var(--panel) 88%, var(--teal) 6%);
+}
