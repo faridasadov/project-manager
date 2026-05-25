@@ -314,6 +314,18 @@ const translations = {
     passwordChangeSkipped: "Mail göndərilmədi. Mail və SMTP ayarlarını yoxlayın.",
     passwordChanged: "Parol dəyişdirildi.",
     loginButton: "Daxil ol",
+    register: "Qeydiyyat",
+    authBack: "Geri",
+    heroCta: "Daxil ol",
+    heroRegisterCta: "Qeydiyyatdan keç",
+    heroTitle: "Layihələrinizi tam nəzarət altına alın",
+    heroSub: "Komandanız, tapşırıqlarınız, müddətləriniz — hamısı bir platformada. Şəffaf, sürətli, etibarlı.",
+    heroF1Title: "Çoxlu görünüş", heroF1Desc: "Gantt, Kanban, Kalendar və Cədvəl — seçim sizindir",
+    heroF2Title: "Rol sistemi", heroF2Desc: "Admin, Manager, Contributor, Viewer, Sponsor — hər kəsə öz icazəsi",
+    heroF3Title: "Avtomatik bildirişlər", heroF3Desc: "Deadline yaxınlaşanda komanda mail alır, heç nə atlanmır",
+    heroF4Title: "Çox şirkətli platforma", heroF4Desc: "Hər workspace tamamilə izolyasiyalı, öz adminliyi ilə",
+    heroF5Title: "Öz serveriniz", heroF5Desc: "Məlumatlarınız heç bir üçüncü tərəflə paylaşılmır",
+    heroStat1: "Layihə & tapşırıq", heroStat2: "Rol səviyyəsi", heroStat3: "Öz serverinizdə",
     logout: "Çıxış",
     loginError: "İstifadəçi adı və ya şifrə yanlışdır.",
     manageUsers: "Userlər",
@@ -690,6 +702,18 @@ const translations = {
     passwordChangeSkipped: "Email не отправлен. Проверьте email и SMTP настройки.",
     passwordChanged: "Пароль изменен.",
     loginButton: "Войти",
+    register: "Регистрация",
+    authBack: "Назад",
+    heroCta: "Войти",
+    heroRegisterCta: "Зарегистрироваться",
+    heroTitle: "Управляйте проектами полностью",
+    heroSub: "Ваша команда, задачи, дедлайны — всё в одной платформе. Прозрачно, быстро, надёжно.",
+    heroF1Title: "Несколько видов", heroF1Desc: "Gantt, Kanban, Календарь и Таблица — выбор за вами",
+    heroF2Title: "Система ролей", heroF2Desc: "Admin, Manager, Contributor, Viewer, Sponsor — каждому свои права",
+    heroF3Title: "Автоматические уведомления", heroF3Desc: "Когда дедлайн близко — команда получает email, ничего не упускается",
+    heroF4Title: "Мультитенантная платформа", heroF4Desc: "Каждый workspace полностью изолирован, со своим администратором",
+    heroF5Title: "Ваш сервер", heroF5Desc: "Данные не передаются третьим лицам",
+    heroStat1: "Проекты & задачи", heroStat2: "Уровней ролей", heroStat3: "На вашем сервере",
     logout: "Выйти",
     loginError: "Неверное имя пользователя или пароль.",
     manageUsers: "Пользователи",
@@ -1066,6 +1090,18 @@ const translations = {
     passwordChangeSkipped: "Email was not sent. Check user email and SMTP settings.",
     passwordChanged: "Password was changed.",
     loginButton: "Sign in",
+    register: "Register",
+    authBack: "Back",
+    heroCta: "Sign in",
+    heroRegisterCta: "Get started",
+    heroTitle: "Take full control of your projects",
+    heroSub: "Your team, tasks and deadlines — all in one platform. Transparent, fast, reliable.",
+    heroF1Title: "Multiple views", heroF1Desc: "Gantt, Kanban, Calendar and Table — your choice",
+    heroF2Title: "Role system", heroF2Desc: "Admin, Manager, Contributor, Viewer, Sponsor — right access for everyone",
+    heroF3Title: "Automatic notifications", heroF3Desc: "When a deadline approaches, your team gets an email — nothing is missed",
+    heroF4Title: "Multi-tenant platform", heroF4Desc: "Every workspace is fully isolated with its own administration",
+    heroF5Title: "Your own server", heroF5Desc: "Your data is never shared with any third parties",
+    heroStat1: "Projects & tasks", heroStat2: "Role levels", heroStat3: "On your server",
     logout: "Logout",
     loginError: "Username or password is incorrect.",
     manageUsers: "Users",
@@ -7660,6 +7696,40 @@ authTabs.forEach((button) => {
     const mode = button.dataset.authTab || "login";
     authPanel.dataset.authMode = mode;
     authTabs.forEach((item) => item.classList.toggle("active", item === button));
+  });
+});
+
+// ── Hero CTA buttons → open auth panel ───────────────────────────────────
+function openAuthPanel(mode = "login") {
+  loginScreen.classList.add("show-auth");
+  authPanel.dataset.authMode = mode;
+  authTabs.forEach((item) => item.classList.toggle("active", item.dataset.authTab === mode));
+  // Focus first input
+  setTimeout(() => {
+    const inp = authPanel.querySelector("input");
+    if (inp) inp.focus();
+  }, 320);
+}
+
+function closeAuthPanel() {
+  loginScreen.classList.remove("show-auth");
+}
+
+document.querySelector("#heroLoginBtn")?.addEventListener("click", (e) => { e.stopPropagation(); openAuthPanel("login"); });
+document.querySelector("#heroRegisterBtn")?.addEventListener("click", (e) => { e.stopPropagation(); openAuthPanel("register"); });
+document.querySelector("#authBackBtn")?.addEventListener("click", closeAuthPanel);
+
+// Close auth panel when clicking the dimmed hero backdrop
+document.querySelector(".login-hero")?.addEventListener("click", () => {
+  if (loginScreen.classList.contains("show-auth")) closeAuthPanel();
+});
+
+// Hero language switcher
+document.querySelectorAll(".hero-lang-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const lang = btn.dataset.heroLang;
+    changeLanguage(lang);
+    document.querySelectorAll(".hero-lang-btn").forEach((b) => b.classList.toggle("active", b === btn));
   });
 });
 

@@ -9,80 +9,102 @@
   <body>
     <section id="loginScreen" class="login-screen">
 
-      <!-- ── Left: marketing / hero panel ───────────────────────────────── -->
-      <div class="login-hero" aria-hidden="true">
-        <div class="login-hero-brand">
-          <span class="brand-mark">PM</span>
-          <div>
-            <strong>Project Manager</strong>
-            <small>Professional Edition</small>
+      <!-- ── Welcome / hero (full-screen) ──────────────────────────────────── -->
+      <div class="login-hero">
+
+        <!-- Top bar -->
+        <div class="login-hero-topbar">
+          <div class="login-hero-brand">
+            <span class="brand-mark">PM</span>
+            <div>
+              <strong>Project Manager</strong>
+              <small>Professional Edition</small>
+            </div>
+          </div>
+          <!-- Language switcher -->
+          <div class="hero-lang-switch">
+            <button type="button" class="hero-lang-btn active" data-hero-lang="az">AZ</button>
+            <button type="button" class="hero-lang-btn" data-hero-lang="ru">RU</button>
+            <button type="button" class="hero-lang-btn" data-hero-lang="en">EN</button>
           </div>
         </div>
 
+        <!-- Main content -->
         <div class="login-hero-body">
-          <h2 class="login-hero-title">Layihələrinizi tam nəzarət altına alın</h2>
-          <p class="login-hero-sub">Komandanız, tapşırıqlarınız, müddətləriniz — hamısı bir platformada. Şəffaf, sürətli, etibarlı.</p>
+          <h2 class="login-hero-title" data-i18n="heroTitle">Layihələrinizi tam nəzarət altına alın</h2>
+          <p class="login-hero-sub" data-i18n="heroSub">Komandanız, tapşırıqlarınız, müddətləriniz — hamısı bir platformada.</p>
+
+          <!-- CTA buttons -->
+          <div class="hero-cta-row">
+            <button type="button" class="hero-cta-btn hero-cta-primary" id="heroLoginBtn" data-i18n="heroCta">Daxil ol</button>
+            <button type="button" class="hero-cta-btn hero-cta-ghost" id="heroRegisterBtn" data-i18n="heroRegisterCta">Qeydiyyatdan keç</button>
+          </div>
 
           <ul class="login-feature-list">
             <li>
               <span class="lf-icon">📊</span>
               <div>
-                <strong>Çoxlu görünüş</strong>
-                <span>Gantt, Kanban, Kalendar və Cədvəl — seçim sizindir</span>
+                <strong data-i18n="heroF1Title">Çoxlu görünüş</strong>
+                <span data-i18n="heroF1Desc">Gantt, Kanban, Kalendar və Cədvəl — seçim sizindir</span>
               </div>
             </li>
             <li>
               <span class="lf-icon">👥</span>
               <div>
-                <strong>Rol sistemi</strong>
-                <span>Admin, Manager, Contributor, Viewer, Sponsor — hər kəsə öz icazəsi</span>
+                <strong data-i18n="heroF2Title">Rol sistemi</strong>
+                <span data-i18n="heroF2Desc">Admin, Manager, Contributor, Viewer, Sponsor — hər kəsə öz icazəsi</span>
               </div>
             </li>
             <li>
               <span class="lf-icon">🔔</span>
               <div>
-                <strong>Avtomatik bildirişlər</strong>
-                <span>Deadline yaxınlaşanda komanda mail alır, heç nə atlanmır</span>
+                <strong data-i18n="heroF3Title">Avtomatik bildirişlər</strong>
+                <span data-i18n="heroF3Desc">Deadline yaxınlaşanda komanda mail alır, heç nə atlanmır</span>
               </div>
             </li>
             <li>
               <span class="lf-icon">🏢</span>
               <div>
-                <strong>Çox şirkətli platforma</strong>
-                <span>Hər workspace tamamilə izolyasiyalı, öz adminliyi ilə</span>
+                <strong data-i18n="heroF4Title">Çox şirkətli platforma</strong>
+                <span data-i18n="heroF4Desc">Hər workspace tamamilə izolyasiyalı, öz adminliyi ilə</span>
               </div>
             </li>
             <li>
               <span class="lf-icon">🔒</span>
               <div>
-                <strong>Öz serveriniz</strong>
-                <span>Məlumatlarınız heç bir üçüncü tərəflə paylaşılmır</span>
+                <strong data-i18n="heroF5Title">Öz serveriniz</strong>
+                <span data-i18n="heroF5Desc">Məlumatlarınız heç bir üçüncü tərəflə paylaşılmır</span>
               </div>
             </li>
           </ul>
         </div>
 
+        <!-- Stats footer -->
         <div class="login-hero-stats">
           <div class="login-stat">
             <strong>∞</strong>
-            <span>Layihə &amp; tapşırıq</span>
+            <span data-i18n="heroStat1">Layihə &amp; tapşırıq</span>
           </div>
           <div class="login-stat">
             <strong>6</strong>
-            <span>Rol səviyyəsi</span>
+            <span data-i18n="heroStat2">Rol səviyyəsi</span>
           </div>
           <div class="login-stat">
             <strong>100%</strong>
-            <span>Öz serverinizdə</span>
+            <span data-i18n="heroStat3">Öz serverinizdə</span>
           </div>
         </div>
       </div>
 
-      <!-- ── Right: auth panel ────────────────────────────────────────────── -->
+      <!-- ── Auth panel (slide-in drawer from right) ─────────────────────── -->
       <div id="authPanel" class="auth-panel" data-auth-mode="login">
+      <button type="button" class="auth-back-btn" id="authBackBtn" aria-label="Geri">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <span data-i18n="authBack">Geri</span>
+      </button>
       <div class="auth-tabs" role="tablist" aria-label="Auth">
-        <button id="showLoginTab" class="auth-tab active" type="button" data-auth-tab="login">Daxil ol</button>
-        <button id="showRegisterTab" class="auth-tab" type="button" data-auth-tab="register">Qeydiyyat</button>
+        <button id="showLoginTab" class="auth-tab active" type="button" data-auth-tab="login" data-i18n="loginButton">Daxil ol</button>
+        <button id="showRegisterTab" class="auth-tab" type="button" data-auth-tab="register" data-i18n="register">Qeydiyyat</button>
       </div>
       <form id="loginForm" class="login-card">
         <div class="login-language">
