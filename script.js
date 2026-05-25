@@ -3525,22 +3525,56 @@ function isAdmin() {
   return currentUser?.role === "admin";
 }
 
+// ─── Telebe-Hotel Role Modeli (Seçim A) ──────────────────────────────────────
+// superadmin  →  super_admin  (platform — bütün şirkətlər)
+// org admin   →  admin        (şirkət — öz tenant-ini tam idarə edir)
+// moderator   →  manager      (layihə/tapşırıq idarəsi, istifadəçi idarə edə bilməz)
+// support     →  contributor  (yalnız tapşırıqlara kömək)
+// student     →  user         (son istifadəçi)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Telebe-Hotel: requireOrgAdmin middleware ekvivalenti
+// Öz şirkətini tam idarə edir: istifadəçilər, parametrlər, layihələr
+function isOrgAdmin() {
+  return currentUser?.role === "admin";
+}
+
 function isSuperAdmin() {
   return currentUser?.role === "super_admin";
 }
 
 function canOpenAdminPanel() {
-  return isSuperAdmin() || isAdmin();
+  return isSuperAdmin() || isOrgAdmin();
 }
 
+// Platform parametrləri: yalnız super_admin
+// Telebe-Hotel: requireSuperAdminAuth
 function canManagePlatformSettings() {
   return isSuperAdmin();
 }
 
-function canManageMailSettings() {
-  return isSuperAdmin() || isAdmin();
+// Şirkət/mail parametrləri: super_admin + org admin
+// Telebe-Hotel: requireOrgAdmin
+function canManageOrgSettings() {
+  return isSuperAdmin() || isOrgAdmin();
 }
 
+function canManageMailSettings() {
+  return canManageOrgSettings();
+}
+
+// İstifadəçi idarəsi: yalnız super_admin + org admin
+// Telebe-Hotel: moderator istifadəçi əlavə/silə BİLMƏZ
+function canManageOrgUsers() {
+  return isSuperAdmin() || isOrgAdmin();
+}
+
+// Layihə idarəsi: org admin + manager (telebe-hotel: admin + moderator)
+function canManageProjects() {
+  return ["admin", "manager"].includes(currentUser?.role);
+}
+
+// Tapşırıq idarəsi: org admin + manager (əvvəlki kimi)
 function canManageTasks() {
   return ["admin", "manager"].includes(currentUser?.role);
 }
@@ -3554,14 +3588,14 @@ function canApproveGovernance() {
 }
 
 function canApproveDateRequest(task) {
-  if (isAdmin()) return true;
+  if (isOrgAdmin()) return true;
   if (!["manager", "sponsor"].includes(currentUser?.role)) return false;
   const project = projects.find((item) => item.name === task.project);
   return Boolean(project?.managerIds?.includes(currentUser.id));
 }
 
 function canApproveTask(task) {
-  if (isAdmin()) return true;
+  if (isOrgAdmin()) return true;
   if (!["manager", "sponsor"].includes(currentUser?.role)) return false;
   const project = projects.find((item) => item.name === task.project);
   return Boolean(project?.managerIds?.includes(currentUser.id));
@@ -4058,14 +4092,14 @@ function renderResourceControls() {
         <span><strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>${escapeHtml(user.profile?.position || roleLabel(user.role))} · ${escapeHtml(user.username)}${user.managerId ? ` · ${escapeHtml(users.find((item) => item.id === user.managerId)?.username || "")}` : ""}</span>
       </summary>
       <form class="user-profile-form" data-user-id="${user.id}">
-        <label><span>${text("login")}</span><input name="username" value="${escapeHtml(user.username)}" ${isAdmin() ? "" : "readonly"}></label>
-        <label><span>${text("fullName")}</span><input name="fullName" value="${escapeHtml(user.profile?.fullName || "")}" ${isAdmin() ? "" : "readonly"}></label>
-        <label><span>${text("fatherName")}</span><input name="fatherName" value="${escapeHtml(user.profile?.fatherName || "")}" ${isAdmin() ? "" : "readonly"}></label>
-        <label><span>${text("email")}</span><input name="email" type="email" value="${escapeHtml(user.profile?.email || "")}" ${isAdmin() ? "" : "readonly"}></label>
-        <label><span>${text("position")}</span><input name="position" value="${escapeHtml(user.profile?.position || "")}" ${isAdmin() ? "" : "readonly"}></label>
-        <label><span>${text("phone")}</span><input name="phone" value="${escapeHtml(user.profile?.phone || "")}" ${isAdmin() ? "" : "readonly"}></label>
-        <label><span>${text("address")}</span><input name="address" value="${escapeHtml(user.profile?.address || "")}" ${isAdmin() ? "" : "readonly"}></label>
-        <label><span>${text("company")}</span><input name="company" value="${escapeHtml(user.profile?.company || "")}" ${isAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("login")}</span><input name="username" value="${escapeHtml(user.username)}" ${isOrgAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("fullName")}</span><input name="fullName" value="${escapeHtml(user.profile?.fullName || "")}" ${isOrgAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("fatherName")}</span><input name="fatherName" value="${escapeHtml(user.profile?.fatherName || "")}" ${isOrgAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("email")}</span><input name="email" type="email" value="${escapeHtml(user.profile?.email || "")}" ${isOrgAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("position")}</span><input name="position" value="${escapeHtml(user.profile?.position || "")}" ${isOrgAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("phone")}</span><input name="phone" value="${escapeHtml(user.profile?.phone || "")}" ${isOrgAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("address")}</span><input name="address" value="${escapeHtml(user.profile?.address || "")}" ${isOrgAdmin() ? "" : "readonly"}></label>
+        <label><span>${text("company")}</span><input name="company" value="${escapeHtml(user.profile?.company || "")}" ${isOrgAdmin() ? "" : "readonly"}></label>
         <label class="admin-only"><span>${text("manager")}</span><select name="managerId">${managerOptions(user.managerId || "")}</select></label>
         <div class="user-actions">
         ${user.id === currentUser?.id ? `
@@ -4082,7 +4116,7 @@ function renderResourceControls() {
           </div>
         `}
         ${user.id === currentUser?.id ? "" : `<button type="button" data-user-action="delete-user" data-id="${user.id}">${text("remove")}</button>`}
-        ${isAdmin() ? `<button class="primary" type="submit">${text("saveProfile")}</button>` : ""}
+        ${isOrgAdmin() ? `<button class="primary" type="submit">${text("saveProfile")}</button>` : ""}
         </div>
       </form>
     </details>
@@ -7369,7 +7403,8 @@ managerAssignList.addEventListener("change", () => {
 });
 saveProjectManagersButton.addEventListener("click", () => {
   const project = projects.find((item) => item.id === activeManagerProjectId);
-  if (!project || !isAdmin()) return;
+  // Telebe-Hotel: admin + manager (moderator) layihəyə menecer təyin edə bilər
+  if (!project || !canManageProjects()) return;
   project.managerIds = managerPickerIds();
   saveResources();
   closeManagerAssign();
@@ -7384,25 +7419,25 @@ document.addEventListener("keydown", (event) => {
 });
 
 exportDataButton.addEventListener("click", async () => {
-  if (!isAdmin()) return;
+  if (!isOrgAdmin()) return;
   const ok = await downloadBackendFile("/api/backup/json", `project-manager-backup-${isoDate(new Date())}.json`);
   if (ok) return;
   downloadJson(`project-manager-backup-${isoDate(new Date())}.json`, backupPayload());
 });
 
 exportExcelButton.addEventListener("click", async () => {
-  if (!isAdmin()) return;
+  if (!isOrgAdmin()) return;
   downloadText(`project-manager-report-${isoDate(new Date())}.csv`, filteredReportCsv(), "text/csv;charset=utf-8");
 });
 
 exportPdfButton.addEventListener("click", async () => {
-  if (!isAdmin()) return;
+  if (!isOrgAdmin()) return;
   const ok = await downloadBackendFile("/api/export/pdf", `project-manager-report-${isoDate(new Date())}.pdf`);
   if (!ok) downloadText(`project-manager-report-${isoDate(new Date())}.html`, reports.innerHTML, "text/html;charset=utf-8");
 });
 
 importDataInput.addEventListener("change", () => {
-  if (!isAdmin() || !importDataInput.files?.length) return;
+  if (!isOrgAdmin() || !importDataInput.files?.length) return;
   const reader = new FileReader();
   reader.addEventListener("load", () => {
     try {
@@ -7418,7 +7453,7 @@ importDataInput.addEventListener("change", () => {
 });
 
 saveImportMappingButton?.addEventListener("click", () => {
-  if (!isAdmin()) return;
+  if (!isOrgAdmin()) return;
   appSettings = {
     ...appSettings,
     importColumnMap: {
@@ -7433,7 +7468,7 @@ saveImportMappingButton?.addEventListener("click", () => {
 });
 
 createManualBackupButton?.addEventListener("click", () => {
-  if (!isAdmin()) return;
+  if (!isOrgAdmin()) return;
   const payload = backupPayload();
   const backup = {
     id: createId("backup"),
@@ -7453,14 +7488,14 @@ createManualBackupButton?.addEventListener("click", () => {
 
 backupList?.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-backup-download]");
-  if (!button || !isAdmin()) return;
+  if (!button || !isOrgAdmin()) return;
   const backup = (appSettings.backups || []).find((item) => item.id === button.dataset.backupDownload);
   if (!backup) return;
   downloadJson(`project-manager-backup-${isoDate(new Date(backup.createdAt))}.json`, backup.payload);
 });
 
 restoreBackupInput?.addEventListener("change", () => {
-  if (!isAdmin() || !restoreBackupInput.files?.length) return;
+  if (!isOrgAdmin() || !restoreBackupInput.files?.length) return;
   const reader = new FileReader();
   reader.addEventListener("load", () => {
     try {
@@ -7583,7 +7618,8 @@ workflowStatusList.addEventListener("click", (event) => {
 });
 
 addUserButton.addEventListener("click", () => {
-  if (!canManageTasks()) return;
+  // Telebe-Hotel: yalnız org admin istifadəçi əlavə edə bilər (manager/moderator yox)
+  if (!canManageOrgUsers()) return;
   const companySlug = slugFromName(currentUser?.profile?.company || currentCompanyId());
   const password = newUserPasswordInput.value;
   const role = newUserRoleInput.value;
@@ -7623,7 +7659,8 @@ userList.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button) return;
   if (button.dataset.userAction === "change-password") {
-    if (!isAdmin()) return;
+    // Telebe-Hotel: yalnız org admin başqasının şifrəsini dəyişə bilər
+    if (!canManageOrgUsers()) return;
     const row = button.closest(".password-form");
     const user = users.find((item) => item.id === button.dataset.id);
     const input = row?.querySelector("input[name='password']");
