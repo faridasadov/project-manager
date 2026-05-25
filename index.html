@@ -513,17 +513,15 @@
             <button id="closeAdminPanel" class="icon-button" type="button" aria-label="Bağla" data-i18n-aria="close">×</button>
           </div>
 
-          <div class="admin-tools admin-only">
-            <button id="exportData" type="button" data-i18n="exportData">Backup</button>
-            <button id="exportExcel" type="button" data-i18n="exportExcel">Excel export</button>
-            <button id="exportPdf" type="button" data-i18n="exportPdf">PDF export</button>
-            <label class="import-button">
-              <span data-i18n="importData">Import</span>
-              <input id="importData" type="file" accept="application/json,.json,.csv,.xml,.mpp">
-            </label>
-            <button id="clearDone" type="button" data-i18n="clearDone">Bitənləri təmizlə</button>
-            <button id="loadClinicPortfolio" class="project-action-button" type="button" data-i18n="loadClinicPortfolio">Layihəyə yüklə</button>
-            <button id="resetDemo" class="project-reset-button" type="button" data-i18n="resetDemo">Seçilmiş layihəni resetlə</button>
+          <!-- Quick action buttons — görünməz, JS üçün saxlanılır -->
+          <div hidden>
+            <button id="exportData" type="button">Backup</button>
+            <button id="exportExcel" type="button">Excel export</button>
+            <button id="exportPdf" type="button">PDF export</button>
+            <label><input id="importData" type="file" accept="application/json,.json,.csv,.xml,.mpp"></label>
+            <button id="clearDone" type="button">Bitənləri təmizlə</button>
+            <button id="loadClinicPortfolio" type="button">Layihəyə yüklə</button>
+            <button id="resetDemo" type="button">Seçilmiş layihəni resetlə</button>
           </div>
 
           <section class="panel-launch-grid" aria-label="Admin bölmələri">
@@ -725,6 +723,12 @@
               <small>CSV / XML</small>
             </summary>
             <div class="resource-body">
+              <div class="import-quick-actions">
+                <label class="import-button primary">
+                  <span>📥 Fayl seç (JSON/CSV/XML)</span>
+                  <input id="importDataBtn" type="file" accept="application/json,.json,.csv,.xml,.mpp">
+                </label>
+              </div>
               <p class="field-hint" data-i18n="projectImportHint">Import düyməsi JSON backup, Excel CSV və MS Project XML fayllarını qəbul edir. CSV başlıqları: Project, Task, Start, End, Status, Priority, Progress, Owner, Dependencies, Milestone.</p>
               <div class="import-mapping-grid">
                 <label><span>Project column</span><input id="importProjectColumn" type="text" placeholder="Project"></label>
@@ -742,6 +746,12 @@
               <small id="backupCount">0</small>
             </summary>
             <div class="resource-body backup-grid">
+              <div class="backup-quick-actions admin-only">
+                <button id="exportDataBtn" type="button" class="primary">⬇ JSON Backup</button>
+                <button id="exportExcelBtn" type="button">📊 Excel export</button>
+                <button id="exportPdfBtn" type="button">📄 PDF export</button>
+                <button id="clearDoneBtn" type="button">🧹 Bitənləri sil</button>
+              </div>
               <button id="createManualBackup" class="primary" type="button" data-i18n="createBackup">Backup yarat</button>
               <label class="import-button">
                 <span data-i18n="restoreBackup">Restore backup</span>

@@ -3594,6 +3594,29 @@ function canApproveGovernance() {
   return ["admin", "manager", "sponsor"].includes(currentUser?.role);
 }
 
+// Register idarəsi: admin (bütün şirkət), manager (öz layihəsi)
+function canManageRegister(item) {
+  if (!currentUser) return false;
+  if (isSuperAdmin()) return false;
+  if (isOrgAdmin()) return true;
+  if (currentUser.role === "manager") {
+    const project = projects.find((p) => p.name === item.project);
+    return !!(project?.managerIds?.includes(currentUser.id));
+  }
+  return false;
+}
+
+// Status dəyişikliyi: admin + manager (öz layihəsi) + sponsor (öz layihəsi)
+function canChangeRegisterStatus(item) {
+  if (!currentUser) return false;
+  if (isOrgAdmin()) return true;
+  if (["manager", "sponsor"].includes(currentUser.role)) {
+    const project = projects.find((p) => p.name === item.project);
+    return !!(project?.managerIds?.includes(currentUser.id));
+  }
+  return false;
+}
+
 function canApproveDateRequest(task) {
   if (isOrgAdmin()) return true;
   if (!["manager", "sponsor"].includes(currentUser?.role)) return false;
@@ -4310,17 +4333,55 @@ function renderResourceControls() {
     </div>
   `).join("") : `<div class="empty">${text("empty")}</div>`;
 
-  registerList.innerHTML = scopedRegisters.length ? scopedRegisters.map((item) => `
+  registerList.innerHTML = scopedRegisters.length ? scopedRegisters.map((item) => {
+    const canMgr = canManageRegister(item);
+    const canStatus = canChangeRegisterStatus(item);
+    const statusCycle = { Open: "Monitoring", Monitoring: "Resolved", Resolved: "Open" };
+    const statusNext = statusCycle[item.status] || "Open";
+    const statusLabel = { Open: "👁 Monitor et", Monitoring: "✓ Həll et", Resolved: "↺ Yenidən aç" };
+    return `
     <div class="resource-item register-item ${escapeHtml(item.type)}">
-      <span>
-        <strong>${escapeHtml(item.title)}</strong>
-        ${escapeHtml(item.project)} · ${registerTypeLabel(item.type)} · ${escapeHtml(registerStatusLabel(item.status))} · ${impactLabel(item.impact)} · ${shortDate(item.dueDate)}
-        ${item.owner ? ` · ${escapeHtml(resourceLabel(item.owner))}` : ""}
-        ${item.mitigation ? `<small>${escapeHtml(item.mitigation)}</small>` : ""}
-      </span>
-      <button type="button" data-register-action="delete" data-id="${item.id}">${text("remove")}</button>
-    </div>
-  `).join("") : `<div class="empty">${text("empty")}</div>`;
+      <div class="register-main">
+        <div class="register-header">
+          <span class="reg-type-badge reg-${escapeHtml(item.type)}">${registerTypeLabel(item.type)}</span>
+          <strong>${escapeHtml(item.title)}</strong>
+          <span class="reg-project">${escapeHtml(item.project)}</span>
+        </div>
+        <div class="register-meta">
+          ${canMgr ? `
+            <label class="reg-inline-label">Status
+              <select data-register-field="status" data-id="${item.id}">
+                <option value="Open" ${item.status === "Open" ? "selected" : ""}>Open</option>
+                <option value="Monitoring" ${item.status === "Monitoring" ? "selected" : ""}>Monitoring</option>
+                <option value="Resolved" ${item.status === "Resolved" ? "selected" : ""}>Resolved</option>
+              </select>
+            </label>
+            <label class="reg-inline-label">Impact
+              <select data-register-field="impact" data-id="${item.id}">
+                <option value="Low" ${item.impact === "Low" ? "selected" : ""}>Low</option>
+                <option value="Medium" ${item.impact === "Medium" ? "selected" : ""}>Medium</option>
+                <option value="High" ${item.impact === "High" ? "selected" : ""}>High</option>
+              </select>
+            </label>
+            ${item.dueDate ? `<span class="reg-meta-chip">📅 ${shortDate(item.dueDate)}</span>` : ""}
+            ${item.owner ? `<span class="reg-meta-chip">👤 ${escapeHtml(resourceLabel(item.owner))}</span>` : ""}
+          ` : `
+            <span class="reg-status-chip reg-status-${escapeHtml(item.status)}">${escapeHtml(registerStatusLabel(item.status))}</span>
+            <span class="reg-impact-chip">${impactLabel(item.impact)}</span>
+            ${item.dueDate ? `<span class="reg-meta-chip">📅 ${shortDate(item.dueDate)}</span>` : ""}
+            ${item.owner ? `<span class="reg-meta-chip">👤 ${escapeHtml(resourceLabel(item.owner))}</span>` : ""}
+          `}
+        </div>
+        ${canMgr
+          ? `<input class="reg-mitigation-input" type="text" placeholder="Azaldıcı tədbirlər..." value="${escapeHtml(item.mitigation || "")}" data-register-field="mitigation" data-id="${item.id}">`
+          : item.mitigation ? `<small class="reg-mitigation-text">${escapeHtml(item.mitigation)}</small>` : ""}
+      </div>
+      <div class="register-actions">
+        ${canStatus ? `<button type="button" class="reg-status-btn" data-register-action="status" data-id="${item.id}" data-next="${statusNext}">${statusLabel[item.status] || "Status"}</button>` : ""}
+        ${canMgr ? `<button type="button" class="danger" data-register-action="delete" data-id="${item.id}">${text("remove")}</button>` : ""}
+      </div>
+    </div>`;
+  }).join("") : `<div class="empty">${text("empty")}</div>`;
 
   userList.innerHTML = scopedUsers.map((user) => `
     <details class="user-profile-card">
@@ -7891,6 +7952,21 @@ restoreBackupInput?.addEventListener("change", () => {
   reader.readAsText(restoreBackupInput.files[0]);
 });
 
+// Backup bölməsindəki yeni düymələr
+document.querySelector("#exportDataBtn")?.addEventListener("click", () => document.querySelector("#exportData")?.click());
+document.querySelector("#exportExcelBtn")?.addEventListener("click", () => document.querySelector("#exportExcel")?.click());
+document.querySelector("#exportPdfBtn")?.addEventListener("click", () => document.querySelector("#exportPdf")?.click());
+document.querySelector("#clearDoneBtn")?.addEventListener("click", () => document.querySelector("#clearDone")?.click());
+document.querySelector("#importDataBtn")?.addEventListener("change", (e) => {
+  const importData = document.querySelector("#importData");
+  if (importData && e.target.files?.length) {
+    const dt = new DataTransfer();
+    dt.items.add(e.target.files[0]);
+    importData.files = dt.files;
+    importData.dispatchEvent(new Event("change"));
+  }
+});
+
 [themeModeInput, backgroundStyleInput, accentColorInput].forEach((input) => {
   input.addEventListener("change", () => {
     appSettings = {
@@ -8690,14 +8766,46 @@ addRegisterItemButton.addEventListener("click", () => {
 });
 
 registerList.addEventListener("click", (event) => {
-  if (!canManageTasks()) return;
   const button = event.target.closest("button[data-register-action]");
   if (!button) return;
+  const id = button.dataset.id;
+  const item = registers.find((r) => r.id === id);
+  if (!item) return;
+
   if (button.dataset.registerAction === "delete") {
-    registers = registers.filter((item) => item.id !== button.dataset.id);
+    if (!canManageRegister(item)) return;
+    registers = registers.filter((r) => r.id !== id);
     saveRegisters();
     render();
   }
+
+  if (button.dataset.registerAction === "status") {
+    if (!canChangeRegisterStatus(item)) return;
+    item.status = button.dataset.next || "Open";
+    saveRegisters();
+    render();
+  }
+});
+
+registerList.addEventListener("change", (event) => {
+  const el = event.target.closest("[data-register-field]");
+  if (!el) return;
+  const id = el.dataset.id;
+  const field = el.dataset.registerField;
+  const item = registers.find((r) => r.id === id);
+  if (!item || !canManageRegister(item)) return;
+  item[field] = el.value;
+  saveRegisters();
+});
+
+registerList.addEventListener("input", (event) => {
+  const el = event.target.closest("input[data-register-field='mitigation']");
+  if (!el) return;
+  const id = el.dataset.id;
+  const item = registers.find((r) => r.id === id);
+  if (!item || !canManageRegister(item)) return;
+  item.mitigation = el.value;
+  saveRegisters();
 });
 
 [projectList, teamList, projectLinksList].forEach((container) => {
