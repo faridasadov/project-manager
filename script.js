@@ -2692,6 +2692,10 @@ function saveAppSettings() {
 }
 
 function loadSession() {
+  if (isSupabasePrimaryMode() && !loadSupabaseSession()?.access_token) {
+    localStorage.removeItem(sessionKey);
+    return null;
+  }
   const userId = localStorage.getItem(sessionKey);
   return userId ? users?.find((user) => user.id === userId) || null : null;
 }
@@ -6294,8 +6298,7 @@ function backupPayload() {
 }
 
 function canUseBackend() {
-  const cfg = supabaseConfig();
-  if (cfg?.primaryBackend !== false && canUseSupabase()) return false;
+  if (isSupabasePrimaryMode()) return false;
   const host = window.location?.hostname || "";
   return typeof fetch === "function"
     && window.location?.protocol !== "file:"
@@ -6327,6 +6330,11 @@ function supabaseConfig() {
 
 function canUseSupabase() {
   return Boolean(supabaseConfig()) && typeof fetch === "function";
+}
+
+function isSupabasePrimaryMode() {
+  const cfg = supabaseConfig();
+  return Boolean(cfg && cfg.primaryBackend !== false && typeof fetch === "function");
 }
 
 function loadSupabaseSession() {
@@ -8018,7 +8026,11 @@ loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const username = loginUsername.value.trim();
   const password = loginPassword.value;
-  if (canUseSupabase() && username.includes("@")) {
+  if (isSupabasePrimaryMode() && !username.includes("@")) {
+    loginError.textContent = "Online rejimdə dəyişikliklərin yadda qalması üçün email ilə Supabase login edin.";
+    return;
+  }
+  if (canUseSupabase()) {
     try {
       const user = await supabaseLoginWorkspace(username, password);
       if (user) {
@@ -8033,6 +8045,10 @@ loginForm.addEventListener("submit", async (event) => {
       loginError.textContent = error.message;
       return;
     }
+  }
+  if (isSupabasePrimaryMode()) {
+    loginError.textContent = "Supabase login alınmadı. Dəyişikliklər online yadda qalması üçün email login vacibdir.";
+    return;
   }
   const localUser = users.find((item) => item.username === username && item.passwordHash === md5(password));
   let user = canUseBackend() ? await backendLogin(username, password) : null;
