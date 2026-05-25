@@ -3063,35 +3063,40 @@ textarea:focus {
    ══════════════════════════════════════════════════════════════ */
 
 .control-strip {
-  padding: 10px 16px 12px;
+  padding: 8px 16px 10px;
 }
 
 .control-strip .view-tabs {
   display: none;
 }
 
-/* hide old heading */
 .filter-heading {
   display: none;
 }
 
-/* hide group labels */
-.filter-group-label {
-  display: none;
-}
-
-/* tools = full-width flex bar */
+/* ── Two-row filter toolbar ─────────────────────────────────── */
 .tools {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 7px;
   width: 100%;
 }
 
-/* search */
-.tools #searchInput {
-  flex: 0 0 220px;
+/* Each row is a flex line */
+.tools-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Row 1: search + project ──────────────────────────────── */
+.tools-search-row {
+  gap: 8px;
+}
+
+.tools-search-row #searchInput {
+  flex: 1 1 180px;
   min-height: 34px;
   border-radius: 8px;
   font-size: 0.84rem;
@@ -3101,54 +3106,82 @@ textarea:focus {
   background-position: 10px center;
 }
 
-/* project select */
+/* Project select — label stays in flow */
 .filter-select-label {
-  display: contents;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
 }
 
-.filter-select-label span {
-  display: none;
+.filter-select-prefix {
+  font-size: 0.70rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .filter-select-label select {
-  flex: 0 0 160px;
   min-height: 34px;
   border-radius: 8px;
   font-size: 0.84rem;
   padding: 0 10px;
+  min-width: 160px;
 }
 
-/* group divider */
-.tools .filters {
+/* ── Row 2: labeled filter groups ────────────────────────── */
+.tools-filter-row {
+  gap: 0;
+  flex-wrap: wrap;
+}
+
+.tools-filter-row .filters {
   display: flex;
   align-items: center;
   gap: 3px;
   background: none;
   border: none;
-  padding: 0;
+  padding: 0 14px 0 14px;
   min-height: 0;
   border-left: 1.5px solid var(--line);
-  padding-left: 8px;
 }
 
-.tools .filters:first-of-type {
+.tools-filter-row .filters:first-child {
   border-left: none;
   padding-left: 0;
 }
 
-/* pill chip filter buttons */
+/* Group label — small uppercase category tag */
+.filter-group-label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  white-space: nowrap;
+  margin-right: 4px;
+  opacity: 0.75;
+  user-select: none;
+}
+
+/* ── Filter pill buttons ──────────────────────────────────── */
 .tools .filter {
-  min-height: 30px;
+  min-height: 28px;
   min-width: 0;
   padding: 0 10px;
   border-radius: 6px;
-  font-size: 0.80rem;
-  font-weight: 600;
+  font-size: 0.79rem;
+  font-weight: 500;
   border: 1px solid var(--line);
   background: var(--panel);
   color: var(--muted);
   transition: background 120ms, border-color 120ms, color 120ms;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .tools .filter:hover {
@@ -4803,12 +4836,15 @@ button:disabled {
   }
 
   .tools {
-    display: flex;
-    flex-wrap: wrap;
+    gap: 6px;
   }
 
-  .tools #searchInput {
+  .tools-search-row #searchInput {
     flex: 1 1 140px;
+  }
+
+  .tools-filter-row .filters {
+    padding: 0 8px 0 8px;
   }
 
   .platform-ops {
@@ -4829,7 +4865,7 @@ button:disabled {
     justify-self: stretch;
   }
 
-  .tools .filters {
+  .tools-filter-row .filters {
     align-items: center;
     flex-wrap: wrap;
   }
@@ -4864,7 +4900,6 @@ button:disabled {
   .task-detail-grid,
   .task-card,
   .project-card,
-  .tools,
   .settings-grid,
   .manager-assign-body,
   .user-profile-form,

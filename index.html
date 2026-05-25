@@ -1357,40 +1357,45 @@
       <section class="workspace">
         <section class="control-strip">
           <div class="tools">
-            <div class="filter-heading">
-              <strong data-i18n="filters">Filterlər</strong>
-              <span data-i18n="filtersScope">Task, Kanban, Gantt və Hesabat üçün tətbiq olunur</span>
+
+            <!-- Row 1: search + project select -->
+            <div class="tools-row tools-search-row">
+              <input id="searchInput" type="search" placeholder="Task, layihə, məsul şəxs axtar…" data-i18n-placeholder="searchPlaceholder">
+              <label class="filter-select-label">
+                <span class="filter-select-prefix" data-i18n="project">Layihə</span>
+                <select id="projectFilter">
+                  <option value="Hamısı">Bütün layihələr</option>
+                </select>
+              </label>
             </div>
-            <input id="searchInput" type="search" placeholder="Task, layihə, məsul şəxs axtar" data-i18n-placeholder="searchPlaceholder">
-            <label class="filter-select-label">
-              <span data-i18n="project">Layihə</span>
-              <select id="projectFilter">
-                <option value="Hamısı">Bütün layihələr</option>
-              </select>
-            </label>
-            <div id="statusFilters" class="filters" aria-label="Status filteri" data-i18n-aria="statusFilterAria">
-              <span class="filter-group-label" data-i18n="status">Status</span>
-              <button class="filter active" data-filter="Hamısı" type="button">Hamısı</button>
-              <button class="filter" data-filter="Plan" type="button">Plan</button>
-              <button class="filter" data-filter="Davam edir" type="button">Davam edir</button>
-              <button class="filter" data-filter="Bitib" type="button">Bitib</button>
+
+            <!-- Row 2: labeled filter groups -->
+            <div class="tools-row tools-filter-row">
+              <div id="statusFilters" class="filters" aria-label="Status filteri" data-i18n-aria="statusFilterAria">
+                <span class="filter-group-label">Status</span>
+                <button class="filter active" data-filter="Hamısı" type="button">Hamısı</button>
+                <button class="filter" data-filter="Plan" type="button">Plan</button>
+                <button class="filter" data-filter="Davam edir" type="button">Davam edir</button>
+                <button class="filter" data-filter="Bitib" type="button">Bitib</button>
+              </div>
+              <div id="priorityFilters" class="filters priority-filters" aria-label="Prioritet filteri" data-i18n-aria="priorityFilterAria">
+                <span class="filter-group-label">Prioritet</span>
+                <button class="filter active" data-priority-filter="Hamısı" type="button">Hamısı</button>
+                <button class="filter" data-priority-filter="Kritik" type="button">Kritik</button>
+                <button class="filter" data-priority-filter="Yüksək" type="button">Yüksək</button>
+                <button class="filter" data-priority-filter="Normal" type="button">Normal</button>
+                <button class="filter" data-priority-filter="Aşağı" type="button">Aşağı</button>
+              </div>
+              <div id="smartFilters" class="filters smart-filters" aria-label="Ağıllı filterlər">
+                <span class="filter-group-label">Ağıllı</span>
+                <button class="filter active" data-smart-filter="Hamısı" type="button">Hamısı</button>
+                <button class="filter" data-smart-filter="blocked" type="button">Bloklanmış</button>
+                <button class="filter" data-smart-filter="overdue" type="button">Gecikən</button>
+                <button class="filter" data-smart-filter="risk" type="button">Risk</button>
+                <button class="filter" data-smart-filter="mine" type="button">Mənim</button>
+              </div>
             </div>
-            <div id="priorityFilters" class="filters priority-filters" aria-label="Prioritet filteri" data-i18n-aria="priorityFilterAria">
-              <span class="filter-group-label" data-i18n="priority">Prioritet</span>
-              <button class="filter active" data-priority-filter="Hamısı" type="button">Hamısı</button>
-              <button class="filter" data-priority-filter="Kritik" type="button">Kritik</button>
-              <button class="filter" data-priority-filter="Yüksək" type="button">Yüksək</button>
-              <button class="filter" data-priority-filter="Normal" type="button">Normal</button>
-              <button class="filter" data-priority-filter="Aşağı" type="button">Aşağı</button>
-            </div>
-            <div id="smartFilters" class="filters smart-filters" aria-label="Ağıllı filterlər">
-              <span class="filter-group-label" data-i18n="smartFilters">Ağıllı</span>
-              <button class="filter active" data-smart-filter="Hamısı" type="button">Hamısı</button>
-              <button class="filter" data-smart-filter="blocked" type="button" data-i18n="blockedTasks">Bloklanmış task</button>
-              <button class="filter" data-smart-filter="overdue" type="button" data-i18n="overdueTasks">Gecikən task</button>
-              <button class="filter" data-smart-filter="risk" type="button" data-i18n="riskFocus">Risk fokus</button>
-              <button class="filter" data-smart-filter="mine" type="button" data-i18n="myTasks">Mənim tasklarım</button>
-            </div>
+
           </div>
         </section>
 
