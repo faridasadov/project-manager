@@ -1436,6 +1436,7 @@
         </div>
 
         <section id="dashboardView" class="view active-view">
+          <div id="dashKpi" class="dash-kpi-row"></div>
           <div class="insight-grid">
             <article class="panel dashboard-panel" data-dashboard-panel="status" draggable="true">
               <div class="section-head">
@@ -1517,22 +1518,17 @@
             </article>
           </div>
           <div class="dashboard-calendar-grid">
-            <article class="panel">
+            <article class="panel dash-calendar-panel">
               <div class="section-head">
                 <div>
                   <p class="kicker" data-i18n="calendar">Təqvim</p>
-                  <h2 data-i18n="deadlineCalendar">Təqvim</h2>
+                  <h2 data-i18n="deadlineCalendar">Deadline təqvimi</h2>
                 </div>
-              </div>
-              <div class="calendar-controls">
-                <label>
-                  <span data-i18n="rangeStart">Başlama</span>
-                  <input id="dashboardCalendarStart" type="date">
-                </label>
-                <label>
-                  <span data-i18n="rangeEnd">Bitmə</span>
-                  <input id="dashboardCalendarEnd" type="date">
-                </label>
+                <div class="dash-cal-nav">
+                  <button type="button" id="dashCalPrev" class="icon-btn" title="Əvvəlki ay">‹</button>
+                  <span id="dashCalMonthLabel" class="dash-cal-month"></span>
+                  <button type="button" id="dashCalNext" class="icon-btn" title="Növbəti ay">›</button>
+                </div>
               </div>
               <div id="dashboardCalendar" class="calendar-grid compact-calendar"></div>
             </article>

@@ -1624,10 +1624,13 @@ const summaryCards = document.querySelectorAll(".summary-card");
 const dashboardCalendar = document.querySelector("#dashboardCalendar");
 const calendarBoard = document.querySelector("#calendarBoard");
 const calendarDetails = document.querySelector("#calendarDetails");
-const dashboardCalendarStart = document.querySelector("#dashboardCalendarStart");
-const dashboardCalendarEnd = document.querySelector("#dashboardCalendarEnd");
+const dashboardCalendarStart = null; // replaced by nav buttons
+const dashboardCalendarEnd = null;   // replaced by nav buttons
 const calendarStart = document.querySelector("#calendarStart");
 const calendarEnd = document.querySelector("#calendarEnd");
+const dashCalPrev = document.querySelector("#dashCalPrev");
+const dashCalNext = document.querySelector("#dashCalNext");
+const dashCalMonthLabel = document.querySelector("#dashCalMonthLabel");
 const dashboardPanels = document.querySelectorAll("[data-dashboard-panel]");
 const taskList = document.querySelector("#taskList");
 const statusFilters = document.querySelector("#statusFilters");
@@ -4722,45 +4725,119 @@ function renderSummary() {
 
 function renderDashboard() {
   const shownTasks = accessibleTasks();
-  const total = Math.max(1, shownTasks.length);
+  const totalReal = shownTasks.length;
+  const total = Math.max(1, totalReal);
+  const activeTasks = shownTasks.filter((t) => t.status !== "Bitib");
+  const doneTasks = shownTasks.filter((t) => t.status === "Bitib");
+  const overdueItems = riskyTasks().filter((i) => i.alert.type === "danger");
+  const blockedItems = shownTasks.filter(isTaskBlocked);
+  const metrics = portfolioMetrics();
+  const planned = shownTasks.reduce((sum, t) => sum + plannedHoursForTask(t), 0);
+  const actual = shownTasks.reduce((sum, t) => sum + actualHoursForTask(t), 0);
+  const doneRatio = Math.round((doneTasks.length / total) * 100);
+
+  // ── KPI strip ──────────────────────────────────────────────────────────────
+  const dashKpi = document.querySelector("#dashKpi");
+  if (dashKpi) {
+    dashKpi.innerHTML = `
+      <div class="dash-kpi">
+        <span class="kpi-icon">📋</span>
+        <div class="kpi-body">
+          <strong class="kpi-num">${totalReal}</strong>
+          <span class="kpi-label">Cəmi task</span>
+        </div>
+      </div>
+      <div class="dash-kpi">
+        <span class="kpi-icon" style="background:color-mix(in srgb,var(--blue) 14%,var(--panel))">🔵</span>
+        <div class="kpi-body">
+          <strong class="kpi-num" style="color:var(--blue)">${activeTasks.length}</strong>
+          <span class="kpi-label">Aktiv task</span>
+          <div class="kpi-bar"><span style="width:${Math.round(activeTasks.length/total*100)}%;background:var(--blue)"></span></div>
+        </div>
+      </div>
+      <div class="dash-kpi">
+        <span class="kpi-icon" style="background:color-mix(in srgb,var(--green) 14%,var(--panel))">✅</span>
+        <div class="kpi-body">
+          <strong class="kpi-num" style="color:var(--green)">${doneTasks.length}</strong>
+          <span class="kpi-label">Tamamlandı · ${doneRatio}%</span>
+          <div class="kpi-bar"><span style="width:${doneRatio}%;background:var(--green)"></span></div>
+        </div>
+      </div>
+      <div class="dash-kpi ${overdueItems.length ? 'kpi-alert' : ''}">
+        <span class="kpi-icon" style="background:color-mix(in srgb,var(--red) 12%,var(--panel))">⏰</span>
+        <div class="kpi-body">
+          <strong class="kpi-num" style="color:${overdueItems.length ? 'var(--red)' : 'var(--muted)'}">${overdueItems.length}</strong>
+          <span class="kpi-label">Gecikmiş</span>
+        </div>
+      </div>
+      <div class="dash-kpi ${blockedItems.length ? 'kpi-warn' : ''}">
+        <span class="kpi-icon" style="background:color-mix(in srgb,var(--amber) 14%,var(--panel))">🚧</span>
+        <div class="kpi-body">
+          <strong class="kpi-num" style="color:${blockedItems.length ? 'var(--amber)' : 'var(--muted)'}">${blockedItems.length}</strong>
+          <span class="kpi-label">Bloklanmış</span>
+        </div>
+      </div>
+      <div class="dash-kpi">
+        <span class="kpi-icon">⏱</span>
+        <div class="kpi-body">
+          <strong class="kpi-num">${planned}</strong>
+          <span class="kpi-label">Plan saat · ${actual} fakt</span>
+        </div>
+      </div>
+      <div class="dash-kpi">
+        <span class="kpi-icon" style="background:color-mix(in srgb,#f59e0b 14%,var(--panel))">🏆</span>
+        <div class="kpi-body">
+          <strong class="kpi-num" style="color:#d97706">${metrics.governanceScore}%</strong>
+          <span class="kpi-label">IPMA skoru</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Status bars — richer ───────────────────────────────────────────────────
+  const counts = registerCounts();
   statusBars.innerHTML = statuses.map((status) => {
     const count = shownTasks.filter((task) => task.status === status).length;
     const width = Math.round((count / total) * 100);
     return `
       <div class="status-line">
-        <div><span>${statusLabel(status)}</span><strong>${count}</strong></div>
-        <div class="meter"><span class="${statusClass(status)}" style="width:${width}%"></span></div>
-      </div>
-    `;
-  }).join("") + (() => {
-    const counts = registerCounts();
-    return `
-      <div class="status-line register-summary-line">
-        <div><span>${text("registerSummary")}</span><strong>${counts.risks + counts.issues + counts.milestones}</strong></div>
-        <div class="task-meta">
-          <span>${text("riskRegister")}: ${counts.risks}</span>
-          <span>${text("issueRegister")}: ${counts.issues}</span>
-          <span>${text("milestoneRegister")}: ${counts.milestones}</span>
+        <div class="status-line-head">
+          <span class="status-dot ${statusClass(status)}"></span>
+          <span class="status-name">${statusLabel(status)}</span>
+          <strong class="status-count">${count}</strong>
+          <span class="status-pct">${width}%</span>
         </div>
+        <div class="meter thick-meter"><span class="${statusClass(status)}" style="width:${width}%"></span></div>
       </div>
     `;
-  })();
+  }).join("") + `
+    <div class="register-badges">
+      <span class="reg-badge reg-risk">⚠ Risk: ${counts.risks}</span>
+      <span class="reg-badge reg-issue">🔴 Issue: ${counts.issues}</span>
+      <span class="reg-badge reg-milestone">🎯 Milestone: ${counts.milestones}</span>
+    </div>
+  `;
 
+  // ── Upcoming tasks ─────────────────────────────────────────────────────────
   const upcoming = shownTasks
     .filter((task) => task.status !== "Bitib")
     .sort((a, b) => parseDate(a.end) - parseDate(b.end))
-    .slice(0, 5);
+    .slice(0, 6);
 
-  upcomingList.innerHTML = upcoming.length ? upcoming.map((task) => `
-    <div class="compact-item">
+  upcomingList.innerHTML = upcoming.length ? upcoming.map((task) => {
+    const days = daysUntil(task.end);
+    const urgency = days < 0 ? "danger" : days <= 3 ? "warning" : "";
+    const daysLabel = days < 0 ? `${Math.abs(days)} gün gecikdi` : days === 0 ? "Bu gün" : `${days} gün qaldı`;
+    return `
+    <div class="compact-item ${urgency}">
       <strong>${escapeHtml(task.name)}</strong>
       <div class="task-meta">
         <span>${escapeHtml(getProject(task))}</span>
-        <span>${shortDate(task.end)}</span>
         <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
+        <span style="color:${urgency === 'danger' ? 'var(--red)' : urgency === 'warning' ? 'var(--amber)' : 'var(--muted)'}">${daysLabel}</span>
       </div>
     </div>
-  `).join("") : `<div class="empty">${text("noUpcoming")}</div>`;
+  `;}).join("") : `<div class="empty">${text("noUpcoming")}</div>`;
 
   const rows = workloadRows().slice(0, 6);
   workloadList.innerHTML = rows.length ? rows.map((row) => {
@@ -5000,11 +5077,16 @@ function renderCalendarDetails() {
 }
 
 function renderCalendar() {
-  [dashboardCalendarStart, calendarStart].forEach((input) => { input.value = calendarRange.start; });
-  [dashboardCalendarEnd, calendarEnd].forEach((input) => { input.value = calendarRange.end; });
+  [calendarStart].forEach((input) => { if (input) input.value = calendarRange.start; });
+  [calendarEnd].forEach((input) => { if (input) input.value = calendarRange.end; });
   dashboardCalendar.innerHTML = renderCalendarMarkup(true);
   calendarBoard.innerHTML = renderCalendarMarkup(false);
   renderCalendarDetails();
+  // update month label in dashboard nav
+  if (dashCalMonthLabel && calendarRange.start) {
+    const d = new Date(calendarRange.start + "T00:00:00");
+    dashCalMonthLabel.textContent = d.toLocaleDateString("az-AZ", { month: "long", year: "numeric" });
+  }
 }
 
 function renderProjectsView() {
@@ -5717,6 +5799,7 @@ function renderReports() {
 
 function renderViews() {
   views.forEach((view) => view.classList.toggle("active-view", view.id === `${currentView}View`));
+  document.body.dataset.view = currentView;
 }
 
 function renderPlatformConsole() {
@@ -5936,6 +6019,7 @@ function renderPlatformConsole() {
 
 function setView(view) {
   currentView = view;
+  document.body.dataset.view = view;
   viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === currentView));
   if (view === "projects") projectFilter.value = "Hamısı";
   render();
@@ -7720,13 +7804,22 @@ function syncCalendarRangeFromInputs(source) {
 }
 dashboardCalendar.addEventListener("click", handleCalendarClick);
 calendarBoard.addEventListener("click", handleCalendarClick);
-[
-  { start: dashboardCalendarStart, end: dashboardCalendarEnd },
-  { start: calendarStart, end: calendarEnd }
-].forEach((source) => {
-  source.start.addEventListener("change", () => syncCalendarRangeFromInputs(source));
-  source.end.addEventListener("change", () => syncCalendarRangeFromInputs(source));
+[{ start: calendarStart, end: calendarEnd }].forEach((source) => {
+  source.start?.addEventListener("change", () => syncCalendarRangeFromInputs(source));
+  source.end?.addEventListener("change", () => syncCalendarRangeFromInputs(source));
 });
+// Dashboard calendar nav buttons (prev/next month)
+function shiftDashboardCalendarMonth(delta) {
+  const d = new Date(calendarRange.start + "T00:00:00");
+  d.setMonth(d.getMonth() + delta, 1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const lastDay = new Date(y, d.getMonth() + 1, 0).getDate();
+  calendarRange = { start: `${y}-${m}-01`, end: `${y}-${m}-${lastDay}` };
+  renderCalendar();
+}
+dashCalPrev?.addEventListener("click", () => shiftDashboardCalendarMonth(-1));
+dashCalNext?.addEventListener("click", () => shiftDashboardCalendarMonth(1));
 cancelEdit.addEventListener("click", () => {
   resetForm();
   closeTaskComposer();
