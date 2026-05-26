@@ -30,6 +30,87 @@ const dbConfig = {
 };
 const pool = mysql.createPool(dbConfig);
 const pdfFontPath = process.env.PDF_FONT_PATH || "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf";
+
+// ── Supabase background sync ─────────────────────────────────
+const sbUrl   = (process.env.SUPABASE_URL  || "").replace(/\/+$/, "");
+const sbAnon  = process.env.SUPABASE_ANON_KEY || "";
+const sbEmail = process.env.SUPABASE_EMAIL    || "";
+const sbPass  = process.env.SUPABASE_PASSWORD || "";
+
+let _sbToken = null;
+let _sbWorkspaceId = null;
+let _sbTokenExpiry = 0;
+
+function sbHttpReq(urlStr, options = {}, body) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(urlStr);
+    const data = body !== undefined ? JSON.stringify(body) : undefined;
+    const req = httpsRequest({
+      hostname: u.hostname,
+      port: u.port || 443,
+      path: u.pathname + u.search,
+      method: options.method || "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": sbAnon,
+        "Authorization": `Bearer ${options.token || sbAnon}`,
+        ...(data ? { "Content-Length": Buffer.byteLength(data) } : {}),
+        ...options.headers
+      }
+    }, (res) => {
+      let chunks = "";
+      res.on("data", c => { chunks += c; });
+      res.on("end", () => {
+        try { resolve({ ok: res.statusCode < 300, status: res.statusCode, data: JSON.parse(chunks) }); }
+        catch { resolve({ ok: res.statusCode < 300, status: res.statusCode, data: chunks }); }
+      });
+    });
+    req.on("error", reject);
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+async function sbEnsureToken() {
+  if (_sbToken && Date.now() < _sbTokenExpiry - 60_000) return _sbToken;
+  if (!sbUrl || !sbAnon || !sbEmail || !sbPass) return null;
+  try {
+    const { ok, data } = await sbHttpReq(
+      `${sbUrl}/auth/v1/token?grant_type=password`,
+      { method: "POST" },
+      { email: sbEmail, password: sbPass }
+    );
+    if (!ok || !data?.access_token) return null;
+    _sbToken = data.access_token;
+    _sbTokenExpiry = Date.now() + (data.expires_in || 3600) * 1000;
+    if (!_sbWorkspaceId) {
+      const userId = data.user?.id;
+      const { data: ws } = await sbHttpReq(
+        `${sbUrl}/rest/v1/workspaces?owner_id=eq.${userId}&select=id&limit=1`,
+        { token: _sbToken }
+      );
+      _sbWorkspaceId = Array.isArray(ws) ? ws[0]?.id : null;
+    }
+    return _sbToken;
+  } catch { return null; }
+}
+
+async function supabasePushState(stateJson) {
+  if (!sbUrl || !sbAnon || !sbEmail || !sbPass) return;
+  try {
+    const token = await sbEnsureToken();
+    if (!token || !_sbWorkspaceId) return;
+    const { ok, status } = await sbHttpReq(
+      `${sbUrl}/rest/v1/app_state?on_conflict=workspace_id`,
+      { method: "POST", token, headers: { Prefer: "resolution=merge-duplicates" } },
+      { workspace_id: _sbWorkspaceId, state_json: stateJson, updated_at: new Date().toISOString() }
+    );
+    if (ok) console.log(`[Supabase] synced ✓ (${new Date().toISOString()})`);
+    else    console.warn(`[Supabase] sync warning HTTP ${status}`);
+  } catch (err) {
+    console.warn("[Supabase] sync error:", err.message);
+  }
+}
 const bootstrapUsers = [
   { id: "user-super-admin", username: "superadmin", passwordHash: md5("superadmin123"), role: "super_admin", managerId: "", companyId: "platform", profile: { fullName: "Platform Admin", email: "", fatherName: "", position: "Super Admin", phone: "", address: "", company: "Platform" } },
   { id: "user-admin", username: "adminklinika", passwordHash: md5("adminklinika123"), role: "admin", managerId: "", companyId: "company-default", profile: { fullName: "Klinika Admin", email: "", fatherName: "", position: "Company Admin", phone: "", address: "", company: "Klinika" } },
@@ -2852,6 +2933,8 @@ async function handleApi(request, response) {
         ? await writeState({ ...ensureStateShape(payload), savedBy: actor.username }, "platform")
         : await writeState(mergeActorState(currentState, payload, actor), actorCompanyId(actor));
       sendJson(response, 200, { ok: true, savedAt: nextState.savedAt });
+      // arxa planda Supabase-ə sync et (cavabı gecikdirmir)
+      supabasePushState(nextState).catch(() => {});
     } catch (error) {
       sendJson(response, error.statusCode || 400, { error: "Could not save state" });
     }

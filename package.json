@@ -12,7 +12,10 @@
     "test:backend": "node scripts/backend-smoke.mjs",
     "test:tenant": "node scripts/tenant-simulation.mjs",
     "backup:json": "node scripts/backup-json.mjs",
-    "backup:db": "scripts/backup-db.sh"
+    "backup:db": "scripts/backup-db.sh",
+    "sync": "node sync-to-supabase.mjs",
+    "sync:status": "node sync-to-supabase.mjs --status",
+    "sync:init": "node sync-to-supabase.mjs --init"
   },
   "dependencies": {
     "ldapjs": "^3.0.7",
