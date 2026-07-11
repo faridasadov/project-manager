@@ -241,9 +241,18 @@ context.document.documentElement = { lang: "az" };
 context.globalThis = context;
 
 vm.createContext(context);
-// Load shared classic-script modules first, mirroring index.html load order.
-vm.runInContext(readFileSync(join(rootDir, "modules", "utils.js"), "utf8"), context);
-vm.runInContext(readFileSync(join(rootDir, "script.js"), "utf8"), context);
+// Load the classic scripts in index.html order. They must share one lexical
+// scope (browser classic scripts share the global lexical environment, so a
+// module function can read a `const`/`let` declared in script.js). Node's vm
+// does NOT share const/let across separate runInContext calls, so concatenate
+// the sources and run them as a single script to mirror browser semantics.
+const classicScripts = [
+  join(rootDir, "modules", "utils.js"),
+  join(rootDir, "modules", "labels.js"),
+  join(rootDir, "script.js")
+];
+const combinedSource = classicScripts.map((file) => readFileSync(file, "utf8")).join("\n");
+vm.runInContext(combinedSource, context);
 
 assert.equal(elements["#totalCount"].textContent, 19, "clinic count renders");
 assert.match(elements["#gantt"].innerHTML, /Klinika İT Portfeli/, "gantt renders project row first");

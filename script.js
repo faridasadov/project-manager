@@ -2031,9 +2031,7 @@ function text(key) {
   return translations[currentLanguage][key] || translations.az[key] || key;
 }
 
-function statusLabel(status) {
-  return translations[currentLanguage].statuses[status] || status;
-}
+// statusLabel → modules/labels.js
 
 function normalizeWorkflowStatuses(values = defaultWorkflowStatuses) {
   const cleaned = (Array.isArray(values) ? values : defaultWorkflowStatuses)
@@ -2084,27 +2082,7 @@ function syncWorkflowStatuses() {
   appSettings.workflowStatuses = statuses;
 }
 
-function priorityLabel(priority) {
-  return translations[currentLanguage].priorities[priority] || priority;
-}
-
-function registerTypeLabel(type) {
-  if (type === "issue") return text("issueRegister");
-  if (type === "milestone") return text("milestoneRegister");
-  return text("riskRegister");
-}
-
-function impactLabel(impact) {
-  if (impact === "High") return text("impactHigh");
-  if (impact === "Low") return text("impactLow");
-  return text("impactMedium");
-}
-
-function registerStatusLabel(status) {
-  if (status === "Resolved") return text("registerResolved");
-  if (status === "Monitoring") return text("registerMonitoring");
-  return text("registerOpen");
-}
+// priorityLabel, registerTypeLabel, impactLabel, registerStatusLabel → modules/labels.js
 
 function applyTranslations() {
   syncWorkflowStatuses();
