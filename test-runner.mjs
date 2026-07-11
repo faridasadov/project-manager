@@ -248,6 +248,7 @@ vm.createContext(context);
 // the sources and run them as a single script to mirror browser semantics.
 const classicScripts = [
   join(rootDir, "modules", "ids.js"),
+  join(rootDir, "modules", "crypto.js"),
   join(rootDir, "modules", "utils.js"),
   join(rootDir, "modules", "labels.js"),
   join(rootDir, "modules", "format.js"),
