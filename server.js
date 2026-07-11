@@ -15,6 +15,10 @@ const uploadsDir = join(rootDir, "uploads");
 const port = Number(process.env.PORT || 3000);
 const authSecret = process.env.AUTH_SECRET || "project-manager-change-this-secret";
 if (authSecret === "project-manager-change-this-secret") {
+  if (process.env.NODE_ENV === "production") {
+    console.error("[SECURITY] AUTH_SECRET is using the default value in production. Set AUTH_SECRET before starting. Refusing to boot.");
+    process.exit(1);
+  }
   console.warn("[SECURITY] AUTH_SECRET is using the default value. Set AUTH_SECRET in your .env file before deploying.");
 }
 const corsOrigin = process.env.CORS_ORIGIN || "*";

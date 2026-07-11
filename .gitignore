@@ -2,3 +2,5 @@ data/
 node_modules/
 .env
 supabase/.temp/
+uploads/
+!uploads/.gitkeep
