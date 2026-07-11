@@ -69,7 +69,7 @@ function saveResources() {
   localStorage.setItem(projectsKey, JSON.stringify(projects));
   localStorage.setItem(projectLinksKey, JSON.stringify(projectLinks));
   localStorage.setItem(customersKey, JSON.stringify(customers));
-  localStorage.setItem(managedFilesKey, JSON.stringify(managedFiles));
+  localStorage.setItem(managedFilesKey, JSON.stringify(appState.managedFiles));
   scheduleBackendSave();
 }
 

@@ -1841,7 +1841,7 @@ let teams = loadTeams();
 let projects = loadProjects();
 let projectLinks = loadProjectLinks();
 let customers = loadCustomers();
-let managedFiles = loadManagedFiles();
+appState.managedFiles = loadManagedFiles();
 let registers = loadRegisters();
 let users = loadUsers();
 let trash = loadTrash();
@@ -2168,7 +2168,7 @@ function loadClinicPortfolioState() {
   projects = [normalizeProject({ ...clinicPortfolioProject })];
   projectLinks = [];
   customers = [{ id: "customer-clinic", name: "Klinika", contact: "Klinika İT Şöbəsi", email: "" }];
-  managedFiles = [];
+  appState.managedFiles = [];
   registers = [
     ...registers
       .filter((item) => item.project === clinicPortfolioProject.name && item.type !== "milestone")
@@ -2209,9 +2209,9 @@ function resetSelectedProjectState() {
 }
 
 function enforceClinicOnlyState() {
-  const before = JSON.stringify({ tasks, projects, members, teams, projectLinks, customers, managedFiles, registers, trash });
+  const before = JSON.stringify({ tasks, projects, members, teams, projectLinks, customers, managedFiles: appState.managedFiles, registers, trash });
   loadClinicPortfolioState();
-  return before !== JSON.stringify({ tasks, projects, members, teams, projectLinks, customers, managedFiles, registers, trash });
+  return before !== JSON.stringify({ tasks, projects, members, teams, projectLinks, customers, managedFiles: appState.managedFiles, registers, trash });
 }
 
 function ensureDemoData() {
@@ -2647,7 +2647,7 @@ function companyBackupPayload(companyId = "") {
     members: companyId ? members.filter((member) => !member.companyId || member.companyId === companyId) : members,
     teams: companyId ? teams.filter((team) => !team.companyId || team.companyId === companyId) : teams,
     customers: companyId ? customers.filter((customer) => !customer.companyId || customer.companyId === companyId) : customers,
-    managedFiles: companyId ? managedFiles.filter((file) => !file.companyId || file.companyId === companyId) : managedFiles,
+    managedFiles: companyId ? appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId) : appState.managedFiles,
     projectLinks: projectLinks.filter((link) => projectNames.has(link.project) || !companyId),
     registers: registers.filter((item) => projectNames.has(item.project) || !companyId),
     users: companyId ? users.filter((user) => user.companyId === companyId) : users,
@@ -3927,7 +3927,7 @@ function renderResourceControls() {
   const scopedProjectNames = new Set(scopedProjects.map((project) => project.name));
   const scopedTasks = accessibleTasks();
   const scopedCustomers = customers.filter(isSameCompany);
-  const scopedFiles = managedFiles.filter(isSameCompany);
+  const scopedFiles = appState.managedFiles.filter(isSameCompany);
   const scopedTeams = teams.filter(isSameCompany);
   const scopedLinks = projectLinks.filter((link) => (
     link.companyId ? isSameCompany(link) : scopedProjectNames.has(link.project)
@@ -4233,7 +4233,7 @@ function renderCustomerList() {
 }
 
 function renderManagedFileList() {
-  const scopedFiles = managedFiles.filter(isSameCompany);
+  const scopedFiles = appState.managedFiles.filter(isSameCompany);
   managedFileList.innerHTML = scopedFiles.length ? scopedFiles.map((file) => `
     <div class="resource-item">
       <span><strong>${escapeHtml(file.name)}</strong>${fileSizeLabel(Number(file.size) || 0)} · ${escapeHtml(formatDateTime(file.createdAt))}</span>
@@ -6121,7 +6121,7 @@ function backupPayload() {
     members: isSuperAdmin() ? [] : members.filter((member) => !member.companyId || member.companyId === companyId),
     teams: isSuperAdmin() ? [] : teams.filter((team) => !team.companyId || team.companyId === companyId),
     customers: isSuperAdmin() ? [] : customers.filter((customer) => !customer.companyId || customer.companyId === companyId),
-    managedFiles: isSuperAdmin() ? [] : managedFiles.filter((file) => !file.companyId || file.companyId === companyId),
+    managedFiles: isSuperAdmin() ? [] : appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId),
     projectLinks: isSuperAdmin() ? [] : projectLinks.filter((link) => projectNames.has(link.project)),
     registers: isSuperAdmin() ? [] : registers.filter((item) => projectNames.has(item.project)),
     users: scopedUsers,
@@ -7153,7 +7153,7 @@ function importBackup(payload) {
   members = Array.isArray(payload.members) ? payload.members : members;
   teams = Array.isArray(payload.teams) ? payload.teams : teams;
   customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : customers;
-  managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : managedFiles;
+  appState.managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : appState.managedFiles;
   projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
   registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : registers;
   users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
@@ -7166,7 +7166,7 @@ function importBackup(payload) {
     members = members.map((member) => ({ ...member, companyId })).filter((member) => member.companyId === companyId);
     teams = teams.map((team) => ({ ...team, companyId })).filter((team) => team.companyId === companyId);
     customers = customers.map((customer) => normalizeCustomer({ ...customer, companyId })).filter((customer) => customer.companyId === companyId);
-    managedFiles = managedFiles.map((file) => ({ ...file, companyId })).filter((file) => file.companyId === companyId);
+    appState.managedFiles = appState.managedFiles.map((file) => ({ ...file, companyId })).filter((file) => file.companyId === companyId);
     projectLinks = projectLinks.filter((link) => projectNames.has(link.project));
     registers = registers.filter((item) => projectNames.has(item.project));
     users = users.filter((user) => user.role !== "super_admin" && user.companyId === companyId);
@@ -7494,7 +7494,7 @@ async function savePlatformState() {
       members,
       teams,
       customers,
-      managedFiles,
+      managedFiles: appState.managedFiles,
       projectLinks,
       registers,
       users,
@@ -8943,7 +8943,7 @@ platformConsole?.addEventListener("change", async (event) => {
     members = Array.isArray(payload.members) ? payload.members.map(normalizeMember) : members;
     teams = Array.isArray(payload.teams) ? payload.teams.map(normalizeTeam) : teams;
     customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : customers;
-    managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : managedFiles;
+    appState.managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : appState.managedFiles;
     projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
     registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : registers;
     users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
@@ -9035,7 +9035,7 @@ addManagedFilesButton.addEventListener("click", async () => {
   if (!isAdmin() || !managedFileInput.files?.length) return;
   try {
     const files = await readSelectedAttachments(managedFileInput);
-    managedFiles.push(...files.map((file) => ({
+    appState.managedFiles.push(...files.map((file) => ({
       ...file,
       id: createId(),
       companyId: currentCompanyId(),
@@ -9054,11 +9054,11 @@ addManagedFilesButton.addEventListener("click", async () => {
 managedFileList.addEventListener("click", async (event) => {
   const button = event.target.closest("button[data-file-action]");
   if (!button || !isAdmin()) return;
-  const file = managedFiles.find((item) => item.id === button.dataset.id);
+  const file = appState.managedFiles.find((item) => item.id === button.dataset.id);
   if (file?.storageProvider === "supabase") {
     deleteSupabaseObject(file.storagePath).catch((error) => console.warn("Supabase file delete failed", error));
   }
-  managedFiles = managedFiles.filter((file) => file.id !== button.dataset.id);
+  appState.managedFiles = appState.managedFiles.filter((file) => file.id !== button.dataset.id);
   saveResources();
   render();
 });

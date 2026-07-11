@@ -247,6 +247,7 @@ vm.createContext(context);
 // does NOT share const/let across separate runInContext calls, so concatenate
 // the sources and run them as a single script to mirror browser semantics.
 const classicScripts = [
+  join(rootDir, "modules", "state.js"),
   join(rootDir, "modules", "ids.js"),
   join(rootDir, "modules", "crypto.js"),
   join(rootDir, "modules", "utils.js"),
