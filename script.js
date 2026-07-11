@@ -2305,23 +2305,11 @@ function ensureTenantSeedData() {
   return changedTasks || changedResources || changedUsers;
 }
 
-function loadJson(key, fallback) {
-  const stored = localStorage.getItem(key);
-  if (!stored) return fallback();
-  try {
-    return JSON.parse(stored);
-  } catch {
-    return fallback();
-  }
-}
+// loadJson → modules/storage.js
 
-function loadMembers() {
-  return loadJson(membersKey, () => []);
-}
+// loadMembers → modules/storage.js
 
-function loadTeams() {
-  return loadJson(teamsKey, () => []);
-}
+// loadTeams → modules/storage.js
 
 function loadProjects() {
   const stored = loadJson(projectsKey, () => []);
@@ -2329,17 +2317,13 @@ function loadProjects() {
   return [normalizeProject({ ...clinicPortfolioProject })];
 }
 
-function loadProjectLinks() {
-  return loadJson(projectLinksKey, () => []);
-}
+// loadProjectLinks → modules/storage.js
 
 function loadCustomers() {
   return loadJson(customersKey, () => [{ id: "customer-clinic", name: "Klinika", contact: "Klinika İT Şöbəsi", email: "" }]).map(normalizeCustomer);
 }
 
-function loadManagedFiles() {
-  return loadJson(managedFilesKey, () => []);
-}
+// loadManagedFiles → modules/storage.js
 
 function loadUsers() {
   const stored = loadJson(usersKey, () => demoUsers.map((user) => ({ ...user })));
@@ -2372,9 +2356,7 @@ function uniqueUsername(base) {
 
 // normalizeCustomer → modules/normalize.js
 
-function loadTrash() {
-  return loadJson(trashKey, () => []);
-}
+// loadTrash → modules/storage.js
 
 // normalizeRegisterItem → modules/normalize.js
 
@@ -2382,13 +2364,9 @@ function loadRegisters() {
   return loadJson(registersKey, () => []).map(normalizeRegisterItem);
 }
 
-function loadLocalAuditLogs() {
-  return loadJson(localAuditKey, () => []);
-}
+// loadLocalAuditLogs → modules/storage.js
 
-function loadNotifications() {
-  return loadJson(notificationsKey, () => []);
-}
+// loadNotifications → modules/storage.js
 
 function saveLocalAuditLogs() {
   localStorage.setItem(localAuditKey, JSON.stringify(localAuditLogs.slice(0, 200)));
@@ -6212,14 +6190,7 @@ function isSupabasePrimaryMode() {
   return Boolean(cfg && cfg.primaryBackend !== false && typeof fetch === "function");
 }
 
-function loadSupabaseSession() {
-  try {
-    const value = JSON.parse(localStorage.getItem(supabaseSessionKey) || "null");
-    return value && value.access_token ? value : null;
-  } catch {
-    return null;
-  }
-}
+// loadSupabaseSession → modules/storage.js
 
 function saveSupabaseSession(session) {
   supabaseSession = session || null;
