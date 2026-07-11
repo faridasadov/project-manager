@@ -1,3 +1,8 @@
+# Secrets (AUTH_SECRET, DB_PASSWORD, ...) come from EnvironmentFile below —
+# see deploy/project-manager.env.example. Keep /etc/project-manager.env at mode 600;
+# never put secrets on inline Environment= lines (this unit is world-readable).
+# WorkingDirectory/ExecStart assume APP_DIR=/opt/project-manager (install-server.sh);
+# adjust both paths if you deploy elsewhere.
 [Unit]
 Description=Project Manager backend
 After=network.target mariadb.service

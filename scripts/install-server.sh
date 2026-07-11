@@ -33,6 +33,7 @@ DB_USER=${DB_USER}
 DB_PASSWORD=${DB_PASSWORD}
 DEADLINE_SCHEDULER=on
 ENV
+chmod 600 /etc/project-manager.env
 
 cp deploy/project-manager.service /etc/systemd/system/project-manager.service
 systemctl daemon-reload
