@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      # npm test = `node --check script.js && node test-runner.mjs`.
+      # test-runner.mjs uses only Node built-ins, so no install step is needed.
+      - name: Run tests
+        run: npm test

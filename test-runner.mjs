@@ -234,7 +234,8 @@ const context = {
     },
     createComment: (value) => ({ value, replaceWith: () => {} }),
     addEventListener: () => {}
-  }
+  },
+  navigator: { userAgent: "node-test" }
 };
 context.document.documentElement = { lang: "az" };
 context.globalThis = context;
@@ -486,7 +487,7 @@ assert.match(elements["#taskList"].innerHTML, /Təsdiq et/, "done request waits 
 elements["#taskList"].dispatch("click", {
   target: { closest: () => ({ dataset: { action: "approve-done", id: editedId } }) }
 });
-const doneTaskCard = elements["#taskList"].innerHTML.match(/<article class="task-card[^"]*">[\s\S]*?Redaktə olunmuş task[\s\S]*?<\/article>/)?.[0] || "";
+const doneTaskCard = elements["#taskList"].innerHTML.match(/<article class="task-card[^>]*>[\s\S]*?Redaktə olunmuş task[\s\S]*?<\/article>/)?.[0] || "";
 assert.doesNotMatch(doneTaskCard, /<textarea name="comment"/, "done tasks do not show comment form");
 assert.doesNotMatch(doneTaskCard, />İrəli</, "done tasks do not show next button");
 assert.match(doneTaskCard, />Sil</, "done tasks keep delete button");
