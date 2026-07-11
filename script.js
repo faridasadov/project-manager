@@ -1286,12 +1286,7 @@ const translations = {
   }
 };
 
-function createId() {
-  if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
-    return globalThis.crypto.randomUUID();
-  }
-  return `task-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
+// createId → modules/ids.js
 
 function md5(input) {
   function add32(a, b) {
@@ -2497,28 +2492,9 @@ function loadUsers() {
   });
 }
 
-function companyIdFromName(name) {
-  const slug = String(name || "workspace").trim().toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 42);
-  return `company-${slug || createId()}`;
-}
+// companyIdFromName → modules/ids.js
 
-function slugFromName(name) {
-  return String(name || "workspace").trim().toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ə/g, "e")
-    .replace(/ı/g, "i")
-    .replace(/ö/g, "o")
-    .replace(/ü/g, "u")
-    .replace(/ğ/g, "g")
-    .replace(/ş/g, "s")
-    .replace(/ç/g, "c")
-    .replace(/[^a-z0-9]+/g, "")
-    .slice(0, 32) || "workspace";
-}
+// slugFromName → modules/ids.js
 
 function uniqueUsername(base) {
   const cleanBase = slugFromName(base);
