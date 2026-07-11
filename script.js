@@ -2926,34 +2926,7 @@ function saveRegisters() {
 }
 
 // parseDate, daysBetween, addDays, isoDate → modules/utils.js
-
-function shortDate(value) {
-  if (!value) return "-";
-  return new Intl.DateTimeFormat(translations[currentLanguage].locale, {
-    day: "2-digit",
-    month: "short"
-  }).format(parseDate(value));
-}
-
-function formatDateTime(value) {
-  if (!value) return "";
-  return new Intl.DateTimeFormat(translations[currentLanguage].locale, {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(new Date(value));
-}
-
-function statusDurationLabel(value) {
-  if (!value) return "-";
-  const start = new Date(value);
-  if (Number.isNaN(start.getTime())) return "-";
-  const days = Math.max(0, Math.floor((Date.now() - start.getTime()) / 86400000));
-  if (days === 0) return "bu gün";
-  return `${days} gün`;
-}
+// shortDate, formatDateTime, statusDurationLabel → modules/format.js
 
 function companyStatusMeta(company) {
   const isSuspended = company.status === "suspended";
@@ -3053,9 +3026,7 @@ function todayStart() {
   return today;
 }
 
-function daysUntil(value) {
-  return Math.round((parseDate(value) - todayStart()) / 86400000);
-}
+// daysUntil → modules/format.js
 
 // fileSizeLabel → modules/utils.js
 

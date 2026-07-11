@@ -249,6 +249,7 @@ vm.createContext(context);
 const classicScripts = [
   join(rootDir, "modules", "utils.js"),
   join(rootDir, "modules", "labels.js"),
+  join(rootDir, "modules", "format.js"),
   join(rootDir, "script.js")
 ];
 const combinedSource = classicScripts.map((file) => readFileSync(file, "utf8")).join("\n");
