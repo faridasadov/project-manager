@@ -1,4 +1,4 @@
-// Project Manager — localStorage read helpers.
+// Project Manager — localStorage read/write helpers.
 //
 // Classic <script> loaded before script.js. loadJson is the shared primitive;
 // each accessor reads one storage key (the *Key consts live in script.js and
@@ -51,4 +51,39 @@ function loadSupabaseSession() {
   } catch {
     return null;
   }
+}
+
+// --- Writers ---
+// Persist a mutable state global to localStorage and trigger the background
+// backend sync. They read the shared state (tasks/users/... — let in script.js)
+// and call scheduleBackendSave (a hoisted global in script.js) at call time.
+
+function saveTasks() {
+  localStorage.setItem(storageKey, JSON.stringify(tasks));
+  scheduleBackendSave();
+}
+
+function saveResources() {
+  localStorage.setItem(membersKey, JSON.stringify(members));
+  localStorage.setItem(teamsKey, JSON.stringify(teams));
+  localStorage.setItem(projectsKey, JSON.stringify(projects));
+  localStorage.setItem(projectLinksKey, JSON.stringify(projectLinks));
+  localStorage.setItem(customersKey, JSON.stringify(customers));
+  localStorage.setItem(managedFilesKey, JSON.stringify(managedFiles));
+  scheduleBackendSave();
+}
+
+function saveUsers() {
+  localStorage.setItem(usersKey, JSON.stringify(users));
+  scheduleBackendSave();
+}
+
+function saveTrash() {
+  localStorage.setItem(trashKey, JSON.stringify(trash));
+  scheduleBackendSave();
+}
+
+function saveRegisters() {
+  localStorage.setItem(registersKey, JSON.stringify(registers));
+  scheduleBackendSave();
 }
