@@ -14,7 +14,9 @@ The current Node/MariaDB backend stays unchanged.
 
 If the schema was applied correctly, the test page returns `supabase_health` with `app_name: project-manager`.
 
-`supabase/schema.sql` is a reset/test file. It drops and recreates Project Manager objects, so do not run it against an online project that has real data.
+> **Data model:** the app stores each workspace as one JSON document in the
+> `app_state` table (blob model). The normalized relational schema was never
+> adopted and now lives in `supabase/archive/` — do not run those files.
 
 For GitHub Pages, set Supabase Authentication -> URL Configuration:
 

@@ -42,6 +42,18 @@ supabase/migrations/20260525_online_sync.sql
 supabase/migrations/20260525_storage_mail.sql
 ```
 
+Optional — for daily deadline-alert email via `pg_cron`:
+
+```
+supabase/migrations/20260525_mail_cron.sql
+```
+
+> **Data model:** the app stores each workspace as one JSON document in the
+> `app_state` table. The frontend only uses `workspaces`, `profiles`,
+> `app_state`, `app_settings`, `notifications` and `audit_logs`. An older
+> normalized relational schema was never adopted and is kept, unused, in
+> `supabase/archive/` — do not run those files.
+
 ### 3. Configure the frontend
 
 Edit `supabase/supabase-config.js`:
