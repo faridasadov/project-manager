@@ -2947,23 +2947,7 @@ function saveRegisters() {
   scheduleBackendSave();
 }
 
-function parseDate(value) {
-  return new Date(`${value}T00:00:00`);
-}
-
-function daysBetween(start, end) {
-  return Math.round((parseDate(end) - parseDate(start)) / 86400000);
-}
-
-function addDays(date, days) {
-  const copy = new Date(date);
-  copy.setDate(copy.getDate() + days);
-  return copy;
-}
-
-function isoDate(date) {
-  return date.toISOString().slice(0, 10);
-}
+// parseDate, daysBetween, addDays, isoDate → modules/utils.js
 
 function shortDate(value) {
   if (!value) return "-";
@@ -3095,11 +3079,7 @@ function daysUntil(value) {
   return Math.round((parseDate(value) - todayStart()) / 86400000);
 }
 
-function fileSizeLabel(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+// fileSizeLabel → modules/utils.js
 
 function readFileAsAttachment(file) {
   const maxFileSize = 800 * 1024;
@@ -3123,13 +3103,7 @@ function readFileAsAttachment(file) {
   });
 }
 
-function safeStorageName(name) {
-  return String(name || "file")
-    .normalize("NFKD")
-    .replace(/[^\w.\-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 120) || "file";
-}
+// safeStorageName → modules/utils.js
 
 function readSelectedAttachments(input) {
   if (!input?.files?.length) return Promise.resolve([]);
@@ -3137,20 +3111,7 @@ function readSelectedAttachments(input) {
   return Promise.all([...input.files].map(readFileAsAttachment));
 }
 
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function statusClass(status) {
-  if (status === "Bitib") return "done";
-  if (status !== "Plan") return "active";
-  return "plan";
-}
+// escapeHtml, statusClass → modules/utils.js
 
 function priorityClass(priority) {
   if (priority === "Kritik") return "critical";

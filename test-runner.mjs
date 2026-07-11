@@ -241,6 +241,8 @@ context.document.documentElement = { lang: "az" };
 context.globalThis = context;
 
 vm.createContext(context);
+// Load shared classic-script modules first, mirroring index.html load order.
+vm.runInContext(readFileSync(join(rootDir, "modules", "utils.js"), "utf8"), context);
 vm.runInContext(readFileSync(join(rootDir, "script.js"), "utf8"), context);
 
 assert.equal(elements["#totalCount"].textContent, 19, "clinic count renders");
