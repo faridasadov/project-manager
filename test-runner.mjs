@@ -261,6 +261,7 @@ const classicScripts = [
   join(rootDir, "modules", "scope.js"),
   join(rootDir, "modules", "dependencies.js"),
   join(rootDir, "modules", "notifications.js"),
+  join(rootDir, "modules", "company.js"),
   join(rootDir, "script.js")
 ];
 const combinedSource = classicScripts.map((file) => readFileSync(file, "utf8")).join("\n");
