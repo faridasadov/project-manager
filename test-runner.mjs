@@ -251,6 +251,7 @@ const classicScripts = [
   join(rootDir, "modules", "translations.js"),
   join(rootDir, "modules", "ids.js"),
   join(rootDir, "modules", "crypto.js"),
+  join(rootDir, "modules", "seed-data.js"),
   join(rootDir, "modules", "utils.js"),
   join(rootDir, "modules", "labels.js"),
   join(rootDir, "modules", "format.js"),
