@@ -859,34 +859,13 @@ function loadRegisters() {
 
 // loadNotifications → modules/storage.js
 
-function saveLocalAuditLogs() {
-  localStorage.setItem(localAuditKey, JSON.stringify(localAuditLogs.slice(0, 200)));
-  syncSupabaseAuditLogs().catch((error) => console.warn("Supabase audit sync failed", error));
-}
+// saveLocalAuditLogs / saveNotifications → modules/notifications.js
 
-function saveNotifications() {
-  localStorage.setItem(notificationsKey, JSON.stringify(notifications.slice(0, 200)));
-  renderNotificationBadge();
-  syncSupabaseNotifications().catch((error) => console.warn("Supabase notification sync failed", error));
-}
 
 // currentCompanyId / projectCompanyId / taskCompanyId / isSameCompany → modules/tenant.js
 
-function recordAudit(action, entityType, entityId, detail = "") {
-  const entry = {
-    id: createId(),
-    action,
-    actor: currentUser?.username || "system",
-    companyId: currentCompanyId(),
-    entity_type: entityType,
-    entity_id: entityId,
-    detail,
-    created_at: new Date().toISOString()
-  };
-  localAuditLogs.unshift(entry);
-  saveLocalAuditLogs();
-  return entry;
-}
+// recordAudit → modules/notifications.js
+
 
 function companyRegistryFromLocalState() {
   const existing = new Map((companyRegistry || []).map((company) => [company.id, { ...company }]));
@@ -929,35 +908,7 @@ function companyRegistryFromLocalState() {
   }).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function addNotification(message, targetUserId = "", meta = {}) {
-  notifications.unshift({
-    id: createId(),
-    message,
-    targetUserId,
-    companyId: currentCompanyId(),
-    read: false,
-    createdAt: new Date().toISOString(),
-    ...meta
-  });
-  saveNotifications();
-}
-
-function visibleNotifications() {
-  const companyId = currentCompanyId();
-  return notifications.filter((item) => {
-    const sameCompany = !item.companyId || item.companyId === companyId;
-    const sameTarget = !item.targetUserId || item.targetUserId === currentUser?.id;
-    return sameCompany && sameTarget;
-  });
-}
-
-function renderNotificationBadge() {
-  if (!notifyUnreadCount) return;
-  const unreadCount = visibleNotifications().filter((item) => !item.read).length;
-  notifyUnreadCount.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
-  notifyUnreadCount.hidden = unreadCount === 0;
-  notifyButton?.setAttribute("aria-label", unreadCount ? `${text("notify")}: ${unreadCount}` : text("notify"));
-}
+// addNotification / visibleNotifications / renderNotificationBadge → modules/notifications.js
 
 function defaultSettings() {
   return {
