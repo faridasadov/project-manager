@@ -6330,28 +6330,42 @@ kbd {
 
 /* ═══════════════════════════════════════════════════════════════════
    MOTION LAYER — welcome entrance + interior micro-interactions
-   All effects sit behind prefers-reduced-motion (guard at the bottom).
+   Built on Emil Kowalski's motion principles: strong custom easing,
+   transform/opacity only, enter = ease-out, crisp on frequent actions,
+   hover gated to fine pointers, reduced-motion keeps a gentle fade.
    ═══════════════════════════════════════════════════════════════════ */
+:root {
+  /* Strong ease-out — the built-in curves lack punch (Emil) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+}
 
 @keyframes heroRise {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes heroCardRise {
-  from { opacity: 0; transform: translateY(22px) scale(0.985); }
+  from { opacity: 0; transform: translateY(18px) scale(0.99); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* View switch: subtle + fast — views are entered many times/day */
 @keyframes viewEnter {
-  from { opacity: 0; transform: translateY(10px) scale(0.996); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes softPop {
-  0%   { opacity: 0; transform: scale(0.94); }
-  60%  { opacity: 1; transform: scale(1.015); }
-  100% { opacity: 1; transform: scale(1); }
+/* Panels rise gently, no bounce overshoot (professional = crisp) */
+@keyframes panelRise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Reduced-motion fallback: opacity only, no positional movement */
+@keyframes gentleFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* ── Welcome page: staggered entrance ─────────────────────────────── */
@@ -6362,77 +6376,80 @@ kbd {
 .hero-cta-row,
 .hero-ipma-block,
 .login-hero-stats {
-  animation: heroRise 620ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: heroRise 520ms var(--ease-out) both;
 }
 .login-hero-brand   { animation-delay: 40ms; }
-.hero-eyebrow       { animation-delay: 120ms; }
-.login-hero-title   { animation-delay: 190ms; }
-.login-hero-sub     { animation-delay: 260ms; }
-.hero-cta-row       { animation-delay: 330ms; }
-.hero-ipma-block    { animation-delay: 520ms; }
-.login-hero-stats   { animation-delay: 600ms; }
+.hero-eyebrow       { animation-delay: 110ms; }
+.login-hero-title   { animation-delay: 175ms; }
+.login-hero-sub     { animation-delay: 240ms; }
+.hero-cta-row       { animation-delay: 305ms; }
+.hero-ipma-block    { animation-delay: 470ms; }
+.login-hero-stats   { animation-delay: 540ms; }
 
 .login-feature-list li {
-  animation: heroRise 560ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: heroRise 480ms var(--ease-out) both;
 }
-.login-feature-list li:nth-child(1) { animation-delay: 380ms; }
-.login-feature-list li:nth-child(2) { animation-delay: 440ms; }
-.login-feature-list li:nth-child(3) { animation-delay: 500ms; }
-.login-feature-list li:nth-child(4) { animation-delay: 560ms; }
-.login-feature-list li:nth-child(5) { animation-delay: 620ms; }
+.login-feature-list li:nth-child(1) { animation-delay: 340ms; }
+.login-feature-list li:nth-child(2) { animation-delay: 385ms; }
+.login-feature-list li:nth-child(3) { animation-delay: 430ms; }
+.login-feature-list li:nth-child(4) { animation-delay: 475ms; }
+.login-feature-list li:nth-child(5) { animation-delay: 520ms; }
 
 .login-card {
-  animation: heroCardRise 720ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
-  animation-delay: 220ms;
+  animation: heroCardRise 560ms var(--ease-out) both;
+  animation-delay: 200ms;
 }
 
 /* ── Interior: view switch entrance ───────────────────────────────── */
 .active-view {
   display: block;
-  animation: viewEnter 340ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: viewEnter 240ms var(--ease-out) both;
 }
 
-/* Dashboard panels gently rise-in as their view enters */
+/* Dashboard panels gently rise-in as their view enters (short stagger) */
 .active-view .dashboard-panel {
-  animation: softPop 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: panelRise 300ms var(--ease-out) both;
 }
-.active-view .dashboard-panel:nth-child(2) { animation-delay: 60ms; }
-.active-view .dashboard-panel:nth-child(3) { animation-delay: 120ms; }
-.active-view .dashboard-panel:nth-child(4) { animation-delay: 180ms; }
-.active-view .dashboard-panel:nth-child(5) { animation-delay: 240ms; }
-.active-view .dashboard-panel:nth-child(6) { animation-delay: 300ms; }
+.active-view .dashboard-panel:nth-child(2) { animation-delay: 45ms; }
+.active-view .dashboard-panel:nth-child(3) { animation-delay: 90ms; }
+.active-view .dashboard-panel:nth-child(4) { animation-delay: 135ms; }
+.active-view .dashboard-panel:nth-child(5) { animation-delay: 180ms; }
+.active-view .dashboard-panel:nth-child(6) { animation-delay: 225ms; }
 
-/* ── Micro-interactions: press + hover feedback ───────────────────── */
+/* ── Micro-interactions: press feedback (all pointers) ────────────── */
 .view-tab,
 .hero-cta-btn,
 .export-btn,
 button.primary,
 .snapshot-restore-btn {
-  transition: transform 130ms ease, box-shadow 150ms ease, background 150ms ease,
-              color 150ms ease, border-color 150ms ease;
+  transition: transform 140ms var(--ease-out), box-shadow 160ms ease,
+              background 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 .view-tab:active,
 .hero-cta-btn:active,
 .export-btn:active,
 button.primary:active,
 .snapshot-restore-btn:active {
-  transform: translateY(1px) scale(0.975);
-}
-.hero-cta-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(79, 70, 229, 0.32);
+  transform: scale(0.97);
 }
 
-/* Feature cards lift on hover (welcome page) */
 .login-feature-list li {
-  transition: transform 200ms cubic-bezier(0.22, 0.61, 0.36, 1),
-              box-shadow 200ms ease, border-color 200ms ease;
-}
-.login-feature-list li:hover {
-  transform: translateY(-3px);
+  transition: transform 220ms var(--ease-out), box-shadow 220ms ease,
+              border-color 220ms ease;
 }
 
-/* ── Accessibility: honour reduced-motion ─────────────────────────── */
+/* ── Hover lift: fine pointers only (avoid touch false-positives) ─── */
+@media (hover: hover) and (pointer: fine) {
+  .hero-cta-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(79, 70, 229, 0.32);
+  }
+  .login-feature-list li:hover {
+    transform: translateY(-3px);
+  }
+}
+
+/* ── Accessibility: reduced-motion keeps a gentle fade, no movement ─ */
 @media (prefers-reduced-motion: reduce) {
   .login-hero-brand,
   .hero-eyebrow,
@@ -6445,7 +6462,7 @@ button.primary:active,
   .login-card,
   .active-view,
   .active-view .dashboard-panel {
-    animation: none !important;
+    animation: gentleFade 200ms ease both;
   }
   .view-tab,
   .hero-cta-btn,
