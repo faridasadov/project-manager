@@ -74,7 +74,7 @@ function saveResources() {
 }
 
 function saveUsers() {
-  localStorage.setItem(usersKey, JSON.stringify(users));
+  localStorage.setItem(usersKey, JSON.stringify(appState.users));
   scheduleBackendSave();
 }
 

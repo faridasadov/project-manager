@@ -1846,7 +1846,7 @@ appState.projectLinks = loadProjectLinks();
 appState.customers = loadCustomers();
 appState.managedFiles = loadManagedFiles();
 appState.registers = loadRegisters();
-let users = loadUsers();
+appState.users = loadUsers();
 appState.trash = loadTrash();
 let currentUser = loadSession();
 let appSettings = loadSettings();
@@ -2223,8 +2223,8 @@ function ensureDemoData() {
   let changedUsers = false;
 
   demoUsers.forEach((user) => {
-    if (!users.some((item) => item.id === user.id || item.username === user.username)) {
-      users.push(normalizeUser({ ...user }));
+    if (!appState.users.some((item) => item.id === user.id || item.username === user.username)) {
+      appState.users.push(normalizeUser({ ...user }));
       changedUsers = true;
     }
   });
@@ -2275,8 +2275,8 @@ function ensureTenantSeedData() {
   let changedUsers = false;
 
   tenantSeedUsers.forEach((user) => {
-    if (!users.some((item) => item.id === user.id || item.username === user.username)) {
-      users.push(normalizeUser({ ...user }));
+    if (!appState.users.some((item) => item.id === user.id || item.username === user.username)) {
+      appState.users.push(normalizeUser({ ...user }));
       changedUsers = true;
     }
   });
@@ -2349,9 +2349,9 @@ function loadUsers() {
 
 function uniqueUsername(base) {
   const cleanBase = slugFromName(base);
-  if (!users.some((user) => user.username === cleanBase)) return cleanBase;
+  if (!appState.users.some((user) => user.username === cleanBase)) return cleanBase;
   let index = 2;
-  while (users.some((user) => user.username === `${cleanBase}${index}`)) index += 1;
+  while (appState.users.some((user) => user.username === `${cleanBase}${index}`)) index += 1;
   return `${cleanBase}${index}`;
 }
 
@@ -2419,7 +2419,7 @@ function recordAudit(action, entityType, entityId, detail = "") {
 function companyRegistryFromLocalState() {
   const existing = new Map((companyRegistry || []).map((company) => [company.id, { ...company }]));
   const usersByCompany = new Map();
-  users.forEach((user) => {
+  appState.users.forEach((user) => {
     if (user.role === "super_admin") return;
     const companyId = user.companyId || "company-default";
     const list = usersByCompany.get(companyId) || [];
@@ -2537,7 +2537,7 @@ function loadSession() {
     return null;
   }
   const userId = localStorage.getItem(sessionKey);
-  return userId ? users?.find((user) => user.id === userId) || null : null;
+  return userId ? appState.users?.find((user) => user.id === userId) || null : null;
 }
 
 function loadTasks() {
@@ -2653,7 +2653,7 @@ function companyBackupPayload(companyId = "") {
     managedFiles: companyId ? appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId) : appState.managedFiles,
     projectLinks: appState.projectLinks.filter((link) => projectNames.has(link.project) || !companyId),
     registers: appState.registers.filter((item) => projectNames.has(item.project) || !companyId),
-    users: companyId ? users.filter((user) => user.companyId === companyId) : users,
+    users: companyId ? appState.users.filter((user) => user.companyId === companyId) : appState.users,
     companyRegistry: companyId ? companyRegistryFromLocalState().filter((company) => company.id === companyId) : companyRegistryFromLocalState()
   };
 }
@@ -2729,7 +2729,7 @@ function createProject(name, details = {}) {
   if (!cleanName || projects.some((project) => project.companyId === companyId && project.name.toLowerCase() === cleanName.toLowerCase())) return false;
   const defaultManagerId = currentUser?.role === "manager"
     ? currentUser.id
-    : users.find((user) => user.role === "manager" && user.companyId === companyId)?.id || "";
+    : appState.users.find((user) => user.role === "manager" && user.companyId === companyId)?.id || "";
   const managerIds = details.managerId ? [details.managerId] : (defaultManagerId ? [defaultManagerId] : []);
   const progress = Math.min(100, Math.max(0, Number.parseInt(details.progress || "0", 10)));
   const project = normalizeProject({
@@ -2944,11 +2944,11 @@ function updateGovernanceScorePreview() {
 }
 
 function managerUsers(managerId) {
-  return users.filter((user) => user.managerId === managerId);
+  return appState.users.filter((user) => user.managerId === managerId);
 }
 
 function projectManagers(project) {
-  return users.filter((user) => (project.managerIds || []).includes(user.id));
+  return appState.users.filter((user) => (project.managerIds || []).includes(user.id));
 }
 
 function customerLabel(customerId) {
@@ -3014,7 +3014,7 @@ function resourceLabel(value) {
   if (!value) return text("noOwner");
   const [type, id] = value.split(":");
   if (type === "user") {
-    const user = users.find((item) => item.id === id);
+    const user = appState.users.find((item) => item.id === id);
     return user ? user.profile?.fullName || user.username : value;
   }
   if (type === "member") {
@@ -3029,7 +3029,7 @@ function resourceLabel(value) {
 }
 
 function userDisplayLabel(username) {
-  const user = users.find((item) => item.username === username || item.id === username);
+  const user = appState.users.find((item) => item.username === username || item.id === username);
   return user ? user.profile?.fullName || user.username : username || "";
 }
 
@@ -3052,7 +3052,7 @@ function managerOptions(selectedId = "") {
   const companyId = currentCompanyId();
   return [
     `<option value="">${text("noOwnerSelect")}</option>`,
-    ...users
+    ...appState.users
       .filter((user) => user.role === "manager" && user.companyId === companyId)
       .map((user) => {
         const label = user.profile?.fullName ? `${user.profile.fullName} (${user.username})` : user.username;
@@ -3063,7 +3063,7 @@ function managerOptions(selectedId = "") {
 
 function managerMultiOptions(selectedIds = []) {
   const companyId = currentCompanyId();
-  return users
+  return appState.users
     .filter((user) => user.role === "manager" && user.companyId === companyId)
     .map((user) => `<option value="${user.id}" ${selectedIds.includes(user.id) ? "selected" : ""}>${escapeHtml(user.username)}</option>`)
     .join("");
@@ -3072,7 +3072,7 @@ function managerMultiOptions(selectedIds = []) {
 function allResourceOptions() {
   const companyId = currentCompanyId();
   return [
-    ...users.filter((user) => !["admin", "super_admin"].includes(user.role) && user.companyId === companyId).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) })),
+    ...appState.users.filter((user) => !["admin", "super_admin"].includes(user.role) && user.companyId === companyId).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) })),
     ...appState.teams.filter((team) => isSameCompany(team)).map((team) => ({ value: resourceValue("team", team.id), label: team.name, type: text("team") }))
   ];
 }
@@ -3080,7 +3080,7 @@ function allResourceOptions() {
 function teamMemberOptions(selectedIds = []) {
   const companyId = currentCompanyId();
   return [
-    ...users.filter((user) => !["admin", "super_admin"].includes(user.role) && user.companyId === companyId).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) }))
+    ...appState.users.filter((user) => !["admin", "super_admin"].includes(user.role) && user.companyId === companyId).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) }))
   ].map((option) => `<option value="${option.value}" ${selectedIds.includes(option.value) ? "selected" : ""}>${option.type}: ${escapeHtml(option.label)}</option>`).join("");
 }
 
@@ -3165,7 +3165,7 @@ function resourceIncludesUser(resource, userId) {
 function visibleUserIdsForCurrentUser() {
   if (!currentUser) return [];
   if (isSuperAdmin()) return [];
-  if (isAdmin()) return users.filter((user) => user.companyId === currentCompanyId()).map((user) => user.id);
+  if (isAdmin()) return appState.users.filter((user) => user.companyId === currentCompanyId()).map((user) => user.id);
   if (currentUser.role === "manager") return [currentUser.id, ...managerUsers(currentUser.id).map((user) => user.id)];
   return [currentUser.id];
 }
@@ -3437,7 +3437,7 @@ function renderManagerPanel() {
   const myProjects = visibleProjects().filter((p) =>
     (p.managerIds || []).includes(currentUser.id)
   );
-  const myTeam = users.filter(
+  const myTeam = appState.users.filter(
     (u) => u.managerId === currentUser.id && u.companyId === companyId
   );
   const myRegisters = visibleRegisters().filter((r) => r.status !== "Resolved");
@@ -3562,7 +3562,7 @@ function renderManagerPanel() {
   // Team members for new team select
   const mgrNewTeamMembers = document.querySelector("#mgrNewTeamMembers");
   if (mgrNewTeamMembers) {
-    mgrNewTeamMembers.innerHTML = users
+    mgrNewTeamMembers.innerHTML = appState.users
       .filter((u) => !["admin", "super_admin"].includes(u.role) && u.companyId === companyId)
       .map((u) => `<option value="${u.id}">${escapeHtml(u.profile?.fullName || u.username)}</option>`)
       .join("");
@@ -3654,14 +3654,14 @@ function managerPickerIds() {
 }
 
 function updateSelectedManagersPreview(selectedIds = managerPickerIds()) {
-  const selected = users.filter((user) => selectedIds.includes(user.id));
+  const selected = appState.users.filter((user) => selectedIds.includes(user.id));
   selectedManagersPreview.innerHTML = selected.length
     ? selected.map((user) => `<span class="selected-manager-chip">${escapeHtml(user.profile?.fullName || user.username)}</span>`).join("")
     : `<div class="empty">${text("noManagersSelected")}</div>`;
 }
 
 function managerChoiceItems(selectedIds = []) {
-  const managers = users.filter((user) => user.role === "manager");
+  const managers = appState.users.filter((user) => user.role === "manager");
   return managers.length ? managers.map((user) => `
     <label class="manager-choice">
       <input type="checkbox" name="projectManager" value="${user.id}" ${selectedIds.includes(user.id) ? "checked" : ""}>
@@ -3873,7 +3873,7 @@ function renderResourceControls() {
   if (isSuperAdmin()) {
     const registry = companyRegistry.length ? companyRegistry : companyRegistryFromLocalState();
     if (companyCount) companyCount.textContent = registry.length;
-    userCount.textContent = users.filter((user) => user.role === "super_admin").length;
+    userCount.textContent = appState.users.filter((user) => user.role === "super_admin").length;
     projectCount.textContent = 0;
     customerCount.textContent = 0;
     fileCount.textContent = 0;
@@ -3899,7 +3899,7 @@ function renderResourceControls() {
     registerList.innerHTML = `<div class="empty">${text("empty")}</div>`;
     projectList.innerHTML = `<div class="empty">${text("empty")}</div>`;
     trashList.innerHTML = `<div class="empty">${text("empty")}</div>`;
-    userList.innerHTML = users.filter((user) => user.role === "super_admin").map((user) => `
+    userList.innerHTML = appState.users.filter((user) => user.role === "super_admin").map((user) => `
       <details class="user-profile-card">
         <summary><span><strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>${escapeHtml(roleLabel(user.role))} · ${escapeHtml(user.username)}</span></summary>
       </details>
@@ -3938,8 +3938,8 @@ function renderResourceControls() {
   const scopedRegisters = appState.registers.filter((item) => scopedProjectNames.has(item.project));
   const scopedTrash = appState.trash.filter(isSameCompany);
   const scopedUsers = isAdmin()
-    ? users.filter((user) => user.role !== "super_admin" && user.companyId === currentCompanyId())
-    : users.filter((user) => user.companyId === currentCompanyId() && (currentUser?.role === "manager" || user.managerId === currentUser?.id || user.id === currentUser?.id));
+    ? appState.users.filter((user) => user.role !== "super_admin" && user.companyId === currentCompanyId())
+    : appState.users.filter((user) => user.companyId === currentCompanyId() && (currentUser?.role === "manager" || user.managerId === currentUser?.id || user.id === currentUser?.id));
 
   userCount.textContent = scopedUsers.length;
   projectCount.textContent = scopedProjects.length;
@@ -4005,7 +4005,7 @@ function renderResourceControls() {
   ].join("");
   projectCustomerInput.value = scopedCustomers.some((customer) => customer.id === currentCustomer) ? currentCustomer : "";
   projectLeaderInput.innerHTML = managerOptions(currentLeader);
-  projectLeaderInput.value = users.some((user) => user.id === currentLeader && user.role === "manager") ? currentLeader : "";
+  projectLeaderInput.value = appState.users.some((user) => user.id === currentLeader && user.role === "manager") ? currentLeader : "";
   projectTeamMembersInput.innerHTML = teamMemberOptions();
   renderSelectedProjectTeamMembers();
 
@@ -4130,7 +4130,7 @@ function renderResourceControls() {
     return `
     <details class="user-profile-card">
       <summary data-initials="${escapeHtml(initials)}">
-        <span><strong>${escapeHtml(displayName)}</strong> · ${escapeHtml(user.profile?.position || roleLabel(user.role))} · ${escapeHtml(user.username)}${user.managerId ? ` · ${escapeHtml(users.find((item) => item.id === user.managerId)?.username || "")}` : ""}</span>
+        <span><strong>${escapeHtml(displayName)}</strong> · ${escapeHtml(user.profile?.position || roleLabel(user.role))} · ${escapeHtml(user.username)}${user.managerId ? ` · ${escapeHtml(appState.users.find((item) => item.id === user.managerId)?.username || "")}` : ""}</span>
       </summary>
       <form class="user-profile-form" data-user-id="${user.id}">
         <label><span>${text("login")}</span><input name="username" value="${escapeHtml(user.username)}" ${isOrgAdmin() ? "" : "readonly"}></label>
@@ -4259,7 +4259,7 @@ function renderRoleMatrix() {
     userMgmtContainer.innerHTML = "";
   } else {
     const companyId = currentCompanyId();
-    const scopedUsers = users.filter((u) => u.companyId === companyId && u.role !== "super_admin");
+    const scopedUsers = appState.users.filter((u) => u.companyId === companyId && u.role !== "super_admin");
     if (roleUserCount) roleUserCount.textContent = scopedUsers.length;
 
     const roleOptions = ["admin", "manager", "contributor", "sponsor", "viewer", "user"];
@@ -4321,7 +4321,7 @@ function renderRoleMatrix() {
         const userId = wrap?.dataset.userId;
         const newRole = opt.dataset.setRole;
         if (!userId || !newRole) return;
-        const targetUser = users.find((u) => u.id === userId);
+        const targetUser = appState.users.find((u) => u.id === userId);
         if (!targetUser || targetUser.id === currentUser?.id) return;
         targetUser.role = newRole;
         saveUsers();
@@ -6114,8 +6114,8 @@ function backupPayload() {
   const scopedProjects = isSuperAdmin() ? [] : projects.filter((project) => !project.companyId || project.companyId === companyId);
   const projectNames = new Set(scopedProjects.map((project) => project.name));
   const scopedUsers = isSuperAdmin()
-    ? users.filter((user) => user.role === "super_admin" && user.id === currentUser?.id)
-    : users.filter((user) => user.role !== "super_admin" && (!user.companyId || user.companyId === companyId));
+    ? appState.users.filter((user) => user.role === "super_admin" && user.id === currentUser?.id)
+    : appState.users.filter((user) => user.role !== "super_admin" && (!user.companyId || user.companyId === companyId));
   return {
     version: backupVersion,
     exportedAt: new Date().toISOString(),
@@ -6374,8 +6374,8 @@ function applySupabaseWorkspaceSession({ userId, email, username, fullName, comp
       company: companyName
     }
   });
-  users = [
-    ...users.filter((user) => user.id !== normalized.id && user.username !== normalized.username),
+  appState.users = [
+    ...appState.users.filter((user) => user.id !== normalized.id && user.username !== normalized.username),
     normalized
   ];
   companyRegistry = [
@@ -7159,7 +7159,7 @@ function importBackup(payload) {
   appState.managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : appState.managedFiles;
   appState.projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : appState.projectLinks;
   appState.registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : appState.registers;
-  users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
+  appState.users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : appState.users;
   appState.trash = Array.isArray(payload.trash) ? payload.trash : appState.trash;
   companyRegistry = Array.isArray(payload.companyRegistry) ? payload.companyRegistry : companyRegistry;
   if (currentUser && !isSuperAdmin()) {
@@ -7172,7 +7172,7 @@ function importBackup(payload) {
     appState.managedFiles = appState.managedFiles.map((file) => ({ ...file, companyId })).filter((file) => file.companyId === companyId);
     appState.projectLinks = appState.projectLinks.filter((link) => projectNames.has(link.project));
     appState.registers = appState.registers.filter((item) => projectNames.has(item.project));
-    users = users.filter((user) => user.role !== "super_admin" && user.companyId === companyId);
+    appState.users = appState.users.filter((user) => user.role !== "super_admin" && user.companyId === companyId);
     appState.trash = appState.trash.map((item) => ({ ...item, companyId })).filter((item) => item.companyId === companyId);
     companyRegistry = companyRegistryFromLocalState().filter((company) => company.id === companyId);
   }
@@ -7500,7 +7500,7 @@ async function savePlatformState() {
       managedFiles: appState.managedFiles,
       projectLinks: appState.projectLinks,
       registers: appState.registers,
-      users,
+      users: appState.users,
       trash: appState.trash
     })
   });
@@ -8115,14 +8115,14 @@ loginForm.addEventListener("submit", async (event) => {
     loginError.textContent = "Supabase login alınmadı. Dəyişikliklər online yadda qalması üçün email login vacibdir.";
     return;
   }
-  const localUser = users.find((item) => item.username === username && item.passwordHash === md5(password));
+  const localUser = appState.users.find((item) => item.username === username && item.passwordHash === md5(password));
   let user = canUseBackend() ? await backendLogin(username, password) : null;
   if (!user) user = localUser;
-  if (user && !users.some((item) => item.id === user.id || item.username === user.username)) {
-    users.push(user);
+  if (user && !appState.users.some((item) => item.id === user.id || item.username === user.username)) {
+    appState.users.push(user);
     saveUsers();
   }
-  user = users.find((item) => item.username === user?.username) || user;
+  user = appState.users.find((item) => item.username === user?.username) || user;
   if (!user) {
     loginError.textContent = text("loginError");
     return;
@@ -8173,7 +8173,7 @@ registerForm?.addEventListener("submit", async (event) => {
       return;
     }
   }
-  if (users.some((user) => user.username.toLowerCase() === username.toLowerCase())) {
+  if (appState.users.some((user) => user.username.toLowerCase() === username.toLowerCase())) {
     registerError.textContent = "Bu istifadəçi adı artıq var.";
     return;
   }
@@ -8193,7 +8193,7 @@ registerForm?.addEventListener("submit", async (event) => {
       company: companyName
     }
   });
-  users.push(user);
+  appState.users.push(user);
   companyRegistry = [
     ...companyRegistry.filter((company) => company.id !== companyId),
     { id: companyId, name: companyName, subdomain, status: "active", plan: "standard", adminUsername, userCount: 1, projectCount: 0, createdAt: new Date().toISOString(), lastLoginAt: "" }
@@ -8690,9 +8690,9 @@ addUserButton.addEventListener("click", () => {
   const role = newUserRoleInput.value;
   const username = newUsernameInput.value.trim() || uniqueUsername(`${role}${companySlug}`);
   const finalPassword = password || `${username}123`;
-  if (!username || users.some((user) => user.username === username)) return;
+  if (!username || appState.users.some((user) => user.username === username)) return;
   const managedRoles = ["user", "contributor", "viewer"];
-  const managerId = managedRoles.includes(role) ? (currentUser?.role === "manager" ? currentUser.id : users.find((user) => user.role === "manager" && user.companyId === currentCompanyId())?.id || "") : "";
+  const managerId = managedRoles.includes(role) ? (currentUser?.role === "manager" ? currentUser.id : appState.users.find((user) => user.role === "manager" && user.companyId === currentCompanyId())?.id || "") : "";
   const user = normalizeUser({
     id: createId(),
     username,
@@ -8708,7 +8708,7 @@ addUserButton.addEventListener("click", () => {
       company: currentUser?.profile?.company || ""
     }
   });
-  users.push(user);
+  appState.users.push(user);
   newUsernameInput.value = "";
   newUserPasswordInput.value = "";
   newUserFullNameInput.value = "";
@@ -8739,7 +8739,7 @@ userList.addEventListener("click", async (event) => {
     // Telebe-Hotel: yalnız org admin başqasının şifrəsini dəyişə bilər
     if (!canManageOrgUsers()) return;
     const row = button.closest(".password-form");
-    const user = users.find((item) => item.id === button.dataset.id);
+    const user = appState.users.find((item) => item.id === button.dataset.id);
     const input = row?.querySelector("input[name='password']");
     const password = input?.value || "";
     if (!user || user.role === "super_admin" || user.id === currentUser?.id || user.companyId !== currentCompanyId() || !password) return;
@@ -8775,7 +8775,7 @@ userList.addEventListener("click", async (event) => {
       await confirmBackendPasswordChange(token);
       if (passwordInput?.value) {
         currentUser.passwordHash = md5(passwordInput.value);
-        const localUser = users.find((user) => user.id === currentUser.id);
+        const localUser = appState.users.find((user) => user.id === currentUser.id);
         if (localUser) localUser.passwordHash = currentUser.passwordHash;
       }
       if (tokenInput) tokenInput.value = "";
@@ -8789,9 +8789,9 @@ userList.addEventListener("click", async (event) => {
   }
   if (button.dataset.userAction === "delete-user") {
     if (!isAdmin()) return;
-    users = users.filter((user) => user.id !== button.dataset.id);
+    appState.users = appState.users.filter((user) => user.id !== button.dataset.id);
     projects = projects.map((project) => ({ ...project, managerIds: (project.managerIds || []).filter((id) => id !== button.dataset.id) }));
-    users = users.map((user) => user.managerId === button.dataset.id ? { ...user, managerId: "" } : user);
+    appState.users = appState.users.map((user) => user.managerId === button.dataset.id ? { ...user, managerId: "" } : user);
     saveResources();
     saveUsers();
     render();
@@ -8908,7 +8908,7 @@ platformConsole?.addEventListener("submit", async (event) => {
       if (created) companyRegistry = [...companyRegistry.filter((item) => item.id !== created.id), created].sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       const companyId = companyIdFromName(payload.name);
-      users.push(normalizeUser({ id: createId(), username: payload.adminUsername, passwordHash: md5(payload.adminPassword), role: "admin", managerId: "", companyId, profile: { fullName: payload.adminUsername, email: "", position: "Company Admin", company: payload.name } }));
+      appState.users.push(normalizeUser({ id: createId(), username: payload.adminUsername, passwordHash: md5(payload.adminPassword), role: "admin", managerId: "", companyId, profile: { fullName: payload.adminUsername, email: "", position: "Company Admin", company: payload.name } }));
       companyRegistry = [...companyRegistry.filter((item) => item.id !== companyId), { id: companyId, name: payload.name, subdomain: slugFromName(payload.subdomain || payload.name), status: "active", plan: payload.plan || "standard", adminUsername: payload.adminUsername, userCount: 1, projectCount: 0, createdAt: new Date().toISOString(), activatedAt: new Date().toISOString(), statusChangedAt: new Date().toISOString() }];
       saveUsers();
       appSettings.companyRegistry = companyRegistry;
@@ -8949,7 +8949,7 @@ platformConsole?.addEventListener("change", async (event) => {
     appState.managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : appState.managedFiles;
     appState.projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : appState.projectLinks;
     appState.registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : appState.registers;
-    users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
+    appState.users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : appState.users;
     companyRegistry = Array.isArray(payload.companyRegistry) ? payload.companyRegistry : companyRegistry;
     saveTasks(); saveResources(); saveUsers(); saveRegisters();
     appSettings.companyRegistry = companyRegistry;
@@ -8969,7 +8969,7 @@ userList.addEventListener("submit", (event) => {
   if (!profileForm) return;
   event.preventDefault();
   if (!profileForm.elements.fullName && profileForm.elements.password) {
-    const user = users.find((item) => item.id === profileForm.dataset.userId);
+    const user = appState.users.find((item) => item.id === profileForm.dataset.userId);
     const password = profileForm.elements.password.value;
     if (!user || !password) return;
     user.passwordHash = md5(password);
@@ -8979,10 +8979,10 @@ userList.addEventListener("submit", (event) => {
     render();
     return;
   }
-  const user = users.find((item) => item.id === profileForm.dataset.userId);
+  const user = appState.users.find((item) => item.id === profileForm.dataset.userId);
   if (!user) return;
   const nextUsername = profileForm.elements.username.value.trim();
-  if (nextUsername && !users.some((item) => item.id !== user.id && item.username === nextUsername)) {
+  if (nextUsername && !appState.users.some((item) => item.id !== user.id && item.username === nextUsername)) {
     user.username = nextUsername;
   }
   user.managerId = profileForm.elements.managerId?.value || "";
@@ -9218,7 +9218,7 @@ quickManagerSaveBtn?.addEventListener("click", () => {
   const password = quickManagerPasswordInput.value;
   const fullName = quickManagerFullNameInput.value.trim();
   if (!username || !password) { quickManagerUsernameInput.focus(); return; }
-  if (users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
+  if (appState.users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
     alert(`"${username}" artıq mövcuddur`);
     return;
   }
@@ -9233,7 +9233,7 @@ quickManagerSaveBtn?.addEventListener("click", () => {
     companyId,
     profile: { fullName: fullName || username, position: "Project Manager", company: companyName, email: "", fatherName: "", phone: "", address: "" }
   });
-  users.push(newManager);
+  appState.users.push(newManager);
   saveResources();
   renderResourceControls();
   projectLeaderInput.value = newManager.id;
