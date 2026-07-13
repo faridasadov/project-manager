@@ -1842,7 +1842,7 @@ let tasks = loadTasks();
 appState.members = loadMembers();
 appState.teams = loadTeams();
 let projects = loadProjects();
-let projectLinks = loadProjectLinks();
+appState.projectLinks = loadProjectLinks();
 appState.customers = loadCustomers();
 appState.managedFiles = loadManagedFiles();
 appState.registers = loadRegisters();
@@ -2169,7 +2169,7 @@ function loadClinicPortfolioState() {
   appState.members = [];
   appState.teams = [];
   projects = [normalizeProject({ ...clinicPortfolioProject })];
-  projectLinks = [];
+  appState.projectLinks = [];
   appState.customers = [{ id: "customer-clinic", name: "Klinika", contact: "Klinika İT Şöbəsi", email: "" }];
   appState.managedFiles = [];
   appState.registers = [
@@ -2204,7 +2204,7 @@ function resetSelectedProjectState() {
 
   tasks = tasks.filter((task) => task.project !== selectedProject);
   appState.registers = appState.registers.filter((item) => item.project !== selectedProject);
-  projectLinks = projectLinks.filter((link) => link.project !== selectedProject);
+  appState.projectLinks = appState.projectLinks.filter((link) => link.project !== selectedProject);
   projects = projects.filter((project) => project.name !== selectedProject);
   saveTasks();
   saveResources();
@@ -2212,9 +2212,9 @@ function resetSelectedProjectState() {
 }
 
 function enforceClinicOnlyState() {
-  const before = JSON.stringify({ tasks, projects, members: appState.members, teams: appState.teams, projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers: appState.registers, trash: appState.trash });
+  const before = JSON.stringify({ tasks, projects, members: appState.members, teams: appState.teams, projectLinks: appState.projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers: appState.registers, trash: appState.trash });
   loadClinicPortfolioState();
-  return before !== JSON.stringify({ tasks, projects, members: appState.members, teams: appState.teams, projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers: appState.registers, trash: appState.trash });
+  return before !== JSON.stringify({ tasks, projects, members: appState.members, teams: appState.teams, projectLinks: appState.projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers: appState.registers, trash: appState.trash });
 }
 
 function ensureDemoData() {
@@ -2251,8 +2251,8 @@ function ensureDemoData() {
   });
 
   demoProjectLinks.forEach((link) => {
-    if (!projectLinks.some((item) => item.project === link.project && item.resource === link.resource)) {
-      projectLinks.push({ ...link });
+    if (!appState.projectLinks.some((item) => item.project === link.project && item.resource === link.resource)) {
+      appState.projectLinks.push({ ...link });
       changedResources = true;
     }
   });
@@ -2651,7 +2651,7 @@ function companyBackupPayload(companyId = "") {
     teams: companyId ? appState.teams.filter((team) => !team.companyId || team.companyId === companyId) : appState.teams,
     customers: companyId ? appState.customers.filter((customer) => !customer.companyId || customer.companyId === companyId) : appState.customers,
     managedFiles: companyId ? appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId) : appState.managedFiles,
-    projectLinks: projectLinks.filter((link) => projectNames.has(link.project) || !companyId),
+    projectLinks: appState.projectLinks.filter((link) => projectNames.has(link.project) || !companyId),
     registers: appState.registers.filter((item) => projectNames.has(item.project) || !companyId),
     users: companyId ? users.filter((user) => user.companyId === companyId) : users,
     companyRegistry: companyId ? companyRegistryFromLocalState().filter((company) => company.id === companyId) : companyRegistryFromLocalState()
@@ -2751,8 +2751,8 @@ function createProject(name, details = {}) {
   });
   projects.push(project);
   project.teamMemberIds.forEach((resource) => {
-    if (!projectLinks.some((link) => link.project === cleanName && link.resource === resource)) {
-      projectLinks.push({ id: createId(), companyId, project: cleanName, resource });
+    if (!appState.projectLinks.some((link) => link.project === cleanName && link.resource === resource)) {
+      appState.projectLinks.push({ id: createId(), companyId, project: cleanName, resource });
     }
   });
   saveResources();
@@ -2783,15 +2783,15 @@ function updateProject(projectId, details = {}) {
   project.charter = { ...(project.charter || {}), ...(details.charter || {}) };
   if (previousName !== cleanName) {
     tasks = tasks.map((task) => task.project === previousName ? { ...task, project: cleanName } : task);
-    projectLinks = projectLinks.map((link) => link.project === previousName ? { ...link, project: cleanName } : link);
+    appState.projectLinks = appState.projectLinks.map((link) => link.project === previousName ? { ...link, project: cleanName } : link);
     appState.registers = appState.registers.map((item) => item.project === previousName ? { ...item, project: cleanName } : item);
     saveTasks();
     saveRegisters();
   }
-  projectLinks = projectLinks.filter((link) => link.project !== cleanName || !link.resource.startsWith("user:"));
+  appState.projectLinks = appState.projectLinks.filter((link) => link.project !== cleanName || !link.resource.startsWith("user:"));
   project.teamMemberIds.forEach((resource) => {
-    if (!projectLinks.some((link) => link.project === cleanName && link.resource === resource)) {
-    projectLinks.push({ id: createId(), companyId, project: cleanName, resource });
+    if (!appState.projectLinks.some((link) => link.project === cleanName && link.resource === resource)) {
+    appState.projectLinks.push({ id: createId(), companyId, project: cleanName, resource });
     }
   });
   saveResources();
@@ -3148,7 +3148,7 @@ function rescheduleDependentTasks(sourceTask) {
 }
 
 function linkedResourcesForProject(project) {
-  const directLinks = projectLinks.filter((link) => link.project === project).map((link) => link.resource);
+  const directLinks = appState.projectLinks.filter((link) => link.project === project).map((link) => link.resource);
   const projectMembers = projects.find((item) => item.name === project)?.teamMemberIds || [];
   return [...new Set([...directLinks, ...projectMembers])];
 }
@@ -3443,7 +3443,7 @@ function renderManagerPanel() {
   const myRegisters = visibleRegisters().filter((r) => r.status !== "Resolved");
   const myTeamGroups = appState.teams.filter((t) => isSameCompany(t));
   const myCustomers = appState.customers.filter((c) => !c.companyId || c.companyId === companyId);
-  const myLinks = projectLinks.filter((l) => isSameCompany(l));
+  const myLinks = appState.projectLinks.filter((l) => isSameCompany(l));
   const myTrash = appState.trash.filter((t) => !t.companyId || t.companyId === companyId);
   const myDateRequests = (appSettings.dateRequests || []).filter(
     (r) => r.status === "pending"
@@ -3932,7 +3932,7 @@ function renderResourceControls() {
   const scopedCustomers = appState.customers.filter(isSameCompany);
   const scopedFiles = appState.managedFiles.filter(isSameCompany);
   const scopedTeams = appState.teams.filter(isSameCompany);
-  const scopedLinks = projectLinks.filter((link) => (
+  const scopedLinks = appState.projectLinks.filter((link) => (
     link.companyId ? isSameCompany(link) : scopedProjectNames.has(link.project)
   ));
   const scopedRegisters = appState.registers.filter((item) => scopedProjectNames.has(item.project));
@@ -6125,7 +6125,7 @@ function backupPayload() {
     teams: isSuperAdmin() ? [] : appState.teams.filter((team) => !team.companyId || team.companyId === companyId),
     customers: isSuperAdmin() ? [] : appState.customers.filter((customer) => !customer.companyId || customer.companyId === companyId),
     managedFiles: isSuperAdmin() ? [] : appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId),
-    projectLinks: isSuperAdmin() ? [] : projectLinks.filter((link) => projectNames.has(link.project)),
+    projectLinks: isSuperAdmin() ? [] : appState.projectLinks.filter((link) => projectNames.has(link.project)),
     registers: isSuperAdmin() ? [] : appState.registers.filter((item) => projectNames.has(item.project)),
     users: scopedUsers,
     trash: isSuperAdmin() ? [] : appState.trash.filter((item) => !item.companyId || item.companyId === companyId),
@@ -7157,7 +7157,7 @@ function importBackup(payload) {
   appState.teams = Array.isArray(payload.teams) ? payload.teams : appState.teams;
   appState.customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : appState.customers;
   appState.managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : appState.managedFiles;
-  projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
+  appState.projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : appState.projectLinks;
   appState.registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : appState.registers;
   users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
   appState.trash = Array.isArray(payload.trash) ? payload.trash : appState.trash;
@@ -7170,7 +7170,7 @@ function importBackup(payload) {
     appState.teams = appState.teams.map((team) => ({ ...team, companyId })).filter((team) => team.companyId === companyId);
     appState.customers = appState.customers.map((customer) => normalizeCustomer({ ...customer, companyId })).filter((customer) => customer.companyId === companyId);
     appState.managedFiles = appState.managedFiles.map((file) => ({ ...file, companyId })).filter((file) => file.companyId === companyId);
-    projectLinks = projectLinks.filter((link) => projectNames.has(link.project));
+    appState.projectLinks = appState.projectLinks.filter((link) => projectNames.has(link.project));
     appState.registers = appState.registers.filter((item) => projectNames.has(item.project));
     users = users.filter((user) => user.role !== "super_admin" && user.companyId === companyId);
     appState.trash = appState.trash.map((item) => ({ ...item, companyId })).filter((item) => item.companyId === companyId);
@@ -7498,7 +7498,7 @@ async function savePlatformState() {
       teams: appState.teams,
       customers: appState.customers,
       managedFiles: appState.managedFiles,
-      projectLinks,
+      projectLinks: appState.projectLinks,
       registers: appState.registers,
       users,
       trash: appState.trash
@@ -7595,8 +7595,8 @@ form.addEventListener("submit", async (event) => {
     recordAudit("task.created", "task", task.id, task.name);
   }
 
-  if (task.project && task.projectResource && !projectLinks.some((link) => link.project === task.project && link.resource === task.projectResource)) {
-    projectLinks.push({ id: createId(), companyId: currentCompanyId(), project: task.project, resource: task.projectResource });
+  if (task.project && task.projectResource && !appState.projectLinks.some((link) => link.project === task.project && link.resource === task.projectResource)) {
+    appState.projectLinks.push({ id: createId(), companyId: currentCompanyId(), project: task.project, resource: task.projectResource });
     saveResources();
   }
 
@@ -8351,7 +8351,7 @@ managerPanelModal?.addEventListener("click", (event) => {
   const linkDeleteBtn = event.target.closest("[data-mgr-link-delete]");
   if (linkDeleteBtn) {
     const id = linkDeleteBtn.dataset.mgrLinkDelete;
-    projectLinks = projectLinks.filter((l) => l.id !== id);
+    appState.projectLinks = appState.projectLinks.filter((l) => l.id !== id);
     saveResources();
     renderManagerPanel();
     render();
@@ -8365,7 +8365,7 @@ managerPanelModal?.addEventListener("click", (event) => {
     const item = appState.trash.find((t) => t.id === id);
     if (item) {
       if (item.type === "task") tasks.push(item.data);
-      else if (item.type === "projectRecord") projectLinks.push(item.data);
+      else if (item.type === "projectRecord") appState.projectLinks.push(item.data);
       else projects.push(item.data);
       appState.trash = appState.trash.filter((t) => t.id !== id);
       saveResources();
@@ -8947,7 +8947,7 @@ platformConsole?.addEventListener("change", async (event) => {
     appState.teams = Array.isArray(payload.teams) ? payload.teams.map(normalizeTeam) : appState.teams;
     appState.customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : appState.customers;
     appState.managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : appState.managedFiles;
-    projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
+    appState.projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : appState.projectLinks;
     appState.registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : appState.registers;
     users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
     companyRegistry = Array.isArray(payload.companyRegistry) ? payload.companyRegistry : companyRegistry;
@@ -9315,7 +9315,7 @@ projectCards.addEventListener("click", (event) => {
       appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
       projects = projects.filter((item) => item.id !== project.id);
       tasks = tasks.map((task) => task.project === projectName ? { ...task, project: "" } : task);
-      projectLinks = projectLinks.filter((link) => link.project !== projectName);
+      appState.projectLinks = appState.projectLinks.filter((link) => link.project !== projectName);
       appState.registers = appState.registers.filter((item) => item.project !== projectName);
       saveTrash();
       saveTasks();
@@ -9343,7 +9343,7 @@ archivedProjectCards.addEventListener("click", (event) => {
   if (button.dataset.projectAction === "delete") {
     appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
     projects = projects.filter((item) => item.id !== project.id);
-    projectLinks = projectLinks.filter((link) => link.project !== projectName);
+    appState.projectLinks = appState.projectLinks.filter((link) => link.project !== projectName);
     appState.registers = appState.registers.filter((item) => item.project !== projectName);
     saveTrash();
     saveResources();
@@ -9368,8 +9368,8 @@ addProjectLinkButton.addEventListener("click", () => {
   const project = linkProjectInput.value.trim();
   const resource = linkResourceInput.value;
   if (!project || !resource) return;
-  if (!projectLinks.some((link) => link.project === project && link.resource === resource)) {
-    projectLinks.push({ id: createId(), companyId: currentCompanyId(), project, resource });
+  if (!appState.projectLinks.some((link) => link.project === project && link.resource === resource)) {
+    appState.projectLinks.push({ id: createId(), companyId: currentCompanyId(), project, resource });
   }
   linkProjectInput.value = "";
   saveResources();
@@ -9459,7 +9459,7 @@ registerList.addEventListener("input", (event) => {
     if (action === "delete-team") {
       appState.teams = appState.teams.filter((team) => team.id !== id);
       tasks = tasks.map((task) => task.owner === resourceValue("team", id) ? { ...task, owner: "" } : task);
-      projectLinks = projectLinks.filter((link) => link.resource !== resourceValue("team", id));
+      appState.projectLinks = appState.projectLinks.filter((link) => link.resource !== resourceValue("team", id));
       saveTasks();
     }
 
@@ -9474,11 +9474,11 @@ registerList.addEventListener("input", (event) => {
     }
 
     if (action === "delete-link") {
-      const link = projectLinks.find((item) => item.id === id);
+      const link = appState.projectLinks.find((item) => item.id === id);
       if (link) {
         appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "project", data: { ...link }, deletedAt: new Date().toISOString() });
       }
-      projectLinks = projectLinks.filter((link) => link.id !== id);
+      appState.projectLinks = appState.projectLinks.filter((link) => link.id !== id);
     }
 
     saveResources();
@@ -9499,8 +9499,8 @@ trashList.addEventListener("click", (event) => {
       tasks.push(item.data);
       saveTasks();
     }
-    if (item.type === "project" && !projectLinks.some((link) => link.id === item.data.id)) {
-      projectLinks.push(item.data);
+    if (item.type === "project" && !appState.projectLinks.some((link) => link.id === item.data.id)) {
+      appState.projectLinks.push(item.data);
       saveResources();
     }
     if (item.type === "projectRecord" && !projects.some((project) => project.id === item.data.id)) {
