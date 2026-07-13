@@ -1839,7 +1839,7 @@ const openPlatformAdminPanelButton = document.querySelector("#openPlatformAdminP
 let companyRegistry = [];
 
 let tasks = loadTasks();
-let members = loadMembers();
+appState.members = loadMembers();
 let teams = loadTeams();
 let projects = loadProjects();
 let projectLinks = loadProjectLinks();
@@ -2166,7 +2166,7 @@ function loadClinicPortfolioState() {
     const existing = currentClinicTaskMap.get(task.name);
     return existing ? normalizeTask({ ...task, id: existing.id || task.id, comments: existing.comments || [], attachments: existing.attachments || [] }) : task;
   });
-  members = [];
+  appState.members = [];
   teams = [];
   projects = [normalizeProject({ ...clinicPortfolioProject })];
   projectLinks = [];
@@ -2212,9 +2212,9 @@ function resetSelectedProjectState() {
 }
 
 function enforceClinicOnlyState() {
-  const before = JSON.stringify({ tasks, projects, members, teams, projectLinks, customers, managedFiles: appState.managedFiles, registers, trash });
+  const before = JSON.stringify({ tasks, projects, members: appState.members, teams, projectLinks, customers, managedFiles: appState.managedFiles, registers, trash });
   loadClinicPortfolioState();
-  return before !== JSON.stringify({ tasks, projects, members, teams, projectLinks, customers, managedFiles: appState.managedFiles, registers, trash });
+  return before !== JSON.stringify({ tasks, projects, members: appState.members, teams, projectLinks, customers, managedFiles: appState.managedFiles, registers, trash });
 }
 
 function ensureDemoData() {
@@ -2647,7 +2647,7 @@ function companyBackupPayload(companyId = "") {
     company: companyId ? (companyRegistryFromLocalState().find((item) => item.id === companyId)?.name || companyId) : "All tenants",
     tasks: tasks.filter((task) => projectNames.has(task.project) || (!companyId && task.project)),
     projects: projectScope,
-    members: companyId ? members.filter((member) => !member.companyId || member.companyId === companyId) : members,
+    members: companyId ? appState.members.filter((member) => !member.companyId || member.companyId === companyId) : appState.members,
     teams: companyId ? teams.filter((team) => !team.companyId || team.companyId === companyId) : teams,
     customers: companyId ? customers.filter((customer) => !customer.companyId || customer.companyId === companyId) : customers,
     managedFiles: companyId ? appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId) : appState.managedFiles,
@@ -3018,7 +3018,7 @@ function resourceLabel(value) {
     return user ? user.profile?.fullName || user.username : value;
   }
   if (type === "member") {
-    const member = members.find((item) => item.id === id);
+    const member = appState.members.find((item) => item.id === id);
     return member ? member.name : value;
   }
   if (type === "team") {
@@ -6121,7 +6121,7 @@ function backupPayload() {
     exportedAt: new Date().toISOString(),
     tasks: tasks.filter((task) => projectNames.has(task.project)),
     projects: scopedProjects,
-    members: isSuperAdmin() ? [] : members.filter((member) => !member.companyId || member.companyId === companyId),
+    members: isSuperAdmin() ? [] : appState.members.filter((member) => !member.companyId || member.companyId === companyId),
     teams: isSuperAdmin() ? [] : teams.filter((team) => !team.companyId || team.companyId === companyId),
     customers: isSuperAdmin() ? [] : customers.filter((customer) => !customer.companyId || customer.companyId === companyId),
     managedFiles: isSuperAdmin() ? [] : appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId),
@@ -7153,7 +7153,7 @@ function importBackup(payload) {
   const companyId = currentCompanyId();
   tasks = payload.tasks.map(normalizeTask);
   projects = Array.isArray(payload.projects) ? payload.projects.map(normalizeProject) : projects;
-  members = Array.isArray(payload.members) ? payload.members : members;
+  appState.members = Array.isArray(payload.members) ? payload.members : appState.members;
   teams = Array.isArray(payload.teams) ? payload.teams : teams;
   customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : customers;
   appState.managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : appState.managedFiles;
@@ -7166,7 +7166,7 @@ function importBackup(payload) {
     projects = projects.map((project) => ({ ...project, companyId })).filter((project) => project.companyId === companyId);
     const projectNames = new Set(projects.map((project) => project.name));
     tasks = tasks.filter((task) => projectNames.has(task.project));
-    members = members.map((member) => ({ ...member, companyId })).filter((member) => member.companyId === companyId);
+    appState.members = appState.members.map((member) => ({ ...member, companyId })).filter((member) => member.companyId === companyId);
     teams = teams.map((team) => ({ ...team, companyId })).filter((team) => team.companyId === companyId);
     customers = customers.map((customer) => normalizeCustomer({ ...customer, companyId })).filter((customer) => customer.companyId === companyId);
     appState.managedFiles = appState.managedFiles.map((file) => ({ ...file, companyId })).filter((file) => file.companyId === companyId);
@@ -7494,7 +7494,7 @@ async function savePlatformState() {
       version: backupVersion,
       tasks,
       projects,
-      members,
+      members: appState.members,
       teams,
       customers,
       managedFiles: appState.managedFiles,
@@ -8943,7 +8943,7 @@ platformConsole?.addEventListener("change", async (event) => {
     const payload = JSON.parse(await file.text());
     tasks = Array.isArray(payload.tasks) ? payload.tasks.map(normalizeTask) : tasks;
     projects = Array.isArray(payload.projects) ? payload.projects.map(normalizeProject) : projects;
-    members = Array.isArray(payload.members) ? payload.members.map(normalizeMember) : members;
+    appState.members = Array.isArray(payload.members) ? payload.members.map(normalizeMember) : appState.members;
     teams = Array.isArray(payload.teams) ? payload.teams.map(normalizeTeam) : teams;
     customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : customers;
     appState.managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : appState.managedFiles;
@@ -9604,8 +9604,8 @@ document.querySelector("#bulkStatus")?.addEventListener("click", () => {
 
 document.querySelector("#bulkOwner")?.addEventListener("click", () => {
   if (!selectedTaskIds.size) return;
-  const opts = members.map(m => m.name || m.username || m.id);
-  const ids  = members.map(m => m.id);
+  const opts = appState.members.map(m => m.name || m.username || m.id);
+  const ids  = appState.members.map(m => m.id);
   const chosen = prompt(`Sahib seçin:\n${opts.map((n,i)=>`${i+1}. ${n}`).join("\n")}`);
   const idx = parseInt(chosen) - 1;
   if (isNaN(idx) || !ids[idx]) return;
