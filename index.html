@@ -4,7 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Manager</title>
-  <link rel="stylesheet" href="styles.css?v=20260522-platform-ops">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="styles.css?v=20260713-welcome-aurora">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4f46e5">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,6 +18,14 @@
 
       <!-- ── Welcome / hero (full-screen) ──────────────────────────────────── -->
       <div class="login-hero">
+
+        <!-- Animated aurora background -->
+        <div class="hero-aurora" aria-hidden="true">
+          <span class="aurora-blob aurora-1"></span>
+          <span class="aurora-blob aurora-2"></span>
+          <span class="aurora-blob aurora-3"></span>
+          <span class="aurora-grid"></span>
+        </div>
 
         <!-- Top bar -->
         <div class="login-hero-topbar">
@@ -35,46 +46,62 @@
 
         <!-- Main content -->
         <div class="login-hero-body">
-          <h2 class="login-hero-title" data-i18n="heroTitle">Layihələrinizi tam nəzarət altına alın</h2>
-          <p class="login-hero-sub" data-i18n="heroSub">Komandanız, tapşırıqlarınız, müddətləriniz — hamısı bir platformada.</p>
+          <div class="hero-copy">
+            <span class="hero-eyebrow">
+              <span class="hero-eyebrow-dot"></span>
+              <span data-i18n="heroEyebrow">IPMA uyğun · Öz serverinizdə</span>
+            </span>
+            <h2 class="login-hero-title" data-i18n="heroTitle">Layihələrinizi tam nəzarət altına alın</h2>
+            <p class="login-hero-sub" data-i18n="heroSub">Komandanız, tapşırıqlarınız, müddətləriniz — hamısı bir platformada.</p>
 
-          <!-- CTA buttons -->
-          <div class="hero-cta-row">
-            <button type="button" class="hero-cta-btn hero-cta-primary" id="heroLoginBtn" data-i18n="heroCta">Daxil ol</button>
-            <button type="button" class="hero-cta-btn hero-cta-ghost" id="heroRegisterBtn" data-i18n="heroRegisterCta">Qeydiyyatdan keç</button>
+            <!-- CTA buttons -->
+            <div class="hero-cta-row">
+              <button type="button" class="hero-cta-btn hero-cta-primary" id="heroLoginBtn" data-i18n="heroCta">Daxil ol</button>
+              <button type="button" class="hero-cta-btn hero-cta-ghost" id="heroRegisterBtn" data-i18n="heroRegisterCta">Qeydiyyatdan keç</button>
+            </div>
           </div>
 
           <ul class="login-feature-list">
             <li>
-              <span class="lf-icon">📊</span>
+              <span class="lf-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+              </span>
               <div>
                 <strong data-i18n="heroF1Title">Çoxlu görünüş</strong>
                 <span data-i18n="heroF1Desc">Gantt, Kanban, Kalendar və Cədvəl — seçim sizindir</span>
               </div>
             </li>
             <li>
-              <span class="lf-icon">👥</span>
+              <span class="lf-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </span>
               <div>
                 <strong data-i18n="heroF2Title">Rol sistemi</strong>
                 <span data-i18n="heroF2Desc">Admin, Manager, Contributor, Viewer, Sponsor — hər kəsə öz icazəsi</span>
               </div>
             </li>
             <li>
-              <span class="lf-icon">🔔</span>
+              <span class="lf-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              </span>
               <div>
                 <strong data-i18n="heroF3Title">Avtomatik bildirişlər</strong>
                 <span data-i18n="heroF3Desc">Deadline yaxınlaşanda komanda mail alır, heç nə atlanmır</span>
               </div>
             </li>
             <li>
-              <span class="lf-icon">🏢</span>
+              <span class="lf-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
+              </span>
               <div>
                 <strong data-i18n="heroF4Title">Çox şirkətli platforma</strong>
                 <span data-i18n="heroF4Desc">Hər workspace tamamilə izolyasiyalı, öz adminliyi ilə</span>
               </div>
             </li>
             <li>
-              <span class="lf-icon">🔒</span>
+              <span class="lf-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+              </span>
               <div>
                 <strong data-i18n="heroF5Title">Öz serveriniz</strong>
                 <span data-i18n="heroF5Desc">Məlumatlarınız heç bir üçüncü tərəflə paylaşılmır</span>
