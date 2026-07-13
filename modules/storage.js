@@ -84,6 +84,6 @@ function saveTrash() {
 }
 
 function saveRegisters() {
-  localStorage.setItem(registersKey, JSON.stringify(registers));
+  localStorage.setItem(registersKey, JSON.stringify(appState.registers));
   scheduleBackendSave();
 }

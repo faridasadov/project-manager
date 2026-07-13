@@ -1845,7 +1845,7 @@ let projects = loadProjects();
 let projectLinks = loadProjectLinks();
 appState.customers = loadCustomers();
 appState.managedFiles = loadManagedFiles();
-let registers = loadRegisters();
+appState.registers = loadRegisters();
 let users = loadUsers();
 appState.trash = loadTrash();
 let currentUser = loadSession();
@@ -2172,8 +2172,8 @@ function loadClinicPortfolioState() {
   projectLinks = [];
   appState.customers = [{ id: "customer-clinic", name: "Klinika", contact: "Klinika İT Şöbəsi", email: "" }];
   appState.managedFiles = [];
-  registers = [
-    ...registers
+  appState.registers = [
+    ...appState.registers
       .filter((item) => item.project === clinicPortfolioProject.name && item.type !== "milestone")
       .map(normalizeRegisterItem),
     ...clinicMilestones.map((item, index) => normalizeRegisterItem({
@@ -2203,7 +2203,7 @@ function resetSelectedProjectState() {
   }
 
   tasks = tasks.filter((task) => task.project !== selectedProject);
-  registers = registers.filter((item) => item.project !== selectedProject);
+  appState.registers = appState.registers.filter((item) => item.project !== selectedProject);
   projectLinks = projectLinks.filter((link) => link.project !== selectedProject);
   projects = projects.filter((project) => project.name !== selectedProject);
   saveTasks();
@@ -2212,9 +2212,9 @@ function resetSelectedProjectState() {
 }
 
 function enforceClinicOnlyState() {
-  const before = JSON.stringify({ tasks, projects, members: appState.members, teams: appState.teams, projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers, trash: appState.trash });
+  const before = JSON.stringify({ tasks, projects, members: appState.members, teams: appState.teams, projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers: appState.registers, trash: appState.trash });
   loadClinicPortfolioState();
-  return before !== JSON.stringify({ tasks, projects, members: appState.members, teams: appState.teams, projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers, trash: appState.trash });
+  return before !== JSON.stringify({ tasks, projects, members: appState.members, teams: appState.teams, projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers: appState.registers, trash: appState.trash });
 }
 
 function ensureDemoData() {
@@ -2652,7 +2652,7 @@ function companyBackupPayload(companyId = "") {
     customers: companyId ? appState.customers.filter((customer) => !customer.companyId || customer.companyId === companyId) : appState.customers,
     managedFiles: companyId ? appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId) : appState.managedFiles,
     projectLinks: projectLinks.filter((link) => projectNames.has(link.project) || !companyId),
-    registers: registers.filter((item) => projectNames.has(item.project) || !companyId),
+    registers: appState.registers.filter((item) => projectNames.has(item.project) || !companyId),
     users: companyId ? users.filter((user) => user.companyId === companyId) : users,
     companyRegistry: companyId ? companyRegistryFromLocalState().filter((company) => company.id === companyId) : companyRegistryFromLocalState()
   };
@@ -2784,7 +2784,7 @@ function updateProject(projectId, details = {}) {
   if (previousName !== cleanName) {
     tasks = tasks.map((task) => task.project === previousName ? { ...task, project: cleanName } : task);
     projectLinks = projectLinks.map((link) => link.project === previousName ? { ...link, project: cleanName } : link);
-    registers = registers.map((item) => item.project === previousName ? { ...item, project: cleanName } : item);
+    appState.registers = appState.registers.map((item) => item.project === previousName ? { ...item, project: cleanName } : item);
     saveTasks();
     saveRegisters();
   }
@@ -2861,13 +2861,13 @@ function gateRequirementMissing(project, gate) {
 function syncGovernanceRisks(project) {
   const lines = project?.charter?.riskOpportunity || [];
   const companyId = project?.companyId || currentCompanyId();
-  const existingKeys = new Set(registers.map((item) => item.sourceKey).filter(Boolean));
+  const existingKeys = new Set(appState.registers.map((item) => item.sourceKey).filter(Boolean));
   lines.forEach((line) => {
     const title = line.split("|")[0]?.trim() || line.trim();
     if (!title) return;
     const sourceKey = `${project.id || project.name}:risk:${title.toLowerCase()}`;
-    if (existingKeys.has(sourceKey) || registers.some((item) => item.project === project.name && item.type === "risk" && item.title.toLowerCase() === title.toLowerCase())) return;
-    registers.push(normalizeRegisterItem({
+    if (existingKeys.has(sourceKey) || appState.registers.some((item) => item.project === project.name && item.type === "risk" && item.title.toLowerCase() === title.toLowerCase())) return;
+    appState.registers.push(normalizeRegisterItem({
       id: createId("register"),
       companyId,
       project: project.name,
@@ -3191,7 +3191,7 @@ function projectHasResourceAccess(projectName) {
 }
 
 function visibleRegisters(projectName = "") {
-  return registers.filter((item) => {
+  return appState.registers.filter((item) => {
     if (projectName && item.project !== projectName) return false;
     const project = projects.find((candidate) => candidate.name === item.project);
     return !project || canSeeProject(project);
@@ -3935,7 +3935,7 @@ function renderResourceControls() {
   const scopedLinks = projectLinks.filter((link) => (
     link.companyId ? isSameCompany(link) : scopedProjectNames.has(link.project)
   ));
-  const scopedRegisters = registers.filter((item) => scopedProjectNames.has(item.project));
+  const scopedRegisters = appState.registers.filter((item) => scopedProjectNames.has(item.project));
   const scopedTrash = appState.trash.filter(isSameCompany);
   const scopedUsers = isAdmin()
     ? users.filter((user) => user.role !== "super_admin" && user.companyId === currentCompanyId())
@@ -5261,7 +5261,7 @@ function renderKanbanActions(task) {
 }
 
 function milestoneMarkers(project, minStart, days) {
-  const projectMilestones = registers
+  const projectMilestones = appState.registers
     .filter((item) => item.type === "milestone" && item.project === project.name && item.dueDate);
   const markers = projectMilestones.length ? projectMilestones : [{ title: project.name, dueDate: project.end }];
   return markers
@@ -6126,7 +6126,7 @@ function backupPayload() {
     customers: isSuperAdmin() ? [] : appState.customers.filter((customer) => !customer.companyId || customer.companyId === companyId),
     managedFiles: isSuperAdmin() ? [] : appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId),
     projectLinks: isSuperAdmin() ? [] : projectLinks.filter((link) => projectNames.has(link.project)),
-    registers: isSuperAdmin() ? [] : registers.filter((item) => projectNames.has(item.project)),
+    registers: isSuperAdmin() ? [] : appState.registers.filter((item) => projectNames.has(item.project)),
     users: scopedUsers,
     trash: isSuperAdmin() ? [] : appState.trash.filter((item) => !item.companyId || item.companyId === companyId),
     companyRegistry: isSuperAdmin() ? companyRegistryFromLocalState() : companyRegistryFromLocalState().filter((company) => company.id === companyId)
@@ -7158,7 +7158,7 @@ function importBackup(payload) {
   appState.customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : appState.customers;
   appState.managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : appState.managedFiles;
   projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
-  registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : registers;
+  appState.registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : appState.registers;
   users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
   appState.trash = Array.isArray(payload.trash) ? payload.trash : appState.trash;
   companyRegistry = Array.isArray(payload.companyRegistry) ? payload.companyRegistry : companyRegistry;
@@ -7171,7 +7171,7 @@ function importBackup(payload) {
     appState.customers = appState.customers.map((customer) => normalizeCustomer({ ...customer, companyId })).filter((customer) => customer.companyId === companyId);
     appState.managedFiles = appState.managedFiles.map((file) => ({ ...file, companyId })).filter((file) => file.companyId === companyId);
     projectLinks = projectLinks.filter((link) => projectNames.has(link.project));
-    registers = registers.filter((item) => projectNames.has(item.project));
+    appState.registers = appState.registers.filter((item) => projectNames.has(item.project));
     users = users.filter((user) => user.role !== "super_admin" && user.companyId === companyId);
     appState.trash = appState.trash.map((item) => ({ ...item, companyId })).filter((item) => item.companyId === companyId);
     companyRegistry = companyRegistryFromLocalState().filter((company) => company.id === companyId);
@@ -7266,7 +7266,7 @@ function importTabularProject(textBody) {
     tasks.push(task);
     createdTasks.push(task);
     if (isMilestone) {
-      registers.push(normalizeRegisterItem({
+      appState.registers.push(normalizeRegisterItem({
         id: createId("register"),
         project: projectName,
         type: "milestone",
@@ -7337,7 +7337,7 @@ function importMsProjectXml(textBody) {
     tasks.push(task);
     idByUid.set(uid, task.id);
     if (milestone) {
-      registers.push(normalizeRegisterItem({ id: createId("register"), project: projectName, type: "milestone", title: name, dueDate: task.end || task.start }));
+      appState.registers.push(normalizeRegisterItem({ id: createId("register"), project: projectName, type: "milestone", title: name, dueDate: task.end || task.start }));
     }
   });
   tasks.forEach((task) => {
@@ -7499,7 +7499,7 @@ async function savePlatformState() {
       customers: appState.customers,
       managedFiles: appState.managedFiles,
       projectLinks,
-      registers,
+      registers: appState.registers,
       users,
       trash: appState.trash
     })
@@ -8329,7 +8329,7 @@ managerPanelModal?.addEventListener("click", (event) => {
   const regDeleteBtn = event.target.closest("[data-mgr-register-delete]");
   if (regDeleteBtn) {
     const id = regDeleteBtn.dataset.mgrRegisterDelete;
-    registers = registers.filter((r) => r.id !== id);
+    appState.registers = appState.registers.filter((r) => r.id !== id);
     saveResources();
     renderManagerPanel();
     render();
@@ -8394,7 +8394,7 @@ document.querySelector("#mgrAddRegister")?.addEventListener("click", () => {
   const project = document.querySelector("#mgrRegisterProject")?.value;
   if (!title || !project) return;
   const reg = { id: createId("reg"), title, type, project, status: "Open", impact: "Medium", mitigation: "", owner: "", dueDate: "" };
-  registers.push(reg);
+  appState.registers.push(reg);
   saveResources();
   document.querySelector("#mgrRegisterTitle").value = "";
   renderManagerPanel();
@@ -8948,7 +8948,7 @@ platformConsole?.addEventListener("change", async (event) => {
     appState.customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : appState.customers;
     appState.managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : appState.managedFiles;
     projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
-    registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : registers;
+    appState.registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : appState.registers;
     users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
     companyRegistry = Array.isArray(payload.companyRegistry) ? payload.companyRegistry : companyRegistry;
     saveTasks(); saveResources(); saveUsers(); saveRegisters();
@@ -9316,7 +9316,7 @@ projectCards.addEventListener("click", (event) => {
       projects = projects.filter((item) => item.id !== project.id);
       tasks = tasks.map((task) => task.project === projectName ? { ...task, project: "" } : task);
       projectLinks = projectLinks.filter((link) => link.project !== projectName);
-      registers = registers.filter((item) => item.project !== projectName);
+      appState.registers = appState.registers.filter((item) => item.project !== projectName);
       saveTrash();
       saveTasks();
       saveResources();
@@ -9344,7 +9344,7 @@ archivedProjectCards.addEventListener("click", (event) => {
     appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
     projects = projects.filter((item) => item.id !== project.id);
     projectLinks = projectLinks.filter((link) => link.project !== projectName);
-    registers = registers.filter((item) => item.project !== projectName);
+    appState.registers = appState.registers.filter((item) => item.project !== projectName);
     saveTrash();
     saveResources();
     saveRegisters();
@@ -9390,7 +9390,7 @@ addRegisterItemButton.addEventListener("click", () => {
     mitigation: registerMitigationInput.value.trim()
   });
   if (!item.project || !item.title) return;
-  registers.push(item);
+  appState.registers.push(item);
   registerTitleInput.value = "";
   registerMitigationInput.value = "";
   registerDueDateInput.value = "";
@@ -9404,12 +9404,12 @@ registerList.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-register-action]");
   if (!button) return;
   const id = button.dataset.id;
-  const item = registers.find((r) => r.id === id);
+  const item = appState.registers.find((r) => r.id === id);
   if (!item) return;
 
   if (button.dataset.registerAction === "delete") {
     if (!canManageRegister(item)) return;
-    registers = registers.filter((r) => r.id !== id);
+    appState.registers = appState.registers.filter((r) => r.id !== id);
     saveRegisters();
     render();
   }
@@ -9427,7 +9427,7 @@ registerList.addEventListener("change", (event) => {
   if (!el) return;
   const id = el.dataset.id;
   const field = el.dataset.registerField;
-  const item = registers.find((r) => r.id === id);
+  const item = appState.registers.find((r) => r.id === id);
   if (!item || !canManageRegister(item)) return;
   item[field] = el.value;
   saveRegisters();
@@ -9437,7 +9437,7 @@ registerList.addEventListener("input", (event) => {
   const el = event.target.closest("input[data-register-field='mitigation']");
   if (!el) return;
   const id = el.dataset.id;
-  const item = registers.find((r) => r.id === id);
+  const item = appState.registers.find((r) => r.id === id);
   if (!item || !canManageRegister(item)) return;
   item.mitigation = el.value;
   saveRegisters();
