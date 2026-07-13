@@ -68,7 +68,7 @@ function saveResources() {
   localStorage.setItem(teamsKey, JSON.stringify(appState.teams));
   localStorage.setItem(projectsKey, JSON.stringify(projects));
   localStorage.setItem(projectLinksKey, JSON.stringify(projectLinks));
-  localStorage.setItem(customersKey, JSON.stringify(customers));
+  localStorage.setItem(customersKey, JSON.stringify(appState.customers));
   localStorage.setItem(managedFilesKey, JSON.stringify(appState.managedFiles));
   scheduleBackendSave();
 }
@@ -79,7 +79,7 @@ function saveUsers() {
 }
 
 function saveTrash() {
-  localStorage.setItem(trashKey, JSON.stringify(trash));
+  localStorage.setItem(trashKey, JSON.stringify(appState.trash));
   scheduleBackendSave();
 }
 

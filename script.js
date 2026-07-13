@@ -1843,11 +1843,11 @@ appState.members = loadMembers();
 appState.teams = loadTeams();
 let projects = loadProjects();
 let projectLinks = loadProjectLinks();
-let customers = loadCustomers();
+appState.customers = loadCustomers();
 appState.managedFiles = loadManagedFiles();
 let registers = loadRegisters();
 let users = loadUsers();
-let trash = loadTrash();
+appState.trash = loadTrash();
 let currentUser = loadSession();
 let appSettings = loadSettings();
 statuses = normalizeWorkflowStatuses(appSettings.workflowStatuses);
@@ -2170,7 +2170,7 @@ function loadClinicPortfolioState() {
   appState.teams = [];
   projects = [normalizeProject({ ...clinicPortfolioProject })];
   projectLinks = [];
-  customers = [{ id: "customer-clinic", name: "Klinika", contact: "Klinika İT Şöbəsi", email: "" }];
+  appState.customers = [{ id: "customer-clinic", name: "Klinika", contact: "Klinika İT Şöbəsi", email: "" }];
   appState.managedFiles = [];
   registers = [
     ...registers
@@ -2187,7 +2187,7 @@ function loadClinicPortfolioState() {
       mitigation: ""
     }))
   ];
-  trash = [];
+  appState.trash = [];
   saveTasks();
   saveResources();
   saveTrash();
@@ -2212,9 +2212,9 @@ function resetSelectedProjectState() {
 }
 
 function enforceClinicOnlyState() {
-  const before = JSON.stringify({ tasks, projects, members: appState.members, teams: appState.teams, projectLinks, customers, managedFiles: appState.managedFiles, registers, trash });
+  const before = JSON.stringify({ tasks, projects, members: appState.members, teams: appState.teams, projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers, trash: appState.trash });
   loadClinicPortfolioState();
-  return before !== JSON.stringify({ tasks, projects, members: appState.members, teams: appState.teams, projectLinks, customers, managedFiles: appState.managedFiles, registers, trash });
+  return before !== JSON.stringify({ tasks, projects, members: appState.members, teams: appState.teams, projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers, trash: appState.trash });
 }
 
 function ensureDemoData() {
@@ -2230,8 +2230,8 @@ function ensureDemoData() {
   });
 
   demoCustomers.forEach((customer) => {
-    if (!customers.some((item) => item.id === customer.id || item.name === customer.name)) {
-      customers.push(normalizeCustomer({ ...customer }));
+    if (!appState.customers.some((item) => item.id === customer.id || item.name === customer.name)) {
+      appState.customers.push(normalizeCustomer({ ...customer }));
       changedResources = true;
     }
   });
@@ -2282,8 +2282,8 @@ function ensureTenantSeedData() {
   });
 
   tenantSeedCustomers.forEach((customer) => {
-    if (!customers.some((item) => item.id === customer.id || item.name === customer.name)) {
-      customers.push(normalizeCustomer({ ...customer }));
+    if (!appState.customers.some((item) => item.id === customer.id || item.name === customer.name)) {
+      appState.customers.push(normalizeCustomer({ ...customer }));
       changedResources = true;
     }
   });
@@ -2649,7 +2649,7 @@ function companyBackupPayload(companyId = "") {
     projects: projectScope,
     members: companyId ? appState.members.filter((member) => !member.companyId || member.companyId === companyId) : appState.members,
     teams: companyId ? appState.teams.filter((team) => !team.companyId || team.companyId === companyId) : appState.teams,
-    customers: companyId ? customers.filter((customer) => !customer.companyId || customer.companyId === companyId) : customers,
+    customers: companyId ? appState.customers.filter((customer) => !customer.companyId || customer.companyId === companyId) : appState.customers,
     managedFiles: companyId ? appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId) : appState.managedFiles,
     projectLinks: projectLinks.filter((link) => projectNames.has(link.project) || !companyId),
     registers: registers.filter((item) => projectNames.has(item.project) || !companyId),
@@ -2953,7 +2953,7 @@ function projectManagers(project) {
 
 function customerLabel(customerId) {
   if (!customerId) return text("empty");
-  const customer = customers.find((item) => item.id === customerId);
+  const customer = appState.customers.find((item) => item.id === customerId);
   return customer?.name || text("empty");
 }
 
@@ -3442,9 +3442,9 @@ function renderManagerPanel() {
   );
   const myRegisters = visibleRegisters().filter((r) => r.status !== "Resolved");
   const myTeamGroups = appState.teams.filter((t) => isSameCompany(t));
-  const myCustomers = customers.filter((c) => !c.companyId || c.companyId === companyId);
+  const myCustomers = appState.customers.filter((c) => !c.companyId || c.companyId === companyId);
   const myLinks = projectLinks.filter((l) => isSameCompany(l));
-  const myTrash = trash.filter((t) => !t.companyId || t.companyId === companyId);
+  const myTrash = appState.trash.filter((t) => !t.companyId || t.companyId === companyId);
   const myDateRequests = (appSettings.dateRequests || []).filter(
     (r) => r.status === "pending"
   );
@@ -3929,14 +3929,14 @@ function renderResourceControls() {
   const scopedVisibleProjects = scopedProjects.filter((project) => !project.archived);
   const scopedProjectNames = new Set(scopedProjects.map((project) => project.name));
   const scopedTasks = accessibleTasks();
-  const scopedCustomers = customers.filter(isSameCompany);
+  const scopedCustomers = appState.customers.filter(isSameCompany);
   const scopedFiles = appState.managedFiles.filter(isSameCompany);
   const scopedTeams = appState.teams.filter(isSameCompany);
   const scopedLinks = projectLinks.filter((link) => (
     link.companyId ? isSameCompany(link) : scopedProjectNames.has(link.project)
   ));
   const scopedRegisters = registers.filter((item) => scopedProjectNames.has(item.project));
-  const scopedTrash = trash.filter(isSameCompany);
+  const scopedTrash = appState.trash.filter(isSameCompany);
   const scopedUsers = isAdmin()
     ? users.filter((user) => user.role !== "super_admin" && user.companyId === currentCompanyId())
     : users.filter((user) => user.companyId === currentCompanyId() && (currentUser?.role === "manager" || user.managerId === currentUser?.id || user.id === currentUser?.id));
@@ -4224,7 +4224,7 @@ function renderDateRequests() {
 }
 
 function renderCustomerList() {
-  const scopedCustomers = customers.filter(isSameCompany);
+  const scopedCustomers = appState.customers.filter(isSameCompany);
   customerList.innerHTML = scopedCustomers.length ? scopedCustomers.map((customer) => `
     <div class="resource-item">
       <span><strong>${escapeHtml(customer.name)}</strong>${escapeHtml([customer.contact, customer.email].filter(Boolean).join(" · "))}</span>
@@ -6048,7 +6048,7 @@ function handleTaskAction(action, id) {
 
   if (action === "delete") {
     if (!canManageTasks()) return;
-    trash.push({ id: createId(), companyId: currentCompanyId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
+    appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
     tasks = tasks.filter((item) => item.id !== task.id);
     saveTrash();
     saveTasks();
@@ -6123,12 +6123,12 @@ function backupPayload() {
     projects: scopedProjects,
     members: isSuperAdmin() ? [] : appState.members.filter((member) => !member.companyId || member.companyId === companyId),
     teams: isSuperAdmin() ? [] : appState.teams.filter((team) => !team.companyId || team.companyId === companyId),
-    customers: isSuperAdmin() ? [] : customers.filter((customer) => !customer.companyId || customer.companyId === companyId),
+    customers: isSuperAdmin() ? [] : appState.customers.filter((customer) => !customer.companyId || customer.companyId === companyId),
     managedFiles: isSuperAdmin() ? [] : appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId),
     projectLinks: isSuperAdmin() ? [] : projectLinks.filter((link) => projectNames.has(link.project)),
     registers: isSuperAdmin() ? [] : registers.filter((item) => projectNames.has(item.project)),
     users: scopedUsers,
-    trash: isSuperAdmin() ? [] : trash.filter((item) => !item.companyId || item.companyId === companyId),
+    trash: isSuperAdmin() ? [] : appState.trash.filter((item) => !item.companyId || item.companyId === companyId),
     companyRegistry: isSuperAdmin() ? companyRegistryFromLocalState() : companyRegistryFromLocalState().filter((company) => company.id === companyId)
   };
 }
@@ -7155,12 +7155,12 @@ function importBackup(payload) {
   projects = Array.isArray(payload.projects) ? payload.projects.map(normalizeProject) : projects;
   appState.members = Array.isArray(payload.members) ? payload.members : appState.members;
   appState.teams = Array.isArray(payload.teams) ? payload.teams : appState.teams;
-  customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : customers;
+  appState.customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : appState.customers;
   appState.managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : appState.managedFiles;
   projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
   registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : registers;
   users = Array.isArray(payload.users) ? payload.users.map(normalizeUser) : users;
-  trash = Array.isArray(payload.trash) ? payload.trash : trash;
+  appState.trash = Array.isArray(payload.trash) ? payload.trash : appState.trash;
   companyRegistry = Array.isArray(payload.companyRegistry) ? payload.companyRegistry : companyRegistry;
   if (currentUser && !isSuperAdmin()) {
     projects = projects.map((project) => ({ ...project, companyId })).filter((project) => project.companyId === companyId);
@@ -7168,12 +7168,12 @@ function importBackup(payload) {
     tasks = tasks.filter((task) => projectNames.has(task.project));
     appState.members = appState.members.map((member) => ({ ...member, companyId })).filter((member) => member.companyId === companyId);
     appState.teams = appState.teams.map((team) => ({ ...team, companyId })).filter((team) => team.companyId === companyId);
-    customers = customers.map((customer) => normalizeCustomer({ ...customer, companyId })).filter((customer) => customer.companyId === companyId);
+    appState.customers = appState.customers.map((customer) => normalizeCustomer({ ...customer, companyId })).filter((customer) => customer.companyId === companyId);
     appState.managedFiles = appState.managedFiles.map((file) => ({ ...file, companyId })).filter((file) => file.companyId === companyId);
     projectLinks = projectLinks.filter((link) => projectNames.has(link.project));
     registers = registers.filter((item) => projectNames.has(item.project));
     users = users.filter((user) => user.role !== "super_admin" && user.companyId === companyId);
-    trash = trash.map((item) => ({ ...item, companyId })).filter((item) => item.companyId === companyId);
+    appState.trash = appState.trash.map((item) => ({ ...item, companyId })).filter((item) => item.companyId === companyId);
     companyRegistry = companyRegistryFromLocalState().filter((company) => company.id === companyId);
   }
   saveTasks();
@@ -7496,12 +7496,12 @@ async function savePlatformState() {
       projects,
       members: appState.members,
       teams: appState.teams,
-      customers,
+      customers: appState.customers,
       managedFiles: appState.managedFiles,
       projectLinks,
       registers,
       users,
-      trash
+      trash: appState.trash
     })
   });
   if (!response.ok) throw new Error("Platform state save failed");
@@ -8362,12 +8362,12 @@ managerPanelModal?.addEventListener("click", (event) => {
   const trashRestoreBtn = event.target.closest("[data-mgr-trash-restore]");
   if (trashRestoreBtn) {
     const id = trashRestoreBtn.dataset.mgrTrashRestore;
-    const item = trash.find((t) => t.id === id);
+    const item = appState.trash.find((t) => t.id === id);
     if (item) {
       if (item.type === "task") tasks.push(item.data);
       else if (item.type === "projectRecord") projectLinks.push(item.data);
       else projects.push(item.data);
-      trash = trash.filter((t) => t.id !== id);
+      appState.trash = appState.trash.filter((t) => t.id !== id);
       saveResources();
       saveTasks();
       renderManagerPanel();
@@ -8380,7 +8380,7 @@ managerPanelModal?.addEventListener("click", (event) => {
   const trashDeleteBtn = event.target.closest("[data-mgr-trash-delete]");
   if (trashDeleteBtn) {
     const id = trashDeleteBtn.dataset.mgrTrashDelete;
-    trash = trash.filter((t) => t.id !== id);
+    appState.trash = appState.trash.filter((t) => t.id !== id);
     saveResources();
     renderManagerPanel();
     return;
@@ -8945,7 +8945,7 @@ platformConsole?.addEventListener("change", async (event) => {
     projects = Array.isArray(payload.projects) ? payload.projects.map(normalizeProject) : projects;
     appState.members = Array.isArray(payload.members) ? payload.members.map(normalizeMember) : appState.members;
     appState.teams = Array.isArray(payload.teams) ? payload.teams.map(normalizeTeam) : appState.teams;
-    customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : customers;
+    appState.customers = Array.isArray(payload.customers) ? payload.customers.map(normalizeCustomer) : appState.customers;
     appState.managedFiles = Array.isArray(payload.managedFiles) ? payload.managedFiles : appState.managedFiles;
     projectLinks = Array.isArray(payload.projectLinks) ? payload.projectLinks : projectLinks;
     registers = Array.isArray(payload.registers) ? payload.registers.map(normalizeRegisterItem) : registers;
@@ -9010,8 +9010,8 @@ addCustomerButton.addEventListener("click", () => {
     contact: customerContactInput.value,
     email: customerEmailInput.value
   });
-  if (!customer.name || customers.some((item) => item.name.toLowerCase() === customer.name.toLowerCase())) return;
-  customers.push(customer);
+  if (!customer.name || appState.customers.some((item) => item.name.toLowerCase() === customer.name.toLowerCase())) return;
+  appState.customers.push(customer);
   customerNameInput.value = "";
   customerContactInput.value = "";
   customerEmailInput.value = "";
@@ -9022,7 +9022,7 @@ addCustomerButton.addEventListener("click", () => {
 customerList.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-customer-action]");
   if (!button || !isAdmin()) return;
-  customers = customers.filter((customer) => customer.id !== button.dataset.id);
+  appState.customers = appState.customers.filter((customer) => customer.id !== button.dataset.id);
   projects = projects.map((project) => project.customerId === button.dataset.id ? { ...project, customerId: "" } : project);
   saveResources();
   render();
@@ -9179,8 +9179,8 @@ quickCustomerCancelBtn?.addEventListener("click", () => {
 quickCustomerSaveBtn?.addEventListener("click", () => {
   const name = quickCustomerNameInput.value.trim();
   if (!name) { quickCustomerNameInput.focus(); return; }
-  if (customers.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
-    const existing = customers.find((c) => c.name.toLowerCase() === name.toLowerCase());
+  if (appState.customers.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+    const existing = appState.customers.find((c) => c.name.toLowerCase() === name.toLowerCase());
     projectCustomerInput.value = existing.id;
     quickCustomerForm.hidden = true;
     quickCustomerNameInput.value = "";
@@ -9193,7 +9193,7 @@ quickCustomerSaveBtn?.addEventListener("click", () => {
     contact: quickCustomerContactInput.value.trim(),
     email: ""
   });
-  customers.push(customer);
+  appState.customers.push(customer);
   saveResources();
   renderResourceControls();
   projectCustomerInput.value = customer.id;
@@ -9223,7 +9223,7 @@ quickManagerSaveBtn?.addEventListener("click", () => {
     return;
   }
   const companyId = currentCompanyId();
-  const companyName = customers.find((c) => c.companyId === companyId)?.name || "";
+  const companyName = appState.customers.find((c) => c.companyId === companyId)?.name || "";
   const newManager = normalizeUser({
     id: createId(),
     username,
@@ -9312,7 +9312,7 @@ projectCards.addEventListener("click", (event) => {
   if (button.dataset.projectAction === "delete") {
     const project = projects.find((item) => item.name === projectName);
     if (project) {
-      trash.push({ id: createId(), companyId: currentCompanyId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
+      appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
       projects = projects.filter((item) => item.id !== project.id);
       tasks = tasks.map((task) => task.project === projectName ? { ...task, project: "" } : task);
       projectLinks = projectLinks.filter((link) => link.project !== projectName);
@@ -9341,7 +9341,7 @@ archivedProjectCards.addEventListener("click", (event) => {
     return;
   }
   if (button.dataset.projectAction === "delete") {
-    trash.push({ id: createId(), companyId: currentCompanyId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
+    appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
     projects = projects.filter((item) => item.id !== project.id);
     projectLinks = projectLinks.filter((link) => link.project !== projectName);
     registers = registers.filter((item) => item.project !== projectName);
@@ -9476,7 +9476,7 @@ registerList.addEventListener("input", (event) => {
     if (action === "delete-link") {
       const link = projectLinks.find((item) => item.id === id);
       if (link) {
-        trash.push({ id: createId(), companyId: currentCompanyId(), type: "project", data: { ...link }, deletedAt: new Date().toISOString() });
+        appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "project", data: { ...link }, deletedAt: new Date().toISOString() });
       }
       projectLinks = projectLinks.filter((link) => link.id !== id);
     }
@@ -9491,7 +9491,7 @@ trashList.addEventListener("click", (event) => {
   if (!canManageTasks()) return;
   const button = event.target.closest("button");
   if (!button) return;
-  const item = trash.find((trashItem) => trashItem.id === button.dataset.id);
+  const item = appState.trash.find((trashItem) => trashItem.id === button.dataset.id);
   if (!item) return;
 
   if (button.dataset.trashAction === "restore") {
@@ -9509,7 +9509,7 @@ trashList.addEventListener("click", (event) => {
     }
   }
 
-  trash = trash.filter((trashItem) => trashItem.id !== item.id);
+  appState.trash = appState.trash.filter((trashItem) => trashItem.id !== item.id);
   saveTrash();
   render();
 });
@@ -9533,7 +9533,7 @@ clearDone.addEventListener("click", () => {
   if (!isAdmin()) return;
   const doneTasks = tasks.filter((task) => task.status === "Bitib");
   doneTasks.forEach((task) => {
-    trash.push({ id: createId(), companyId: currentCompanyId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
+    appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
   });
   tasks = tasks.filter((task) => task.status !== "Bitib");
   saveTrash();
