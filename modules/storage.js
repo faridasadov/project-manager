@@ -66,7 +66,7 @@ function saveTasks() {
 function saveResources() {
   localStorage.setItem(membersKey, JSON.stringify(appState.members));
   localStorage.setItem(teamsKey, JSON.stringify(appState.teams));
-  localStorage.setItem(projectsKey, JSON.stringify(projects));
+  localStorage.setItem(projectsKey, JSON.stringify(appState.projects));
   localStorage.setItem(projectLinksKey, JSON.stringify(appState.projectLinks));
   localStorage.setItem(customersKey, JSON.stringify(appState.customers));
   localStorage.setItem(managedFilesKey, JSON.stringify(appState.managedFiles));
