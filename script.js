@@ -2382,23 +2382,7 @@ function saveNotifications() {
   syncSupabaseNotifications().catch((error) => console.warn("Supabase notification sync failed", error));
 }
 
-function currentCompanyId() {
-  return currentUser?.companyId || "company-default";
-}
-
-function projectCompanyId(project) {
-  return project?.companyId || "company-default";
-}
-
-function taskCompanyId(task) {
-  if (task?.companyId) return task.companyId;
-  const project = appState.projects.find((item) => item.name === task?.project);
-  return projectCompanyId(project);
-}
-
-function isSameCompany(item) {
-  return projectCompanyId(item) === currentCompanyId();
-}
+// currentCompanyId / projectCompanyId / taskCompanyId / isSameCompany → modules/tenant.js
 
 function recordAudit(action, entityType, entityId, detail = "") {
   const entry = {
@@ -3264,9 +3248,7 @@ function workloadRows() {
     .sort((a, b) => b.load - a.load);
 }
 
-function isAdmin() {
-  return currentUser?.role === "admin";
-}
+// isAdmin → modules/tenant.js
 
 // ─── Telebe-Hotel Role Modeli (Seçim A) ──────────────────────────────────────
 // superadmin  →  super_admin  (platform — bütün şirkətlər)
@@ -3282,9 +3264,7 @@ function isOrgAdmin() {
   return currentUser?.role === "admin";
 }
 
-function isSuperAdmin() {
-  return currentUser?.role === "super_admin";
-}
+// isSuperAdmin → modules/tenant.js
 
 function canOpenAdminPanel() {
   return isSuperAdmin() || isOrgAdmin();
