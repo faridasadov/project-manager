@@ -31,3 +31,51 @@ function isAdmin() {
 function isSuperAdmin() {
   return currentUser?.role === "super_admin";
 }
+
+// ── Visibility / access control ──────────────────────────────────────────────
+// These reference resourceInCurrentScope / linkedResourcesForProject (hoisted
+// globals still in script.js) at call time — cross-file runtime calls are fine.
+function projectHasRoleAccess(project) {
+  if (!project || !currentUser) return false;
+  const managerIds = project.managerIds || [];
+  if (["manager", "sponsor"].includes(currentUser.role)) return managerIds.includes(currentUser.id);
+  if (["user", "contributor", "viewer"].includes(currentUser.role)) return Boolean(currentUser.managerId && managerIds.includes(currentUser.managerId));
+  return false;
+}
+
+function taskHasDirectAccess(task) {
+  return [task.owner, task.projectResource].some(resourceInCurrentScope);
+}
+
+function projectHasResourceAccess(projectName) {
+  return linkedResourcesForProject(projectName).some(resourceInCurrentScope);
+}
+
+function canSeeProject(project) {
+  if (!currentUser) return true;
+  if (isSuperAdmin()) return false;
+  if (projectCompanyId(project) !== currentCompanyId()) return false;
+  if (isAdmin()) return true;
+  return projectHasRoleAccess(project)
+    || projectHasResourceAccess(project.name)
+    || appState.tasks.some((task) => task.project === project.name && taskHasDirectAccess(task));
+}
+
+function visibleProjects() {
+  return appState.projects.filter((project) => !project.archived).filter(canSeeProject);
+}
+
+function canSeeTask(task) {
+  if (!currentUser) return true;
+  if (isSuperAdmin()) return false;
+  if (taskCompanyId(task) !== currentCompanyId()) return false;
+  const project = appState.projects.find((item) => item.name === task.project);
+  if (isAdmin() && (!project || isSameCompany(project))) return true;
+  return projectHasRoleAccess(project)
+    || taskHasDirectAccess(task)
+    || projectHasResourceAccess(task.project);
+}
+
+function accessibleTasks() {
+  return appState.tasks.filter(canSeeTask);
+}

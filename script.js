@@ -2941,34 +2941,7 @@ function customerLabel(customerId) {
   return customer?.name || text("empty");
 }
 
-function canSeeProject(project) {
-  if (!currentUser) return true;
-  if (isSuperAdmin()) return false;
-  if (projectCompanyId(project) !== currentCompanyId()) return false;
-  if (isAdmin()) return true;
-  return projectHasRoleAccess(project)
-    || projectHasResourceAccess(project.name)
-    || appState.tasks.some((task) => task.project === project.name && taskHasDirectAccess(task));
-}
-
-function visibleProjects() {
-  return appState.projects.filter((project) => !project.archived).filter(canSeeProject);
-}
-
-function canSeeTask(task) {
-  if (!currentUser) return true;
-  if (isSuperAdmin()) return false;
-  if (taskCompanyId(task) !== currentCompanyId()) return false;
-  const project = appState.projects.find((item) => item.name === task.project);
-  if (isAdmin() && (!project || isSameCompany(project))) return true;
-  return projectHasRoleAccess(project)
-    || taskHasDirectAccess(task)
-    || projectHasResourceAccess(task.project);
-}
-
-function accessibleTasks() {
-  return appState.tasks.filter(canSeeTask);
-}
+// canSeeProject / visibleProjects / canSeeTask / accessibleTasks → modules/tenant.js
 
 function openProjectPage(projectName) {
   projectFilter.value = projectName;
@@ -3158,21 +3131,7 @@ function resourceInCurrentScope(resource) {
   return visibleUserIdsForCurrentUser().some((userId) => resourceIncludesUser(resource, userId));
 }
 
-function projectHasRoleAccess(project) {
-  if (!project || !currentUser) return false;
-  const managerIds = project.managerIds || [];
-  if (["manager", "sponsor"].includes(currentUser.role)) return managerIds.includes(currentUser.id);
-  if (["user", "contributor", "viewer"].includes(currentUser.role)) return Boolean(currentUser.managerId && managerIds.includes(currentUser.managerId));
-  return false;
-}
-
-function taskHasDirectAccess(task) {
-  return [task.owner, task.projectResource].some(resourceInCurrentScope);
-}
-
-function projectHasResourceAccess(projectName) {
-  return linkedResourcesForProject(projectName).some(resourceInCurrentScope);
-}
+// projectHasRoleAccess / taskHasDirectAccess / projectHasResourceAccess → modules/tenant.js
 
 function visibleRegisters(projectName = "") {
   return appState.registers.filter((item) => {
