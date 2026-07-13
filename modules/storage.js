@@ -55,11 +55,11 @@ function loadSupabaseSession() {
 
 // --- Writers ---
 // Persist a mutable state global to localStorage and trigger the background
-// backend sync. They read the shared state (tasks/users/... — let in script.js)
+// backend sync. They read the shared state from appState (state.js, loaded first)
 // and call scheduleBackendSave (a hoisted global in script.js) at call time.
 
 function saveTasks() {
-  localStorage.setItem(storageKey, JSON.stringify(tasks));
+  localStorage.setItem(storageKey, JSON.stringify(appState.tasks));
   scheduleBackendSave();
 }
 

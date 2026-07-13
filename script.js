@@ -1838,7 +1838,7 @@ const refreshPlatformCompaniesButton = document.querySelector("#refreshPlatformC
 const openPlatformAdminPanelButton = document.querySelector("#openPlatformAdminPanel");
 let companyRegistry = [];
 
-let tasks = loadTasks();
+appState.tasks = loadTasks();
 appState.members = loadMembers();
 appState.teams = loadTeams();
 appState.projects = loadProjects();
@@ -2157,12 +2157,12 @@ function createClinicPortfolioTasks() {
 
 function loadClinicPortfolioState() {
   const clinicTaskNames = new Set(clinicPortfolioTasks.map((task) => task.name));
-  const currentClinicTasks = tasks
+  const currentClinicTasks = appState.tasks
     .filter((task) => task.project === clinicPortfolioProject.name && clinicTaskNames.has(task.name))
     .map((task) => [task.name, task]);
   const currentClinicTaskMap = new Map(currentClinicTasks);
 
-  tasks = createClinicPortfolioTasks().map((task) => {
+  appState.tasks = createClinicPortfolioTasks().map((task) => {
     const existing = currentClinicTaskMap.get(task.name);
     return existing ? normalizeTask({ ...task, id: existing.id || task.id, comments: existing.comments || [], attachments: existing.attachments || [] }) : task;
   });
@@ -2202,7 +2202,7 @@ function resetSelectedProjectState() {
     return;
   }
 
-  tasks = tasks.filter((task) => task.project !== selectedProject);
+  appState.tasks = appState.tasks.filter((task) => task.project !== selectedProject);
   appState.registers = appState.registers.filter((item) => item.project !== selectedProject);
   appState.projectLinks = appState.projectLinks.filter((link) => link.project !== selectedProject);
   appState.projects = appState.projects.filter((project) => project.name !== selectedProject);
@@ -2212,9 +2212,9 @@ function resetSelectedProjectState() {
 }
 
 function enforceClinicOnlyState() {
-  const before = JSON.stringify({ tasks, projects: appState.projects, members: appState.members, teams: appState.teams, projectLinks: appState.projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers: appState.registers, trash: appState.trash });
+  const before = JSON.stringify({ tasks: appState.tasks, projects: appState.projects, members: appState.members, teams: appState.teams, projectLinks: appState.projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers: appState.registers, trash: appState.trash });
   loadClinicPortfolioState();
-  return before !== JSON.stringify({ tasks, projects: appState.projects, members: appState.members, teams: appState.teams, projectLinks: appState.projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers: appState.registers, trash: appState.trash });
+  return before !== JSON.stringify({ tasks: appState.tasks, projects: appState.projects, members: appState.members, teams: appState.teams, projectLinks: appState.projectLinks, customers: appState.customers, managedFiles: appState.managedFiles, registers: appState.registers, trash: appState.trash });
 }
 
 function ensureDemoData() {
@@ -2258,8 +2258,8 @@ function ensureDemoData() {
   });
 
   demoTaskTemplates.forEach((task) => {
-    if (!tasks.some((item) => item.project === task.project && item.name === task.name)) {
-      tasks.push(normalizeTask({ ...task, id: createId() }));
+    if (!appState.tasks.some((item) => item.project === task.project && item.name === task.name)) {
+      appState.tasks.push(normalizeTask({ ...task, id: createId() }));
       changedTasks = true;
     }
   });
@@ -2296,8 +2296,8 @@ function ensureTenantSeedData() {
   });
 
   tenantSeedTasks.forEach((task) => {
-    if (!tasks.some((item) => item.id === task.id || (item.project === task.project && item.name === task.name))) {
-      tasks.push(normalizeTask({ ...task }));
+    if (!appState.tasks.some((item) => item.id === task.id || (item.project === task.project && item.name === task.name))) {
+      appState.tasks.push(normalizeTask({ ...task }));
       changedTasks = true;
     }
   });
@@ -2594,7 +2594,7 @@ function companyProjectNames(companyId) {
 
 function companyOperationsMeta(company) {
   const projectNames = companyProjectNames(company.id);
-  const companyTasks = tasks.filter((task) => {
+  const companyTasks = appState.tasks.filter((task) => {
     if (task.companyId) return task.companyId === company.id;
     return projectNames.has(task.project);
   });
@@ -2645,7 +2645,7 @@ function companyBackupPayload(companyId = "") {
     exportedAt: new Date().toISOString(),
     companyId: companyId || "platform",
     company: companyId ? (companyRegistryFromLocalState().find((item) => item.id === companyId)?.name || companyId) : "All tenants",
-    tasks: tasks.filter((task) => projectNames.has(task.project) || (!companyId && task.project)),
+    tasks: appState.tasks.filter((task) => projectNames.has(task.project) || (!companyId && task.project)),
     projects: projectScope,
     members: companyId ? appState.members.filter((member) => !member.companyId || member.companyId === companyId) : appState.members,
     teams: companyId ? appState.teams.filter((team) => !team.companyId || team.companyId === companyId) : appState.teams,
@@ -2782,7 +2782,7 @@ function updateProject(projectId, details = {}) {
   project.budget = Math.max(0, Number(details.budget) || 0);
   project.charter = { ...(project.charter || {}), ...(details.charter || {}) };
   if (previousName !== cleanName) {
-    tasks = tasks.map((task) => task.project === previousName ? { ...task, project: cleanName } : task);
+    appState.tasks = appState.tasks.map((task) => task.project === previousName ? { ...task, project: cleanName } : task);
     appState.projectLinks = appState.projectLinks.map((link) => link.project === previousName ? { ...link, project: cleanName } : link);
     appState.registers = appState.registers.map((item) => item.project === previousName ? { ...item, project: cleanName } : item);
     saveTasks();
@@ -2964,7 +2964,7 @@ function canSeeProject(project) {
   if (isAdmin()) return true;
   return projectHasRoleAccess(project)
     || projectHasResourceAccess(project.name)
-    || tasks.some((task) => task.project === project.name && taskHasDirectAccess(task));
+    || appState.tasks.some((task) => task.project === project.name && taskHasDirectAccess(task));
 }
 
 function visibleProjects() {
@@ -2983,7 +2983,7 @@ function canSeeTask(task) {
 }
 
 function accessibleTasks() {
-  return tasks.filter(canSeeTask);
+  return appState.tasks.filter(canSeeTask);
 }
 
 function openProjectPage(projectName) {
@@ -3100,12 +3100,12 @@ function ensureSelectOption(select, value, label = "") {
 }
 
 function taskNameById(id) {
-  return tasks.find((task) => task.id === id)?.name || "";
+  return appState.tasks.find((task) => task.id === id)?.name || "";
 }
 
 function incompleteDependencies(task) {
   return (task.dependencyIds || [])
-    .map((id) => tasks.find((item) => item.id === id))
+    .map((id) => appState.tasks.find((item) => item.id === id))
     .filter((item) => item && item.status !== "Bitib");
 }
 
@@ -3131,7 +3131,7 @@ function dependencyBlockedMessage(task) {
 function rescheduleDependentTasks(sourceTask) {
   if (!sourceTask?.end) return 0;
   let changed = 0;
-  tasks = tasks.map((task) => {
+  appState.tasks = appState.tasks.map((task) => {
     if (task.id === sourceTask.id || !(task.dependencyIds || []).includes(sourceTask.id) || !task.start || !task.end) return task;
     if (parseDate(task.start) > parseDate(sourceTask.end)) return task;
     const duration = Math.max(0, daysBetween(task.start, task.end));
@@ -3993,7 +3993,7 @@ function renderResourceControls() {
     `<option value="">${text("noParentTask")}</option>`,
     taskOptionItems([currentParent], editingTaskId)
   ].join("");
-  parentTaskInput.value = tasks.some((task) => task.id === currentParent && task.id !== editingTaskId) ? currentParent : "";
+  parentTaskInput.value = appState.tasks.some((task) => task.id === currentParent && task.id !== editingTaskId) ? currentParent : "";
   taskDependenciesInput.innerHTML = taskOptionItems(currentDependencies, editingTaskId);
 
   teamMembersInput.innerHTML = teamMemberOptions();
@@ -4197,7 +4197,7 @@ function renderResourceControls() {
 }
 
 function pendingDateRequests() {
-  return tasks.flatMap((task) => (task.dateChangeRequests || [])
+  return appState.tasks.flatMap((task) => (task.dateChangeRequests || [])
     .filter((request) => request.status === "pending")
     .map((request) => ({ task, request })))
     .filter(({ task }) => canApproveDateRequest(task));
@@ -5020,7 +5020,7 @@ function renderCommentDeleteButton(task, comment) {
 }
 
 function deleteTaskComment(taskId, commentId) {
-  const task = tasks.find((item) => item.id === taskId);
+  const task = appState.tasks.find((item) => item.id === taskId);
   if (!task || !commentId || !canDeleteTaskComment(task)) return false;
   task.comments = (task.comments || []).filter((comment) => comment.id !== commentId);
   saveTasks();
@@ -5187,7 +5187,7 @@ function renderComments(task) {
 }
 
 function openTaskDetail(id) {
-  const task = tasks.find((item) => item.id === id);
+  const task = appState.tasks.find((item) => item.id === id);
   if (!task || !taskDetailModal) return;
   const project = appState.projects.find((item) => item.name === task.project);
   taskDetailTitle.textContent = task.name;
@@ -5445,7 +5445,7 @@ function renderGantt() {
 function ganttItem(type, id) {
   return type === "project"
     ? appState.projects.find((project) => project.id === id)
-    : tasks.find((task) => task.id === id);
+    : appState.tasks.find((task) => task.id === id);
 }
 
 function shiftIsoDate(value, delta) {
@@ -5956,7 +5956,7 @@ function moveForward(task) {
 
 function handleTaskAction(action, id) {
   if (!currentUser) return;
-  const task = tasks.find((item) => item.id === id);
+  const task = appState.tasks.find((item) => item.id === id);
   if (!task) return;
 
   if (action === "edit") {
@@ -6049,7 +6049,7 @@ function handleTaskAction(action, id) {
   if (action === "delete") {
     if (!canManageTasks()) return;
     appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
-    tasks = tasks.filter((item) => item.id !== task.id);
+    appState.tasks = appState.tasks.filter((item) => item.id !== task.id);
     saveTrash();
     saveTasks();
     render();
@@ -6057,7 +6057,7 @@ function handleTaskAction(action, id) {
 }
 
 function editTask(id, options = {}) {
-  const task = tasks.find((item) => item.id === id);
+  const task = appState.tasks.find((item) => item.id === id);
   if (!task) return;
   const readonly = Boolean(options.readonly || !canManageTasks());
   taskId.value = task.id;
@@ -6092,7 +6092,7 @@ const AUTO_SNAP_KEY = "pm_auto_snapshots";
 const AUTO_SNAP_MAX = 5;
 
 function saveAutoSnapshot() {
-  if (!tasks.length && !appState.projects.length) return; // nothing to save
+  if (!appState.tasks.length && !appState.projects.length) return; // nothing to save
   try {
     const snaps = JSON.parse(localStorage.getItem(AUTO_SNAP_KEY) || "[]");
     snaps.unshift({ savedAt: new Date().toISOString(), payload: backupPayload() });
@@ -6119,7 +6119,7 @@ function backupPayload() {
   return {
     version: backupVersion,
     exportedAt: new Date().toISOString(),
-    tasks: tasks.filter((task) => projectNames.has(task.project)),
+    tasks: appState.tasks.filter((task) => projectNames.has(task.project)),
     projects: scopedProjects,
     members: isSuperAdmin() ? [] : appState.members.filter((member) => !member.companyId || member.companyId === companyId),
     teams: isSuperAdmin() ? [] : appState.teams.filter((team) => !team.companyId || team.companyId === companyId),
@@ -7151,7 +7151,7 @@ function importBackup(payload) {
   }
   if (!payload || !Array.isArray(payload.tasks)) throw new Error(text("backupError"));
   const companyId = currentCompanyId();
-  tasks = payload.tasks.map(normalizeTask);
+  appState.tasks = payload.tasks.map(normalizeTask);
   appState.projects = Array.isArray(payload.projects) ? payload.projects.map(normalizeProject) : appState.projects;
   appState.members = Array.isArray(payload.members) ? payload.members : appState.members;
   appState.teams = Array.isArray(payload.teams) ? payload.teams : appState.teams;
@@ -7165,7 +7165,7 @@ function importBackup(payload) {
   if (currentUser && !isSuperAdmin()) {
     appState.projects = appState.projects.map((project) => ({ ...project, companyId })).filter((project) => project.companyId === companyId);
     const projectNames = new Set(appState.projects.map((project) => project.name));
-    tasks = tasks.filter((task) => projectNames.has(task.project));
+    appState.tasks = appState.tasks.filter((task) => projectNames.has(task.project));
     appState.members = appState.members.map((member) => ({ ...member, companyId })).filter((member) => member.companyId === companyId);
     appState.teams = appState.teams.map((team) => ({ ...team, companyId })).filter((team) => team.companyId === companyId);
     appState.customers = appState.customers.map((customer) => normalizeCustomer({ ...customer, companyId })).filter((customer) => customer.companyId === companyId);
@@ -7263,7 +7263,7 @@ function importTabularProject(textBody) {
       notes: valueFromRow(row, headers, ["Notes", "Qeyd"]),
       importDependencyNames: valueFromRow(row, headers, [columnMap.dependencies, "Dependencies", "Depends On", "Predecessors"].filter(Boolean))
     });
-    tasks.push(task);
+    appState.tasks.push(task);
     createdTasks.push(task);
     if (isMilestone) {
       appState.registers.push(normalizeRegisterItem({
@@ -7279,7 +7279,7 @@ function importTabularProject(textBody) {
     }
     if (index === rows.length - 2) {
       appState.projects = appState.projects.map((project) => {
-        const projectTasks = tasks.filter((taskItem) => taskItem.project === project.name && taskItem.start && taskItem.end);
+        const projectTasks = appState.tasks.filter((taskItem) => taskItem.project === project.name && taskItem.start && taskItem.end);
         if (!projectTasks.length) return project;
         return normalizeProject({
           ...project,
@@ -7289,7 +7289,7 @@ function importTabularProject(textBody) {
       });
     }
   });
-  const taskByName = new Map(tasks.map((task) => [task.name.toLowerCase(), task.id]));
+  const taskByName = new Map(appState.tasks.map((task) => [task.name.toLowerCase(), task.id]));
   createdTasks.forEach((task) => {
     if (!task.importDependencyNames) return;
     task.dependencyIds = String(task.importDependencyNames)
@@ -7334,13 +7334,13 @@ function importMsProjectXml(textBody) {
       priority: "Normal",
       importPredecessors: [...block.matchAll(/<PredecessorUID>(.*?)<\/PredecessorUID>/gi)].map((match) => match[1])
     });
-    tasks.push(task);
+    appState.tasks.push(task);
     idByUid.set(uid, task.id);
     if (milestone) {
       appState.registers.push(normalizeRegisterItem({ id: createId("register"), project: projectName, type: "milestone", title: name, dueDate: task.end || task.start }));
     }
   });
-  tasks.forEach((task) => {
+  appState.tasks.forEach((task) => {
     if (!task.importPredecessors) return;
     task.dependencyIds = task.importPredecessors.map((uid) => idByUid.get(uid)).filter(Boolean);
     delete task.importPredecessors;
@@ -7492,7 +7492,7 @@ async function savePlatformState() {
     headers: authHeaders({ "content-type": "application/json" }),
     body: JSON.stringify({
       version: backupVersion,
-      tasks,
+      tasks: appState.tasks,
       projects: appState.projects,
       members: appState.members,
       teams: appState.teams,
@@ -7558,7 +7558,7 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  const existingTask = tasks.find((item) => item.id === taskId.value);
+  const existingTask = appState.tasks.find((item) => item.id === taskId.value);
   const progress = Math.min(100, Math.max(0, Number.parseInt(progressInput.value || "0", 10)));
   const task = {
     id: taskId.value || createId(),
@@ -7586,12 +7586,12 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  const existingIndex = tasks.findIndex((item) => item.id === task.id);
+  const existingIndex = appState.tasks.findIndex((item) => item.id === task.id);
   if (existingIndex >= 0) {
-    tasks[existingIndex] = task;
+    appState.tasks[existingIndex] = task;
     recordAudit("task.updated", "task", task.id, task.name);
   } else {
-    tasks.push(task);
+    appState.tasks.push(task);
     recordAudit("task.created", "task", task.id, task.name);
   }
 
@@ -7647,7 +7647,7 @@ form.addEventListener("submit", async (event) => {
     if (timeEntryForm?.elements?.hours && currentUser) {
       event.preventDefault();
       if (!canContribute()) return;
-      const task = tasks.find((item) => item.id === timeEntryForm.dataset.taskId);
+      const task = appState.tasks.find((item) => item.id === timeEntryForm.dataset.taskId);
       const hours = Number(timeEntryForm.elements.hours.value) || 0;
       const date = timeEntryForm.elements.date?.value || isoDate(new Date());
       const note = timeEntryForm.elements.note?.value?.trim() || "";
@@ -7674,7 +7674,7 @@ form.addEventListener("submit", async (event) => {
     if (!commentForm || !currentUser) return;
     event.preventDefault();
     if (!canContribute()) return;
-    const task = tasks.find((item) => item.id === commentForm.dataset.taskId);
+    const task = appState.tasks.find((item) => item.id === commentForm.dataset.taskId);
     const input = commentForm.elements.comment;
     const value = input.value.trim();
     if (!task || !value) return;
@@ -7914,7 +7914,7 @@ refreshPlatformCompaniesButton?.addEventListener("click", () => {
 dateRequestList?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-date-request-action]");
   if (!button) return;
-  const task = tasks.find((item) => item.id === button.dataset.taskId);
+  const task = appState.tasks.find((item) => item.id === button.dataset.taskId);
   const request = task?.dateChangeRequests?.find((item) => item.id === button.dataset.requestId);
   if (!task || !request || !canApproveDateRequest(task)) return;
   request.status = button.dataset.dateRequestAction === "approve" ? "approved" : "rejected";
@@ -8302,7 +8302,7 @@ managerPanelModal?.addEventListener("click", (event) => {
     const id = approveBtn.dataset.mgrDateApprove;
     const req = (appSettings.dateRequests || []).find((r) => r.id === id);
     if (req) {
-      const task = tasks.find((t) => t.id === req.taskId);
+      const task = appState.tasks.find((t) => t.id === req.taskId);
       if (task) { task.end = req.newEnd; saveTasks(); }
       appSettings.dateRequests = (appSettings.dateRequests || []).map((r) =>
         r.id === id ? { ...r, status: "approved" } : r
@@ -8364,7 +8364,7 @@ managerPanelModal?.addEventListener("click", (event) => {
     const id = trashRestoreBtn.dataset.mgrTrashRestore;
     const item = appState.trash.find((t) => t.id === id);
     if (item) {
-      if (item.type === "task") tasks.push(item.data);
+      if (item.type === "task") appState.tasks.push(item.data);
       else if (item.type === "projectRecord") appState.projectLinks.push(item.data);
       else appState.projects.push(item.data);
       appState.trash = appState.trash.filter((t) => t.id !== id);
@@ -8503,7 +8503,7 @@ createManualBackupButton?.addEventListener("click", () => {
   const backup = {
     id: createId("backup"),
     createdAt: new Date().toISOString(),
-    taskCount: tasks.length,
+    taskCount: appState.tasks.length,
     projectCount: appState.projects.length,
     payload
   };
@@ -8671,7 +8671,7 @@ workflowStatusList.addEventListener("click", (event) => {
   const status = button.dataset.workflowRemove;
   if (protectedWorkflowStatuses.has(status)) return;
   appSettings.workflowStatuses = normalizeWorkflowStatuses(statuses.filter((item) => item !== status));
-  tasks = tasks.map((task) => task.status === status ? { ...task, status: "Plan" } : task);
+  appState.tasks = appState.tasks.map((task) => task.status === status ? { ...task, status: "Plan" } : task);
   appState.projects = appState.projects.map((project) => project.status === status ? { ...project, status: "Plan" } : project);
   currentFilter = currentFilter === status ? "Hamısı" : currentFilter;
   syncWorkflowStatuses();
@@ -8941,7 +8941,7 @@ platformConsole?.addEventListener("change", async (event) => {
   if (!file) return;
   try {
     const payload = JSON.parse(await file.text());
-    tasks = Array.isArray(payload.tasks) ? payload.tasks.map(normalizeTask) : tasks;
+    appState.tasks = Array.isArray(payload.tasks) ? payload.tasks.map(normalizeTask) : appState.tasks;
     appState.projects = Array.isArray(payload.projects) ? payload.projects.map(normalizeProject) : appState.projects;
     appState.members = Array.isArray(payload.members) ? payload.members.map(normalizeMember) : appState.members;
     appState.teams = Array.isArray(payload.teams) ? payload.teams.map(normalizeTeam) : appState.teams;
@@ -9314,7 +9314,7 @@ projectCards.addEventListener("click", (event) => {
     if (project) {
       appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
       appState.projects = appState.projects.filter((item) => item.id !== project.id);
-      tasks = tasks.map((task) => task.project === projectName ? { ...task, project: "" } : task);
+      appState.tasks = appState.tasks.map((task) => task.project === projectName ? { ...task, project: "" } : task);
       appState.projectLinks = appState.projectLinks.filter((link) => link.project !== projectName);
       appState.registers = appState.registers.filter((item) => item.project !== projectName);
       saveTrash();
@@ -9458,7 +9458,7 @@ registerList.addEventListener("input", (event) => {
 
     if (action === "delete-team") {
       appState.teams = appState.teams.filter((team) => team.id !== id);
-      tasks = tasks.map((task) => task.owner === resourceValue("team", id) ? { ...task, owner: "" } : task);
+      appState.tasks = appState.tasks.map((task) => task.owner === resourceValue("team", id) ? { ...task, owner: "" } : task);
       appState.projectLinks = appState.projectLinks.filter((link) => link.resource !== resourceValue("team", id));
       saveTasks();
     }
@@ -9495,8 +9495,8 @@ trashList.addEventListener("click", (event) => {
   if (!item) return;
 
   if (button.dataset.trashAction === "restore") {
-    if (item.type === "task" && !tasks.some((task) => task.id === item.data.id)) {
-      tasks.push(item.data);
+    if (item.type === "task" && !appState.tasks.some((task) => task.id === item.data.id)) {
+      appState.tasks.push(item.data);
       saveTasks();
     }
     if (item.type === "project" && !appState.projectLinks.some((link) => link.id === item.data.id)) {
@@ -9531,11 +9531,11 @@ resetDemo.addEventListener("click", () => {
 
 clearDone.addEventListener("click", () => {
   if (!isAdmin()) return;
-  const doneTasks = tasks.filter((task) => task.status === "Bitib");
+  const doneTasks = appState.tasks.filter((task) => task.status === "Bitib");
   doneTasks.forEach((task) => {
     appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
   });
-  tasks = tasks.filter((task) => task.status !== "Bitib");
+  appState.tasks = appState.tasks.filter((task) => task.status !== "Bitib");
   saveTrash();
   saveTasks();
   render();
@@ -9587,7 +9587,7 @@ document.querySelector("#bulkClear")?.addEventListener("click", () => {
 document.querySelector("#bulkDelete")?.addEventListener("click", () => {
   if (!selectedTaskIds.size) return;
   if (!confirm(`${selectedTaskIds.size} task silinsin?`)) return;
-  tasks = tasks.filter(t => !selectedTaskIds.has(t.id));
+  appState.tasks = appState.tasks.filter(t => !selectedTaskIds.has(t.id));
   selectedTaskIds.clear();
   saveState(); render(); updateBulkBar();
 });
@@ -9598,7 +9598,7 @@ document.querySelector("#bulkStatus")?.addEventListener("click", () => {
   const chosen = prompt(`Yeni status seçin:\n${opts.map((s,i)=>`${i+1}. ${s}`).join("\n")}`);
   const idx = parseInt(chosen) - 1;
   if (isNaN(idx) || !opts[idx]) return;
-  tasks.forEach(t => { if (selectedTaskIds.has(t.id)) t.status = opts[idx]; });
+  appState.tasks.forEach(t => { if (selectedTaskIds.has(t.id)) t.status = opts[idx]; });
   selectedTaskIds.clear(); saveState(); render(); updateBulkBar();
 });
 
@@ -9609,7 +9609,7 @@ document.querySelector("#bulkOwner")?.addEventListener("click", () => {
   const chosen = prompt(`Sahib seçin:\n${opts.map((n,i)=>`${i+1}. ${n}`).join("\n")}`);
   const idx = parseInt(chosen) - 1;
   if (isNaN(idx) || !ids[idx]) return;
-  tasks.forEach(t => { if (selectedTaskIds.has(t.id)) t.owner = ids[idx]; });
+  appState.tasks.forEach(t => { if (selectedTaskIds.has(t.id)) t.owner = ids[idx]; });
   selectedTaskIds.clear(); saveState(); render(); updateBulkBar();
 });
 
