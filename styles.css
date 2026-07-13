@@ -6327,3 +6327,140 @@ kbd {
   transition: background .14s, border-color .14s;
 }
 .export-btn:hover { background: var(--soft); border-color: var(--teal); color: var(--teal); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOTION LAYER — welcome entrance + interior micro-interactions
+   All effects sit behind prefers-reduced-motion (guard at the bottom).
+   ═══════════════════════════════════════════════════════════════════ */
+
+@keyframes heroRise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes heroCardRise {
+  from { opacity: 0; transform: translateY(22px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes viewEnter {
+  from { opacity: 0; transform: translateY(10px) scale(0.996); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes softPop {
+  0%   { opacity: 0; transform: scale(0.94); }
+  60%  { opacity: 1; transform: scale(1.015); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Welcome page: staggered entrance ─────────────────────────────── */
+.login-hero-brand,
+.hero-eyebrow,
+.login-hero-title,
+.login-hero-sub,
+.hero-cta-row,
+.hero-ipma-block,
+.login-hero-stats {
+  animation: heroRise 620ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.login-hero-brand   { animation-delay: 40ms; }
+.hero-eyebrow       { animation-delay: 120ms; }
+.login-hero-title   { animation-delay: 190ms; }
+.login-hero-sub     { animation-delay: 260ms; }
+.hero-cta-row       { animation-delay: 330ms; }
+.hero-ipma-block    { animation-delay: 520ms; }
+.login-hero-stats   { animation-delay: 600ms; }
+
+.login-feature-list li {
+  animation: heroRise 560ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.login-feature-list li:nth-child(1) { animation-delay: 380ms; }
+.login-feature-list li:nth-child(2) { animation-delay: 440ms; }
+.login-feature-list li:nth-child(3) { animation-delay: 500ms; }
+.login-feature-list li:nth-child(4) { animation-delay: 560ms; }
+.login-feature-list li:nth-child(5) { animation-delay: 620ms; }
+
+.login-card {
+  animation: heroCardRise 720ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: 220ms;
+}
+
+/* ── Interior: view switch entrance ───────────────────────────────── */
+.active-view {
+  display: block;
+  animation: viewEnter 340ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* Dashboard panels gently rise-in as their view enters */
+.active-view .dashboard-panel {
+  animation: softPop 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.active-view .dashboard-panel:nth-child(2) { animation-delay: 60ms; }
+.active-view .dashboard-panel:nth-child(3) { animation-delay: 120ms; }
+.active-view .dashboard-panel:nth-child(4) { animation-delay: 180ms; }
+.active-view .dashboard-panel:nth-child(5) { animation-delay: 240ms; }
+.active-view .dashboard-panel:nth-child(6) { animation-delay: 300ms; }
+
+/* ── Micro-interactions: press + hover feedback ───────────────────── */
+.view-tab,
+.hero-cta-btn,
+.export-btn,
+button.primary,
+.snapshot-restore-btn {
+  transition: transform 130ms ease, box-shadow 150ms ease, background 150ms ease,
+              color 150ms ease, border-color 150ms ease;
+}
+.view-tab:active,
+.hero-cta-btn:active,
+.export-btn:active,
+button.primary:active,
+.snapshot-restore-btn:active {
+  transform: translateY(1px) scale(0.975);
+}
+.hero-cta-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(79, 70, 229, 0.32);
+}
+
+/* Feature cards lift on hover (welcome page) */
+.login-feature-list li {
+  transition: transform 200ms cubic-bezier(0.22, 0.61, 0.36, 1),
+              box-shadow 200ms ease, border-color 200ms ease;
+}
+.login-feature-list li:hover {
+  transform: translateY(-3px);
+}
+
+/* ── Accessibility: honour reduced-motion ─────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .login-hero-brand,
+  .hero-eyebrow,
+  .login-hero-title,
+  .login-hero-sub,
+  .hero-cta-row,
+  .hero-ipma-block,
+  .login-hero-stats,
+  .login-feature-list li,
+  .login-card,
+  .active-view,
+  .active-view .dashboard-panel {
+    animation: none !important;
+  }
+  .view-tab,
+  .hero-cta-btn,
+  .export-btn,
+  button.primary,
+  .snapshot-restore-btn,
+  .login-feature-list li {
+    transition: background 140ms, color 140ms, border-color 140ms;
+  }
+  .view-tab:active,
+  .hero-cta-btn:active,
+  .export-btn:active,
+  button.primary:active,
+  .hero-cta-primary:hover,
+  .login-feature-list li:hover {
+    transform: none;
+  }
+}
