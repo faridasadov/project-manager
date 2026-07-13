@@ -1592,55 +1592,11 @@ function rescheduleDependentTasks(sourceTask) {
   return changed;
 }
 
-function linkedResourcesForProject(project) {
-  const directLinks = appState.projectLinks.filter((link) => link.project === project).map((link) => link.resource);
-  const projectMembers = appState.projects.find((item) => item.name === project)?.teamMemberIds || [];
-  return [...new Set([...directLinks, ...projectMembers])];
-}
-
-function resourceIncludesUser(resource, userId) {
-  if (!resource || !userId) return false;
-  if (resource === resourceValue("user", userId)) return true;
-  if (!resource.startsWith("team:")) return false;
-  const teamId = resource.split(":")[1];
-  const team = appState.teams.find((item) => item.id === teamId);
-  return Boolean(team?.memberIds?.some((memberId) => memberId === userId || memberId === resourceValue("user", userId)));
-}
-
-function visibleUserIdsForCurrentUser() {
-  if (!currentUser) return [];
-  if (isSuperAdmin()) return [];
-  if (isAdmin()) return appState.users.filter((user) => user.companyId === currentCompanyId()).map((user) => user.id);
-  if (currentUser.role === "manager") return [currentUser.id, ...managerUsers(currentUser.id).map((user) => user.id)];
-  return [currentUser.id];
-}
-
-function resourceInCurrentScope(resource) {
-  return visibleUserIdsForCurrentUser().some((userId) => resourceIncludesUser(resource, userId));
-}
+// linkedResourcesForProject / resourceIncludesUser / visibleUserIdsForCurrentUser / resourceInCurrentScope → modules/scope.js
 
 // projectHasRoleAccess / taskHasDirectAccess / projectHasResourceAccess → modules/tenant.js
 
-function visibleRegisters(projectName = "") {
-  return appState.registers.filter((item) => {
-    if (projectName && item.project !== projectName) return false;
-    const project = appState.projects.find((candidate) => candidate.name === item.project);
-    return !project || canSeeProject(project);
-  });
-}
-
-function registerCounts(projectName = "") {
-  const items = visibleRegisters(projectName).filter((item) => item.status !== "Resolved");
-  return {
-    risks: items.filter((item) => item.type === "risk").length,
-    issues: items.filter((item) => item.type === "issue").length,
-    milestones: items.filter((item) => item.type === "milestone").length
-  };
-}
-
-function projectHasOpenRisk(projectName) {
-  return visibleRegisters(projectName).some((item) => item.status !== "Resolved" && ["risk", "issue"].includes(item.type));
-}
+// visibleRegisters / registerCounts / projectHasOpenRisk → modules/scope.js
 
 function taskMatchesSmartFilter(task) {
   if (currentSmartFilter === "Hamısı") return true;
