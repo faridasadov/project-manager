@@ -2018,29 +2018,15 @@ function renderDateRequests() {
   `).join("") : `<div class="empty">${text("noDateRequests")}</div>`;
 }
 
+// markup (saf data→HTML) → modules/render-markup.js: customerListMarkup, managedFileListMarkup
 function renderCustomerList() {
   const scopedCustomers = appState.customers.filter(isSameCompany);
-  customerList.innerHTML = scopedCustomers.length ? scopedCustomers.map((customer) => `
-    <div class="resource-item">
-      <span><strong>${escapeHtml(customer.name)}</strong>${escapeHtml([customer.contact, customer.email].filter(Boolean).join(" · "))}</span>
-      <div class="mini-actions">
-        <button type="button" data-customer-action="delete" data-id="${escapeHtml(customer.id)}">${text("delete")}</button>
-      </div>
-    </div>
-  `).join("") : `<div class="empty">${text("empty")}</div>`;
+  customerList.innerHTML = customerListMarkup(scopedCustomers);
 }
 
 function renderManagedFileList() {
   const scopedFiles = appState.managedFiles.filter(isSameCompany);
-  managedFileList.innerHTML = scopedFiles.length ? scopedFiles.map((file) => `
-    <div class="resource-item">
-      <span><strong>${escapeHtml(file.name)}</strong>${fileSizeLabel(Number(file.size) || 0)} · ${escapeHtml(formatDateTime(file.createdAt))}</span>
-      <div class="mini-actions">
-        <a class="attachment-chip" href="${escapeHtml(file.dataUrl)}" download="${escapeHtml(file.name)}">${text("download")}</a>
-        <button type="button" data-file-action="delete" data-id="${escapeHtml(file.id)}">${text("delete")}</button>
-      </div>
-    </div>
-  `).join("") : `<div class="empty">${text("empty")}</div>`;
+  managedFileList.innerHTML = managedFileListMarkup(scopedFiles);
 }
 
 function renderRoleMatrix() {
