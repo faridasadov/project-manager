@@ -1038,13 +1038,8 @@ function priorityClass(priority) {
   return "";
 }
 
-function getProject(task) {
-  return task.project || text("unassignedProject");
-}
-
-function projectExists(name) {
-  return appState.projects.some((project) => project.name === name);
-}
+// domen lookup / label: getProject, projectExists, customerLabel, resourceLabel,
+// userDisplayLabel, resourceTypeLabel, roleLabel → modules/lookups.js
 
 // layihə domen mutasiyaları (createProject, updateProject, projectGateError)
 // → modules/project-crud.js
@@ -1091,11 +1086,7 @@ function projectManagers(project) {
   return appState.users.filter((user) => (project.managerIds || []).includes(user.id));
 }
 
-function customerLabel(customerId) {
-  if (!customerId) return text("empty");
-  const customer = appState.customers.find((item) => item.id === customerId);
-  return customer?.name || text("empty");
-}
+// customerLabel → modules/lookups.js
 
 // canSeeProject / visibleProjects / canSeeTask / accessibleTasks → modules/tenant.js
 
@@ -1123,43 +1114,7 @@ function resourceValue(type, id) {
   return `${type}:${id}`;
 }
 
-function resourceLabel(value) {
-  if (!value) return text("noOwner");
-  const [type, id] = value.split(":");
-  if (type === "user") {
-    const user = appState.users.find((item) => item.id === id);
-    return user ? user.profile?.fullName || user.username : value;
-  }
-  if (type === "member") {
-    const member = appState.members.find((item) => item.id === id);
-    return member ? member.name : value;
-  }
-  if (type === "team") {
-    const team = appState.teams.find((item) => item.id === id);
-    return team ? team.name : value;
-  }
-  return value;
-}
-
-function userDisplayLabel(username) {
-  const user = appState.users.find((item) => item.username === username || item.id === username);
-  return user ? user.profile?.fullName || user.username : username || "";
-}
-
-function resourceTypeLabel(value) {
-  if (value.startsWith("user:")) return text("userRole");
-  return value.startsWith("team:") ? text("team") : text("member");
-}
-
-function roleLabel(role) {
-  if (role === "super_admin") return text("superAdminRole");
-  if (role === "admin") return text("adminRole");
-  if (role === "manager") return text("managerRole");
-  if (role === "contributor") return text("contributorRole");
-  if (role === "viewer") return text("viewerRole");
-  if (role === "sponsor") return text("sponsorRole");
-  return text("userRole");
-}
+// resourceLabel / userDisplayLabel / resourceTypeLabel / roleLabel → modules/lookups.js
 
 function managerOptions(selectedId = "") {
   const companyId = currentCompanyId();

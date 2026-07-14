@@ -266,6 +266,7 @@ const classicScripts = [
   join(rootDir, "modules", "permissions.js"),
   join(rootDir, "modules", "project-crud.js"),
   join(rootDir, "modules", "metrics.js"),
+  join(rootDir, "modules", "lookups.js"),
   join(rootDir, "script.js")
 ];
 const combinedSource = classicScripts.map((file) => readFileSync(file, "utf8")).join("\n");
