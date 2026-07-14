@@ -1,7 +1,7 @@
 // Project Manager — Service Worker
 // Strategy: Cache-first for static assets, network-only for API calls
 
-const CACHE = "pm-v26";
+const CACHE = "pm-v27";
 const STATIC = [
   "./",
   "./index.html",
@@ -25,6 +25,7 @@ const STATIC = [
   "./modules/project-crud.js",
   "./modules/metrics.js",
   "./modules/lookups.js",
+  "./modules/option-builders.js",
   "./modules/vendor/motion.js",
   "./script.js",
   "./styles.css",

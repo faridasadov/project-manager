@@ -1116,48 +1116,9 @@ function resourceValue(type, id) {
 
 // resourceLabel / userDisplayLabel / resourceTypeLabel / roleLabel → modules/lookups.js
 
-function managerOptions(selectedId = "") {
-  const companyId = currentCompanyId();
-  return [
-    `<option value="">${text("noOwnerSelect")}</option>`,
-    ...appState.users
-      .filter((user) => user.role === "manager" && user.companyId === companyId)
-      .map((user) => {
-        const label = user.profile?.fullName ? `${user.profile.fullName} (${user.username})` : user.username;
-        return `<option value="${user.id}" ${user.id === selectedId ? "selected" : ""}>${escapeHtml(label)}</option>`;
-      })
-  ].join("");
-}
-
-function managerMultiOptions(selectedIds = []) {
-  const companyId = currentCompanyId();
-  return appState.users
-    .filter((user) => user.role === "manager" && user.companyId === companyId)
-    .map((user) => `<option value="${user.id}" ${selectedIds.includes(user.id) ? "selected" : ""}>${escapeHtml(user.username)}</option>`)
-    .join("");
-}
-
-function allResourceOptions() {
-  const companyId = currentCompanyId();
-  return [
-    ...appState.users.filter((user) => !["admin", "super_admin"].includes(user.role) && user.companyId === companyId).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) })),
-    ...appState.teams.filter((team) => isSameCompany(team)).map((team) => ({ value: resourceValue("team", team.id), label: team.name, type: text("team") }))
-  ];
-}
-
-function teamMemberOptions(selectedIds = []) {
-  const companyId = currentCompanyId();
-  return [
-    ...appState.users.filter((user) => !["admin", "super_admin"].includes(user.role) && user.companyId === companyId).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) }))
-  ].map((option) => `<option value="${option.value}" ${selectedIds.includes(option.value) ? "selected" : ""}>${option.type}: ${escapeHtml(option.label)}</option>`).join("");
-}
-
-function taskOptionItems(selectedIds = [], excludedId = "") {
-  return accessibleTasks()
-    .filter((task) => task.id !== excludedId)
-    .map((task) => `<option value="${task.id}" ${selectedIds.includes(task.id) ? "selected" : ""}>${escapeHtml(task.name)} (${escapeHtml(getProject(task))})</option>`)
-    .join("");
-}
+// <option> HTML-string / resurs siyahısı qurucuları (managerOptions,
+// managerMultiOptions, allResourceOptions, teamMemberOptions, taskOptionItems)
+// → modules/option-builders.js
 
 function ensureSelectOption(select, value, label = "") {
   if (!select || !value || [...select.options].some((option) => option.value === value)) return;
