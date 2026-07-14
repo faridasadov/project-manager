@@ -2601,6 +2601,28 @@ function renderSummary() {
   dateRange.textContent = `${totalDays} ${text("day")}`;
 }
 
+// KPI rəqəmlərini 0-dan hədəfə "sayaraq" artır — vanilla Motion (framer-motion sibling).
+// window.motionAnimate yoxdursa və ya reduced-motion isə: rəqəm dərhal görünür (fallback).
+function animateKpiCountUp(container) {
+  if (!container) return;
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  container.querySelectorAll(".kpi-num").forEach((el) => {
+    const raw = el.textContent.trim();
+    const m = raw.match(/^(-?\d+(?:\.\d+)?)(.*)$/);
+    if (!m) return;
+    const target = parseFloat(m[1]);
+    const suffix = m[2] || "";
+    const decimals = (m[1].split(".")[1] || "").length;
+    if (reduce || !window.motionAnimate || !isFinite(target)) { el.textContent = raw; return; }
+    el.textContent = (0).toFixed(decimals) + suffix;
+    window.motionAnimate(0, target, {
+      duration: 0.6,
+      ease: [0.23, 1, 0.32, 1],
+      onUpdate: (v) => { el.textContent = v.toFixed(decimals) + suffix; },
+    });
+  });
+}
+
 function renderDashboard() {
   const shownTasks = accessibleTasks();
   const totalReal = shownTasks.length;
@@ -2670,6 +2692,7 @@ function renderDashboard() {
         </div>
       </div>
     `;
+    animateKpiCountUp(dashKpi);
   }
 
   // ── Status bars — richer ───────────────────────────────────────────────────
