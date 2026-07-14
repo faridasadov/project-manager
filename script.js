@@ -2373,38 +2373,14 @@ function riskyTasks() {
     .sort((a, b) => daysUntil(a.task.end) - daysUntil(b.task.end));
 }
 
+// markup → render-markup.js: deadlineAlertsMarkup, portfolioHealthMarkup
 function renderDeadlineAlerts() {
-  const alerts = riskyTasks().slice(0, 6);
-  deadlineAlerts.innerHTML = alerts.length ? alerts.map(({ task, alert }) => `
-    <button class="compact-item ${alert.type}" type="button" data-open-task="${escapeHtml(task.id)}" title="${escapeHtml(task.name)}">
-      <strong>${escapeHtml(task.name)}</strong>
-      <div class="task-meta">
-        <span>${escapeHtml(getProject(task))}</span>
-        <span>${shortDate(task.end)}</span>
-        <span class="badge ${alert.type === "danger" ? "high" : ""}">${escapeHtml(alert.label)}</span>
-      </div>
-    </button>
-  `).join("") : `<div class="empty">${text("noDeadlineAlerts")}</div>`;
+  deadlineAlerts.innerHTML = deadlineAlertsMarkup(riskyTasks().slice(0, 6));
 }
 
 function renderPortfolioHealth() {
   if (!portfolioHealth) return;
-  const metrics = portfolioMetrics();
-  portfolioHealth.innerHTML = `
-    <div class="health-score">
-      <strong>${metrics.score}</strong>
-      <span>${text("healthScore")}</span>
-    </div>
-    <div class="health-meter"><span style="width:${metrics.score}%"></span></div>
-    <div class="health-grid">
-      <span><strong>${metrics.completion}%</strong>${text("completionRate")}</span>
-      <span><strong>${metrics.overdue}</strong>${text("overdueTasks")}</span>
-      <span><strong>${metrics.blocked}</strong>${text("blockedTasks")}</span>
-      <span><strong>${metrics.risks}</strong>${text("riskLoad")}</span>
-      <span><strong>${metrics.issues}</strong>${text("openIssueLoad")}</span>
-      <span><strong>${metrics.governanceScore}%</strong>${text("ipmaScore")}</span>
-    </div>
-  `;
+  portfolioHealth.innerHTML = portfolioHealthMarkup(portfolioMetrics());
 }
 
 function nextActionItems() {
@@ -2426,15 +2402,7 @@ function nextActionItems() {
 
 function renderNextActions() {
   if (!nextActions) return;
-  const actions = nextActionItems();
-  nextActions.innerHTML = actions.length ? actions.map((action) => `
-    <button class="compact-item action-item ${escapeHtml(action.type)}" type="button"
-      ${action.taskId ? `data-open-task="${escapeHtml(action.taskId)}"` : `data-action-filter="${escapeHtml(action.target)}"`}>
-      <strong>${escapeHtml(action.label)}</strong>
-      <span>${escapeHtml(action.title)}</span>
-      <small>${escapeHtml(action.meta || "")}</small>
-    </button>
-  `).join("") : `<div class="empty">${text("noActionNeeded")}</div>`;
+  nextActions.innerHTML = nextActionsMarkup(nextActionItems());
 }
 
 function renderActivityLists() {
