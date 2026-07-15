@@ -1882,11 +1882,11 @@ function renderDashboard() {
         </div>
       </div>
       <div class="dash-kpi">
-        <span class="kpi-icon" style="background:color-mix(in srgb,var(--blue) 14%,var(--panel))">🔵</span>
+        <span class="kpi-icon" style="background:color-mix(in srgb,var(--teal) 13%,var(--panel))">🔵</span>
         <div class="kpi-body">
-          <strong class="kpi-num" style="color:var(--blue)">${activeTasks.length}</strong>
+          <strong class="kpi-num" style="color:var(--teal)">${activeTasks.length}</strong>
           <span class="kpi-label">Aktiv task</span>
-          <div class="kpi-bar"><span style="width:${Math.round(activeTasks.length/total*100)}%;background:var(--blue)"></span></div>
+          <div class="kpi-bar"><span style="width:${Math.round(activeTasks.length/total*100)}%;background:var(--teal)"></span></div>
         </div>
       </div>
       <div class="dash-kpi">
@@ -1919,9 +1919,9 @@ function renderDashboard() {
         </div>
       </div>
       <div class="dash-kpi">
-        <span class="kpi-icon" style="background:color-mix(in srgb,#f59e0b 14%,var(--panel))">🏆</span>
+        <span class="kpi-icon" style="background:color-mix(in srgb,var(--teal) 13%,var(--panel))">🏆</span>
         <div class="kpi-body">
-          <strong class="kpi-num" style="color:#d97706">${metrics.governanceScore}%</strong>
+          <strong class="kpi-num" style="color:var(--teal)">${metrics.governanceScore}%</strong>
           <span class="kpi-label">IPMA balı</span>
         </div>
       </div>

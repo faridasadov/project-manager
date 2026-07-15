@@ -5,16 +5,19 @@
   --panel: #ffffff;
   --line: #e4e8f2;
   --field: #f4f6fd;
-  --teal: #4f46e5;
-  --blue: #7c3aed;
-  --amber: #f59e0b;
-  --green: #16a34a;
-  --red: #ef4444;
-  --soft: #eef2ff;
-  --sidebar: #1e1b4b;
-  --sidebar-muted: #818cf8;
+  /* Harmonized jewel family — one tonal system around the indigo brand.
+     All semantics sit at a consistent lightness/chroma so they read as a set,
+     not competing web-bright colors. */
+  --teal: #4f46e5;   /* brand — indigo (primary action, selection) */
+  --blue: #3b6fd4;   /* info / in-progress — calmer azure, distinct from brand */
+  --amber: #c47d1c;  /* warning / plan — deeper amber, readable as text ≥3:1 */
+  --green: #12a150;  /* success / done — emerald */
+  --red: #e0475c;    /* danger — rose-red, cooler to harmonize with indigo */
+  --soft: #eef1fb;
+  --sidebar: #211d52;
+  --sidebar-muted: #8f97e8;
   --shadow: 0 4px 24px rgba(79, 70, 229, 0.12);
-  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.07);
+  --shadow-soft: 0 2px 12px rgba(15, 23, 42, 0.06);
 }
 
 * {
@@ -4249,7 +4252,10 @@ textarea:focus {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--red), var(--amber), var(--green));
+  /* Calm brand fill instead of a neon red→amber→green rainbow. The score
+     number carries the value; the bar just shows fill level cohesively. */
+  background: linear-gradient(90deg, var(--teal), color-mix(in srgb, var(--teal) 62%, var(--blue)));
+  transition: width 500ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .health-grid {
@@ -5946,9 +5952,9 @@ body[data-view="dashboard"] .summary {
   color: var(--muted);
 }
 
-.reg-risk   { color: var(--red);   border-color: color-mix(in srgb, var(--red) 22%, var(--line)); background: color-mix(in srgb, var(--red) 8%, var(--panel)); }
-.reg-issue  { color: var(--red);   border-color: color-mix(in srgb, var(--red) 18%, var(--line)); background: color-mix(in srgb, var(--red) 6%, var(--panel)); }
-.reg-milestone { color: var(--teal); border-color: color-mix(in srgb, var(--teal) 22%, var(--line)); background: color-mix(in srgb, var(--teal) 8%, var(--panel)); }
+.reg-risk   { color: var(--red);   border-color: color-mix(in srgb, var(--red) 24%, var(--line));   background: color-mix(in srgb, var(--red) 9%, var(--panel)); }
+.reg-issue  { color: color-mix(in srgb, var(--amber) 76%, #000); border-color: color-mix(in srgb, var(--amber) 26%, var(--line)); background: color-mix(in srgb, var(--amber) 10%, var(--panel)); }
+.reg-milestone { color: var(--teal); border-color: color-mix(in srgb, var(--teal) 22%, var(--line));  background: color-mix(in srgb, var(--teal) 8%, var(--panel)); }
 
 /* ── Dashboard calendar nav ──────────────────────────────────────── */
 .dash-calendar-panel .section-head {
