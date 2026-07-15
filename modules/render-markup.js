@@ -580,3 +580,127 @@ function platformLifecycleCardMarkup(company) {
       </article>
     `;
 }
+
+// ── Manager paneli siyahı markup-ları (renderManagerPanel-dən). Deps: escapeHtml,
+//    shortDate (format.js), roleLabel/resourceLabel (lookups.js),
+//    registerTypeLabel/registerStatusLabel (labels.js), text. ─────────────────────
+function mgrProjectListMarkup(myProjects) {
+  return myProjects.length
+    ? myProjects.map((p) => `
+          <div class="resource-item">
+            <span>
+              <strong>${escapeHtml(p.name)}</strong>
+              ${escapeHtml(p.status || "")} · ${p.progress || 0}% · ${shortDate(p.start)} → ${shortDate(p.end)}
+            </span>
+            <button type="button" data-mgr-open-project="${escapeHtml(p.name)}">Aç</button>
+          </div>`).join("")
+    : `<div class="empty">Sizə aid layihə yoxdur</div>`;
+}
+
+function mgrTeamListMarkup(myTeam) {
+  return myTeam.length
+    ? myTeam.map((u) => `
+          <div class="resource-item">
+            <span>
+              <strong>${escapeHtml(u.profile?.fullName || u.username)}</strong>
+              ${escapeHtml(roleLabel(u.role))} · ${escapeHtml(u.username)}
+              ${u.profile?.position ? ` · ${escapeHtml(u.profile.position)}` : ""}
+            </span>
+          </div>`).join("")
+    : `<div class="empty">Komanda üzvü yoxdur</div>`;
+}
+
+function mgrDateRequestListMarkup(myDateRequests) {
+  return myDateRequests.length
+    ? myDateRequests.map((r) => `
+          <div class="resource-item">
+            <span>
+              <strong>${escapeHtml(r.taskName || r.taskId)}</strong>
+              ${escapeHtml(r.requester || "")} · ${shortDate(r.newEnd)}
+              ${r.reason ? `<small>${escapeHtml(r.reason)}</small>` : ""}
+            </span>
+            <div class="mini-actions">
+              <button type="button" data-mgr-date-approve="${r.id}">Təsdiqlə</button>
+              <button type="button" data-mgr-date-reject="${r.id}" class="danger">Rədd et</button>
+            </div>
+          </div>`).join("")
+    : `<div class="empty">Gözləyən sorğu yoxdur</div>`;
+}
+
+function mgrRegisterListMarkup(myRegisters) {
+  return myRegisters.length
+    ? myRegisters.map((r) => `
+          <div class="resource-item register-item ${escapeHtml(r.type)}">
+            <span>
+              <strong>${escapeHtml(r.title)}</strong>
+              ${escapeHtml(r.project)} · ${registerTypeLabel(r.type)} · ${escapeHtml(registerStatusLabel(r.status))}
+              ${r.mitigation ? `<small>${escapeHtml(r.mitigation)}</small>` : ""}
+            </span>
+            <button type="button" data-mgr-register-delete="${r.id}">${text("remove")}</button>
+          </div>`).join("")
+    : `<div class="empty">Aktiv register yoxdur</div>`;
+}
+
+function mgrTeamGroupListMarkup(myTeamGroups) {
+  return myTeamGroups.length
+    ? myTeamGroups.map((t) => `
+          <div class="resource-item">
+            <span>
+              <strong>${escapeHtml(t.name)}</strong>
+              ${(t.memberIds || []).length} üzv
+            </span>
+            <button type="button" data-mgr-team-delete="${t.id}">${text("remove")}</button>
+          </div>`).join("")
+    : `<div class="empty">Komanda yoxdur</div>`;
+}
+
+function mgrCustomerListMarkup(myCustomers) {
+  return myCustomers.length
+    ? myCustomers.map((c) => `
+          <div class="resource-item">
+            <span><strong>${escapeHtml(c.name)}</strong>${c.contact ? ` · ${escapeHtml(c.contact)}` : ""}</span>
+          </div>`).join("")
+    : `<div class="empty">Sifarişçi yoxdur</div>`;
+}
+
+function mgrLinkListMarkup(myLinks) {
+  return myLinks.length
+    ? myLinks.map((l) => `
+          <div class="resource-item">
+            <span>
+              <strong>${escapeHtml(l.project)}</strong> → ${escapeHtml(resourceLabel(l.resource))}
+            </span>
+            <button type="button" data-mgr-link-delete="${l.id}">${text("remove")}</button>
+          </div>`).join("")
+    : `<div class="empty">Bağlantı yoxdur</div>`;
+}
+
+function mgrTrashListMarkup(myTrash) {
+  return myTrash.length
+    ? myTrash.map((t) => {
+        const title = t.type === "task" ? t.data.name : (t.data.project || t.data.name);
+        return `
+            <div class="resource-item">
+              <span><strong>${escapeHtml(title)}</strong>${t.type === "task" ? " — tapşırıq" : " — layihə"}</span>
+              <div class="mini-actions">
+                <button type="button" data-mgr-trash-restore="${t.id}">${text("restore")}</button>
+                <button type="button" data-mgr-trash-delete="${t.id}" class="danger">${text("deleteForever")}</button>
+              </div>
+            </div>`;
+      }).join("")
+    : `<div class="empty">Zibil qutusu boşdur</div>`;
+}
+
+// Layihəyə manager təyini üçün seçim siyahısı. Deps: appState.users, escapeHtml, text.
+function managerChoiceItems(selectedIds = []) {
+  const managers = appState.users.filter((user) => user.role === "manager");
+  return managers.length ? managers.map((user) => `
+    <label class="manager-choice">
+      <input type="checkbox" name="projectManager" value="${user.id}" ${selectedIds.includes(user.id) ? "checked" : ""}>
+      <span>
+        <strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>
+        <small>${escapeHtml(user.username)}</small>
+      </span>
+    </label>
+  `).join("") : `<div class="empty">${text("empty")}</div>`;
+}

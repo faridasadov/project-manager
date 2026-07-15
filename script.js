@@ -1266,145 +1266,20 @@ function renderManagerPanel() {
   setCount("mgrLinkCountBadge", myLinks.length);
   setCount("mgrTrashCountBadge", myTrash.length);
 
-  // Layihələrim
-  const mgrProjectList = document.querySelector("#mgrProjectList");
-  if (mgrProjectList) {
-    mgrProjectList.innerHTML = myProjects.length
-      ? myProjects.map((p) => `
-          <div class="resource-item">
-            <span>
-              <strong>${escapeHtml(p.name)}</strong>
-              ${escapeHtml(p.status || "")} · ${p.progress || 0}% · ${shortDate(p.start)} → ${shortDate(p.end)}
-            </span>
-            <button type="button" data-mgr-open-project="${escapeHtml(p.name)}">Aç</button>
-          </div>`).join("")
-      : `<div class="empty">Sizə aid layihə yoxdur</div>`;
-  }
-
-  // Komanda üzvlərim
-  const mgrTeamList = document.querySelector("#mgrTeamList");
-  if (mgrTeamList) {
-    mgrTeamList.innerHTML = myTeam.length
-      ? myTeam.map((u) => `
-          <div class="resource-item">
-            <span>
-              <strong>${escapeHtml(u.profile?.fullName || u.username)}</strong>
-              ${escapeHtml(roleLabel(u.role))} · ${escapeHtml(u.username)}
-              ${u.profile?.position ? ` · ${escapeHtml(u.profile.position)}` : ""}
-            </span>
-          </div>`).join("")
-      : `<div class="empty">Komanda üzvü yoxdur</div>`;
-  }
-
-  // Tarix sorğuları
-  const mgrDateRequestList = document.querySelector("#mgrDateRequestList");
-  if (mgrDateRequestList) {
-    mgrDateRequestList.innerHTML = myDateRequests.length
-      ? myDateRequests.map((r) => `
-          <div class="resource-item">
-            <span>
-              <strong>${escapeHtml(r.taskName || r.taskId)}</strong>
-              ${escapeHtml(r.requester || "")} · ${shortDate(r.newEnd)}
-              ${r.reason ? `<small>${escapeHtml(r.reason)}</small>` : ""}
-            </span>
-            <div class="mini-actions">
-              <button type="button" data-mgr-date-approve="${r.id}">Təsdiqlə</button>
-              <button type="button" data-mgr-date-reject="${r.id}" class="danger">Rədd et</button>
-            </div>
-          </div>`).join("")
-      : `<div class="empty">Gözləyən sorğu yoxdur</div>`;
-  }
-
-  // Registerlar
-  const mgrRegisterList = document.querySelector("#mgrRegisterList");
-  if (mgrRegisterList) {
-    mgrRegisterList.innerHTML = myRegisters.length
-      ? myRegisters.map((r) => `
-          <div class="resource-item register-item ${escapeHtml(r.type)}">
-            <span>
-              <strong>${escapeHtml(r.title)}</strong>
-              ${escapeHtml(r.project)} · ${registerTypeLabel(r.type)} · ${escapeHtml(registerStatusLabel(r.status))}
-              ${r.mitigation ? `<small>${escapeHtml(r.mitigation)}</small>` : ""}
-            </span>
-            <button type="button" data-mgr-register-delete="${r.id}">${text("remove")}</button>
-          </div>`).join("")
-      : `<div class="empty">Aktiv register yoxdur</div>`;
-  }
-
-  // Register project seçimi
-  const mgrRegisterProject = document.querySelector("#mgrRegisterProject");
-  if (mgrRegisterProject) {
-    mgrRegisterProject.innerHTML = myProjects.map((p) =>
-      `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`
-    ).join("");
-  }
-
-  // Komandalar
-  const mgrTeamGroupList = document.querySelector("#mgrTeamGroupList");
-  if (mgrTeamGroupList) {
-    mgrTeamGroupList.innerHTML = myTeamGroups.length
-      ? myTeamGroups.map((t) => `
-          <div class="resource-item">
-            <span>
-              <strong>${escapeHtml(t.name)}</strong>
-              ${(t.memberIds || []).length} üzv
-            </span>
-            <button type="button" data-mgr-team-delete="${t.id}">${text("remove")}</button>
-          </div>`).join("")
-      : `<div class="empty">Komanda yoxdur</div>`;
-  }
-
-  // Team members for new team select
-  const mgrNewTeamMembers = document.querySelector("#mgrNewTeamMembers");
-  if (mgrNewTeamMembers) {
-    mgrNewTeamMembers.innerHTML = appState.users
-      .filter((u) => !["admin", "super_admin"].includes(u.role) && u.companyId === companyId)
-      .map((u) => `<option value="${u.id}">${escapeHtml(u.profile?.fullName || u.username)}</option>`)
-      .join("");
-  }
-
-  // Sifarişçilər
-  const mgrCustomerList = document.querySelector("#mgrCustomerList");
-  if (mgrCustomerList) {
-    mgrCustomerList.innerHTML = myCustomers.length
-      ? myCustomers.map((c) => `
-          <div class="resource-item">
-            <span><strong>${escapeHtml(c.name)}</strong>${c.contact ? ` · ${escapeHtml(c.contact)}` : ""}</span>
-          </div>`).join("")
-      : `<div class="empty">Sifarişçi yoxdur</div>`;
-  }
-
-  // Layihə bağlantıları
-  const mgrLinkList = document.querySelector("#mgrLinkList");
-  if (mgrLinkList) {
-    mgrLinkList.innerHTML = myLinks.length
-      ? myLinks.map((l) => `
-          <div class="resource-item">
-            <span>
-              <strong>${escapeHtml(l.project)}</strong> → ${escapeHtml(resourceLabel(l.resource))}
-            </span>
-            <button type="button" data-mgr-link-delete="${l.id}">${text("remove")}</button>
-          </div>`).join("")
-      : `<div class="empty">Bağlantı yoxdur</div>`;
-  }
-
-  // Zibil qutusu
-  const mgrTrashList = document.querySelector("#mgrTrashList");
-  if (mgrTrashList) {
-    mgrTrashList.innerHTML = myTrash.length
-      ? myTrash.map((t) => {
-          const title = t.type === "task" ? t.data.name : (t.data.project || t.data.name);
-          return `
-            <div class="resource-item">
-              <span><strong>${escapeHtml(title)}</strong>${t.type === "task" ? " — tapşırıq" : " — layihə"}</span>
-              <div class="mini-actions">
-                <button type="button" data-mgr-trash-restore="${t.id}">${text("restore")}</button>
-                <button type="button" data-mgr-trash-delete="${t.id}" class="danger">${text("deleteForever")}</button>
-              </div>
-            </div>`;
-        }).join("")
-      : `<div class="empty">Zibil qutusu boşdur</div>`;
-  }
+  // Siyahı markup-ları → modules/render-markup.js (mgr*ListMarkup)
+  const setHtml = (id, html) => { const el = document.querySelector(`#${id}`); if (el) el.innerHTML = html; };
+  setHtml("mgrProjectList", mgrProjectListMarkup(myProjects));
+  setHtml("mgrTeamList", mgrTeamListMarkup(myTeam));
+  setHtml("mgrDateRequestList", mgrDateRequestListMarkup(myDateRequests));
+  setHtml("mgrRegisterList", mgrRegisterListMarkup(myRegisters));
+  setHtml("mgrRegisterProject", myProjects.map((p) => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join(""));
+  setHtml("mgrTeamGroupList", mgrTeamGroupListMarkup(myTeamGroups));
+  setHtml("mgrNewTeamMembers", appState.users
+    .filter((u) => !["admin", "super_admin"].includes(u.role) && u.companyId === companyId)
+    .map((u) => `<option value="${u.id}">${escapeHtml(u.profile?.fullName || u.username)}</option>`).join(""));
+  setHtml("mgrCustomerList", mgrCustomerListMarkup(myCustomers));
+  setHtml("mgrLinkList", mgrLinkListMarkup(myLinks));
+  setHtml("mgrTrashList", mgrTrashListMarkup(myTrash));
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1455,18 +1330,7 @@ function updateSelectedManagersPreview(selectedIds = managerPickerIds()) {
     : `<div class="empty">${text("noManagersSelected")}</div>`;
 }
 
-function managerChoiceItems(selectedIds = []) {
-  const managers = appState.users.filter((user) => user.role === "manager");
-  return managers.length ? managers.map((user) => `
-    <label class="manager-choice">
-      <input type="checkbox" name="projectManager" value="${user.id}" ${selectedIds.includes(user.id) ? "checked" : ""}>
-      <span>
-        <strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>
-        <small>${escapeHtml(user.username)}</small>
-      </span>
-    </label>
-  `).join("") : `<div class="empty">${text("empty")}</div>`;
-}
+// managerChoiceItems → modules/render-markup.js
 
 function openManagerAssign(projectId) {
   if (!isAdmin()) return;
