@@ -526,3 +526,57 @@ function reportProjectMarkup(project, reportTasks) {
       </article>
     `;
 }
+
+// Platform konsolu: əməliyyat xülasəsi kartları. Deps: escapeHtml, formatDateTime (format.js).
+//   ops = platformOpsSummary(registry), auditCount = auditLogs.length + localAuditLogs.length.
+function platformOpsMarkup(ops, auditCount) {
+  return `
+      <article>
+        <span>Tenant health</span>
+        <strong>${ops.averageHealth}%</strong>
+        <small>${ops.riskCompanies} şirkət nəzarət tələb edir</small>
+      </article>
+      <article>
+        <span>Risk siqnalları</span>
+        <strong>${ops.overdueTotal + ops.blockedTotal}</strong>
+        <small>${ops.overdueTotal} gecikən · ${ops.blockedTotal} blok</small>
+      </article>
+      <article>
+        <span>Backup readiness</span>
+        <strong>${ops.backupCount}</strong>
+        <small>Son backup: ${escapeHtml(formatDateTime(ops.lastBackup) || "-")}</small>
+      </article>
+      <article>
+        <span>Mail gateway</span>
+        <strong>${ops.mailReady ? "Hazır" : "Yoxlanılmalıdır"}</strong>
+        <small>${ops.mailReady ? "SMTP/API aktivdir" : "Provider və aktivlik yoxlanmalıdır"}</small>
+      </article>
+      <article>
+        <span>Audit izi</span>
+        <strong>${auditCount}</strong>
+        <small>Son hadisə: ${escapeHtml(formatDateTime(ops.lastAudit) || "-")}</small>
+      </article>
+    `;
+}
+
+// Platform konsolu: bir şirkətin lifecycle kartı. Deps: escapeHtml, text.
+function platformLifecycleCardMarkup(company) {
+  return `
+      <article class="platform-lifecycle-card" data-company-id="${escapeHtml(company.id)}">
+        <div>
+          <strong>${escapeHtml(company.name)}</strong>
+          <small>${escapeHtml(company.status || "active")} · ${escapeHtml(company.plan || "standard")}</small>
+        </div>
+        <select data-lifecycle-field="plan">
+          ${["standard", "pro", "enterprise"].map((plan) => `<option value="${plan}" ${company.plan === plan ? "selected" : ""}>${plan}</option>`).join("")}
+        </select>
+        <label><span>Trial bitir</span><input type="date" data-lifecycle-field="trialEndsAt" value="${escapeHtml(company.trialEndsAt || "")}"></label>
+        <label><span>Abonement bitir</span><input type="date" data-lifecycle-field="subscriptionEndsAt" value="${escapeHtml(company.subscriptionEndsAt || "")}"></label>
+        <input data-lifecycle-field="statusReason" type="text" placeholder="Status səbəbi">
+        <div class="platform-card-actions">
+          <button type="button" data-lifecycle-action="save">Yadda saxla</button>
+          <button type="button" data-lifecycle-action="${company.status === "suspended" ? "activate" : "suspend"}">${company.status === "suspended" ? text("activateCompany") : text("suspendCompany")}</button>
+        </div>
+      </article>
+    `;
+}
