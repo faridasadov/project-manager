@@ -2699,10 +2699,7 @@ function canDeleteTaskComment(task) {
   return Boolean(task && currentUser && (isAdmin() || currentUser.role === "manager") && canSeeTask(task));
 }
 
-function renderCommentDeleteButton(task, comment) {
-  if (!canDeleteTaskComment(task)) return "";
-  return `<button class="comment-delete" type="button" data-action="delete-comment" data-task-id="${escapeHtml(task.id)}" data-comment-id="${escapeHtml(comment.id)}" aria-label="${text("delete")}">${text("delete")}</button>`;
-}
+// renderCommentDeleteButton → modules/render-markup.js
 
 function deleteTaskComment(taskId, commentId) {
   const task = appState.tasks.find((item) => item.id === taskId);
@@ -2713,120 +2710,15 @@ function deleteTaskComment(taskId, commentId) {
   return true;
 }
 
-function renderTaskInlineComments(task) {
-  const comments = task.comments || [];
-  const recent = comments.slice(-2);
-  const items = recent.length ? recent.map((comment) => `
-    <div class="comment-item task-inline-comment">
-      <div class="comment-head">
-        <strong>${escapeHtml(comment.author)}</strong>
-        <span class="comment-tools">
-          <time datetime="${escapeHtml(comment.createdAt || "")}">${escapeHtml(formatDateTime(comment.createdAt))}</time>
-          ${renderCommentDeleteButton(task, comment)}
-        </span>
-      </div>
-      <span>${escapeHtml(comment.text)}</span>
-      ${renderCommentAttachments(comment)}
-    </div>
-  `).join("") : "";
-  const more = comments.length > recent.length
-    ? `<button class="inline-link" type="button" data-action="view" data-id="${task.id}">${comments.length} ${text("comments")}</button>`
-    : "";
-  const formHtml = task.status === "Bitib" ? "" : `
-    <form class="comment-form task-inline-comment-form" data-task-id="${task.id}">
-      <button class="comment-compose-trigger" type="button" data-action="expand-comment" aria-label="${text("commentPlaceholder")}">
-        <span>💬</span> ${text("commentPlaceholder")}…
-      </button>
-      <div class="comment-body">
-        <textarea name="comment" rows="2" placeholder="${text("commentPlaceholder")}" required></textarea>
-        <div class="inline-comment-actions">
-          <button class="comment-send-btn" type="submit">${text("addComment")}</button>
-          <button class="comment-cancel-btn" type="button" data-action="collapse-comment">${text("cancel")}</button>
-          <label class="comment-attach-btn" title="${text("attachments")}">
-            📎
-            <input class="comment-attachment-input" name="attachments" type="file" multiple aria-label="${text("attachments")}">
-          </label>
-          <small class="file-picker-status"></small>
-        </div>
-      </div>
-    </form>
-  `;
-  return `
-    <div class="comments task-inline-comments">
-      <div class="task-inline-comments-head">
-        <h4>${text("comments")}</h4>
-        ${more}
-      </div>
-      ${items}
-      ${formHtml}
-    </div>
-  `;
-}
+// renderTaskInlineComments → modules/render-markup.js
 
 // renderTaskRelations → modules/render-markup.js
 
-function renderTaskActions(task) {
-  let actions = "";
-  if (task.status === "Bitib") {
-    actions = `
-        <button class="action-button" type="button" data-action="view" data-id="${task.id}">Bax</button>
-        <button class="action-button next-action" type="button" data-action="reopen" data-id="${task.id}">${text("reopen")}</button>
-        <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
-      `;
-  } else {
-    const blocked = isTaskBlocked(task);
-    const completionAction = task.completionRequestedAt
-      ? `${canApproveTask(task) ? `<button class="action-button next-action" type="button" data-action="approve-done" data-id="${task.id}">${text("approveDone")}</button>` : `<span class="pending-label">${text("pendingDone")}</span>`}`
-      : `<button class="action-button next-action" type="button" data-action="request-done" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("doneRequest")}</button>`;
-    actions = `
-        <button class="action-button" type="button" data-action="view" data-id="${task.id}">Bax</button>
-        <button class="action-button edit-action" type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
-        <button class="action-button next-action" type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}</button>
-        ${completionAction}
-        <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
-      `;
-  }
-  return `<div class="task-actions">${actions}</div>`;
-}
+// renderTaskActions → modules/render-markup.js
 
 // renderTimeEntries → modules/render-markup.js
 
-function renderComments(task) {
-  const comments = task.comments || [];
-  const items = comments.length ? comments.map((comment) => `
-    <div class="comment-item">
-      <div class="comment-head">
-        <strong>${escapeHtml(comment.author)}</strong>
-        <span class="comment-tools">
-          <time datetime="${escapeHtml(comment.createdAt || "")}">${escapeHtml(formatDateTime(comment.createdAt))}</time>
-          ${renderCommentDeleteButton(task, comment)}
-        </span>
-      </div>
-      <span>${escapeHtml(comment.text)}</span>
-      ${renderCommentAttachments(comment)}
-    </div>
-  `).join("") : `<div class="comment-empty">${text("noComments")}</div>`;
-
-  const formHtml = task.status === "Bitib" ? "" : `
-      <form class="comment-form" data-task-id="${task.id}">
-        <textarea name="comment" rows="3" placeholder="${text("commentPlaceholder")}" required></textarea>
-        <label class="file-picker">
-          <span>${text("chooseFiles")}</span>
-          <input class="comment-attachment-input" name="attachments" type="file" multiple aria-label="${text("attachments")}">
-        </label>
-        <small class="file-picker-status">${text("noFilesSelected")}</small>
-        <button type="submit">${text("addComment")}</button>
-      </form>
-  `;
-
-  return `
-    <div class="comments">
-      <h4>${text("comments")}</h4>
-      ${items}
-      ${formHtml}
-    </div>
-  `;
-}
+// renderComments → modules/render-markup.js
 
 function openTaskDetail(id) {
   const task = appState.tasks.find((item) => item.id === id);
