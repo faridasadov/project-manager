@@ -470,3 +470,59 @@ function dependencyArrows(task, projectTasks, minStart, days) {
     return `<div class="gantt-dependency-arrow" style="grid-column:${start + 1} / span ${span};" title="${escapeHtml(dependency.name)} → ${escapeHtml(task.name)}"></div>`;
   }).join("");
 }
+
+// Hesabat: bir layihənin tam blok markup-ı (governance + task sətirləri + register-lər).
+// renderReports-un per-project map gövdəsi. Deps: projectGovernanceAudit (governance.js),
+//   visibleRegisters (scope.js), parseDate (utils.js), escapeHtml, statusLabel/priorityLabel/
+//   registerTypeLabel/registerStatusLabel/impactLabel (labels.js), isTaskBlocked (dependencies.js),
+//   text, shortDate/formatDateTime (format.js), resourceLabel (lookups.js),
+//   plannedHoursForTask/actualHoursForTask (metrics.js).
+function reportProjectMarkup(project, reportTasks) {
+  const audit = projectGovernanceAudit(project);
+  const projectTasks = reportTasks.filter((task) => task.project === project.name)
+    .sort((a, b) => parseDate(a.start) - parseDate(b.start));
+  const rows = projectTasks.length ? projectTasks.map((task) => `
+      <div class="report-row">
+        <strong>${escapeHtml(task.name)}</strong>
+        <span>${statusLabel(task.status)}</span>
+        <span>${priorityLabel(task.priority)}</span>
+        <span>${isTaskBlocked(task) ? text("blocked") : "-"}</span>
+        <span>${text("start")}: ${escapeHtml(shortDate(task.start))}</span>
+        <span>${text("end")}: ${escapeHtml(shortDate(task.end))}</span>
+        <span>${text("executedBy")}: ${escapeHtml(resourceLabel(task.owner))}</span>
+        <span>${text("plannedHours")}: ${plannedHoursForTask(task)}</span>
+        <span>${text("actualHours")}: ${actualHoursForTask(task)}</span>
+        <span>${text("requestedAt")}: ${escapeHtml(formatDateTime(task.completionRequestedAt) || "-")}</span>
+        <span>${text("approvedAt")}: ${escapeHtml(formatDateTime(task.approvedAt) || "-")}</span>
+      </div>
+    `).join("") : `<div class="empty">${text("empty")}</div>`;
+  const registerRows = visibleRegisters(project.name).length ? visibleRegisters(project.name).map((item) => `
+      <div class="report-row">
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${registerTypeLabel(item.type)}</span>
+        <span>${registerStatusLabel(item.status)}</span>
+        <span>${impactLabel(item.impact)}</span>
+        <span>${shortDate(item.dueDate)}</span>
+      </div>
+    `).join("") : `<div class="empty">${text("empty")}</div>`;
+  const governanceRows = `
+      <div class="report-row">
+        <strong>${text("ipmaScore")}: ${audit.score}%</strong>
+        <span>${text("lifecycleStage")}: ${escapeHtml(project.lifecycle || "Initiation")}</span>
+        <span>${text("governanceCoverage")}: ${audit.done}/${audit.total}</span>
+        <span>${text("openGovernanceRisk")}: ${audit.openGovernanceRisks.length}</span>
+        <span>${text("gateApprovals")}: ${audit.approvedGates.length}/4</span>
+        <span>${text("governanceMissing")}: ${escapeHtml(audit.missing.join(" · ") || "-")}</span>
+      </div>
+    `;
+  return `
+      <article class="report-project">
+        <h3>${escapeHtml(project.name)}</h3>
+        <h3>${text("ipmaReport")}</h3>
+        <div class="report-rows">${governanceRows}</div>
+        <div class="report-rows">${rows}</div>
+        <h3>${text("projectRegisters")}</h3>
+        <div class="report-rows">${registerRows}</div>
+      </article>
+    `;
+}
