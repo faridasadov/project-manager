@@ -2321,54 +2321,12 @@ function renderCalendar() {
   }
 }
 
+// per-project card markup → modules/render-markup.js: projectCardMarkup
 function renderProjectsView() {
   const shownProjects = visibleProjects();
-  projectCards.innerHTML = shownProjects.length ? shownProjects.map((project) => {
-    const projectTasks = accessibleTasks().filter((task) => task.project === project.name);
-    const done = projectTasks.filter((task) => task.status === "Bitib").length;
-    const active = projectTasks.length - done;
-    const fallbackPercent = projectTasks.length ? Math.round((done / projectTasks.length) * 100) : 0;
-    const percent = Number.isFinite(Number(project.progress)) ? Number(project.progress) : fallbackPercent;
-    const managerNames = projectManagers(project).map((user) => user.profile?.fullName || user.username);
-    const counts = registerCounts(project.name);
-    const nextGate = nextGateForProject(project);
-    const lifecycle = project.lifecycle || "Initiation";
-    const hasAlerts = counts.risks > 0 || counts.issues > 0;
-    return `
-      <article class="project-card">
-        <div class="project-card-header">
-          <div class="project-card-titlerow">
-            <h3>${escapeHtml(project.name)}</h3>
-            <div class="project-card-badges">
-              <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
-              <span class="badge ${priorityClass(project.priority)}">${priorityLabel(project.priority)}</span>
-              <span class="lifecycle-tag lifecycle-${lifecycle.toLowerCase()}">${lifecycle}</span>
-            </div>
-          </div>
-          <div class="project-card-pct">
-            <strong>${percent}%</strong>
-            <span>tamamlandı</span>
-          </div>
-        </div>
-        <div class="project-card-meta">
-          <span>👤 ${escapeHtml(managerNames.join(", ") || text("noOwner"))}</span>
-          <span>📅 ${shortDate(project.start)} – ${shortDate(project.end)}</span>
-          <span>📋 ${projectTasks.length} task · ${active} aktiv · ${done} bitmiş</span>
-          ${hasAlerts ? `<span class="proj-meta-alert">⚠ Risk: ${counts.risks} &nbsp; Issue: ${counts.issues}</span>` : ""}
-        </div>
-        <div class="progress-mini project-progress"><span style="width:${percent}%"></span></div>
-        ${renderProjectGovernance(project)}
-        <div class="project-card-actions">
-          <button class="proj-btn proj-primary" type="button" data-project-action="open" data-project="${escapeHtml(project.name)}">${text("openProject")}</button>
-          <button class="proj-btn proj-add" type="button" data-project-action="add-task" data-project="${escapeHtml(project.name)}">${text("addTaskToProject")}</button>
-          <button class="proj-btn proj-secondary" type="button" data-project-action="edit" data-project="${escapeHtml(project.name)}">${text("editProject")}</button>
-          ${nextGate ? `<button class="proj-btn proj-gate" type="button" data-project-action="approve-gate" data-gate="${escapeHtml(nextGate)}" data-project="${escapeHtml(project.name)}">✓ Gate: ${escapeHtml(nextGate)}</button>` : ""}
-          <button class="proj-btn proj-archive" type="button" data-project-action="archive" data-project="${escapeHtml(project.name)}">${text("archiveProject")}</button>
-          <button class="proj-btn proj-danger" type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>
-        </div>
-      </article>
-    `;
-  }).join("") : `<div class="empty">${text("empty")}</div>`;
+  projectCards.innerHTML = shownProjects.length
+    ? shownProjects.map(projectCardMarkup).join("")
+    : `<div class="empty">${text("empty")}</div>`;
   renderArchivedProjects();
 }
 
