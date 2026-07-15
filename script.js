@@ -2693,33 +2693,7 @@ function renderTaskList() {
   document.querySelector("#taskLoadMore")?.addEventListener("click", () => { taskListPage++; renderTaskList(); });
 }
 
-function renderAttachments(task) {
-  const attachments = task.attachments || [];
-  if (!attachments.length) return "";
-  return `
-    <div class="attachment-list">
-      ${attachments.map((attachment) => `
-        <a class="attachment-chip" href="${escapeHtml(attachment.dataUrl)}" download="${escapeHtml(attachment.name)}" title="${escapeHtml(attachment.name)} (${fileSizeLabel(Number(attachment.size) || 0)})">
-          <span>${escapeHtml(attachment.name)}</span>
-        </a>
-      `).join("")}
-    </div>
-  `;
-}
-
-function renderCommentAttachments(comment) {
-  const attachments = comment.attachments || [];
-  if (!attachments.length) return "";
-  return `
-    <div class="attachment-list compact-attachments">
-      ${attachments.map((attachment) => `
-        <a class="attachment-chip" href="${escapeHtml(attachment.dataUrl)}" download="${escapeHtml(attachment.name)}" title="${escapeHtml(attachment.name)} (${fileSizeLabel(Number(attachment.size) || 0)})">
-          <span>${escapeHtml(attachment.name)}</span>
-        </a>
-      `).join("")}
-    </div>
-  `;
-}
+// renderAttachments / renderCommentAttachments → modules/render-markup.js
 
 function canDeleteTaskComment(task) {
   return Boolean(task && currentUser && (isAdmin() || currentUser.role === "manager") && canSeeTask(task));
@@ -2789,19 +2763,7 @@ function renderTaskInlineComments(task) {
   `;
 }
 
-function renderTaskRelations(task) {
-  const parent = task.parentTaskId ? taskNameById(task.parentTaskId) : "";
-  const dependencies = (task.dependencyIds || []).map(taskNameById).filter(Boolean);
-  const blockers = incompleteDependencies(task).map((item) => item.name).filter(Boolean);
-  if (!parent && !dependencies.length) return "";
-  return `
-    <div class="task-relations">
-      ${parent ? `<span>${text("parentTask")}: ${escapeHtml(parent)}</span>` : ""}
-      ${dependencies.length ? `<span>${text("dependsOn")}: ${escapeHtml(dependencies.join(", "))}</span>` : ""}
-      ${blockers.length ? `<span class="blocked-relation">${text("blockedBy")}: ${escapeHtml(blockers.join(", "))}</span>` : ""}
-    </div>
-  `;
-}
+// renderTaskRelations → modules/render-markup.js
 
 function renderTaskActions(task) {
   let actions = "";
@@ -2827,38 +2789,7 @@ function renderTaskActions(task) {
   return `<div class="task-actions">${actions}</div>`;
 }
 
-function renderTimeEntries(task) {
-  const entries = Array.isArray(task.timeEntries) ? task.timeEntries : [];
-  const items = entries.length ? entries.map((entry) => `
-    <div class="comment-item time-entry-item">
-      <div class="comment-head">
-        <strong>${escapeHtml(entry.hours)} ${text("hours")}</strong>
-        <time datetime="${escapeHtml(entry.date || "")}">${escapeHtml(shortDate(entry.date))}</time>
-      </div>
-      <span>${text("loggedBy")}: ${escapeHtml(userDisplayLabel(entry.user) || "-")}</span>
-      ${entry.note ? `<span>${escapeHtml(entry.note)}</span>` : ""}
-    </div>
-  `).join("") : `<div class="comment-empty">${text("empty")}</div>`;
-
-  const formHtml = task.status === "Bitib" ? "" : `
-      <form class="time-entry-form" data-task-id="${task.id}">
-        <div class="time-entry-grid">
-          <input name="hours" type="number" min="0.25" step="0.25" placeholder="${text("hours")}" required>
-          <input name="date" type="date" value="${isoDate(new Date())}" required>
-        </div>
-        <input name="note" type="text" placeholder="${text("timeEntryNote")}">
-        <button type="submit">${text("addTimeEntry")}</button>
-      </form>
-  `;
-
-  return `
-    <div class="comments time-entries">
-      <h4>${text("timeEntries")}</h4>
-      ${items}
-      ${formHtml}
-    </div>
-  `;
-}
+// renderTimeEntries → modules/render-markup.js
 
 function renderComments(task) {
   const comments = task.comments || [];
