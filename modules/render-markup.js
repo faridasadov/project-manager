@@ -819,3 +819,44 @@ function projectCardMarkup(project) {
       </article>
     `;
 }
+
+// Task siyahısı: bir task kartı (data-prep daxil). Deps: isTaskBlocked (dependencies.js),
+//   getProject/resourceLabel (lookups.js), escapeHtml, statusClass/priorityClass (utils.js),
+//   statusLabel/priorityLabel (labels.js), shortDate (format.js),
+//   plannedHoursForTask/actualHoursForTask (metrics.js), renderTaskRelations/
+//   renderTaskInlineComments/renderTaskActions, selectedTaskIds (script.js global Set), text.
+function taskCardMarkup(task) {
+  const blocked = isTaskBlocked(task);
+  const commentCount = (task.comments || []).length;
+  const fileCount = (task.attachments || []).length;
+  const timeEntryCount = (task.timeEntries || []).length;
+  const projectName = getProject(task);
+  const infoChips = [
+    commentCount ? `💬 ${commentCount}` : "",
+    fileCount ? `📎 ${fileCount}` : "",
+    timeEntryCount ? `⏱ ${timeEntryCount} giriş` : "",
+  ].filter(Boolean);
+  return `
+    <article class="task-card ${blocked ? "blocked-task" : ""}" data-task-card-id="${escapeHtml(task.id)}">
+      <label class="task-cb-wrap" title="Seç" aria-label="Seç">
+        <input type="checkbox" class="task-select-cb" data-task-id="${escapeHtml(task.id)}" ${selectedTaskIds.has(task.id) ? "checked" : ""}>
+      </label>
+      ${projectName ? `<div class="task-project-tag">📁 ${escapeHtml(projectName)}</div>` : ""}
+      <h3>${escapeHtml(task.name)}</h3>
+      <div class="task-meta">
+        <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
+        <span class="badge ${priorityClass(task.priority)}">${priorityLabel(task.priority)}</span>
+        ${blocked ? `<span class="badge blocked">${text("blocked")}</span>` : ""}
+        <span>📅 ${shortDate(task.start)} – ${shortDate(task.end)}</span>
+        <span>👤 ${escapeHtml(resourceLabel(task.owner))}</span>
+        <span>⏱ ${plannedHoursForTask(task)}h plan · ${actualHoursForTask(task)}h fakt</span>
+        ${infoChips.length ? `<span class="task-info-chips">${infoChips.join(" &nbsp;")}</span>` : ""}
+      </div>
+      ${renderTaskRelations(task)}
+      ${task.notes ? `<p class="task-notes-preview">${escapeHtml(task.notes)}</p>` : ""}
+      <div class="progress-mini"><span style="width:${Number(task.progress) || 0}%"></span></div>
+      ${renderTaskInlineComments(task)}
+      ${renderTaskActions(task)}
+    </article>
+  `;
+}
