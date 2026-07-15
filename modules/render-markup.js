@@ -1045,3 +1045,67 @@ function resourceTrashListMarkup(scopedTrash) {
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
 }
+
+// ── Dashboard alt-siyahı markup-ları (renderDashboard-dan). Deps: statusClass (utils.js),
+//    statusLabel (labels.js), daysUntil (utils.js), escapeHtml, getProject/resourceLabel
+//    (lookups.js), text. ──────────────────────────────────────────────────────────────
+function statusBarsMarkup(statuses, shownTasks, total, counts) {
+  return statuses.map((status) => {
+    const count = shownTasks.filter((task) => task.status === status).length;
+    const width = Math.round((count / total) * 100);
+    return `
+      <div class="status-line">
+        <div class="status-line-head">
+          <span class="status-dot ${statusClass(status)}"></span>
+          <span class="status-name">${statusLabel(status)}</span>
+          <strong class="status-count">${count}</strong>
+          <span class="status-pct">${width}%</span>
+        </div>
+        <div class="meter thick-meter"><span class="${statusClass(status)}" style="width:${width}%"></span></div>
+      </div>
+    `;
+  }).join("") + `
+    <div class="register-badges">
+      <span class="reg-badge reg-risk">⚠ Risk: ${counts.risks}</span>
+      <span class="reg-badge reg-issue">🔴 Issue: ${counts.issues}</span>
+      <span class="reg-badge reg-milestone">🎯 Milestone: ${counts.milestones}</span>
+    </div>
+  `;
+}
+
+function upcomingListMarkup(upcoming) {
+  return upcoming.length ? upcoming.map((task) => {
+    const days = daysUntil(task.end);
+    const urgency = days < 0 ? "danger" : days <= 3 ? "warning" : "";
+    const daysLabel = days < 0 ? `${Math.abs(days)} gün gecikdi` : days === 0 ? "Bu gün" : `${days} gün qaldı`;
+    return `
+    <button class="compact-item ${urgency}" type="button" data-open-task="${escapeHtml(task.id)}" title="${escapeHtml(task.name)}">
+      <strong>${escapeHtml(task.name)}</strong>
+      <div class="task-meta">
+        <span>${escapeHtml(getProject(task))}</span>
+        <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
+        <span style="color:${urgency === 'danger' ? 'var(--red)' : urgency === 'warning' ? 'var(--amber)' : 'var(--muted)'}">${daysLabel}</span>
+      </div>
+    </button>
+  `;}).join("") : `<div class="empty">${text("noUpcoming")}</div>`;
+}
+
+function workloadListMarkup(rows) {
+  return rows.length ? rows.map((row) => {
+    const loadClass = row.load > 85 ? "danger" : row.load > 60 ? "warning" : "";
+    const barColor = row.load > 85 ? "var(--red)" : row.load > 60 ? "var(--amber)" : "var(--green)";
+    return `
+    <button class="compact-item workload-item ${loadClass}" type="button" data-owner="${escapeHtml(row.owner)}" title="Tasklara bax: ${escapeHtml(resourceLabel(row.owner))}">
+      <div class="workload-row">
+        <strong>${escapeHtml(resourceLabel(row.owner))}</strong>
+        <span class="workload-pct" style="color:${barColor}">${row.load}%</span>
+      </div>
+      <div class="progress-mini workload-bar"><span style="width:${Math.min(100, row.load)}%; background:${barColor}"></span></div>
+      <div class="task-meta">
+        <span>${row.count} ${text("tasks")}</span>
+        <span>${text("plannedHours")}: ${row.planned} / ${row.actual}</span>
+      </div>
+    </button>
+  `;
+  }).join("") : `<div class="empty">${text("empty")}</div>`;
+}
