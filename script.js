@@ -2559,65 +2559,7 @@ function renderProjectsView() {
   renderArchivedProjects();
 }
 
-function renderProjectGovernance(project) {
-  const checklist = project.charter?.gateChecklist || [];
-  const audit = projectGovernanceAudit(project);
-  const modules = [
-    [text("stakeholderRegister"), project.charter?.stakeholders],
-    [text("communicationPlan"), project.charter?.communicationPlan],
-    [text("decisionLog"), project.charter?.decisionLog],
-    [text("changeControl"), project.charter?.changeControl],
-    [text("riskOpportunity"), project.charter?.riskOpportunity],
-    [text("qualityChecklist"), project.charter?.qualityChecklist],
-    [text("competenceMatrix"), project.charter?.competenceMatrix]
-  ];
-  const hasModules = modules.some(([, rows]) => rows?.length);
-  if (!project.charter?.goal && !project.charter?.scope && !project.charter?.successCriteria && !checklist.length && !project.charter?.closureNotes && !hasModules) {
-    // Still show gate status even without charter data
-    const approvals = project.charter?.gateApprovals || {};
-    const gates = ["Initiation", "Planning", "Execution", "Closing"];
-    const approvedCount = gates.filter(g => approvals[g]?.approvedAt).length;
-    return `
-      <details class="governance-summary">
-        <summary class="governance-score-line">
-          <span class="gov-pill">IPMA</span>
-          <strong>Governance</strong>
-          <span class="gov-score">${audit.score}%</span>
-          <span class="gov-gates">${approvedCount}/4 gate</span>
-          ${audit.missing.length ? `<span class="governance-warning-pill">${audit.missing.length} çatışmır</span>` : ""}
-        </summary>
-        <div class="governance-detail">
-          <div class="gate-status-row">
-            ${gates.map(gate => `<span class="gate-chip ${approvals[gate]?.approvedAt ? "gate-ok" : "gate-pending"}">${gate}</span>`).join("")}
-          </div>
-        </div>
-      </details>
-    `;
-  }
-  const approvals = project.charter?.gateApprovals || {};
-  const gates = ["Initiation", "Planning", "Execution", "Closing"];
-  const approvedCount = gates.filter(g => approvals[g]?.approvedAt).length;
-  return `
-    <details class="governance-summary">
-      <summary class="governance-score-line">
-        <span class="gov-pill">IPMA</span>
-        <strong>Governance</strong>
-        <span class="gov-score">${audit.score}%</span>
-        <span class="gov-gates">${approvedCount}/4 gate</span>
-        ${audit.missing.length ? `<span class="governance-warning-pill">${audit.missing.length} çatışmır</span>` : ""}
-      </summary>
-      <div class="governance-detail">
-        <div class="gate-status-row">
-          ${gates.map(gate => `<span class="gate-chip ${approvals[gate]?.approvedAt ? "gate-ok" : "gate-pending"}">${gate}${approvals[gate]?.approvedAt ? " ✓" : ""}</span>`).join("")}
-        </div>
-        ${audit.missing.length ? `<div class="governance-warning">⚠ ${escapeHtml(audit.missing.slice(0, 4).join(" · "))}${audit.missing.length > 4 ? " ..." : ""}</div>` : ""}
-        ${project.charter?.goal ? `<div><strong>${text("projectCharter")}:</strong> ${escapeHtml(project.charter.goal)}</div>` : ""}
-        ${project.charter?.scope ? `<div><strong>${text("projectScope")}:</strong> ${escapeHtml(project.charter.scope)}</div>` : ""}
-        ${modules.map(([label, rows]) => rows?.length ? `<div><strong>${label}:</strong> ${escapeHtml(rows.slice(0, 3).join(", "))}${rows.length > 3 ? " …" : ""}</div>` : "").join("")}
-      </div>
-    </details>
-  `;
-}
+// renderProjectGovernance → modules/render-markup.js
 
 function nextGateForProject(project) {
   const approvals = project.charter?.gateApprovals || {};
@@ -2779,47 +2721,7 @@ function renderKanban() {
   }).join("");
 }
 
-function renderKanbanActions(task) {
-  const blocked = isTaskBlocked(task);
-  const actions = task.status === "Bitib"
-    ? `
-        <button type="button" data-action="reopen" data-id="${task.id}">${text("reopen")}</button>
-        <button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
-      `
-    : `
-        <button type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
-        <button type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}</button>
-        <button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
-      `;
-  return `<div class="kanban-actions">${actions}</div>`;
-}
-
-function milestoneMarkers(project, minStart, days) {
-  const projectMilestones = appState.registers
-    .filter((item) => item.type === "milestone" && item.project === project.name && item.dueDate);
-  const markers = projectMilestones.length ? projectMilestones : [{ title: project.name, dueDate: project.end }];
-  return markers
-    .map((item) => {
-      const offset = Math.max(0, Math.min(days - 1, daysBetween(isoDate(minStart), item.dueDate)));
-      return `<div class="gantt-milestone" style="grid-column:${offset + 1};" title="${escapeHtml(item.title)}"></div>`;
-    })
-    .join("");
-}
-
-function dependencyArrows(task, projectTasks, minStart, days) {
-  const dependencies = (task.dependencyIds || [])
-    .map((id) => projectTasks.find((item) => item.id === id))
-    .filter((item) => item?.end || item?.start);
-  return dependencies.map((dependency) => {
-    const fromDate = dependency.end || dependency.start;
-    const toDate = task.start || task.end || fromDate;
-    const from = Math.max(0, Math.min(days - 1, daysBetween(isoDate(minStart), fromDate)));
-    const to = Math.max(0, Math.min(days - 1, daysBetween(isoDate(minStart), toDate)));
-    const start = Math.min(from, to);
-    const span = Math.max(1, Math.abs(to - from) + 1);
-    return `<div class="gantt-dependency-arrow" style="grid-column:${start + 1} / span ${span};" title="${escapeHtml(dependency.name)} → ${escapeHtml(task.name)}"></div>`;
-  }).join("");
-}
+// renderKanbanActions / milestoneMarkers / dependencyArrows → modules/render-markup.js
 
 function todayMarker(minStart, days) {
   const today = isoDate(new Date());
