@@ -704,3 +704,67 @@ function managerChoiceItems(selectedIds = []) {
     </label>
   `).join("") : `<div class="empty">${text("empty")}</div>`;
 }
+
+// Rol matrisi: istifadəçi rol siyahısı (renderRoleMatrix-dən). Deps: escapeHtml, roleLabel.
+//   Event listener-lər (dropdown/rol dəyiş) script.js wrapper-də qalır.
+function roleUserListMarkup(scopedUsers, roleOptions, roleAccent, currentUserId) {
+  return `
+      <div class="role-user-list">
+        ${scopedUsers.map((user) => `
+          <div class="role-user-row" data-uid="${user.id}">
+            <div class="role-user-info">
+              <strong>${escapeHtml(user.profile?.fullName || user.username)}</strong>
+              <span class="muted">${escapeHtml(user.username)}</span>
+            </div>
+            ${user.id === currentUserId
+              ? `<span class="role-chip role-chip-locked" style="--chip-color:${roleAccent[user.role] || "var(--teal)"}">
+                   ${roleLabel(user.role)}
+                   <small class="role-self-note">Özünüz</small>
+                 </span>`
+              : `<div class="role-chip-wrap" data-user-id="${user.id}">
+                   <button type="button" class="role-chip role-chip-editable" style="--chip-color:${roleAccent[user.role] || "var(--teal)"}" data-user-id="${user.id}" title="Rolu dəyiş">
+                     ${roleLabel(user.role)}
+                     <svg class="role-chip-caret" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+                   </button>
+                   <div class="role-chip-dropdown" hidden>
+                     ${roleOptions.map((r) => `
+                       <button type="button" class="role-opt ${user.role === r ? "role-opt-active" : ""}" data-set-role="${r}" style="--opt-color:${roleAccent[r] || "var(--text)"}">
+                         ${roleLabel(r)}
+                         ${user.role === r ? `<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ""}
+                       </button>
+                     `).join("")}
+                   </div>
+                 </div>`
+            }
+          </div>
+        `).join("")}
+      </div>
+    `;
+}
+
+// Rol matrisi: icazə cədvəli (arayış). Deps: roleLabel.
+function permMatrixMarkup(displayRoles, roleColors, perms) {
+  return `
+    <details class="perm-matrix-details">
+      <summary class="role-section-head perm-matrix-toggle">İcazə cədvəli</summary>
+      <div class="perm-table-wrap">
+        <table class="perm-table">
+          <thead>
+            <tr>
+              <th class="perm-th-perm">İcazə</th>
+              ${displayRoles.map((r) => `<th style="color:${roleColors[r]}">${roleLabel(r)}</th>`).join("")}
+            </tr>
+          </thead>
+          <tbody>
+            ${perms.map((p) => `
+              <tr>
+                <td class="perm-td-label">${p.label}</td>
+                ${displayRoles.map((r) => `<td class="perm-cell ${p.roles.includes(r) ? "perm-yes" : "perm-no"}">${p.roles.includes(r) ? "✓" : "—"}</td>`).join("")}
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  `;
+}
