@@ -3528,10 +3528,12 @@ async function supabaseLoginWorkspace(email, password) {
   }
   if (!profile?.workspace_id) {
     const meta = session.user?.user_metadata || {};
-    const companyName = meta.company_name || "Workspace";
-    const companyId = meta.company_key || companyIdFromName(companyName);
-    const username = meta.username || email.split("@")[0];
-    const fullName = meta.full_name || username;
+    const emailPrefix = email.split("@")[0];
+    const companyName = meta.company_name || meta.company
+      || (meta.full_name || meta.name ? `${meta.full_name || meta.name} workspace` : `${emailPrefix} workspace`);
+    const companyId = meta.company_key || `${companyIdFromName(companyName)}-${String(userId).slice(0, 8)}`;
+    const username = meta.username || emailPrefix;
+    const fullName = meta.full_name || meta.name || username;
     const workspace = await supabaseCreateWorkspaceProfile({
       userId,
       companyName,
@@ -3663,10 +3665,14 @@ async function supabaseCompleteSession(session) {
   }
   if (!profile?.workspace_id) {
     const meta = tokenUser.user_metadata || {};
-    const companyName = meta.company_name || meta.company || "Project Manager";
-    const companyId = meta.company_key || companyIdFromName(companyName);
-    const username = meta.username || email.split("@")[0];
-    const fullName = meta.full_name || username;
+    const emailPrefix = email.split("@")[0];
+    // OAuth (Google) istifadəçilərində company_name olmur — hər kəsə eyni "Project
+    // Manager" verilsə company_key toqquşar. Ona görə şəxsi workspace + unikal key.
+    const companyName = meta.company_name || meta.company
+      || (meta.full_name || meta.name ? `${meta.full_name || meta.name} workspace` : `${emailPrefix} workspace`);
+    const companyId = meta.company_key || `${companyIdFromName(companyName)}-${String(userId).slice(0, 8)}`;
+    const username = meta.username || emailPrefix;
+    const fullName = meta.full_name || meta.name || username;
     const workspace = await supabaseCreateWorkspaceProfile({
       userId,
       companyName,
@@ -3814,6 +3820,19 @@ async function handleSupabaseAuthRedirect() {
     render();
     return false;
   }
+}
+
+// ── Google OAuth (GoTrue implicit flow → hash → handleSupabaseAuthRedirect) ──
+function supabaseGoogleAuth() {
+  const cfg = supabaseConfig();
+  if (!cfg) {
+    const msg = "Online rejim aktiv deyil — Google girişi üçün Supabase konfiqi lazımdır.";
+    if (loginError) loginError.textContent = msg;
+    if (registerError) registerError.textContent = msg;
+    return;
+  }
+  const redirectTo = cfg.redirectTo || (window.location.origin + window.location.pathname);
+  window.location.href = `${cfg.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
 }
 
 function scheduleSupabaseSave() {
@@ -5234,6 +5253,9 @@ registerForm?.addEventListener("submit", async (event) => {
   recordAudit("workspace.registered", "company", companyId, companyName);
   render();
 });
+
+document.querySelector("#googleLoginBtn")?.addEventListener("click", supabaseGoogleAuth);
+document.querySelector("#googleRegisterBtn")?.addEventListener("click", supabaseGoogleAuth);
 
 registerCompanyInput?.addEventListener("input", () => {
   if (registerSubdomainInput && !registerSubdomainInput.value.trim()) {

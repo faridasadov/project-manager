@@ -1310,6 +1310,44 @@ body.admin-role .manager-only {
   font-weight: 800;
 }
 
+/* Google OAuth düymələri */
+.oauth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  margin: 4px 0;
+}
+.oauth-divider::before,
+.oauth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.oauth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--ink);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+.oauth-btn:hover {
+  background: color-mix(in srgb, var(--soft) 70%, var(--panel));
+  border-color: color-mix(in srgb, var(--teal) 28%, var(--line));
+}
+.oauth-btn svg { flex: none; }
+
 .user-badge {
   min-height: 38px;
   display: inline-flex;
