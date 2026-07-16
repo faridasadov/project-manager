@@ -4346,8 +4346,7 @@ textarea:focus {
 }
 
 .compact-item {
-  padding: 11px 12px 11px 14px;
-  border-left: 3px solid transparent;
+  padding: 11px 14px;
 }
 
 .compact-item strong,
@@ -4363,13 +4362,13 @@ textarea:focus {
 }
 
 .compact-item.danger {
-  border-left-color: var(--red);
-  background: color-mix(in srgb, var(--panel) 90%, var(--red) 6%);
+  border-color: color-mix(in srgb, var(--red) 24%, var(--line));
+  background: var(--soft);
 }
 
 .compact-item.warning {
-  border-left-color: var(--amber);
-  background: color-mix(in srgb, var(--panel) 90%, var(--amber) 7%);
+  border-color: color-mix(in srgb, var(--amber) 24%, var(--line));
+  background: var(--soft);
 }
 
 /* workload items */
@@ -4606,9 +4605,11 @@ textarea:focus {
 }
 
 .badge {
-  border-radius: 999px;
+  border-radius: 6px;
   padding: 3px 9px;
   background: var(--soft);
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  font-weight: 600;
 }
 
 .badge.critical {
@@ -6020,8 +6021,9 @@ body[data-view="dashboard"] .summary {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  color: var(--muted);
 }
+.kpi-icon svg { width: 18px; height: 18px; display: block; }
 
 .kpi-body {
   flex: 1;

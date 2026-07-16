@@ -1897,6 +1897,21 @@ function animateKpiCountUp(container) {
   });
 }
 
+// Peşəkar SVG line-ikonlar (Feather üslubu) — emoji əvəzinə.
+function dashIcon(name) {
+  const s = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">';
+  const paths = {
+    list: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
+    activity: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+    check: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    block: '<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>',
+    timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/>',
+    award: '<circle cx="12" cy="8" r="6"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/>'
+  };
+  return `${s}${paths[name] || ""}</svg>`;
+}
+
 function renderDashboard() {
   const shownTasks = accessibleTasks();
   const totalReal = shownTasks.length;
@@ -1915,14 +1930,14 @@ function renderDashboard() {
   if (dashKpi) {
     dashKpi.innerHTML = `
       <div class="dash-kpi">
-        <span class="kpi-icon">📋</span>
+        <span class="kpi-icon">${dashIcon("list")}</span>
         <div class="kpi-body">
           <strong class="kpi-num">${totalReal}</strong>
           <span class="kpi-label">Cəmi task</span>
         </div>
       </div>
       <div class="dash-kpi">
-        <span class="kpi-icon" style="background:color-mix(in srgb,var(--teal) 13%,var(--panel))">🔵</span>
+        <span class="kpi-icon" style="color:var(--teal);background:color-mix(in srgb,var(--teal) 12%,var(--panel))">${dashIcon("activity")}</span>
         <div class="kpi-body">
           <strong class="kpi-num" style="color:var(--teal)">${activeTasks.length}</strong>
           <span class="kpi-label">Aktiv task</span>
@@ -1930,7 +1945,7 @@ function renderDashboard() {
         </div>
       </div>
       <div class="dash-kpi">
-        <span class="kpi-icon" style="background:color-mix(in srgb,var(--green) 14%,var(--panel))">✅</span>
+        <span class="kpi-icon" style="color:var(--green);background:color-mix(in srgb,var(--green) 12%,var(--panel))">${dashIcon("check")}</span>
         <div class="kpi-body">
           <strong class="kpi-num" style="color:var(--green)">${doneTasks.length}</strong>
           <span class="kpi-label">Tamamlandı · ${doneRatio}%</span>
@@ -1938,28 +1953,28 @@ function renderDashboard() {
         </div>
       </div>
       <div class="dash-kpi ${overdueItems.length ? 'kpi-alert' : ''}">
-        <span class="kpi-icon" style="background:color-mix(in srgb,var(--red) 12%,var(--panel))">⏰</span>
+        <span class="kpi-icon" style="color:${overdueItems.length ? 'var(--red)' : 'var(--muted)'};background:color-mix(in srgb,var(--red) 10%,var(--panel))">${dashIcon("clock")}</span>
         <div class="kpi-body">
           <strong class="kpi-num" style="color:${overdueItems.length ? 'var(--red)' : 'var(--muted)'}">${overdueItems.length}</strong>
           <span class="kpi-label">Gecikmiş</span>
         </div>
       </div>
       <div class="dash-kpi ${blockedItems.length ? 'kpi-warn' : ''}">
-        <span class="kpi-icon" style="background:color-mix(in srgb,var(--amber) 14%,var(--panel))">🚧</span>
+        <span class="kpi-icon" style="color:${blockedItems.length ? 'var(--amber)' : 'var(--muted)'};background:color-mix(in srgb,var(--amber) 12%,var(--panel))">${dashIcon("block")}</span>
         <div class="kpi-body">
           <strong class="kpi-num" style="color:${blockedItems.length ? 'var(--amber)' : 'var(--muted)'}">${blockedItems.length}</strong>
           <span class="kpi-label">Bloklanmış</span>
         </div>
       </div>
       <div class="dash-kpi">
-        <span class="kpi-icon">⏱</span>
+        <span class="kpi-icon">${dashIcon("timer")}</span>
         <div class="kpi-body">
           <strong class="kpi-num">${planned}</strong>
           <span class="kpi-label">Plan saat · ${actual} fakt</span>
         </div>
       </div>
       <div class="dash-kpi">
-        <span class="kpi-icon" style="background:color-mix(in srgb,var(--teal) 13%,var(--panel))">🏆</span>
+        <span class="kpi-icon" style="color:var(--teal);background:color-mix(in srgb,var(--teal) 12%,var(--panel))">${dashIcon("award")}</span>
         <div class="kpi-body">
           <strong class="kpi-num" style="color:var(--teal)">${metrics.governanceScore}%</strong>
           <span class="kpi-label">IPMA balı</span>

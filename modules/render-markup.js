@@ -417,7 +417,7 @@ function renderProjectGovernance(project) {
         <div class="gate-status-row">
           ${gates.map(gate => `<span class="gate-chip ${approvals[gate]?.approvedAt ? "gate-ok" : "gate-pending"}">${gate}${approvals[gate]?.approvedAt ? " ✓" : ""}</span>`).join("")}
         </div>
-        ${audit.missing.length ? `<div class="governance-warning">⚠ ${escapeHtml(audit.missing.slice(0, 4).join(" · "))}${audit.missing.length > 4 ? " ..." : ""}</div>` : ""}
+        ${audit.missing.length ? `<div class="governance-warning">${escapeHtml(audit.missing.slice(0, 4).join(" · "))}${audit.missing.length > 4 ? " ..." : ""}</div>` : ""}
         ${project.charter?.goal ? `<div><strong>${text("projectCharter")}:</strong> ${escapeHtml(project.charter.goal)}</div>` : ""}
         ${project.charter?.scope ? `<div><strong>${text("projectScope")}:</strong> ${escapeHtml(project.charter.scope)}</div>` : ""}
         ${modules.map(([label, rows]) => rows?.length ? `<div><strong>${label}:</strong> ${escapeHtml(rows.slice(0, 3).join(", "))}${rows.length > 3 ? " …" : ""}</div>` : "").join("")}
@@ -801,10 +801,10 @@ function projectCardMarkup(project) {
           </div>
         </div>
         <div class="project-card-meta">
-          <span>👤 ${escapeHtml(managerNames.join(", ") || text("noOwner"))}</span>
+          <span>${escapeHtml(managerNames.join(", ") || text("noOwner"))}</span>
           <span>📅 ${shortDate(project.start)} – ${shortDate(project.end)}</span>
-          <span>📋 ${projectTasks.length} task · ${active} aktiv · ${done} bitmiş</span>
-          ${hasAlerts ? `<span class="proj-meta-alert">⚠ Risk: ${counts.risks} &nbsp; Issue: ${counts.issues}</span>` : ""}
+          <span>${projectTasks.length} task · ${active} aktiv · ${done} bitmiş</span>
+          ${hasAlerts ? `<span class="proj-meta-alert">Risk: ${counts.risks} &nbsp; Issue: ${counts.issues}</span>` : ""}
         </div>
         <div class="progress-mini project-progress"><span style="width:${percent}%"></span></div>
         ${renderProjectGovernance(project)}
@@ -834,22 +834,22 @@ function taskCardMarkup(task) {
   const infoChips = [
     commentCount ? `💬 ${commentCount}` : "",
     fileCount ? `📎 ${fileCount}` : "",
-    timeEntryCount ? `⏱ ${timeEntryCount} giriş` : "",
+    timeEntryCount ? `${timeEntryCount} giriş` : "",
   ].filter(Boolean);
   return `
     <article class="task-card ${blocked ? "blocked-task" : ""}" data-task-card-id="${escapeHtml(task.id)}">
       <label class="task-cb-wrap" title="Seç" aria-label="Seç">
         <input type="checkbox" class="task-select-cb" data-task-id="${escapeHtml(task.id)}" ${selectedTaskIds.has(task.id) ? "checked" : ""}>
       </label>
-      ${projectName ? `<div class="task-project-tag">📁 ${escapeHtml(projectName)}</div>` : ""}
+      ${projectName ? `<div class="task-project-tag">${escapeHtml(projectName)}</div>` : ""}
       <h3>${escapeHtml(task.name)}</h3>
       <div class="task-meta">
         <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
         <span class="badge ${priorityClass(task.priority)}">${priorityLabel(task.priority)}</span>
         ${blocked ? `<span class="badge blocked">${text("blocked")}</span>` : ""}
         <span>📅 ${shortDate(task.start)} – ${shortDate(task.end)}</span>
-        <span>👤 ${escapeHtml(resourceLabel(task.owner))}</span>
-        <span>⏱ ${plannedHoursForTask(task)}h plan · ${actualHoursForTask(task)}h fakt</span>
+        <span>${escapeHtml(resourceLabel(task.owner))}</span>
+        <span>${plannedHoursForTask(task)}h plan · ${actualHoursForTask(task)}h fakt</span>
         ${infoChips.length ? `<span class="task-info-chips">${infoChips.join(" &nbsp;")}</span>` : ""}
       </div>
       ${renderTaskRelations(task)}
@@ -954,12 +954,12 @@ function resourceRegisterListMarkup(scopedRegisters) {
               </select>
             </label>
             ${item.dueDate ? `<span class="reg-meta-chip">📅 ${shortDate(item.dueDate)}</span>` : ""}
-            ${item.owner ? `<span class="reg-meta-chip">👤 ${escapeHtml(resourceLabel(item.owner))}</span>` : ""}
+            ${item.owner ? `<span class="reg-meta-chip">${escapeHtml(resourceLabel(item.owner))}</span>` : ""}
           ` : `
             <span class="reg-status-chip reg-status-${escapeHtml(item.status)}">${escapeHtml(registerStatusLabel(item.status))}</span>
             <span class="reg-impact-chip">${impactLabel(item.impact)}</span>
             ${item.dueDate ? `<span class="reg-meta-chip">📅 ${shortDate(item.dueDate)}</span>` : ""}
-            ${item.owner ? `<span class="reg-meta-chip">👤 ${escapeHtml(resourceLabel(item.owner))}</span>` : ""}
+            ${item.owner ? `<span class="reg-meta-chip">${escapeHtml(resourceLabel(item.owner))}</span>` : ""}
           `}
         </div>
         ${canMgr
@@ -1066,9 +1066,9 @@ function statusBarsMarkup(statuses, shownTasks, total, counts) {
     `;
   }).join("") + `
     <div class="register-badges">
-      <span class="reg-badge reg-risk">⚠ Risk: ${counts.risks}</span>
-      <span class="reg-badge reg-issue">🔴 Issue: ${counts.issues}</span>
-      <span class="reg-badge reg-milestone">🎯 Milestone: ${counts.milestones}</span>
+      <span class="reg-badge reg-risk">Risk: ${counts.risks}</span>
+      <span class="reg-badge reg-issue">Issue: ${counts.issues}</span>
+      <span class="reg-badge reg-milestone">Milestone: ${counts.milestones}</span>
     </div>
   `;
 }
