@@ -2194,7 +2194,7 @@ function renderTaskList() {
   // Owner filter active banner
   const ownerBanner = currentOwnerFilter ? `
     <div class="owner-filter-banner">
-      <span>👤 <strong>${escapeHtml(resourceLabel(currentOwnerFilter))}</strong> — tapşırıqları göstərilir</span>
+      <span><strong>${escapeHtml(resourceLabel(currentOwnerFilter))}</strong> — tapşırıqları göstərilir</span>
       <button type="button" class="owner-filter-clear" id="clearOwnerFilter">✕ Filtri sil</button>
     </div>
   ` : "";
@@ -2590,7 +2590,7 @@ function renderReports() {
   const maxHours = chartRows.length ? Math.max(...chartRows.map((r) => r[1])) : 0;
   const timeChartHtml = chartRows.length ? `
     <section class="time-chart-section">
-      <h3 class="time-chart-title">⏱ ${text("timeChart")} — ${text("timeWeek")}</h3>
+      <h3 class="time-chart-title">${text("timeChart")} — ${text("timeWeek")}</h3>
       <div class="time-chart">
         ${chartRows.map(([owner, hours]) => {
           const pct = maxHours ? Math.round((hours / maxHours) * 100) : 0;
@@ -6063,6 +6063,9 @@ platformApprovalQueue?.addEventListener("click", async (event) => {
     }
     await refreshPlatformApprovalQueue();
     renderPlatformApprovalQueue();
+    // Şirkət grid-i də yenilənsin ki, təsdiqlənən şirkət "active" görünsün.
+    _platformCompaniesLoaded = false;
+    refreshPlatformCompanies();
   } catch (error) {
     alert("Əməliyyat alınmadı: " + (error?.message || ""));
     button.disabled = false;
@@ -7062,8 +7065,8 @@ function injectExportButtons() {
   const wrap = document.createElement("div");
   wrap.className = "export-btn-row";
   wrap.innerHTML = `
-    <button type="button" id="exportExcelBtn" class="export-btn">📊 Excel</button>
-    <button type="button" id="exportPdfBtn"   class="export-btn">📄 PDF</button>`;
+    <button type="button" id="exportExcelBtn" class="export-btn">Excel</button>
+    <button type="button" id="exportPdfBtn"   class="export-btn">PDF</button>`;
   reports.prepend(wrap);
   document.querySelector("#exportExcelBtn").addEventListener("click", () => lazyLoadExportLibs(exportToExcel));
   document.querySelector("#exportPdfBtn").addEventListener("click",   () => lazyLoadExportLibs(exportToPDF));
