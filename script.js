@@ -312,6 +312,7 @@ const companyCount = document.querySelector("#companyCount");
 const companyRegistryList = document.querySelector("#companyRegistryList");
 const platformConsole = document.querySelector("#platformConsole");
 const platformStats = document.querySelector("#platformStats");
+const platformApprovalQueue = document.querySelector("#platformApprovalQueue");
 const platformOps = document.querySelector("#platformOps");
 const platformLifecycle = document.querySelector("#platformLifecycle");
 const platformCreateWizard = document.querySelector("#platformCreateWizard");
@@ -2559,6 +2560,79 @@ function renderViews() {
   document.body.dataset.view = currentView;
 }
 
+// ── Toast bildirişi (self-contained; DOM/CSS asılılığı yoxdur) ───────────────
+function showToast(message, timeout = 3200) {
+  try {
+    let host = document.getElementById("pmToastHost");
+    if (!host) {
+      host = document.createElement("div");
+      host.id = "pmToastHost";
+      document.body.appendChild(host);
+    }
+    const toast = document.createElement("div");
+    toast.className = "pm-toast";
+    toast.textContent = String(message);
+    host.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add("show"));
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 300);
+    }, timeout);
+  } catch (error) { console.warn("toast error:", error?.message); }
+}
+
+// ── Təsdiq növbəsi (Supabase pending workspaces) ─────────────────────────────
+let platformPendingCache = [];
+
+async function refreshPlatformApprovalQueue() {
+  if (!isSuperAdmin() || !canUseSupabase()) { platformPendingCache = []; return; }
+  try {
+    const ws = await supabaseRequest("/rest/v1/workspaces?approval_status=eq.pending&select=id,name,company_key,owner_id,requested_at,email_verified&order=requested_at.asc");
+    const list = Array.isArray(ws) ? ws : [];
+    let owners = [];
+    if (list.length) {
+      const ids = list.map((w) => w.id).join(",");
+      const profs = await supabaseRequest(`/rest/v1/profiles?workspace_id=in.(${ids})&select=workspace_id,email,username,full_name,role`);
+      owners = Array.isArray(profs) ? profs : [];
+    }
+    platformPendingCache = list.map((w) => {
+      const owner = owners.find((p) => p.workspace_id === w.id && p.role === "admin")
+        || owners.find((p) => p.workspace_id === w.id);
+      return { ...w, ownerEmail: owner?.email || "", ownerName: owner?.full_name || owner?.username || "" };
+    });
+  } catch (error) {
+    console.warn("Təsdiq növbəsi yüklənmədi:", error?.message);
+    platformPendingCache = [];
+  }
+}
+
+function renderPlatformApprovalQueue() {
+  if (!platformApprovalQueue) return;
+  const online = canUseSupabase();
+  const rows = platformPendingCache;
+  platformApprovalQueue.innerHTML = `
+    <div class="platform-section-head">
+      <div><p class="kicker">Təsdiq növbəsi</p><h3>Gözləyən qeydiyyatlar${rows.length ? ` · ${rows.length}` : ""}</h3></div>
+      <button type="button" id="refreshApprovalQueue">Yenilə</button>
+    </div>
+    ${!online
+      ? `<div class="empty">Online rejim aktiv deyil — təsdiq növbəsi yalnız Supabase ilə işləyir.</div>`
+      : rows.length
+        ? `<div class="platform-table approval-table">${rows.map((w) => `
+            <div class="approval-row">
+              <strong>${escapeHtml(w.name || "-")}</strong>
+              <span>${escapeHtml(w.ownerEmail || "-")}</span>
+              <span>${escapeHtml(formatDateTime(w.requested_at) || "-")}</span>
+              <span class="approval-badge ${w.email_verified ? "ok" : "wait"}">${w.email_verified ? "email ✓" : "email gözləyir"}</span>
+              <span class="approval-actions">
+                <button type="button" class="approve-btn" data-approval-action="approve" data-id="${escapeHtml(w.id)}">Təsdiqlə</button>
+                <button type="button" class="reject-btn" data-approval-action="reject" data-id="${escapeHtml(w.id)}">Rədd et</button>
+              </span>
+            </div>`).join("")}</div>`
+        : `<div class="empty">Gözləyən qeydiyyat yoxdur</div>`}
+  `;
+}
+
 function renderPlatformConsole() {
   if (!platformConsole) return;
   if (!isSuperAdmin()) {
@@ -2584,6 +2658,9 @@ function renderPlatformConsole() {
     ["Layihə", projectsTotal],
     ["Son status", formatDateTime(lastStatusChange) || "-"]
   ].map(([label, value]) => `<article class="${typeof value === "string" && value.length > 8 ? "compact-stat" : ""}"><span>${value}</span><p>${label}</p></article>`).join("");
+  // Təsdiq növbəsi: əvvəlcə cache-dən render et, sonra Supabase-dən təzələ.
+  renderPlatformApprovalQueue();
+  refreshPlatformApprovalQueue().then(renderPlatformApprovalQueue);
   const ops = platformOpsSummary(registry);
   // markup → render-markup.js: platformOpsMarkup, platformLifecycleCardMarkup
   if (platformOps) {
@@ -3213,7 +3290,9 @@ async function supabaseCreateWorkspaceProfile({ userId, companyName, companyId, 
       company_key: companyId,
       name: companyName,
       owner_id: userId,
-      status: "active"
+      status: "active",
+      approval_status: "pending",
+      email_verified: false
     })
   });
   const workspace = Array.isArray(workspaceRows) ? workspaceRows[0] : workspaceRows;
@@ -3255,23 +3334,26 @@ function applySupabaseWorkspaceSession({ userId, email, username, fullName, comp
     ...appState.users.filter((user) => user.id !== normalized.id && user.username !== normalized.username),
     normalized
   ];
-  companyRegistry = [
-    ...companyRegistry.filter((company) => company.id !== companyId),
-    {
-      id: companyId,
-      name: companyName,
-      subdomain: slugFromName(companyName),
-      status: "active",
-      plan: "standard",
-      adminUsername: username,
-      userCount: 1,
-      projectCount: 0,
-      createdAt: new Date().toISOString(),
-      activatedAt: new Date().toISOString(),
-      statusChangedAt: new Date().toISOString()
-    }
-  ];
-  appSettings.companyRegistry = companyRegistry;
+  // Super-admin heç bir tenant deyil — saxta şirkət registry-yə düşməməlidir.
+  if (role !== "super_admin") {
+    companyRegistry = [
+      ...companyRegistry.filter((company) => company.id !== companyId),
+      {
+        id: companyId,
+        name: companyName,
+        subdomain: slugFromName(companyName),
+        status: "active",
+        plan: "standard",
+        adminUsername: username,
+        userCount: 1,
+        projectCount: 0,
+        createdAt: new Date().toISOString(),
+        activatedAt: new Date().toISOString(),
+        statusChangedAt: new Date().toISOString()
+      }
+    ];
+    appSettings.companyRegistry = companyRegistry;
+  }
   supabaseWorkspaceId = workspaceId;
   localStorage.setItem(supabaseWorkspaceKey, workspaceId);
   currentUser = normalized;
@@ -3406,10 +3488,14 @@ async function supabaseRegisterWorkspace({ companyName, subdomain, username, pas
   saveSupabaseSession(session);
   const userId = signup.user?.id || session.user?.id;
   const workspace = await supabaseCreateWorkspaceProfile({ userId, companyName, companyId, subdomain, username, fullName, email });
-  applySupabaseWorkspaceSession({ userId, email, username, fullName, companyName, companyId, workspaceId: workspace.id });
-  await supabaseSaveState();
-  recordAudit("workspace.supabase_registered", "company", companyId, companyName);
-  return currentUser;
+  // Workspace `pending` yaradıldı — RLS app_state yazmağa icazə vermir və hesab
+  // super-admin təsdiqini gözləyir. App-a giriş etmirik, sessiyanı bağlayırıq.
+  recordAudit("workspace.registered", "company", companyId, companyName);
+  saveSupabaseSession(null);
+  supabaseWorkspaceId = "";
+  localStorage.removeItem(supabaseWorkspaceKey);
+  currentUser = null;
+  throw new Error("Qeydiyyat yaradıldı. Hesabınız super-admin təsdiqini gözləyir — təsdiqdən sonra email ilə daxil ola bilərsiniz.");
 }
 
 async function supabaseLoadWorkspaceState(workspaceId) {
@@ -3425,6 +3511,21 @@ async function supabaseLoginWorkspace(email, password) {
   if (!userId) throw new Error("Supabase istifadəçisi tapılmadı");
   const profiles = await supabaseRequest(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id,workspace_id,username,full_name,email,role,profile_json`);
   let profile = Array.isArray(profiles) ? profiles[0] : null;
+  // Super-admin heç bir tenant-a bağlı deyil (workspace_id=NULL) → platforma sessiyası.
+  if (profile?.role === "super_admin") {
+    applySupabaseWorkspaceSession({
+      userId,
+      email: profile.email || email,
+      username: profile.username || email,
+      fullName: profile.full_name || profile.username || email,
+      companyName: "Platform",
+      companyId: "platform",
+      workspaceId: "",
+      role: "super_admin"
+    });
+    await syncSupabaseAuditLogs();
+    return currentUser;
+  }
   if (!profile?.workspace_id) {
     const meta = session.user?.user_metadata || {};
     const companyName = meta.company_name || "Workspace";
@@ -3450,9 +3551,20 @@ async function supabaseLoginWorkspace(email, password) {
       profile_json: { company: companyName }
     };
   }
-  const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(profile.workspace_id)}&select=id,company_key,name,status`);
+  const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(profile.workspace_id)}&select=id,company_key,name,status,approval_status,email_verified,rejected_reason`);
   const workspace = Array.isArray(workspaces) ? workspaces[0] : null;
   if (!workspace?.id) throw new Error("Workspace oxunmadı");
+  // Təsdiq gate — super-admin bu yola düşmür (yuxarıda idarə olunur).
+  if (workspace.approval_status === "rejected") {
+    saveSupabaseSession(null);
+    supabaseWorkspaceId = "";
+    throw new Error("Qeydiyyat rədd edildi" + (workspace.rejected_reason ? ": " + workspace.rejected_reason : "") + ".");
+  }
+  if (workspace.approval_status && workspace.approval_status !== "active") {
+    saveSupabaseSession(null);
+    supabaseWorkspaceId = "";
+    throw new Error("Hesabınız super-admin təsdiqini gözləyir — təsdiqdən sonra daxil ola biləcəksiniz.");
+  }
   const companyName = workspace.name || profile.profile_json?.company || profile.username;
   const companyId = workspace.company_key || companyIdFromName(companyName);
   applySupabaseWorkspaceSession({
@@ -3534,6 +3646,21 @@ async function supabaseCompleteSession(session) {
   saveSupabaseSession({ ...session, user: tokenUser });
   const profiles = await supabaseRequest(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id,workspace_id,username,full_name,email,role,profile_json`);
   let profile = Array.isArray(profiles) ? profiles[0] : null;
+  // Super-admin heç bir tenant-a bağlı deyil → platforma sessiyası.
+  if (profile?.role === "super_admin") {
+    applySupabaseWorkspaceSession({
+      userId,
+      email: profile.email || email,
+      username: profile.username || email,
+      fullName: profile.full_name || profile.username || email,
+      companyName: "Platform",
+      companyId: "platform",
+      workspaceId: "",
+      role: "super_admin"
+    });
+    await syncSupabaseAuditLogs();
+    return currentUser;
+  }
   if (!profile?.workspace_id) {
     const meta = tokenUser.user_metadata || {};
     const companyName = meta.company_name || meta.company || "Project Manager";
@@ -3559,9 +3686,30 @@ async function supabaseCompleteSession(session) {
       profile_json: { company: companyName }
     };
   }
-  const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(profile.workspace_id)}&select=id,company_key,name,status`);
+  const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(profile.workspace_id)}&select=id,company_key,name,status,approval_status,email_verified,rejected_reason`);
   const workspace = Array.isArray(workspaces) ? workspaces[0] : null;
   if (!workspace?.id) throw new Error("Workspace oxunmadı");
+  // Email təsdiqləndi — workspace-i email_verified=true et ki, təsdiq növbəsinə düşsün.
+  if (!workspace.email_verified) {
+    try {
+      await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(workspace.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ email_verified: true })
+      });
+      workspace.email_verified = true;
+    } catch (error) { console.warn("email_verified yenilənmədi:", error?.message); }
+  }
+  // Təsdiq gate — email təsdiqlənsə də super-admin təsdiqi lazımdır.
+  if (workspace.approval_status === "rejected") {
+    saveSupabaseSession(null);
+    supabaseWorkspaceId = "";
+    throw new Error("Qeydiyyat rədd edildi" + (workspace.rejected_reason ? ": " + workspace.rejected_reason : "") + ".");
+  }
+  if (workspace.approval_status && workspace.approval_status !== "active") {
+    saveSupabaseSession(null);
+    supabaseWorkspaceId = "";
+    throw new Error("Emailiniz təsdiqləndi. Hesabınız super-admin təsdiqini gözləyir — təsdiqdən sonra daxil ola biləcəksiniz.");
+  }
   const companyName = workspace.name || profile.profile_json?.company || "Project Manager";
   const companyId = workspace.company_key || companyIdFromName(companyName);
   applySupabaseWorkspaceSession({
@@ -5060,13 +5208,13 @@ registerForm?.addEventListener("submit", async (event) => {
     id: createId(),
     username,
     passwordHash: md5(password),
-    role: "manager",
+    role: "admin",
     managerId: "",
     companyId,
     profile: {
       fullName,
       email,
-      position: "Project Manager",
+      position: "Company Admin",
       company: companyName
     }
   });
@@ -5727,6 +5875,64 @@ platformCompanyGrid?.addEventListener("click", async (event) => {
     saveBackendSettings();
   }
   render();
+});
+
+platformApprovalQueue?.addEventListener("click", async (event) => {
+  if (!isSuperAdmin()) return;
+  if (event.target.closest("#refreshApprovalQueue")) {
+    await refreshPlatformApprovalQueue();
+    renderPlatformApprovalQueue();
+    return;
+  }
+  const button = event.target.closest("button[data-approval-action]");
+  if (!button) return;
+  const workspaceId = button.dataset.id;
+  const action = button.dataset.approvalAction;
+  const item = platformPendingCache.find((w) => w.id === workspaceId);
+  if (!workspaceId) return;
+  button.disabled = true;
+  try {
+    if (action === "approve") {
+      await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(workspaceId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          approval_status: "active",
+          approved_by: currentUser?.id || null,
+          approved_at: new Date().toISOString()
+        })
+      });
+      recordAudit("workspace.approved", "company", item?.company_key || workspaceId, item?.name || "");
+      // Onboarding bildirişi (best-effort — mail edge-function bunu emal edə bilər).
+      try {
+        await supabaseRequest("/rest/v1/notifications", {
+          method: "POST",
+          body: JSON.stringify({
+            workspace_id: workspaceId,
+            type: "onboarding",
+            recipient: item?.ownerEmail || "",
+            subject: "Hesabınız aktivdir",
+            body: "Qeydiyyatınız təsdiqləndi. Artıq email ilə daxil ola bilərsiniz.",
+            status: "queued"
+          })
+        });
+      } catch (mailError) { console.warn("Onboarding bildirişi göndərilmədi:", mailError?.message); }
+      showToast(`${item?.name || "Workspace"} təsdiqləndi`);
+    } else if (action === "reject") {
+      const raw = prompt("Rədd səbəbi:", "");
+      if (raw === null) { button.disabled = false; return; }
+      await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(workspaceId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ approval_status: "rejected", rejected_reason: raw.trim() })
+      });
+      recordAudit("workspace.rejected", "company", item?.company_key || workspaceId, raw.trim());
+      showToast(`${item?.name || "Workspace"} rədd edildi`);
+    }
+    await refreshPlatformApprovalQueue();
+    renderPlatformApprovalQueue();
+  } catch (error) {
+    alert("Əməliyyat alınmadı: " + (error?.message || ""));
+    button.disabled = false;
+  }
 });
 
 platformConsole?.addEventListener("click", async (event) => {

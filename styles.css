@@ -1009,6 +1009,93 @@ body.admin-role .manager-only {
   font-weight: 800;
 }
 
+/* Toast bildirişləri */
+#pmToastHost {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.pm-toast {
+  background: var(--sidebar, #101827);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+  font-weight: 700;
+  max-width: 340px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+.pm-toast.show { opacity: 1; transform: translateY(0); }
+
+/* Təsdiq növbəsi (Gözləyən qeydiyyatlar) */
+#platformApprovalQueue .platform-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+#refreshApprovalQueue {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.approval-table > div.approval-row {
+  grid-template-columns: 1.3fr 1.5fr 1fr auto auto;
+}
+.approval-row strong { color: var(--ink); }
+.approval-badge {
+  justify-self: start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+  border: 1px solid var(--line);
+}
+.approval-badge.ok {
+  border-color: color-mix(in srgb, var(--green) 32%, var(--line));
+  background: color-mix(in srgb, var(--green) 12%, var(--panel));
+  color: color-mix(in srgb, var(--green) 82%, #000);
+}
+.approval-badge.wait {
+  border-color: color-mix(in srgb, var(--amber) 32%, var(--line));
+  background: color-mix(in srgb, var(--amber) 12%, var(--panel));
+  color: color-mix(in srgb, var(--amber) 82%, #000);
+}
+.approval-actions {
+  display: flex;
+  gap: 8px;
+  justify-self: end;
+}
+.approval-actions button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.approve-btn {
+  background: color-mix(in srgb, var(--green) 14%, var(--panel));
+  border-color: color-mix(in srgb, var(--green) 34%, var(--line));
+  color: color-mix(in srgb, var(--green) 82%, #000);
+}
+.reject-btn {
+  background: color-mix(in srgb, var(--red) 12%, var(--panel));
+  border-color: color-mix(in srgb, var(--red) 32%, var(--line));
+  color: color-mix(in srgb, var(--red) 82%, #000);
+}
+.approval-actions button:disabled { opacity: .55; cursor: default; }
+
 .platform-section {
   border: 1px solid var(--line);
   border-radius: 10px;
