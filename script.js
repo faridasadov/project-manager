@@ -1852,7 +1852,6 @@ function renderRoleMatrix() {
 function renderSummary() {
   const shownTasks = accessibleTasks();
   const metrics = portfolioMetrics(shownTasks);
-  if (sidebarCapacityLabel) sidebarCapacityLabel.textContent = `${Number(appSettings.capacityHours) || 40}h`;
   totalCount.textContent = shownTasks.length;
   activeCount.textContent = shownTasks.filter((task) => task.status !== "Bitib").length;
   doneCount.textContent = shownTasks.filter((task) => task.status === "Bitib").length;
@@ -1861,6 +1860,8 @@ function renderSummary() {
   const planned = shownTasks.reduce((sum, task) => sum + plannedHoursForTask(task), 0);
   const actual = shownTasks.reduce((sum, task) => sum + actualHoursForTask(task), 0);
   hoursSummary.textContent = `${planned} / ${actual}`;
+  // Sidebar "Komanda yüklənməsi" — statik 40h deyil, cari şirkətin real plan saat yükü.
+  if (sidebarCapacityLabel) sidebarCapacityLabel.textContent = `${planned}h`;
 
   if (!shownTasks.length) {
     dateRange.textContent = "-";
