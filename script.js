@@ -360,6 +360,9 @@ let backendSaveTimer = 0;
 let authToken = localStorage.getItem(authTokenKey) || "";
 let supabaseSession = loadSupabaseSession();
 let supabaseWorkspaceId = localStorage.getItem(supabaseWorkspaceKey) || "";
+// Cari workspace kvota limiti (0 = limitsiz/local rejim). supabaseLoginWorkspace təyin edir.
+let workspaceMaxUsers = 0;
+let workspacePlan = "standard";
 let supabaseSaveTimer = null;
 let supabaseSettingsSaveTimer = null;
 let supabaseAuditSyncedIds = new Set();
@@ -2669,7 +2672,7 @@ async function refreshPlatformCompanies() {
   if (!isSuperAdmin() || !canUseSupabase()) return;
   _platformCompaniesLoaded = true;
   try {
-    const ws = await supabaseRequest("/rest/v1/workspaces?select=id,company_key,name,status,approval_status,email_verified,created_at,requested_at&order=created_at");
+    const ws = await supabaseRequest("/rest/v1/workspaces?deleted_at=is.null&select=id,company_key,name,status,approval_status,email_verified,plan,max_users,created_at,requested_at&order=created_at");
     const list = Array.isArray(ws) ? ws : [];
     let profs = [];
     try {
@@ -2690,7 +2693,8 @@ async function refreshPlatformCompanies() {
         status,
         approvalStatus: w.approval_status,
         emailVerified: w.email_verified,
-        plan: "standard",
+        plan: w.plan || "standard",
+        maxUsers: Number(w.max_users) || 0,
         adminUsername: admin?.email || "",
         userCount: users.length,
         projectCount: 0,
@@ -2889,9 +2893,12 @@ function renderPlatformConsole() {
           <div><dt>Son aktiv</dt><dd>${escapeHtml(formatDateTime(statusMeta.activatedAt) || "-")}</dd></div>
           <div><dt>Son dayandırma</dt><dd>${escapeHtml(formatDateTime(statusMeta.suspendedAt) || "-")}</dd></div>
         </dl>
-        <button type="button" data-company-action="${company.status === "suspended" ? "activate" : "suspend"}" data-id="${escapeHtml(company.id)}">
-          ${company.status === "suspended" ? text("activateCompany") : text("suspendCompany")}
-        </button>
+        <div class="platform-company-actions">
+          <button type="button" data-company-action="${company.status === "suspended" ? "activate" : "suspend"}" data-id="${escapeHtml(company.id)}">
+            ${company.status === "suspended" ? text("activateCompany") : text("suspendCompany")}
+          </button>
+          ${company.workspaceId ? `<button type="button" class="offboard-btn" data-company-offboard="${escapeHtml(company.workspaceId)}" data-name="${escapeHtml(company.name || "")}">Offboard</button>` : ""}
+        </div>
       </article>
     `;
   }).join("") : `<div class="empty">${text("empty")}</div>`;
@@ -3656,9 +3663,11 @@ async function supabaseLoginWorkspace(email, password) {
       profile_json: { company: companyName }
     };
   }
-  const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(profile.workspace_id)}&select=id,company_key,name,status,approval_status,email_verified,rejected_reason`);
+  const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(profile.workspace_id)}&select=id,company_key,name,status,approval_status,email_verified,rejected_reason,max_users,plan`);
   const workspace = Array.isArray(workspaces) ? workspaces[0] : null;
   if (!workspace?.id) throw new Error("Workspace oxunmadı");
+  workspaceMaxUsers = Number(workspace.max_users) || 0;
+  workspacePlan = workspace.plan || "standard";
   // Təsdiq gate — super-admin bu yola düşmür (yuxarıda idarə olunur).
   if (workspace.approval_status === "rejected") {
     saveSupabaseSession(null);
@@ -3794,9 +3803,11 @@ async function supabaseCompleteSession(session) {
       profile_json: { company: companyName }
     };
   }
-  const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(profile.workspace_id)}&select=id,company_key,name,status,approval_status,email_verified,rejected_reason`);
+  const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(profile.workspace_id)}&select=id,company_key,name,status,approval_status,email_verified,rejected_reason,max_users,plan`);
   const workspace = Array.isArray(workspaces) ? workspaces[0] : null;
   if (!workspace?.id) throw new Error("Workspace oxunmadı");
+  workspaceMaxUsers = Number(workspace.max_users) || 0;
+  workspacePlan = workspace.plan || "standard";
   // Email təsdiqləndi — workspace-i email_verified=true et ki, təsdiq növbəsinə düşsün.
   if (!workspace.email_verified) {
     try {
@@ -4731,6 +4742,10 @@ form.addEventListener("submit", async (event) => {
     attachments: existingTask?.attachments || []
   };
   if (!projectExists(task.project)) return;
+  if (dependencyCreatesCycle(task.id, task.dependencyIds)) {
+    alert("Asılılıq dövrü aşkarlandı: seçilmiş asılılıq dairəvi zəncir (məs. A→B→A) yaradır. Bu asılılığı silin.");
+    return;
+  }
   if (shouldValidateDependencies(task.status) && !canStartTask(task)) {
     alert(dependencyBlockedMessage(task));
     return;
@@ -5066,6 +5081,31 @@ refreshPlatformCompaniesButton?.addEventListener("click", () => {
   fetchMailHistory();
 });
 
+// #8 Offboarding (soft-delete): super-admin şirkəti arxivləyir.
+platformCompanyGrid?.addEventListener("click", async (event) => {
+  if (!isSuperAdmin()) return;
+  const btn = event.target.closest("button[data-company-offboard]");
+  if (!btn) return;
+  const workspaceId = btn.dataset.companyOffboard;
+  const name = btn.dataset.name || "şirkət";
+  if (!workspaceId || !canUseSupabase()) return;
+  if (!confirm(`"${name}" şirkətini offboard etmək (arxivləmək)? İstifadəçilərin data-ya çıxışı dayanacaq. Geri qaytarmaq üçün deleted_at sıfırlanmalıdır.`)) return;
+  btn.disabled = true;
+  try {
+    await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(workspaceId)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ deleted_at: new Date().toISOString(), status: "disabled" })
+    });
+    recordAudit("workspace.offboarded", "company", workspaceId, name);
+    showToast(`${name} offboard edildi`);
+    _platformCompaniesLoaded = false;
+    refreshPlatformCompanies();
+  } catch (error) {
+    alert("Offboard alınmadı: " + (error?.message || ""));
+    btn.disabled = false;
+  }
+});
+
 dateRequestList?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-date-request-action]");
   if (!button) return;
@@ -5307,6 +5347,15 @@ loginForm.addEventListener("submit", async (event) => {
 
 registerForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
+  // #6 Rate-limit: eyni brauzerdən çox tez-tez qeydiyyatın qarşısını al (60s cooldown).
+  // Server tərəfdə Supabase Auth-un öz signup rate-limiti də var.
+  const lastReg = Number(localStorage.getItem("pm-last-register") || 0);
+  const waitMs = 60000 - (Date.now() - lastReg);
+  if (waitMs > 0) {
+    registerError.textContent = `Çox tez-tez cəhd. ${Math.ceil(waitMs / 1000)} saniyə sonra yenidən cəhd edin.`;
+    return;
+  }
+  localStorage.setItem("pm-last-register", String(Date.now()));
   const companyName = registerCompanyInput.value.trim();
   const subdomain = slugFromName(registerSubdomainInput?.value || companyName);
   const username = registerUsernameInput.value.trim() || `admin${subdomain}`;
@@ -5844,6 +5893,14 @@ workflowStatusList.addEventListener("click", (event) => {
 addUserButton.addEventListener("click", () => {
   // Telebe-Hotel: yalnız org admin istifadəçi əlavə edə bilər (manager/moderator yox)
   if (!canManageOrgUsers()) return;
+  // #5 kvota: workspace istifadəçi limitini keçmə (0 = limitsiz/local rejim).
+  if (workspaceMaxUsers > 0) {
+    const currentCount = appState.users.filter((u) => (u.companyId || "company-default") === currentCompanyId()).length;
+    if (currentCount >= workspaceMaxUsers) {
+      alert(`İstifadəçi limiti dolub (${workspaceMaxUsers} / plan: ${workspacePlan}). Yeni istifadəçi üçün planı yüksəldin və ya mövcud istifadəçini silin.`);
+      return;
+    }
+  }
   const companySlug = slugFromName(currentUser?.profile?.company || currentCompanyId());
   const password = newUserPasswordInput.value;
   const role = newUserRoleInput.value;
@@ -6050,6 +6107,18 @@ platformApprovalQueue?.addEventListener("click", async (event) => {
           })
         });
       } catch (mailError) { console.warn("Onboarding bildirişi göndərilmədi:", mailError?.message); }
+      // Real email (Resend edge-function; RESEND_API_KEY yoxdursa gracefully skip olunur).
+      if (item?.ownerEmail) {
+        try {
+          await callSupabaseFunction(supabaseConfig().mailFunction, {
+            type: "onboarding",
+            workspaceId,
+            recipients: item.ownerEmail,
+            subject: "Hesabınız aktivdir — Project Manager",
+            text: `Salam,\n\n"${item.name || "workspace"}" hesabınız super-admin tərəfindən təsdiqləndi. Artıq email ilə daxil ola bilərsiniz.\n\nProject Manager`
+          });
+        } catch (sendError) { console.warn("Onboarding email göndərilmədi:", sendError?.message); }
+      }
       showToast(`${item?.name || "Workspace"} təsdiqləndi`);
     } else if (action === "reject") {
       const raw = prompt("Rədd səbəbi:", "");

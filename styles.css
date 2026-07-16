@@ -1151,6 +1151,19 @@ body.admin-role .manager-only {
 }
 .approval-actions button:disabled { opacity: .55; cursor: default; }
 
+/* Platform şirkət kart əməliyyatları */
+.platform-company-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.platform-company-actions button { flex: 1; min-width: 110px; }
+.offboard-btn {
+  border: 1px solid color-mix(in srgb, var(--red) 30%, var(--line));
+  background: color-mix(in srgb, var(--red) 8%, var(--panel));
+  color: color-mix(in srgb, var(--red) 80%, #000);
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.offboard-btn:disabled { opacity: .55; cursor: default; }
+
 .platform-section {
   border: 1px solid var(--line);
   border-radius: 10px;
