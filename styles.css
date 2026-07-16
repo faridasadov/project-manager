@@ -1034,6 +1034,61 @@ body.admin-role .manager-only {
 }
 .pm-toast.show { opacity: 1; transform: translateY(0); }
 
+/* Onboarding tur */
+.help-tour-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--teal);
+  font-weight: 900;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+}
+.help-tour-btn:hover { background: color-mix(in srgb, var(--teal) 12%, var(--panel)); }
+#pmTourOverlay { position: fixed; inset: 0; z-index: 9998; background: transparent; }
+.pm-tour-highlight {
+  position: relative;
+  z-index: 9999;
+  border-radius: 8px;
+  box-shadow: 0 0 0 3px var(--teal), 0 0 0 9999px rgba(15, 23, 39, .58);
+  pointer-events: none;
+}
+#pmTourTip {
+  position: fixed;
+  z-index: 10000;
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .28);
+  padding: 16px;
+}
+.pm-tour-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.pm-tour-progress { font-size: 12px; font-weight: 800; color: var(--muted); }
+.pm-tour-close {
+  border: none; background: transparent; color: var(--muted);
+  font-size: 20px; line-height: 1; cursor: pointer; padding: 0 4px;
+}
+#pmTourTip h4 { margin: 0 0 6px; color: var(--ink); font-size: 16px; }
+#pmTourTip p { margin: 0 0 14px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.pm-tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pm-tour-skip {
+  border: none; background: transparent; color: var(--muted);
+  font-weight: 700; cursor: pointer; padding: 6px 4px;
+}
+.pm-tour-nav { display: flex; gap: 8px; }
+.pm-tour-nav button {
+  padding: 8px 14px; border-radius: 8px; font-weight: 700; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.pm-tour-nav button.primary {
+  background: var(--teal); border-color: var(--teal); color: #fff;
+}
+
 /* Təsdiq növbəsi (Gözləyən qeydiyyatlar) */
 #platformApprovalQueue .platform-section-head {
   display: flex;

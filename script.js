@@ -1170,8 +1170,47 @@ function openAdminPanel() {
   adminModal.classList.add("open");
   adminModal.setAttribute("aria-hidden", "false");
   closeAdminPanelButton.focus();
+  const companyInput = document.querySelector("#companyNameInput");
+  if (companyInput) companyInput.value = currentCompanyName();
   fetchAuditLogs();
   fetchMailHistory();
+}
+
+function currentCompanyName() {
+  const registry = companyRegistry.length ? companyRegistry : companyRegistryFromLocalState();
+  const reg = registry.find((c) => c.id === currentCompanyId());
+  return reg?.name || currentUser?.profile?.company || "";
+}
+
+async function saveCompanyName() {
+  if (!currentUser || !(isAdmin() || isSuperAdmin())) return;
+  const input = document.querySelector("#companyNameInput");
+  const newName = (input?.value || "").trim();
+  if (!newName) { showToast("Şirkət adı boş ola bilməz"); return; }
+  const btn = document.querySelector("#saveCompanyNameBtn");
+  if (btn) btn.disabled = true;
+  try {
+    if (canUseSupabase() && supabaseWorkspaceId) {
+      await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(supabaseWorkspaceId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: newName })
+      });
+    }
+    const cid = currentCompanyId();
+    const base = companyRegistry.length ? companyRegistry : companyRegistryFromLocalState();
+    companyRegistry = base.map((c) => (c.id === cid ? { ...c, name: newName } : c));
+    appSettings.companyRegistry = companyRegistry;
+    if (currentUser.profile) currentUser.profile.company = newName;
+    saveUsers();
+    saveAppSettings();
+    recordAudit("company.renamed", "company", cid, newName);
+    showToast("Şirkət adı yeniləndi: " + newName);
+    render();
+  } catch (error) {
+    showToast("Alınmadı: " + (error?.message || ""));
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function closeAdminPanel() {
@@ -2606,6 +2645,49 @@ async function refreshPlatformApprovalQueue() {
   }
 }
 
+// Super-admin üçün BÜTÜN tenant-ları Supabase workspaces cədvəlindən çək —
+// lokal companyRegistry Supabase super-admin-də boş olur, ona görə mənbə buradır.
+let _platformCompaniesLoaded = false;
+
+async function refreshPlatformCompanies() {
+  if (!isSuperAdmin() || !canUseSupabase()) return;
+  _platformCompaniesLoaded = true;
+  try {
+    const ws = await supabaseRequest("/rest/v1/workspaces?select=id,company_key,name,status,approval_status,email_verified,created_at,requested_at&order=created_at");
+    const list = Array.isArray(ws) ? ws : [];
+    let profs = [];
+    try {
+      const p = await supabaseRequest("/rest/v1/profiles?select=workspace_id,role,email");
+      profs = Array.isArray(p) ? p : [];
+    } catch (e) { /* profil sayı olmasa da şirkətlər göstərilsin */ }
+    companyRegistry = list.map((w) => {
+      const users = profs.filter((p) => p.workspace_id === w.id);
+      const admin = users.find((p) => p.role === "admin");
+      const status = w.status === "disabled" ? "suspended"
+        : w.approval_status === "active" ? "active"
+        : w.approval_status; // pending / rejected
+      return {
+        id: w.company_key || w.id,
+        workspaceId: w.id,
+        name: w.name,
+        subdomain: slugFromName(w.name || ""),
+        status,
+        approvalStatus: w.approval_status,
+        emailVerified: w.email_verified,
+        plan: "standard",
+        adminUsername: admin?.email || "",
+        userCount: users.length,
+        projectCount: 0,
+        createdAt: w.created_at,
+        requestedAt: w.requested_at
+      };
+    });
+  } catch (error) {
+    console.warn("Platform şirkətləri yüklənmədi:", error?.message);
+  }
+  renderPlatformConsole();
+}
+
 function renderPlatformApprovalQueue() {
   if (!platformApprovalQueue) return;
   const online = canUseSupabase();
@@ -2638,6 +2720,10 @@ function renderPlatformConsole() {
   if (!isSuperAdmin()) {
     platformConsole.classList.remove("active");
     return;
+  }
+  // İlk dəfə: bütün tenant-ları Supabase-dən yüklə (sonra re-render olunacaq).
+  if (canUseSupabase() && !_platformCompaniesLoaded) {
+    refreshPlatformCompanies();
   }
   const registry = companyRegistry.length ? companyRegistry : companyRegistryFromLocalState();
   const activeCount = registry.filter((company) => company.status !== "suspended").length;
@@ -2865,6 +2951,7 @@ function render() {
   renderPlatformConsole();
   renderViews();
   renderRoleMatrix();
+  if (typeof maybeAutoStartTour === "function") maybeAutoStartTour();
 }
 
 function taskFormFields() {
@@ -3529,8 +3616,8 @@ async function supabaseLoginWorkspace(email, password) {
   if (!profile?.workspace_id) {
     const meta = session.user?.user_metadata || {};
     const emailPrefix = email.split("@")[0];
-    const companyName = meta.company_name || meta.company
-      || (meta.full_name || meta.name ? `${meta.full_name || meta.name} workspace` : `${emailPrefix} workspace`);
+    // OAuth istifadəçiləri üçün şirkət adı email-in @-dən əvvəlki hissəsi.
+    const companyName = meta.company_name || meta.company || emailPrefix;
     const companyId = meta.company_key || `${companyIdFromName(companyName)}-${String(userId).slice(0, 8)}`;
     const username = meta.username || emailPrefix;
     const fullName = meta.full_name || meta.name || username;
@@ -3666,10 +3753,9 @@ async function supabaseCompleteSession(session) {
   if (!profile?.workspace_id) {
     const meta = tokenUser.user_metadata || {};
     const emailPrefix = email.split("@")[0];
-    // OAuth (Google) istifadəçilərində company_name olmur — hər kəsə eyni "Project
-    // Manager" verilsə company_key toqquşar. Ona görə şəxsi workspace + unikal key.
-    const companyName = meta.company_name || meta.company
-      || (meta.full_name || meta.name ? `${meta.full_name || meta.name} workspace` : `${emailPrefix} workspace`);
+    // OAuth (Google) istifadəçilərində company_name olmur — şirkət adı email-in
+    // @-dən əvvəlki hissəsi olur; company_key isə userId ilə unikal edilir.
+    const companyName = meta.company_name || meta.company || emailPrefix;
     const companyId = meta.company_key || `${companyIdFromName(companyName)}-${String(userId).slice(0, 8)}`;
     const username = meta.username || emailPrefix;
     const fullName = meta.full_name || meta.name || username;
@@ -3818,6 +3904,10 @@ async function handleSupabaseAuthRedirect() {
     loginError.textContent = error.message;
     registerError.textContent = error.message;
     render();
+    // Gate blokladı (pending/rejected) — mesaj görünsün deyə auth panelini aç
+    // və toast göstər, əks halda istifadəçi səbəbini görmədən welcome ekranına qayıdır.
+    openAuthPanel("login");
+    showToast(error.message, 6000);
     return false;
   }
 }
@@ -4950,6 +5040,11 @@ workloadList?.addEventListener("click", (event) => {
 refreshAuditLogsButton?.addEventListener("click", fetchAuditLogs);
 refreshMailHistoryButton?.addEventListener("click", fetchMailHistory);
 refreshPlatformCompaniesButton?.addEventListener("click", () => {
+  if (canUseSupabase() && isSuperAdmin()) {
+    _platformCompaniesLoaded = false;
+    refreshPlatformCompanies();
+    refreshPlatformApprovalQueue().then(renderPlatformApprovalQueue);
+  }
   fetchPlatformCompanies();
   fetchAuditLogs();
   fetchMailHistory();
@@ -5315,6 +5410,7 @@ taskComposerModal.addEventListener("click", (event) => {
   if (event.target.dataset.taskModalClose) closeTaskComposer();
 });
 openAdminPanelButton.addEventListener("click", openAdminPanel);
+document.querySelector("#saveCompanyNameBtn")?.addEventListener("click", saveCompanyName);
 openPlatformAdminPanelButton?.addEventListener("click", openAdminPanel);
 closeAdminPanelButton.addEventListener("click", closeAdminPanel);
 adminModal.addEventListener("click", (event) => {

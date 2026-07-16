@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20260716-google">
+  <link rel="stylesheet" href="styles.css?v=20260716-features">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4f46e5">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -265,6 +265,7 @@
           <option value="ru">RU</option>
           <option value="en">EN</option>
         </select>
+        <button id="helpTourBtn" type="button" class="help-tour-btn" title="Bələdçi tur" aria-label="Bələdçi tur">?</button>
         <button id="logoutButton" type="button" data-i18n="logout">Çıxış</button>
         <button id="notifyButton" class="notify-button" type="button">
           <span data-i18n="notify">Bildirişlər</span>
@@ -765,8 +766,17 @@
               <small data-i18n="new">Yeni</small>
             </summary>
             <div class="resource-body settings-grid">
+              <div class="settings-card admin-only">
+                <h3>Şirkət</h3>
+                <p class="field-hint" style="margin:0 0 10px">Şirkət (workspace) adını dəyiş — bütün istifadəçilər bu adı görür.</p>
+                <label>
+                  <span>Şirkət adı</span>
+                  <input id="companyNameInput" type="text" placeholder="Şirkət adı" autocomplete="organization">
+                </label>
+                <button id="saveCompanyNameBtn" type="button" class="primary" style="margin-top:10px">Adı yadda saxla</button>
+              </div>
               <div class="settings-card">
-                <h3>🗂 Snapshotlar</h3>
+                <h3>Snapshotlar</h3>
                 <p class="field-hint" style="margin:0 0 10px">Hər sessiyada avtomatik 5 snapshot saxlanılır. Bərpa etmək üçün seçin.</p>
                 <div id="snapshotList" class="snapshot-list"><em style="color:var(--muted);font-size:.83rem">Snapshot yoxdur</em></div>
               </div>
@@ -1761,7 +1771,8 @@
   <script src="modules/lookups.js?v=20260714-lookups"></script>
   <script src="modules/option-builders.js?v=20260715-options"></script>
   <script src="modules/render-markup.js?v=20260715-rendermarkup14"></script>
-  <script src="script.js?v=20260716-google"></script>
+  <script src="modules/onboarding.js?v=20260716-tour"></script>
+  <script src="script.js?v=20260716-features"></script>
   <!-- vanilla Motion (framer-motion sibling) — KPI count-up & spring mikro-interaksiyalar -->
   <script type="module">
     import { animate } from "./modules/vendor/motion.js?v=20260714-motion";
