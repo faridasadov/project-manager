@@ -429,15 +429,19 @@ function renderProjectGovernance(project) {
 // Kanban kartı əməliyyat düymələri. Deps: isTaskBlocked (dependencies.js), text.
 function renderKanbanActions(task) {
   const blocked = isTaskBlocked(task);
+  const icoEdit = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`;
+  const icoNext = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+  const icoTrash = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+  const icoReopen = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>`;
   const actions = task.status === "Bitib"
     ? `
-        <button type="button" data-action="reopen" data-id="${task.id}">${text("reopen")}</button>
-        <button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
+        <button class="kb-btn kb-btn-ghost" type="button" data-action="reopen" data-id="${task.id}">${icoReopen}${text("reopen")}</button>
+        <button class="kb-btn kb-btn-danger" type="button" data-action="delete" data-id="${task.id}">${icoTrash}${text("delete")}</button>
       `
     : `
-        <button type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
-        <button type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}</button>
-        <button type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
+        <button class="kb-btn kb-btn-ghost" type="button" data-action="edit" data-id="${task.id}">${icoEdit}${text("edit")}</button>
+        <button class="kb-btn kb-btn-primary" type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}${icoNext}</button>
+        <button class="kb-btn kb-btn-danger" type="button" data-action="delete" data-id="${task.id}">${icoTrash}${text("delete")}</button>
       `;
   return `<div class="kanban-actions">${actions}</div>`;
 }
@@ -519,7 +523,7 @@ function reportProjectMarkup(project, reportTasks) {
       <article class="report-project">
         <h3>${escapeHtml(project.name)}</h3>
         <h3>${text("ipmaReport")}</h3>
-        <div class="report-rows">${governanceRows}</div>
+        <div class="report-rows governance-rows">${governanceRows}</div>
         <div class="report-rows">${rows}</div>
         <h3>${text("projectRegisters")}</h3>
         <div class="report-rows">${registerRows}</div>
@@ -1008,14 +1012,14 @@ function resourceUserListMarkup(scopedUsers) {
         <div class="user-actions">
         ${user.id === currentUser?.id ? `
           <div class="password-form" data-user-id="${user.id}">
-            <input type="password" name="password" placeholder="${text("newPassword")}" required>
+            <input type="password" name="password" placeholder="${text("newPassword")}">
             <button type="button" data-user-action="request-own-password" data-id="${user.id}">${text("requestPasswordChange")}</button>
             <input type="text" name="token" placeholder="${text("confirmationCode")}">
             <button type="button" data-user-action="confirm-own-password" data-id="${user.id}">${text("confirmPasswordChange")}</button>
           </div>
         ` : `
           <div class="password-form" data-user-id="${user.id}">
-            <input type="password" name="password" placeholder="${text("newPassword")}" required>
+            <input type="password" name="password" placeholder="${text("newPassword")}">
             <button type="button" data-user-action="change-password" data-id="${user.id}">${text("changePassword")}</button>
           </div>
         `}
