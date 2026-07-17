@@ -388,14 +388,14 @@ function renderProjectGovernance(project) {
       <details class="governance-summary">
         <summary class="governance-score-line">
           <span class="gov-pill">IPMA</span>
-          <strong>Governance</strong>
+          <strong>${text("governance")}</strong>
           <span class="gov-score">${audit.score}%</span>
-          <span class="gov-gates">${approvedCount}/4 gate</span>
-          ${audit.missing.length ? `<span class="governance-warning-pill">${audit.missing.length} çatışmır</span>` : ""}
+          <span class="gov-gates">${approvedCount}/4 ${text("gatesWord")}</span>
+          ${audit.missing.length ? `<span class="governance-warning-pill">${audit.missing.length} ${text("missingShort")}</span>` : ""}
         </summary>
         <div class="governance-detail">
           <div class="gate-status-row">
-            ${gates.map(gate => `<span class="gate-chip ${approvals[gate]?.approvedAt ? "gate-ok" : "gate-pending"}">${gate}</span>`).join("")}
+            ${gates.map(gate => `<span class="gate-chip ${approvals[gate]?.approvedAt ? "gate-ok" : "gate-pending"}">${gateLabel(gate)}</span>`).join("")}
           </div>
         </div>
       </details>
@@ -408,14 +408,14 @@ function renderProjectGovernance(project) {
     <details class="governance-summary">
       <summary class="governance-score-line">
         <span class="gov-pill">IPMA</span>
-        <strong>Governance</strong>
+        <strong>${text("governance")}</strong>
         <span class="gov-score">${audit.score}%</span>
-        <span class="gov-gates">${approvedCount}/4 gate</span>
-        ${audit.missing.length ? `<span class="governance-warning-pill">${audit.missing.length} çatışmır</span>` : ""}
+        <span class="gov-gates">${approvedCount}/4 ${text("gatesWord")}</span>
+        ${audit.missing.length ? `<span class="governance-warning-pill">${audit.missing.length} ${text("missingShort")}</span>` : ""}
       </summary>
       <div class="governance-detail">
         <div class="gate-status-row">
-          ${gates.map(gate => `<span class="gate-chip ${approvals[gate]?.approvedAt ? "gate-ok" : "gate-pending"}">${gate}${approvals[gate]?.approvedAt ? " ✓" : ""}</span>`).join("")}
+          ${gates.map(gate => `<span class="gate-chip ${approvals[gate]?.approvedAt ? "gate-ok" : "gate-pending"}">${gateLabel(gate)}${approvals[gate]?.approvedAt ? " ✓" : ""}</span>`).join("")}
         </div>
         ${audit.missing.length ? `<div class="governance-warning">${escapeHtml(audit.missing.slice(0, 4).join(" · "))}${audit.missing.length > 4 ? " ..." : ""}</div>` : ""}
         ${project.charter?.goal ? `<div><strong>${text("projectCharter")}:</strong> ${escapeHtml(project.charter.goal)}</div>` : ""}
@@ -508,7 +508,7 @@ function reportProjectMarkup(project, reportTasks) {
   const governanceRows = `
       <div class="report-row">
         <strong>${text("ipmaScore")}: ${audit.score}%</strong>
-        <span>${text("lifecycleStage")}: ${escapeHtml(project.lifecycle || "Initiation")}</span>
+        <span>${text("lifecycleStage")}: ${escapeHtml(lifecycleLabel(project.lifecycle))}</span>
         <span>${text("governanceCoverage")}: ${audit.done}/${audit.total}</span>
         <span>${text("openGovernanceRisk")}: ${audit.openGovernanceRisks.length}</span>
         <span>${text("gateApprovals")}: ${audit.approvedGates.length}/4</span>
@@ -792,7 +792,7 @@ function projectCardMarkup(project) {
             <div class="project-card-badges">
               <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
               <span class="badge ${priorityClass(project.priority)}">${priorityLabel(project.priority)}</span>
-              <span class="lifecycle-tag lifecycle-${lifecycle.toLowerCase()}">${lifecycle}</span>
+              <span class="lifecycle-tag lifecycle-${lifecycle.toLowerCase()}">${escapeHtml(lifecycleLabel(lifecycle))}</span>
             </div>
           </div>
           <div class="project-card-pct">
@@ -812,7 +812,7 @@ function projectCardMarkup(project) {
           <button class="proj-btn proj-primary" type="button" data-project-action="open" data-project="${escapeHtml(project.name)}">${text("openProject")}</button>
           <button class="proj-btn proj-add" type="button" data-project-action="add-task" data-project="${escapeHtml(project.name)}">${text("addTaskToProject")}</button>
           <button class="proj-btn proj-secondary" type="button" data-project-action="edit" data-project="${escapeHtml(project.name)}">${text("editProject")}</button>
-          ${nextGate ? `<button class="proj-btn proj-gate" type="button" data-project-action="approve-gate" data-gate="${escapeHtml(nextGate)}" data-project="${escapeHtml(project.name)}">✓ Gate: ${escapeHtml(nextGate)}</button>` : ""}
+          ${nextGate ? `<button class="proj-btn proj-gate" type="button" data-project-action="approve-gate" data-gate="${escapeHtml(nextGate)}" data-project="${escapeHtml(project.name)}">✓ ${text("gatesWord")}: ${escapeHtml(gateLabel(nextGate))}</button>` : ""}
           <button class="proj-btn proj-archive" type="button" data-project-action="archive" data-project="${escapeHtml(project.name)}">${text("archiveProject")}</button>
           <button class="proj-btn proj-danger" type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>
         </div>

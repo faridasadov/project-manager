@@ -31,3 +31,19 @@ function registerStatusLabel(status) {
   if (status === "Monitoring") return text("registerMonitoring");
   return text("registerOpen");
 }
+
+// IPMA həyat dövrü mərhələsi / gate adları — data ingiliscə saxlanılır, göstəriş tərcümə olunur.
+const LIFECYCLE_LABEL_KEYS = {
+  Initiation: "lcInitiation",
+  Planning: "lcPlanning",
+  Execution: "lcExecution",
+  Monitoring: "lcMonitoring",
+  Closing: "lcClosing",
+  Closed: "lcClosed"
+};
+function lifecycleLabel(stage) {
+  return LIFECYCLE_LABEL_KEYS[stage] ? text(LIFECYCLE_LABEL_KEYS[stage]) : (stage || text("lcInitiation"));
+}
+function gateLabel(gate) {
+  return LIFECYCLE_LABEL_KEYS[gate] ? text(LIFECYCLE_LABEL_KEYS[gate]) : (gate || "");
+}

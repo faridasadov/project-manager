@@ -72,6 +72,7 @@ function normalizeTask(task) {
   return {
     project: "",
     projectResource: "",
+    acceptanceCriteria: "",
     comments: [],
     attachments: [],
     parentTaskId: "",

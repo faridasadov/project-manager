@@ -165,6 +165,77 @@ body[data-accent="slate"] {
   --teal: #475569;
 }
 
+/* ── Auth restore splash — refresh-də "welcome" flash-ını əvəz edir ── */
+#authSplash { display: none; }
+html.auth-restoring #authSplash {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 9997;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+html.auth-restoring #loginScreen,
+html.auth-restoring #appShell,
+html.auth-restoring #platformConsole { display: none !important; }
+.auth-splash-inner { display: grid; justify-items: center; gap: 20px; }
+.auth-splash-logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: var(--teal);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 1px;
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--teal) 32%, transparent);
+}
+.auth-splash-spinner {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--teal) 22%, transparent);
+  border-top-color: var(--teal);
+  animation: authSpin 0.7s linear infinite;
+}
+@keyframes authSpin { to { transform: rotate(360deg); } }
+.auth-splash-text { margin: 0; color: var(--muted); font-weight: 600; font-size: 14px; }
+@media (prefers-reduced-motion: reduce) {
+  .auth-splash-spinner { animation-duration: 1.5s; }
+}
+
+/* ── #21 Layihə açılış detal banneri ── */
+.project-detail-bar {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-soft);
+}
+.pdb-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.pdb-title { display: grid; gap: 8px; }
+.pdb-title h2 { margin: 0; font-size: 1.3rem; }
+.pdb-badges { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.pdb-progress { display: grid; gap: 6px; justify-items: end; min-width: 140px; }
+.pdb-progress-num { font-size: 1.4rem; font-weight: 800; color: var(--teal); line-height: 1; }
+.pdb-progress-mini { width: 140px; }
+.pdb-desc { margin: 12px 0 0; color: var(--muted); font-size: 0.92rem; line-height: 1.5; max-width: 75ch; }
+.pdb-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px 20px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.pdb-field { display: grid; gap: 3px; }
+.pdb-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.pdb-value { font-size: 0.9rem; font-weight: 600; color: var(--ink); }
+
 body.logged-out #appShell {
   display: none;
 }
@@ -1449,6 +1520,21 @@ button {
   color: var(--ink);
   padding: 0 13px;
   cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease, transform 120ms ease;
+}
+button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ink) 18%, var(--line));
+}
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  button { transition: none; }
+  button:active:not(:disabled) { transform: none; }
 }
 
 .import-button {
@@ -1742,10 +1828,130 @@ h2 {
   justify-content: flex-end;
 }
 
-#languageSelect {
-  width: 92px;
+/* ── Header action buttons — vahid icon+label vokabulyarı (product register) ── */
+.header-btn {
   min-height: 38px;
-  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 120ms ease;
+}
+.header-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+.header-btn:hover {
+  background: var(--soft);
+  border-color: color-mix(in srgb, var(--ink) 20%, var(--line));
+}
+.header-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 32%, transparent);
+}
+.header-btn:active { transform: translateY(1px); }
+
+.header-btn.icon-only {
+  width: 38px;
+  padding: 0;
+  justify-content: center;
+  color: var(--muted);
+  border-radius: 8px;
+}
+.header-btn.icon-only:hover { color: var(--ink); }
+
+.header-actions .header-btn-primary {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #ffffff;
+}
+.header-actions .header-btn-primary svg { color: #ffffff; }
+.header-actions .header-btn-primary:hover {
+  background: color-mix(in srgb, var(--teal) 86%, #000);
+  border-color: color-mix(in srgb, var(--teal) 86%, #000);
+  color: #ffffff;
+}
+
+.header-btn-danger:hover {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 42%, var(--line));
+  background: color-mix(in srgb, var(--red) 8%, var(--panel));
+}
+
+.header-btn.notify-button { position: relative; }
+.header-btn.notify-button .notify-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-btn { transition: none; }
+  .header-btn:active { transform: none; }
+}
+
+#languageSelect,
+.header-lang {
+  width: 68px;
+  min-height: 38px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ── İstifadəçi rozetkası — statuslu təmiz pill ── */
+.header-actions .user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 14px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--teal) 6%, var(--panel));
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.88rem;
+  max-width: min(320px, 32vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.header-actions .user-badge::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 18%, transparent);
+  flex-shrink: 0;
+}
+
+/* ── Sürətli yaratma paneli (sifarişçi / istifadəçi / komanda) ── */
+.quick-create-title {
+  margin: 0 0 2px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--ink);
+}
+.quick-create-role {
+  display: grid;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.quick-create-role select {
+  min-height: 36px;
 }
 
 .layout {
@@ -2594,8 +2800,19 @@ form {
   font-size: 1.6rem;
   line-height: 1;
   font-style: normal;
-  display: block;
-  margin-bottom: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 4px;
+  border-radius: 11px;
+  color: var(--card-accent, var(--teal));
+  background: color-mix(in srgb, var(--card-accent, var(--teal)) 11%, var(--soft));
+}
+.panel-launch-grid button i svg {
+  width: 22px;
+  height: 22px;
 }
 
 .panel-launch-grid button strong {
@@ -2622,22 +2839,10 @@ form {
   margin-top: auto;
 }
 
-/* Kart rəng temalarıÉ */
-.panel-launch-grid [data-card-color="slate"]   { --card-accent: #64748b; }
-.panel-launch-grid [data-card-color="amber"]   { --card-accent: #d97706; }
-.panel-launch-grid [data-card-color="green"]   { --card-accent: #16a34a; }
-.panel-launch-grid [data-card-color="purple"]  { --card-accent: #9333ea; }
-.panel-launch-grid [data-card-color="orange"]  { --card-accent: #ea580c; }
-.panel-launch-grid [data-card-color="blue"]    { --card-accent: #2563eb; }
-.panel-launch-grid [data-card-color="indigo"]  { --card-accent: #4f46e5; }
-.panel-launch-grid [data-card-color="teal"]    { --card-accent: #0d9488; }
-.panel-launch-grid [data-card-color="cyan"]    { --card-accent: #0891b2; }
-.panel-launch-grid [data-card-color="emerald"] { --card-accent: #059669; }
-.panel-launch-grid [data-card-color="sky"]     { --card-accent: #0284c7; }
-.panel-launch-grid [data-card-color="red"]     { --card-accent: #dc2626; }
-.panel-launch-grid [data-card-color="violet"]  { --card-accent: #7c3aed; }
-.panel-launch-grid [data-card-color="rose"]    { --card-accent: #e11d48; }
-.panel-launch-grid [data-card-color="lime"]    { --card-accent: #65a30d; }
+/* Premium / restrained: bütün admin kartları vahid brend accent-i işlədir —
+   köhnə "svetofor" (15 saturasiyalı rəng) effekti aradan qaldırıldı. Accent
+   qlobal --teal token-ini izləyir, ona görə seçilmiş palitra ilə uyğun gəlir. */
+.panel-launch-grid [data-card-color] { --card-accent: var(--teal); }
 /* ────────────────────────────────────────────────────────────────────────── */
 
 /* Köhnə alias — mövcud JS kodları üçün */
@@ -5114,6 +5319,24 @@ button:disabled {
   font-weight: 900;
 }
 
+.gantt-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  align-items: center;
+  padding: 4px 2px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.gl-item { display: inline-flex; align-items: center; gap: 7px; }
+.gl-swatch { width: 16px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
+.gl-inprogress { background: linear-gradient(135deg, var(--teal), color-mix(in srgb, var(--teal) 60%, #8b5cf6)); }
+.gl-done { background: linear-gradient(135deg, var(--green), #22c55e); }
+.gl-plan { background: linear-gradient(135deg, var(--amber), #f59e0b); }
+.gl-today { width: 4px; height: 14px; border-radius: 2px; background: var(--red); box-shadow: 0 0 0 2px color-mix(in srgb, var(--red) 16%, transparent); }
+.gl-dep { width: 18px; height: 0; border-radius: 0; border-top: 2px dashed color-mix(in srgb, var(--ink) 42%, transparent); }
+
 .gantt-grid {
   min-width: max(100%, calc(230px + (var(--gantt-day-width) * var(--days))));
 }
@@ -5293,10 +5516,10 @@ button:disabled {
   align-self: start;
   height: 16px;
   margin-top: 4px;
-  border-top: 3px solid var(--red);
+  border-top: 2px dashed color-mix(in srgb, var(--ink) 42%, transparent);
   position: relative;
   z-index: 5;
-  opacity: 0.92;
+  opacity: 0.9;
 }
 
 .gantt-today-line {
@@ -5313,7 +5536,7 @@ button:disabled {
   position: absolute;
   right: -1px;
   top: -6px;
-  border-left: 9px solid var(--red);
+  border-left: 8px solid color-mix(in srgb, var(--ink) 48%, transparent);
   border-top: 5px solid transparent;
   border-bottom: 5px solid transparent;
 }
@@ -5729,14 +5952,15 @@ button:active,
 .primary,
 button.primary {
   border-color: transparent;
-  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  background: var(--teal);
   color: #ffffff;
-  box-shadow: 0 8px 22px rgba(99, 102, 241, 0.30);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--teal) 26%, transparent);
 }
 
 .primary:hover,
 button.primary:hover {
-  box-shadow: 0 12px 28px rgba(99, 102, 241, 0.40);
+  background: color-mix(in srgb, var(--teal) 88%, #000);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--teal) 34%, transparent);
   transform: translateY(-1px);
 }
 
@@ -5860,14 +6084,15 @@ textarea:focus {
 }
 
 .gantt-lane .bar {
-  background: linear-gradient(135deg, #6366f1, #7c3aed);
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.28);
+  background: linear-gradient(135deg, var(--teal), color-mix(in srgb, var(--teal) 60%, #8b5cf6));
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--teal) 28%, transparent);
 }
+.gantt-lane .bar:hover { filter: brightness(1.06); }
 
 .gantt-lane .project-bar {
   min-height: 30px;
   border-radius: 9px;
-  background: linear-gradient(135deg, #0f766e, #2563eb);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--teal) 90%, #000), var(--teal));
 }
 
 .gantt-lane .bar.done {

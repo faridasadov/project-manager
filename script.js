@@ -133,9 +133,16 @@ const quickManagerForm = document.querySelector("#quickManagerForm");
 const quickManagerFullNameInput = document.querySelector("#quickManagerFullName");
 const quickManagerUsernameInput = document.querySelector("#quickManagerUsername");
 const quickManagerPasswordInput = document.querySelector("#quickManagerPassword");
+const quickManagerRoleInput = document.querySelector("#quickManagerRole");
 const quickManagerSaveBtn = document.querySelector("#quickManagerSave");
 const quickManagerCancelBtn = document.querySelector("#quickManagerCancel");
 const projectTeamMembersInput = document.querySelector("#projectTeamMembers");
+const toggleQuickTeamBtn = document.querySelector("#toggleQuickTeam");
+const quickTeamForm = document.querySelector("#quickTeamForm");
+const quickTeamNameInput = document.querySelector("#quickTeamName");
+const quickTeamMembersInput = document.querySelector("#quickTeamMembers");
+const quickTeamSaveBtn = document.querySelector("#quickTeamSave");
+const quickTeamCancelBtn = document.querySelector("#quickTeamCancel");
 const addProjectTeamMembersButton = document.querySelector("#addProjectTeamMembers");
 const selectedProjectTeamMembers = document.querySelector("#selectedProjectTeamMembers");
 const projectStartDateInput = document.querySelector("#projectStartDate");
@@ -354,7 +361,13 @@ let selectedProjectTeamMemberIds = [];
 let activeProjectEditId = "";
 let selectedCalendarDay = "";
 let expandedGanttProject = "";
-let calendarRange = { start: "2026-05-01", end: "2026-05-31" };
+let calendarRange = (() => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+  return { start: `${y}-${m}-01`, end: `${y}-${m}-${lastDay}` };
+})();
 let backendSyncReady = false;
 let backendSaveTimer = 0;
 let authToken = localStorage.getItem(authTokenKey) || "";
@@ -1465,6 +1478,8 @@ function openProjectComposer() {
   if (!currentUser || !canManageTasks()) return;
   resetProjectForm();
   renderResourceControls();
+  // Yeni layihədə IPMA / governance tələbləri görünsün deyə bölməni aç
+  document.querySelector(".project-governance-details")?.setAttribute("open", "");
   raiseModal(projectComposerModal);
   projectComposerModal.classList.add("open");
   projectComposerModal.setAttribute("aria-hidden", "false");
@@ -2120,18 +2135,29 @@ function calendarDays() {
 }
 
 function calendarTasksForDate(date) {
-  return accessibleTasks().filter((task) => task.end === date);
+  return accessibleTasks().filter((task) => {
+    const start = task.start || task.end;
+    const end = task.end || task.start;
+    if (!start && !end) return false;
+    return date >= (start <= end ? start : end) && date <= (start <= end ? end : start);
+  });
 }
 
+const AZ_WEEKDAYS = ["Bazar", "B.e", "Ç.a", "Çərş", "C.a", "Cümə", "Şənbə"];
 function renderCalendarMarkup(compact = false) {
   return calendarDays().map((date) => {
     const dayTasks = calendarTasksForDate(date);
     const selected = date === selectedCalendarDay;
     const day = Number(date.slice(-2));
+    const dow = new Date(date + "T00:00:00").getDay();
+    const weekday = currentLanguage === "az"
+      ? AZ_WEEKDAYS[dow]
+      : new Date(date + "T00:00:00").toLocaleDateString(translations[currentLanguage].locale, { weekday: "short" });
+    const isWeekend = dow === 0 || dow === 6;
     return `
-      <button class="calendar-day ${compact ? "compact" : ""} ${selected ? "selected" : ""}" type="button" data-calendar-day="${date}">
+      <button class="calendar-day ${compact ? "compact" : ""} ${selected ? "selected" : ""} ${isWeekend ? "weekend" : ""}" type="button" data-calendar-day="${date}">
         <strong>${day}</strong>
-        <em>${date.slice(5, 7)}/${date.slice(0, 4)}</em>
+        <em>${escapeHtml(weekday)}</em>
         ${dayTasks.length ? `<span>${dayTasks.length} ${text("tasks")}</span><small>${escapeHtml(getProject(dayTasks[0]))}</small>` : `<span>${text("empty")}</span>`}
       </button>
     `;
@@ -2163,10 +2189,13 @@ function renderCalendar() {
   dashboardCalendar.innerHTML = renderCalendarMarkup(true);
   calendarBoard.innerHTML = renderCalendarMarkup(false);
   renderCalendarDetails();
-  // update month label in dashboard nav
+  // update month label in dashboard nav (az üçün açıq ay adı, "M07" yox)
   if (dashCalMonthLabel && calendarRange.start) {
     const d = new Date(calendarRange.start + "T00:00:00");
-    dashCalMonthLabel.textContent = d.toLocaleDateString("az-AZ", { month: "long", year: "numeric" });
+    const table = GANTT_MONTH_NAMES[currentLanguage];
+    dashCalMonthLabel.textContent = table
+      ? `${table.long[d.getMonth()]} ${d.getFullYear()}`
+      : d.toLocaleDateString(translations[currentLanguage].locale, { month: "long", year: "numeric" });
   }
 }
 
@@ -2257,13 +2286,14 @@ function openTaskDetail(id) {
   taskDetailBody.innerHTML = `
     <div class="task-detail-grid">
       <span><strong>Layihə</strong>${escapeHtml(task.project || "-")}</span>
-      <span><strong>Lifecycle</strong>${escapeHtml(project?.lifecycle || "Initiation")}</span>
+      <span><strong>${text("lifecycleStage")}</strong>${escapeHtml(lifecycleLabel(project?.lifecycle))}</span>
       <span><strong>Status</strong>${escapeHtml(statusLabel(task.status))}</span>
       <span><strong>Tarix</strong>${shortDate(task.start)} - ${shortDate(task.end)}</span>
       <span><strong>Plan/Fakt saat</strong>${plannedHoursForTask(task)} / ${actualHoursForTask(task)}</span>
       <span><strong>Progress</strong>${Number(task.progress) || 0}%</span>
     </div>
     ${renderTaskRelations(task)}
+    ${task.acceptanceCriteria ? `<div class="task-detail-section"><h3>${text("acceptanceCriteria")}</h3><p>${escapeHtml(task.acceptanceCriteria)}</p></div>` : ""}
     ${task.notes ? `<div class="task-detail-section"><h3>Qeyd</h3><p>${escapeHtml(task.notes)}</p></div>` : ""}
     <div class="task-detail-section"><h3>Comments</h3>${renderComments(task)}</div>
     <div class="task-detail-section"><h3>Time log</h3>${renderTimeEntries(task)}</div>
@@ -2335,6 +2365,25 @@ function setGanttZoom(width) {
   renderGantt();
 }
 
+// Bəzi mühitlərdə az-AZ üçün toLocaleDateString "M01/M02" qaytarır — açıq massiv işlədirik.
+const GANTT_MONTH_NAMES = {
+  az: {
+    long: ["Yanvar", "Fevral", "Mart", "Aprel", "May", "İyun", "İyul", "Avqust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"],
+    short: ["Yan", "Fev", "Mar", "Apr", "May", "İyn", "İyl", "Avq", "Sen", "Okt", "Noy", "Dek"]
+  }
+};
+function ganttMonthLabel(date, wide) {
+  const lang = currentLanguage;
+  const m = date.getMonth();
+  const y2 = String(date.getFullYear()).slice(-2);
+  const table = GANTT_MONTH_NAMES[lang];
+  if (table) return wide ? `${table.long[m]} ${y2}` : table.short[m];
+  const loc = translations[lang].locale;
+  return wide
+    ? date.toLocaleDateString(loc, { month: "long", year: "2-digit" })
+    : date.toLocaleDateString(loc, { month: "short" });
+}
+
 function ganttMonthHeaders(minStart, days) {
   const headers = [];
   let cursor = new Date(minStart);
@@ -2346,8 +2395,10 @@ function ganttMonthHeaders(minStart, days) {
     const startOffset = Math.max(0, daysBetween(isoDate(minStart), isoDate(monthStart)));
     const endOffset = Math.min(days - 1, daysBetween(isoDate(minStart), isoDate(monthEnd)));
     const span = Math.max(1, endOffset - startOffset + 1);
-    const label = cursor.toLocaleDateString(translations[currentLanguage].locale, { month: "short", year: "2-digit" });
-    headers.push(`<div class="gantt-month" style="grid-column:${startOffset + 1} / span ${span};">${escapeHtml(label)}</div>`);
+    // Sütun kifayət qədər genişdirsə tam ay adı, yoxsa qısaltma
+    const wide = span * ganttDayWidth >= 64;
+    const label = ganttMonthLabel(cursor, wide);
+    headers.push(`<div class="gantt-month" style="grid-column:${startOffset + 1} / span ${span};" title="${escapeHtml(ganttMonthLabel(cursor, true))}">${escapeHtml(label)}</div>`);
     cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
   }
   return headers.join("");
@@ -2613,9 +2664,68 @@ function renderReports() {
   reports.innerHTML = timeChartHtml + summary + reports.innerHTML;
 }
 
+// #21 — Layihə açılış detal banneri: task görünüşündə konkret layihə seçiləndə
+// layihə haqqında məlumat, istifadəçilər və vaxt göstərilir.
+function renderProjectDetailBar() {
+  const bar = document.getElementById("projectDetailBar");
+  if (!bar) return;
+  const name = projectFilter.value;
+  const inTaskView = ["list", "kanban", "calendar", "gantt"].includes(currentView);
+  const project = appState.projects.find((p) => p.name === name);
+  if (!inTaskView || !name || name === "Hamısı" || !project) {
+    bar.hidden = true;
+    bar.innerHTML = "";
+    return;
+  }
+  const tasks = accessibleTasks().filter((t) => t.project === project.name);
+  const done = tasks.filter((t) => t.status === "Bitib").length;
+  const active = tasks.length - done;
+  const pct = tasks.length ? Math.round((done / tasks.length) * 100) : (Number(project.progress) || 0);
+  const managers = projectManagers(project).map((u) => u.profile?.fullName || u.username);
+  const teamUsers = (project.teamMemberIds || [])
+    .map((val) => {
+      const id = String(val).includes(":") ? String(val).split(":")[1] : val;
+      const u = appState.users.find((x) => x.id === id);
+      return u ? (u.profile?.fullName || u.username) : null;
+    })
+    .filter(Boolean);
+  const customer = appState.customers.find((c) => c.id === project.customerId)?.name || "";
+  const audit = typeof projectGovernanceAudit === "function" ? projectGovernanceAudit(project) : null;
+  const field = (label, value) => value
+    ? `<div class="pdb-field"><span class="pdb-label">${label}</span><span class="pdb-value">${escapeHtml(String(value))}</span></div>`
+    : "";
+  bar.innerHTML = `
+    <div class="pdb-head">
+      <div class="pdb-title">
+        <h2>${escapeHtml(project.name)}</h2>
+        <div class="pdb-badges">
+          <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
+          <span class="badge ${priorityClass(project.priority)}">${priorityLabel(project.priority)}</span>
+          <span class="lifecycle-tag lifecycle-${(project.lifecycle || "Initiation").toLowerCase()}">${escapeHtml(lifecycleLabel(project.lifecycle))}</span>
+        </div>
+      </div>
+      <div class="pdb-progress">
+        <div class="pdb-progress-num">${pct}%</div>
+        <div class="progress-mini pdb-progress-mini"><span style="width:${pct}%"></span></div>
+      </div>
+    </div>
+    ${project.description ? `<p class="pdb-desc">${escapeHtml(project.description)}</p>` : ""}
+    <div class="pdb-fields">
+      ${field(text("customer"), customer)}
+      ${field(text("projectLeader"), managers.join(", "))}
+      ${field(text("projectTeamMembers"), teamUsers.length ? teamUsers.join(", ") : "—")}
+      ${field(`${text("start")} – ${text("end")}`, `${shortDate(project.start)} – ${shortDate(project.end)}`)}
+      ${field(text("tasks"), `${tasks.length} · ${active} / ${done} ✓`)}
+      ${audit ? field(text("ipmaScore"), `${audit.score}% · ${audit.approvedGates.length}/4 ${text("gatesWord")}`) : ""}
+    </div>
+  `;
+  bar.hidden = false;
+}
+
 function renderViews() {
   views.forEach((view) => view.classList.toggle("active-view", view.id === `${currentView}View`));
   document.body.dataset.view = currentView;
+  renderProjectDetailBar();
 }
 
 // ── Toast bildirişi (self-contained; DOM/CSS asılılığı yoxdur) ───────────────
@@ -3041,6 +3151,7 @@ function handleTaskAction(action, id) {
     plannedHoursInput.value = Number(task.plannedHours) || 0;
     actualHoursInput.value = Number(task.actualHours) || 0;
     notesInput.value = task.notes;
+    { const ac = document.querySelector("#taskAcceptance"); if (ac) ac.value = task.acceptanceCriteria || ""; }
     parentTaskInput.value = task.parentTaskId || "";
     taskDependenciesInput.innerHTML = taskOptionItems(task.dependencyIds || [], task.id);
     formTitle.textContent = text("editTask");
@@ -3141,9 +3252,10 @@ function editTask(id, options = {}) {
   plannedHoursInput.value = Number(task.plannedHours) || 0;
   actualHoursInput.value = Number(task.actualHours) || 0;
   notesInput.value = task.notes;
+  { const ac = document.querySelector("#taskAcceptance"); if (ac) ac.value = task.acceptanceCriteria || ""; }
   parentTaskInput.value = task.parentTaskId || "";
   taskDependenciesInput.innerHTML = taskOptionItems(task.dependencyIds || [], task.id);
-  if (taskExtraDetails && (task.parentTaskId || (task.dependencyIds || []).length || task.projectResource)) {
+  if (taskExtraDetails && (task.parentTaskId || (task.dependencyIds || []).length || task.projectResource || task.acceptanceCriteria)) {
     taskExtraDetails.open = true;
   }
   formTitle.textContent = readonly ? task.name : text("editTask");
@@ -4735,6 +4847,7 @@ form.addEventListener("submit", async (event) => {
     plannedHours: Number(plannedHoursInput.value) || 0,
     actualHours: Number(actualHoursInput.value) || 0,
     notes: notesInput.value.trim(),
+    acceptanceCriteria: (document.querySelector("#taskAcceptance")?.value || "").trim(),
     parentTaskId: parentTaskInput.value,
     dependencyIds: [...taskDependenciesInput.selectedOptions].map((option) => option.value).filter((id) => id !== taskId.value),
     timeEntries: existingTask?.timeEntries || [],
@@ -4774,6 +4887,46 @@ form.addEventListener("submit", async (event) => {
   closeTaskComposer();
   render();
 });
+
+async function submitTaskComment(event) {
+  const commentForm = event.target.closest(".comment-form");
+  if (!commentForm || !currentUser) return;
+  event.preventDefault();
+  if (!canContribute()) return;
+  const task = appState.tasks.find((item) => item.id === commentForm.dataset.taskId);
+  const input = commentForm.elements.comment;
+  const value = input.value.trim();
+  if (!task || !value) return;
+  const attachmentInput = commentForm.elements.attachments;
+  let attachments = [];
+  if (attachmentInput?.files?.length) {
+    try {
+      attachments = await readSelectedAttachments(attachmentInput);
+    } catch (error) {
+      alert(error.message || text("fileTooLarge"));
+      return;
+    }
+  }
+  task.comments = task.comments || [];
+  task.comments.push({
+    id: createId(),
+    author: currentUser.username,
+    text: value,
+    attachments,
+    createdAt: new Date().toISOString()
+  });
+  input.value = "";
+  if (attachmentInput) attachmentInput.value = "";
+  saveTasks();
+  if (supabaseSession?.access_token && supabaseWorkspaceId) {
+    await flushSupabaseSave().catch((error) => console.warn("Supabase save failed", error));
+  }
+  // Task detal modalı açıqdırsa, şərh siyahısını təzələ
+  if (taskDetailModal && taskDetailModal.getAttribute("aria-hidden") === "false" && typeof openTaskDetail === "function") {
+    openTaskDetail(task.id);
+  }
+  render();
+}
 
 [taskList, kanban].forEach((container) => {
   container.addEventListener("click", (event) => {
@@ -4835,39 +4988,7 @@ form.addEventListener("submit", async (event) => {
       return;
     }
 
-    const commentForm = event.target.closest(".comment-form");
-    if (!commentForm || !currentUser) return;
-    event.preventDefault();
-    if (!canContribute()) return;
-    const task = appState.tasks.find((item) => item.id === commentForm.dataset.taskId);
-    const input = commentForm.elements.comment;
-    const value = input.value.trim();
-    if (!task || !value) return;
-    const attachmentInput = commentForm.elements.attachments;
-    let attachments = [];
-    if (attachmentInput?.files?.length) {
-      try {
-        attachments = await readSelectedAttachments(attachmentInput);
-      } catch (error) {
-        alert(error.message || text("fileTooLarge"));
-        return;
-      }
-    }
-    task.comments = task.comments || [];
-    task.comments.push({
-      id: createId(),
-      author: currentUser.username,
-      text: value,
-      attachments,
-      createdAt: new Date().toISOString()
-    });
-    input.value = "";
-    if (attachmentInput) attachmentInput.value = "";
-    saveTasks();
-    if (supabaseSession?.access_token && supabaseWorkspaceId) {
-      await flushSupabaseSave().catch((error) => console.warn("Supabase save failed", error));
-    }
-    render();
+    await submitTaskComment(event);
   });
 
   container.addEventListener("change", (event) => {
@@ -6501,11 +6622,19 @@ quickManagerCancelBtn?.addEventListener("click", () => {
   quickManagerUsernameInput.value = "";
   quickManagerPasswordInput.value = "";
 });
+const QUICK_ROLE_POSITIONS = {
+  manager: "Project Manager",
+  contributor: "Contributor",
+  user: "İcraçı",
+  viewer: "İzləyici",
+  sponsor: "Sponsor"
+};
 quickManagerSaveBtn?.addEventListener("click", () => {
-  if (!isAdmin()) { alert("Manager yaratmaq üçün admin icazəsi tələb olunur."); return; }
+  if (!isAdmin()) { alert("İstifadəçi yaratmaq üçün admin icazəsi tələb olunur."); return; }
   const username = quickManagerUsernameInput.value.trim();
   const password = quickManagerPasswordInput.value;
   const fullName = quickManagerFullNameInput.value.trim();
+  const role = quickManagerRoleInput?.value || "manager";
   if (!username || !password) { quickManagerUsernameInput.focus(); return; }
   if (appState.users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
     alert(`"${username}" artıq mövcuddur`);
@@ -6513,23 +6642,69 @@ quickManagerSaveBtn?.addEventListener("click", () => {
   }
   const companyId = currentCompanyId();
   const companyName = appState.customers.find((c) => c.companyId === companyId)?.name || "";
-  const newManager = normalizeUser({
+  const newUser = normalizeUser({
     id: createId(),
     username,
     passwordHash: md5(password),
-    role: "manager",
-    managerId: "",
+    role,
+    managerId: role === "user" ? (currentUser?.role === "manager" ? currentUser.id : "") : "",
     companyId,
-    profile: { fullName: fullName || username, position: "Project Manager", company: companyName, email: "", fatherName: "", phone: "", address: "" }
+    profile: { fullName: fullName || username, position: QUICK_ROLE_POSITIONS[role] || "", company: companyName, email: "", fatherName: "", phone: "", address: "" }
   });
-  appState.users.push(newManager);
+  appState.users.push(newUser);
+  recordAudit("user.created", "user", newUser.id, `${username} (${role})`);
   saveResources();
   renderResourceControls();
-  projectLeaderInput.value = newManager.id;
+  // Manager → layihə rəhbəri seç; digər rollar → komanda seçiminə əlavə et
+  if (role === "manager") {
+    projectLeaderInput.value = newUser.id;
+  } else {
+    const val = resourceValue("user", newUser.id);
+    if (!selectedProjectTeamMemberIds.includes(val)) selectedProjectTeamMemberIds.push(val);
+    renderSelectedProjectTeamMembers();
+  }
   quickManagerForm.hidden = true;
   quickManagerFullNameInput.value = "";
   quickManagerUsernameInput.value = "";
   quickManagerPasswordInput.value = "";
+  if (quickManagerRoleInput) quickManagerRoleInput.value = "manager";
+});
+
+// ── #20 Layihə formasında sürətli komanda yaratma (sifarişçidəki kimi) ──
+toggleQuickTeamBtn?.addEventListener("click", () => {
+  quickTeamForm.hidden = !quickTeamForm.hidden;
+  if (!quickTeamForm.hidden) {
+    if (typeof teamMemberOptions === "function") quickTeamMembersInput.innerHTML = teamMemberOptions();
+    quickTeamNameInput.focus();
+  }
+});
+quickTeamCancelBtn?.addEventListener("click", () => {
+  quickTeamForm.hidden = true;
+  quickTeamNameInput.value = "";
+});
+quickTeamSaveBtn?.addEventListener("click", () => {
+  const name = quickTeamNameInput.value.trim();
+  if (!name) { quickTeamNameInput.focus(); return; }
+  const companyId = currentCompanyId();
+  if (appState.teams.some((t) => t.name.toLowerCase() === name.toLowerCase() && (!t.companyId || t.companyId === companyId))) {
+    alert(`"${name}" komandası artıq mövcuddur`);
+    return;
+  }
+  // seçilmiş üzvlər: quickTeamMembers dəyərləri "user:<id>" formatındadır
+  const memberValues = [...quickTeamMembersInput.selectedOptions].map((o) => o.value);
+  const memberIds = memberValues.map((v) => v.split(":")[1]).filter(Boolean);
+  const team = { id: createId(), companyId, name, memberIds };
+  appState.teams.push(team);
+  recordAudit("team.created", "team", team.id, name);
+  saveResources();
+  renderResourceControls();
+  // komanda üzvlərini layihə seçiminə əlavə et
+  memberValues.forEach((val) => {
+    if (!selectedProjectTeamMemberIds.includes(val)) selectedProjectTeamMemberIds.push(val);
+  });
+  renderSelectedProjectTeamMembers();
+  quickTeamForm.hidden = true;
+  quickTeamNameInput.value = "";
 });
 
 closeTaskDetailButton?.addEventListener("click", closeTaskDetail);
@@ -6543,6 +6718,17 @@ taskDetailModal?.addEventListener("click", (event) => {
     return;
   }
   if (event.target.closest("[data-task-detail-close]")) closeTaskDetail();
+});
+taskDetailModal?.addEventListener("submit", submitTaskComment);
+taskDetailModal?.addEventListener("change", (event) => {
+  const input = event.target.closest(".comment-attachment-input");
+  if (!input) return;
+  const formNode = input.closest(".comment-form");
+  const status = formNode?.querySelector(".file-picker-status");
+  if (!status) return;
+  status.textContent = input.files?.length
+    ? `${input.files.length} ${text("filesSelected")}`
+    : text("noFilesSelected");
 });
 
 projectCards.addEventListener("click", (event) => {
@@ -6831,13 +7017,18 @@ clearDone.addEventListener("click", () => {
 });
 
 async function bootApp() {
-  if (window.location?.hash?.includes("access_token=")) {
-    await handleSupabaseAuthRedirect();
-  } else if (isSupabasePrimaryMode() && loadSupabaseSession()?.access_token) {
-    // Always attempt session restore; resumeSupabaseSession handles token refresh internally
-    await resumeSupabaseSession().catch((error) => console.warn("Supabase resume failed", error));
+  try {
+    if (window.location?.hash?.includes("access_token=")) {
+      await handleSupabaseAuthRedirect();
+    } else if (isSupabasePrimaryMode() && loadSupabaseSession()?.access_token) {
+      // Always attempt session restore; resumeSupabaseSession handles token refresh internally
+      await resumeSupabaseSession().catch((error) => console.warn("Supabase resume failed", error));
+    }
+  } finally {
+    render();
+    // Auth həll olundu → splash-ı gizlət (welcome flash-ının qarşısı alınır)
+    document.documentElement.classList.remove("auth-restoring");
   }
-  render();
   syncBackendState();
   syncBackendSettings();
   // Auto-snapshot once per session after data is loaded

@@ -8,10 +8,15 @@
 
 function shortDate(value) {
   if (!value) return "-";
+  const d = parseDate(value);
+  // az üçün Intl "M10" qaytardığından açıq ay massivini işlədirik ("15 Okt")
+  if (currentLanguage === "az" && typeof GANTT_MONTH_NAMES !== "undefined" && GANTT_MONTH_NAMES.az) {
+    return `${d.getDate()} ${GANTT_MONTH_NAMES.az.short[d.getMonth()]}`;
+  }
   return new Intl.DateTimeFormat(translations[currentLanguage].locale, {
     day: "2-digit",
     month: "short"
-  }).format(parseDate(value));
+  }).format(d);
 }
 
 function formatDateTime(value) {

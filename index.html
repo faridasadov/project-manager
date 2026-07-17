@@ -7,13 +7,30 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20260716-hardening">
+  <link rel="stylesheet" href="styles.css?v=20260717-ui">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4f46e5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script>
+    // Refresh-də 2-3s "welcome" flash-ın qarşısını al: saxlanmış sessiya varsa
+    // ilk boyadan əvvəl splash göstər, bootApp sessiyanı bərpa edəndən sonra silinir.
+    try {
+      if (localStorage.getItem("project-manager-supabase-session-v1") ||
+          localStorage.getItem("project-manager-session-v1")) {
+        document.documentElement.classList.add("auth-restoring");
+      }
+    } catch (e) {}
+  </script>
   </head>
   <body>
+    <div id="authSplash" aria-hidden="true">
+      <div class="auth-splash-inner">
+        <div class="auth-splash-logo">PM</div>
+        <div class="auth-splash-spinner" aria-hidden="true"></div>
+        <p class="auth-splash-text">Yüklənir…</p>
+      </div>
+    </div>
     <section id="loginScreen" class="login-screen">
 
       <!-- ── Welcome / hero (full-screen) ──────────────────────────────────── -->
@@ -260,19 +277,29 @@
       </div>
       <div class="header-actions">
         <span id="currentUserBadge" class="user-badge"></span>
-        <select id="languageSelect" aria-label="Dil seçimi">
+        <select id="languageSelect" class="header-lang" aria-label="Dil seçimi">
           <option value="az">AZ</option>
           <option value="ru">RU</option>
           <option value="en">EN</option>
         </select>
-        <button id="helpTourBtn" type="button" class="help-tour-btn" title="Bələdçi tur" aria-label="Bələdçi tur">?</button>
-        <button id="logoutButton" type="button" data-i18n="logout">Çıxış</button>
-        <button id="notifyButton" class="notify-button" type="button">
-          <span data-i18n="notify">Bildirişlər</span>
+        <button id="helpTourBtn" type="button" class="header-btn icon-only help-tour-btn" title="Bələdçi tur" aria-label="Bələdçi tur">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </button>
+        <button id="notifyButton" class="header-btn icon-only notify-button" type="button" title="Bildirişlər" aria-label="Bildirişlər" data-i18n-aria="notify">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span id="notifyUnreadCount" class="notify-badge" hidden>0</span>
         </button>
-        <button id="openManagerPanel" type="button">Manager paneli</button>
-        <button id="openAdminPanel" type="button" data-i18n="adminPanel">Admin panel</button>
+        <button id="openManagerPanel" type="button" class="header-btn" title="Manager paneli">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          <span>Manager</span>
+        </button>
+        <button id="openAdminPanel" type="button" class="header-btn header-btn-primary" title="Admin panel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span data-i18n="adminPanel">Admin panel</span>
+        </button>
+        <button id="logoutButton" type="button" class="header-btn icon-only header-btn-danger" title="Çıxış" aria-label="Çıxış" data-i18n-aria="logout">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
       </div>
     </header>
 
@@ -419,6 +446,10 @@
             </summary>
             <div class="task-extra-body">
               <label>
+                <span data-i18n="acceptanceCriteria">Qəbul meyarı (IPMA)</span>
+                <textarea id="taskAcceptance" rows="2" placeholder="Bu task hansı şərtlə tamamlanmış sayılır?" data-i18n-placeholder="acceptanceCriteriaPlaceholder"></textarea>
+              </label>
+              <label>
                 <span data-i18n="projectResource">Layihə resursu</span>
                 <select id="projectResource">
                   <option value="" data-i18n="noResource">Resurs seçilməyib</option>
@@ -509,22 +540,48 @@
               <span data-i18n="projectLeader">Layihə rəhbəri</span>
               <select id="projectLeader"></select>
             </label>
-            <button id="toggleQuickManager" type="button" class="quick-add-btn" title="Yeni manager yarat">+</button>
+            <button id="toggleQuickManager" type="button" class="quick-add-btn" title="Yeni istifadəçi yarat">+</button>
           </div>
           <div id="quickManagerForm" class="quick-create-panel" hidden>
+            <p class="quick-create-title">Yeni istifadəçi yarat</p>
             <input id="quickManagerFullName" type="text" placeholder="Ad Soyad (isteğe bağlı)">
             <input id="quickManagerUsername" type="text" placeholder="İstifadəçi adı (tələb olunur)">
             <input id="quickManagerPassword" type="password" placeholder="Şifrə (tələb olunur)">
+            <label class="quick-create-role">
+              <span>Rol</span>
+              <select id="quickManagerRole">
+                <option value="manager">Manager (layihə rəhbəri)</option>
+                <option value="contributor">Contributor</option>
+                <option value="user">User (icraçı)</option>
+                <option value="viewer">Viewer (izləyici)</option>
+                <option value="sponsor">Sponsor</option>
+              </select>
+            </label>
             <div class="quick-create-actions">
-              <button id="quickManagerSave" type="button" class="primary small">Manager yarat</button>
+              <button id="quickManagerSave" type="button" class="primary small">İstifadəçi yarat</button>
               <button id="quickManagerCancel" type="button" class="small">Ləğv et</button>
             </div>
           </div>
 
-          <label>
-            <span data-i18n="projectTeamMembers">Komanda üzvləri</span>
-            <select id="projectTeamMembers" multiple size="3"></select>
-          </label>
+          <div class="field-with-quick-create">
+            <label>
+              <span data-i18n="projectTeamMembers">Komanda üzvləri</span>
+              <select id="projectTeamMembers" multiple size="3"></select>
+            </label>
+            <button id="toggleQuickTeam" type="button" class="quick-add-btn" title="Yeni komanda yarat">+</button>
+          </div>
+          <div id="quickTeamForm" class="quick-create-panel" hidden>
+            <p class="quick-create-title">Yeni komanda yarat</p>
+            <input id="quickTeamName" type="text" placeholder="Komanda adı (tələb olunur)">
+            <label class="quick-create-role">
+              <span>Üzvlər</span>
+              <select id="quickTeamMembers" multiple size="4"></select>
+            </label>
+            <div class="quick-create-actions">
+              <button id="quickTeamSave" type="button" class="primary small">Komanda yarat</button>
+              <button id="quickTeamCancel" type="button" class="small">Ləğv et</button>
+            </div>
+          </div>
           <button id="addProjectTeamMembers" type="button" data-i18n="addSelectedTeamMembers">Komandaya əlavə et</button>
           <div id="selectedProjectTeamMembers" class="selected-manager-list project-team-selection"></div>
 
@@ -579,12 +636,12 @@
             <label>
               <span data-i18n="lifecycleStage">Lifecycle mərhələsi</span>
               <select id="projectLifecycle">
-                <option value="Initiation">Initiation</option>
-                <option value="Planning">Planning</option>
-                <option value="Execution">Execution</option>
-                <option value="Monitoring">Monitoring</option>
-                <option value="Closing">Closing</option>
-                <option value="Closed">Closed</option>
+                <option value="Initiation" data-i18n="lcInitiation">Initiation</option>
+                <option value="Planning" data-i18n="lcPlanning">Planning</option>
+                <option value="Execution" data-i18n="lcExecution">Execution</option>
+                <option value="Monitoring" data-i18n="lcMonitoring">Monitoring</option>
+                <option value="Closing" data-i18n="lcClosing">Closing</option>
+                <option value="Closed" data-i18n="lcClosed">Closed</option>
               </select>
             </label>
             <label>
@@ -698,63 +755,63 @@
 
           <section class="panel-launch-grid" aria-label="Admin bölmələri">
             <button type="button" data-admin-open-section="settings" data-card-color="slate">
-              <i>⚙️</i><strong data-i18n="settings">Settings</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></i><strong data-i18n="settings">Settings</strong>
               <span>Görünüş · Dil</span>
             </button>
             <button type="button" data-admin-open-section="activity" class="admin-only" data-card-color="amber">
-              <i>📊</i><strong data-i18n="adminActivity">Admin aktivliyi</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></i><strong data-i18n="adminActivity">Admin aktivliyi</strong>
               <span data-i18n="auditLogs">Audit logs</span>
             </button>
             <button type="button" data-admin-open-section="backup" class="admin-only" data-card-color="green">
-              <i>💾</i><strong data-i18n="backupPanel">Backup / Restore</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></i><strong data-i18n="backupPanel">Backup / Restore</strong>
               <span id="backupSummary">-</span>
             </button>
             <button type="button" data-admin-open-section="companies" class="platform-only" data-card-color="purple">
-              <i>🏢</i><strong data-i18n="platformCompanies">Şirkətlər</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="9" y1="12" x2="9" y2="12.01"/><line x1="9" y1="15" x2="9" y2="15.01"/></svg></i><strong data-i18n="platformCompanies">Şirkətlər</strong>
               <span id="companyLaunchCount">0</span>
             </button>
             <button type="button" data-admin-open-section="date-requests" class="manager-only" data-card-color="orange">
-              <i>📅</i><strong data-i18n="dateChangeRequests">Tarix sorğuları</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></i><strong data-i18n="dateChangeRequests">Tarix sorğuları</strong>
               <span id="dateRequestLaunchCount">0</span>
             </button>
             <button type="button" data-admin-open-section="projects" class="admin-only" data-card-color="blue">
-              <i>📋</i><strong data-i18n="projects">Layihələr</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></i><strong data-i18n="projects">Layihələr</strong>
               <span id="projectLaunchCount">0</span>
             </button>
             <button type="button" data-admin-open-section="users" data-card-color="indigo">
-              <i>👥</i><strong data-i18n="manageUsers">İstifadəçilər</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></i><strong data-i18n="manageUsers">İstifadəçilər</strong>
               <span id="userLaunchCount">0</span>
             </button>
             <button type="button" data-admin-open-section="customers" data-card-color="teal">
-              <i>🤝</i><strong data-i18n="customers">Sifarişçilər</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></i><strong data-i18n="customers">Sifarişçilər</strong>
               <span id="customerLaunchCount">0</span>
             </button>
             <button type="button" data-admin-open-section="files" data-card-color="cyan">
-              <i>📁</i><strong data-i18n="fileManager">File manager</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></i><strong data-i18n="fileManager">File manager</strong>
               <span id="fileLaunchCount">0</span>
             </button>
             <button type="button" data-admin-open-section="teams" data-card-color="emerald">
-              <i>🏆</i><strong data-i18n="addTeam">Komandalar</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></i><strong data-i18n="addTeam">Komandalar</strong>
               <span id="teamLaunchCount">0</span>
             </button>
             <button type="button" data-admin-open-section="links" data-card-color="sky">
-              <i>🔗</i><strong data-i18n="addProjectLink">Layihə bağlantıları</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></i><strong data-i18n="addProjectLink">Layihə bağlantıları</strong>
               <span id="linkLaunchCount">0</span>
             </button>
             <button type="button" data-admin-open-section="registers" data-card-color="red">
-              <i>⚠️</i><strong data-i18n="projectRegisters">Registerlar</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></i><strong data-i18n="projectRegisters">Registerlar</strong>
               <span id="registerLaunchCount">0</span>
             </button>
             <button type="button" data-admin-open-section="roles" class="admin-only" data-card-color="violet">
-              <i>🔐</i><strong data-i18n="roleMatrix">Rol icazələri</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg></i><strong data-i18n="roleMatrix">Rol icazələri</strong>
               <span>Admin · Manager · User</span>
             </button>
             <button type="button" data-admin-open-section="trash" data-card-color="rose">
-              <i>🗑️</i><strong data-i18n="trash">Zibil qutusu</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></i><strong data-i18n="trash">Zibil qutusu</strong>
               <span id="trashLaunchCount">0</span>
             </button>
             <button type="button" data-admin-open-section="import" class="admin-only" data-card-color="lime">
-              <i>📥</i><strong data-i18n="projectImport">Proyekt import</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></i><strong data-i18n="projectImport">Proyekt import</strong>
               <span>CSV · XML · JSON</span>
             </button>
           </section>
@@ -1278,35 +1335,35 @@
           <!-- Launch grid -->
           <section class="panel-launch-grid" aria-label="Manager bölmələri">
             <button type="button" data-mgr-open-section="mgr-projects" data-card-color="blue">
-              <i>📋</i><strong>Layihələrim</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></i><strong>Layihələrim</strong>
               <span id="mgrProjectCount">0 layihə</span>
             </button>
             <button type="button" data-mgr-open-section="mgr-team" data-card-color="indigo">
-              <i>👥</i><strong>Komanda</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></i><strong>Komanda</strong>
               <span id="mgrTeamCount">0 üzv</span>
             </button>
             <button type="button" data-mgr-open-section="mgr-date-requests" data-card-color="orange">
-              <i>📅</i><strong>Tarix sorğuları</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></i><strong>Tarix sorğuları</strong>
               <span id="mgrDateRequestCount">0</span>
             </button>
             <button type="button" data-mgr-open-section="mgr-registers" data-card-color="red">
-              <i>⚠️</i><strong>Registerlar</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></i><strong>Registerlar</strong>
               <span id="mgrRegisterCount">0 aktiv</span>
             </button>
             <button type="button" data-mgr-open-section="mgr-teams" data-card-color="emerald">
-              <i>🏆</i><strong>Komandalar</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></i><strong>Komandalar</strong>
               <span id="mgrTeamGroupCount">0</span>
             </button>
             <button type="button" data-mgr-open-section="mgr-customers" data-card-color="teal">
-              <i>🤝</i><strong>Sifarişçilər</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></i><strong>Sifarişçilər</strong>
               <span id="mgrCustomerCount">0</span>
             </button>
             <button type="button" data-mgr-open-section="mgr-links" data-card-color="sky">
-              <i>🔗</i><strong>Layihə bağlantıları</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></i><strong>Layihə bağlantıları</strong>
               <span id="mgrLinkCount">0</span>
             </button>
             <button type="button" data-mgr-open-section="mgr-trash" data-card-color="rose">
-              <i>🗑️</i><strong>Zibil qutusu</strong>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></i><strong>Zibil qutusu</strong>
               <span id="mgrTrashCount">0</span>
             </button>
           </section>
@@ -1492,6 +1549,8 @@
 
           </div>
         </section>
+
+        <div id="projectDetailBar" class="project-detail-bar" hidden></div>
 
         <section class="summary" aria-label="Layihə statistikası">
           <article class="summary-card" data-summary-target="list" data-summary-status="Hamısı" tabindex="0" role="button">
@@ -1728,6 +1787,13 @@
                 <button id="ganttZoomIn" type="button" data-gantt-zoom="in">+</button>
               </div>
             </div>
+            <div class="gantt-legend" aria-label="İzah">
+              <span class="gl-item"><span class="gl-swatch gl-inprogress"></span>Davam edir</span>
+              <span class="gl-item"><span class="gl-swatch gl-done"></span>Bitib</span>
+              <span class="gl-item"><span class="gl-swatch gl-plan"></span>Plan</span>
+              <span class="gl-item"><span class="gl-swatch gl-today"></span>Bu gün</span>
+              <span class="gl-item"><span class="gl-swatch gl-dep"></span>Asılılıq</span>
+            </div>
             <div id="gantt" class="gantt" aria-live="polite"></div>
           </div>
         </section>
@@ -1750,14 +1816,14 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="supabase/supabase-config.js"></script>
   <script src="modules/state.js?v=20260713-company"></script>
-  <script src="modules/translations.js?v=20260713-company"></script>
+  <script src="modules/translations.js?v=20260717-ui"></script>
   <script src="modules/ids.js?v=20260713-company"></script>
   <script src="modules/crypto.js?v=20260713-company"></script>
   <script src="modules/seed-data.js?v=20260713-company"></script>
   <script src="modules/utils.js?v=20260713-company"></script>
-  <script src="modules/labels.js?v=20260713-company"></script>
-  <script src="modules/format.js?v=20260713-company"></script>
-  <script src="modules/normalize.js?v=20260713-company"></script>
+  <script src="modules/labels.js?v=20260717-ui"></script>
+  <script src="modules/format.js?v=20260717-ui"></script>
+  <script src="modules/normalize.js?v=20260717-ui"></script>
   <script src="modules/storage.js?v=20260713-company"></script>
   <script src="modules/tenant.js?v=20260713-company"></script>
   <script src="modules/scope.js?v=20260713-company"></script>
@@ -1770,9 +1836,9 @@
   <script src="modules/metrics.js?v=20260714-metrics"></script>
   <script src="modules/lookups.js?v=20260714-lookups"></script>
   <script src="modules/option-builders.js?v=20260715-options"></script>
-  <script src="modules/render-markup.js?v=20260716-design"></script>
+  <script src="modules/render-markup.js?v=20260717-ui"></script>
   <script src="modules/onboarding.js?v=20260716-tour"></script>
-  <script src="script.js?v=20260716-hardening"></script>
+  <script src="script.js?v=20260717-ui"></script>
   <!-- vanilla Motion (framer-motion sibling) — KPI count-up & spring mikro-interaksiyalar -->
   <script type="module">
     import { animate } from "./modules/vendor/motion.js?v=20260714-motion";

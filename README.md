@@ -21,7 +21,6 @@ These are Supabase auth accounts created for the test workspace:
 
 | Role | Email |
 |------|-------|
-| Admin | `adminklinika@project-manager.az` |
 | Manager | `manager@project-manager.az` |
 | User | `user@project-manager.az` |
 
@@ -162,7 +161,7 @@ FORCE=1 DB_HOST=127.0.0.1 DB_PORT=3306 DB_NAME=project_manager \
 ### App state backup (no MariaDB)
 
 ```bash
-BASE_URL=http://localhost PM_USER=adminklinika PM_PASSWORD=adminklinika123 npm run backup:json
+BASE_URL=http://localhost PM_USER=<your-admin-user> PM_PASSWORD=<your-admin-password> npm run backup:json
 ```
 
 ### In-app backup (Admin Panel)
