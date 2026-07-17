@@ -389,7 +389,7 @@ body.admin-role .manager-only {
   z-index: -1;
   overflow: hidden;
   background:
-    radial-gradient(120% 90% at 50% -10%, rgba(79,70,229,0.10) 0%, transparent 55%),
+    radial-gradient(120% 90% at 50% -10%, rgba(16,185,129,0.12) 0%, transparent 55%),
     linear-gradient(165deg, #0a0f1f 0%, #0b1226 48%, #070b16 100%);
 }
 
@@ -404,14 +404,14 @@ body.admin-role .manager-only {
 .aurora-1 {
   width: 46vw; height: 46vw;
   left: -8vw; top: 8vh;
-  background: radial-gradient(circle at 30% 30%, #6366f1, #4f46e5 45%, transparent 70%);
+  background: radial-gradient(circle at 30% 30%, #10b981, #136f63 45%, transparent 70%);
   animation: auroraDrift1 16s ease-in-out infinite;
 }
 
 .aurora-2 {
   width: 40vw; height: 40vw;
   right: -6vw; top: -6vh;
-  background: radial-gradient(circle at 60% 40%, #22d3ee, #0ea5e9 50%, transparent 72%);
+  background: radial-gradient(circle at 60% 40%, #2dd4bf, #14b8a6 50%, transparent 72%);
   opacity: 0.40;
   animation: auroraDrift2 20s ease-in-out infinite;
 }
@@ -419,7 +419,7 @@ body.admin-role .manager-only {
 .aurora-3 {
   width: 42vw; height: 42vw;
   right: 6vw; bottom: -14vh;
-  background: radial-gradient(circle at 50% 50%, #a855f7, #7c3aed 48%, transparent 70%);
+  background: radial-gradient(circle at 50% 50%, #34d399, #0d9488 48%, transparent 70%);
   opacity: 0.38;
   animation: auroraDrift3 24s ease-in-out infinite;
 }
@@ -470,9 +470,9 @@ body.admin-role .manager-only {
   width: 44px;
   height: 44px;
   border-radius: 13px;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 55%, #7c3aed 100%);
+  background: linear-gradient(135deg, #10b981 0%, #136f63 55%, #0d9488 100%);
   border: 1px solid rgba(255,255,255,0.22);
-  box-shadow: 0 8px 24px rgba(79,70,229,0.45), inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: 0 8px 24px rgba(19,111,99,0.45), inset 0 1px 0 rgba(255,255,255,0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -612,15 +612,15 @@ body.admin-role .manager-only {
 
 .hero-cta-btn:hover { transform: translateY(-2px); }
 .hero-cta-btn:active { transform: translateY(0); }
-.hero-cta-btn:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 3px; }
+.hero-cta-btn:focus-visible { outline: 2px solid #6ee7b7; outline-offset: 3px; }
 
 .hero-cta-primary {
   color: #fff;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 55%, #7c3aed 100%);
-  box-shadow: 0 10px 30px rgba(79,70,229,0.45), inset 0 1px 0 rgba(255,255,255,0.22);
+  background: linear-gradient(135deg, #10b981 0%, #136f63 55%, #0d9488 100%);
+  box-shadow: 0 10px 30px rgba(19,111,99,0.45), inset 0 1px 0 rgba(255,255,255,0.22);
 }
 
-.hero-cta-primary:hover { box-shadow: 0 16px 40px rgba(79,70,229,0.6), inset 0 1px 0 rgba(255,255,255,0.25); }
+.hero-cta-primary:hover { box-shadow: 0 16px 40px rgba(19,111,99,0.6), inset 0 1px 0 rgba(255,255,255,0.25); }
 
 .hero-cta-ghost {
   background: rgba(255,255,255,0.07);
@@ -662,7 +662,7 @@ body.admin-role .manager-only {
 .login-feature-list li:hover {
   transform: translateX(4px);
   background: rgba(255,255,255,0.08);
-  border-color: rgba(129,140,248,0.4);
+  border-color: rgba(52,211,153,0.4);
 }
 
 .lf-icon {
@@ -670,12 +670,12 @@ body.admin-role .manager-only {
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(99,102,241,0.28), rgba(124,58,237,0.20));
-  border: 1px solid rgba(129,140,248,0.32);
+  background: linear-gradient(135deg, rgba(19,111,99,0.32), rgba(16,185,129,0.20));
+  border: 1px solid rgba(52,211,153,0.34);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #c7d2fe;
+  color: #a7f3d0;
 }
 
 .lf-icon svg { width: 20px; height: 20px; }
@@ -769,10 +769,7 @@ body.admin-role .manager-only {
   display: block;
   font-size: 1.8rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #6ee7b7;
 }
 
 .login-stat span {
@@ -1627,7 +1624,7 @@ button:hover {
   display: grid;
   place-items: center;
   border-radius: 13px;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 55%, #7c3aed 100%);
+  background: linear-gradient(135deg, #10b981 0%, #136f63 55%, #0d9488 100%);
   box-shadow: 0 8px 22px rgba(79, 70, 229, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   color: #fff;
   font-weight: 900;
@@ -6028,8 +6025,12 @@ textarea:focus {
   inset: 0 auto 0 0;
   width: 4px;
   border-radius: 14px 0 0 14px;
-  background: linear-gradient(180deg, #6366f1, #7c3aed);
+  background: var(--teal);
 }
+/* Kanban kart zolağı statusa görə məna daşıyır (plan/davam/bitib) */
+.kanban-card.kb-plan::before { background: var(--amber); }
+.kanban-card.kb-active::before { background: var(--blue); }
+.kanban-card.kb-done::before { background: var(--green); }
 
 .task-card:hover,
 .kanban-card:hover,
@@ -6067,7 +6068,41 @@ textarea:focus {
 .kanban-column h2 {
   border-bottom: 1px solid var(--line);
   padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+/* ── Kanban status vizualı (sütun accenti + nöqtə + sayğac) ── */
+.kanban-column {
+  border-style: solid;
+  border-top-width: 3px;
+  border-top-color: color-mix(in srgb, var(--teal) 45%, var(--line));
+}
+.kb-col-plan { border-top-color: color-mix(in srgb, var(--amber) 60%, var(--line)); }
+.kb-col-active { border-top-color: color-mix(in srgb, var(--blue) 60%, var(--line)); }
+.kb-col-done { border-top-color: color-mix(in srgb, var(--green) 60%, var(--line)); }
+.kb-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; background: var(--teal); }
+.kb-col-plan .kb-dot { background: var(--amber); }
+.kb-col-active .kb-dot { background: var(--blue); }
+.kb-col-done .kb-dot { background: var(--green); }
+.kb-count {
+  margin-left: auto;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 8px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+.kb-col-plan .kb-count { background: color-mix(in srgb, var(--amber) 15%, var(--soft)); color: color-mix(in srgb, var(--amber) 80%, var(--ink)); }
+.kb-col-active .kb-count { background: color-mix(in srgb, var(--blue) 15%, var(--soft)); color: color-mix(in srgb, var(--blue) 80%, var(--ink)); }
+.kb-col-done .kb-count { background: color-mix(in srgb, var(--green) 15%, var(--soft)); color: color-mix(in srgb, var(--green) 80%, var(--ink)); }
+.kanban-card:hover { transform: translateY(-2px); }
 
 .calendar-day.selected {
   border-color: var(--teal);

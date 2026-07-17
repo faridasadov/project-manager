@@ -2315,7 +2315,7 @@ function renderKanban() {
     const cards = columnTasks.map((task) => {
       const blocked = isTaskBlocked(task);
       return `
-      <article class="kanban-card ${blocked ? "blocked-task" : ""}">
+      <article class="kanban-card kb-${statusClass(status)} ${blocked ? "blocked-task" : ""}">
         <strong>${escapeHtml(task.name)}</strong>
         <div class="task-meta">
           ${blocked ? `<span class="badge blocked">${text("blocked")}</span>` : ""}
@@ -2330,8 +2330,8 @@ function renderKanban() {
     }).join("");
 
     return `
-      <section class="kanban-column">
-        <h2>${statusLabel(status)} (${columnTasks.length})</h2>
+      <section class="kanban-column kb-col-${statusClass(status)}">
+        <h2><span class="kb-dot"></span>${statusLabel(status)}<span class="kb-count">${columnTasks.length}</span></h2>
         ${cards || `<div class="empty">${text("empty")}</div>`}
       </section>
     `;
