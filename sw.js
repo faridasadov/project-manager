@@ -1,7 +1,7 @@
 // Project Manager — Service Worker
 // Strategy: Cache-first for static assets, network-only for API calls
 
-const CACHE = "pm-v54";
+const CACHE = "pm-v55";
 const STATIC = [
   "./",
   "./index.html",

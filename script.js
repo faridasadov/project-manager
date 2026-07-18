@@ -585,6 +585,117 @@ function saveReportPrefs() {
   }
 }
 
+// ── Instant change alerts (mühüm task/layihə dəyişikliyi → anlıq mail) ──
+// Qərar: "Mühümlər anlıq, qalanı digest". Yalnız istifadəçidən asılı hissə
+// (məsul şəxs, deadline/status, komanda üzvlüyü) dəyişəndə mail göndərilir.
+function userDisplayName(id) {
+  const u = appState.users.find((user) => user.id === id);
+  return u?.profile?.fullName || u?.username || id;
+}
+
+function projectForTask(task) {
+  return appState.projects.find((p) => p.id === task.project || p.name === task.project) || null;
+}
+
+// Verilmiş id dəstindən changeAlerts aktiv + email olan istifadəçilərin mail-ları.
+function alertRecipientsFromIds(ids, excludeUserId) {
+  const set = new Set(ids);
+  set.delete(excludeUserId);
+  return appState.users
+    .filter((u) => set.has(u.id) && u.profile?.email && getReportPrefs(u).changeAlerts.enabled)
+    .map((u) => u.profile.email.trim())
+    .filter(Boolean);
+}
+
+function sendChangeAlert(recipients, subject, body) {
+  const list = [...new Set(recipients)].filter(Boolean);
+  if (!list.length) return;
+  callSupabaseFunction(supabaseConfig().mailFunction, {
+    type: "change-alert",
+    recipients: list.join(","),
+    subject,
+    text: body
+  }).catch((err) => console.warn("change-alert göndərilmədi", err));
+}
+
+// Task-ın istifadəçidən asılı mühüm dəyişiklikləri (məsul şəxs, deadline, status).
+function importantTaskChanges(oldTask, newTask) {
+  if (!oldTask) return null;
+  const changes = [];
+  if ((oldTask.owner || "") !== (newTask.owner || "")) {
+    changes.push(`Məsul şəxs: ${oldTask.owner || "—"} → ${newTask.owner || "—"}`);
+  }
+  if ((oldTask.end || "") !== (newTask.end || "")) {
+    changes.push(`Bitmə tarixi (deadline): ${oldTask.end || "—"} → ${newTask.end || "—"}`);
+  }
+  if ((oldTask.status || "") !== (newTask.status || "")) {
+    changes.push(`Status: ${statusLabel(oldTask.status) || "—"} → ${statusLabel(newTask.status) || "—"}`);
+  }
+  return changes.length ? changes : null;
+}
+
+function notifyTaskChange(oldTask, newTask) {
+  try {
+    const changes = importantTaskChanges(oldTask, newTask);
+    if (!changes) return;
+    const project = projectForTask(newTask);
+    if (!project) return;
+    const recipients = alertRecipientsFromIds(
+      [...(project.managerIds || []), ...(project.teamMemberIds || [])],
+      currentUser?.id
+    );
+    if (!recipients.length) return;
+    const body = [
+      `Tapşırıqda dəyişiklik: ${newTask.name}`,
+      `Layihə: ${project.name}`,
+      "",
+      ...changes.map((c) => `• ${c}`),
+      "",
+      `Dəyişikliyi edən: ${currentUser?.profile?.fullName || currentUser?.username || "—"}`,
+      "",
+      "— Project Manager"
+    ].join("\n");
+    sendChangeAlert(recipients, `🔔 Dəyişiklik: ${newTask.name}`, body);
+  } catch (err) {
+    console.warn("notifyTaskChange", err);
+  }
+}
+
+function notifyProjectChange(before, project) {
+  try {
+    if (!before || !project) return;
+    const oldTeam = new Set([...(before.managerIds || []), ...(before.teamMemberIds || [])]);
+    const newTeam = new Set([...(project.managerIds || []), ...(project.teamMemberIds || [])]);
+    const added = [...newTeam].filter((id) => !oldTeam.has(id));
+    const removed = [...oldTeam].filter((id) => !newTeam.has(id));
+    const changes = [];
+    if ((before.end || "") !== (project.end || "")) {
+      changes.push(`Bitmə tarixi (deadline): ${before.end || "—"} → ${project.end || "—"}`);
+    }
+    if ((before.status || "") !== (project.status || "")) {
+      changes.push(`Status: ${before.status || "—"} → ${project.status || "—"}`);
+    }
+    if (added.length) changes.push(`Komandaya əlavə olundu: ${added.map(userDisplayName).join(", ")}`);
+    if (removed.length) changes.push(`Komandadan çıxarıldı: ${removed.map(userDisplayName).join(", ")}`);
+    if (!changes.length) return;
+    // Cari üzvlər + çıxarılanlar (çıxarılan da xəbər tutsun), dəyişikliyi edən istisna.
+    const recipients = alertRecipientsFromIds([...newTeam, ...removed], currentUser?.id);
+    if (!recipients.length) return;
+    const body = [
+      `Layihədə dəyişiklik: ${project.name}`,
+      "",
+      ...changes.map((c) => `• ${c}`),
+      "",
+      `Dəyişikliyi edən: ${currentUser?.profile?.fullName || currentUser?.username || "—"}`,
+      "",
+      "— Project Manager"
+    ].join("\n");
+    sendChangeAlert(recipients, `🔔 Layihə dəyişikliyi: ${project.name}`, body);
+  } catch (err) {
+    console.warn("notifyProjectChange", err);
+  }
+}
+
 function changeLanguage(language) {
   currentLanguage = language;
   localStorage.setItem(languageKey, currentLanguage);
@@ -4960,6 +5071,7 @@ form.addEventListener("submit", async (event) => {
   if (supabaseSession?.access_token && supabaseWorkspaceId) {
     await flushSupabaseSave().catch((error) => console.warn("Supabase save failed", error));
   }
+  if (existingIndex >= 0) notifyTaskChange(existingTask, task);
   resetForm();
   closeTaskComposer();
   render();
@@ -6602,10 +6714,18 @@ projectForm.addEventListener("submit", (event) => {
     return;
   }
   const isNew = !activeProjectEditId;
+  const beforeProject = isNew ? null : appState.projects.find((p) => p.id === activeProjectEditId);
+  const beforeSnapshot = beforeProject ? {
+    managerIds: [...(beforeProject.managerIds || [])],
+    teamMemberIds: [...(beforeProject.teamMemberIds || [])],
+    end: beforeProject.end,
+    status: beforeProject.status
+  } : null;
   const project = isNew
     ? createProject(projectNameInput.value, payload)
     : updateProject(activeProjectEditId, payload);
   if (!project) return;
+  if (beforeSnapshot) notifyProjectChange(beforeSnapshot, project);
   const selectedTemplate = isNew ? projectTemplateInput?.value || "" : "";
   closeProjectComposer();
   if (selectedTemplate && canUseBackend() && authToken) {
