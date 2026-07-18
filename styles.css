@@ -7066,6 +7066,9 @@ button.primary:active,
   animation: pmChatRise 0.24s cubic-bezier(0.23, 1, 0.32, 1);
 }
 @keyframes pmChatRise { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+/* `hidden` atributu display:flex/grid tərəfindən üstələnməsin deyə açıq override */
+.pm-chat-panel[hidden] { display: none; }
+.pm-chat-badge[hidden] { display: none; }
 .pm-chat-head {
   display: flex;
   align-items: center;
