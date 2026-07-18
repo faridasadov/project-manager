@@ -3521,7 +3521,7 @@ function supabaseConfig() {
   return {
     url: String(cfg.url).replace(/\/+$/, ""),
     anonKey: cfg.anonKey,
-    redirectTo: cfg.redirectTo || "https://faridasadov.github.io/project-manager/",
+    redirectTo: cfg.redirectTo || (window.location.origin + window.location.pathname.replace(/[^/]*$/, "")),
     primaryBackend: cfg.primaryBackend !== false,
     storageBucket: cfg.storageBucket || "project-attachments",
     mailFunction: cfg.mailFunction || "project-manager-mail"
@@ -3669,7 +3669,7 @@ async function callSupabaseFunction(name, payload) {
 
 async function supabaseSignUp(email, password, metadata) {
   const cfg = supabaseConfig();
-  const redirect = encodeURIComponent(cfg?.redirectTo || "https://faridasadov.github.io/project-manager/");
+  const redirect = encodeURIComponent(cfg?.redirectTo || (window.location.origin + window.location.pathname.replace(/[^/]*$/, "")));
   return supabaseRequest(`/auth/v1/signup?redirect_to=${redirect}`, {
     method: "POST",
     auth: false,
