@@ -1,3 +1,5 @@
+import nodemailer from "npm:nodemailer@6.9.16";
+
 type MailPayload = {
   type?: string;
   recipients?: string;
@@ -31,10 +33,15 @@ Deno.serve(async (req) => {
     return Response.json({ error: "Method not allowed" }, { status: 405, headers: corsHeaders });
   }
 
-  const resendApiKey = Deno.env.get("RESEND_API_KEY") || "";
-  const mailFrom = Deno.env.get("MAIL_FROM") || "Project Manager <onboarding@resend.dev>";
-  if (!resendApiKey) {
-    return Response.json({ skipped: true, reason: "RESEND_API_KEY is not configured" }, { headers: corsHeaders });
+  // SMTP_USER/SMTP_PASS required; host+port configurable (default: Gmail).
+  // GMAIL_USER/GMAIL_APP_PASSWORD accepted as aliases for backward compat.
+  const smtpUser = Deno.env.get("SMTP_USER") || Deno.env.get("GMAIL_USER") || "";
+  const smtpPass = Deno.env.get("SMTP_PASS") || Deno.env.get("GMAIL_APP_PASSWORD") || "";
+  const smtpHost = Deno.env.get("SMTP_HOST") || "smtp.gmail.com";
+  const smtpPort = Number(Deno.env.get("SMTP_PORT") || "465");
+  const mailFrom = Deno.env.get("MAIL_FROM") || (smtpUser ? `Project Manager <${smtpUser}>` : "");
+  if (!smtpUser || !smtpPass) {
+    return Response.json({ skipped: true, reason: "SMTP_USER or SMTP_PASS is not configured" }, { headers: corsHeaders });
   }
 
   const payload = await req.json() as MailPayload;
@@ -43,24 +50,22 @@ Deno.serve(async (req) => {
     return Response.json({ skipped: true, reason: "No recipients configured" }, { headers: corsHeaders });
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${resendApiKey}`,
-      "content-type": "application/json"
-    },
-    body: JSON.stringify({
-      from: mailFrom,
-      to,
-      subject: payload.subject || "Project Manager",
-      text: renderText(payload)
-    })
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465, // implicit TLS for 465, STARTTLS otherwise
+    auth: { user: smtpUser, pass: smtpPass }
   });
 
-  const body = await response.text();
-  if (!response.ok) {
-    return Response.json({ error: body || "Mail provider failed" }, { status: 502, headers: corsHeaders });
+  try {
+    const info = await transporter.sendMail({
+      from: mailFrom,
+      to: to.join(", "),
+      subject: payload.subject || "Project Manager",
+      text: renderText(payload)
+    });
+    return Response.json({ ok: true, provider: "smtp", messageId: info.messageId, recipients: to }, { headers: corsHeaders });
+  } catch (err) {
+    return Response.json({ error: String((err && err.message) || err) || "SMTP send failed" }, { status: 502, headers: corsHeaders });
   }
-
-  return Response.json({ ok: true, provider: "resend", result: body ? JSON.parse(body) : null }, { headers: corsHeaders });
 });
