@@ -1,0 +1,13 @@
+# Cloudflare Workers static-assets bundle-dan kənarda saxlanılan fayllar.
+# ⚠ supabase/supabase-config.js SAXLANILIR (frontend-ə lazımdır) — yalnız server tərəf çıxarılır.
+.git
+node_modules
+server.js
+supabase/functions
+supabase/migrations
+*.md
+package.json
+package-lock.json
+wrangler.toml
+.assetsignore
+.playwright-mcp

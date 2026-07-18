@@ -1,0 +1,6 @@
+name = "projectmanagerfa"
+compatibility_date = "2026-07-18"
+
+# Static-asset (script-siz) Worker — bütün frontend faylları root-dan servis olunur.
+[assets]
+directory = "./"
