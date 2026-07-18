@@ -1,4 +1,5 @@
-name = "projectmanagerfa"
+name = "pm"
+account_id = "98afb14c687e142c181d617e5e930b96"
 compatibility_date = "2026-07-18"
 
 # Static-asset (script-siz) Worker — bütün frontend faylları root-dan servis olunur.
