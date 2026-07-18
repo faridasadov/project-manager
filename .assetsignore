@@ -2,12 +2,18 @@
 # ⚠ supabase/supabase-config.js SAXLANILIR (frontend-ə lazımdır) — yalnız server tərəf çıxarılır.
 .git
 node_modules
+.wrangler
+.playwright-mcp
 server.js
 supabase/functions
 supabase/migrations
+supabase/archive
+scripts
+uploads
 *.md
+*.sh
+*.mjs
 package.json
 package-lock.json
 wrangler.toml
 .assetsignore
-.playwright-mcp
