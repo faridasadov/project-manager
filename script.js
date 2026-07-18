@@ -2863,6 +2863,7 @@ function renderProjectDetailBar() {
   if (!inTaskView || !name || name === "Hamısı" || !project) {
     bar.hidden = true;
     bar.innerHTML = "";
+    if (typeof closeProjectChat === "function") closeProjectChat();
     return;
   }
   const tasks = accessibleTasks().filter((t) => t.project === project.name);
@@ -2908,6 +2909,7 @@ function renderProjectDetailBar() {
     </div>
   `;
   bar.hidden = false;
+  if (typeof openProjectChat === "function") openProjectChat(project);
 }
 
 function renderViews() {
