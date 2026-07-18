@@ -140,6 +140,10 @@ function toggleChatPanel(force) {
   panel.hidden = !pmChat.open;
   fab?.classList.toggle("open", pmChat.open);
   if (pmChat.open) {
+    // Animasiyani her acilisda yeniden oynat (reflow ile)
+    panel.style.animation = "none";
+    void panel.offsetWidth;
+    panel.style.animation = "";
     pmChat.unread = 0;
     updateBadge();
     if (pmChat.channelKey) refreshMessages();

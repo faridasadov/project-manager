@@ -7029,8 +7029,11 @@ button.primary:active,
   z-index: 1200;
   transition: transform 0.22s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.22s;
 }
-.pm-chat-fab:hover { transform: translateY(-2px) scale(1.04); }
-.pm-chat-fab.open { transform: scale(0.92); opacity: 0.95; }
+.pm-chat-fab:hover { transform: translateY(-3px) scale(1.06); box-shadow: 0 14px 32px rgba(0, 0, 0, 0.32); }
+.pm-chat-fab:active { transform: scale(0.94); }
+.pm-chat-fab.open { transform: scale(0.9) rotate(-6deg); }
+.pm-chat-fab svg { display: block; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.pm-chat-fab.open svg { transform: rotate(12deg); }
 .pm-chat-badge {
   position: absolute;
   top: -3px;
@@ -7063,9 +7066,13 @@ button.primary:active,
   flex-direction: column;
   overflow: hidden;
   z-index: 1200;
-  animation: pmChatRise 0.24s cubic-bezier(0.23, 1, 0.32, 1);
+  transform-origin: bottom right;
+  animation: pmChatRise 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-@keyframes pmChatRise { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes pmChatRise {
+  from { opacity: 0; transform: translateY(24px) scale(0.82); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 /* `hidden` atributu display:flex/grid tərəfindən üstələnməsin deyə açıq override */
 .pm-chat-panel[hidden] { display: none; }
 .pm-chat-badge[hidden] { display: none; }
@@ -7080,8 +7087,24 @@ button.primary:active,
 .pm-chat-head-main { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .pm-chat-head strong { font-size: 0.98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pm-chat-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.28); flex: none; }
-.pm-chat-x { border: none; background: rgba(255, 255, 255, 0.16); color: #fff; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: grid; place-items: center; flex: none; }
-.pm-chat-x:hover { background: rgba(255, 255, 255, 0.28); }
+.pm-chat-x {
+  border: none;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex: none;
+  padding: 0;
+  line-height: 0;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
+}
+.pm-chat-x svg { display: block; }
+.pm-chat-x:hover { background: rgba(255, 255, 255, 0.34); transform: rotate(90deg) scale(1.08); }
+.pm-chat-x:active { transform: rotate(90deg) scale(0.92); }
 .pm-chat-channel { padding: 10px 12px; border-bottom: 1px solid var(--border, #e2e8f0); }
 .pm-chat-channel select {
   width: 100%;
