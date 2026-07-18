@@ -506,6 +506,83 @@ function syncSettingsForm() {
   ldapBindPasswordInput.value = "";
   ldapGroupRoleMapInput.value = appSettings.ldapGroupRoleMap || "";
   capacityHoursInput.value = Number(appSettings.capacityHours) || 40;
+  syncReportPrefsForm();
+}
+
+// ── Per-user report/notification preferences (stored in user.profile.reportPrefs) ──
+const DEFAULT_REPORT_PREFS = {
+  timezone: "Asia/Baku",
+  morning: { enabled: false, hour: 9 },
+  evening: { enabled: false, hour: 18 },
+  deadlineAlerts: { enabled: false, daysBefore: [3, 1] },
+  changeAlerts: { enabled: false }
+};
+
+function getReportPrefs(user) {
+  const p = user?.profile?.reportPrefs || {};
+  return {
+    timezone: p.timezone || DEFAULT_REPORT_PREFS.timezone,
+    morning: { enabled: Boolean(p.morning?.enabled), hour: Number(p.morning?.hour ?? 9) },
+    evening: { enabled: Boolean(p.evening?.enabled), hour: Number(p.evening?.hour ?? 18) },
+    deadlineAlerts: { enabled: Boolean(p.deadlineAlerts?.enabled), daysBefore: Array.isArray(p.deadlineAlerts?.daysBefore) ? p.deadlineAlerts.daysBefore : [3, 1] },
+    changeAlerts: { enabled: Boolean(p.changeAlerts?.enabled) }
+  };
+}
+
+function fillHourOptions(select, selected) {
+  if (!select || select.dataset.filled) return;
+  select.innerHTML = "";
+  for (let h = 0; h < 24; h++) {
+    const opt = document.createElement("option");
+    opt.value = String(h);
+    opt.textContent = `${String(h).padStart(2, "0")}:00`;
+    select.appendChild(opt);
+  }
+  select.dataset.filled = "1";
+  if (selected != null) select.value = String(selected);
+}
+
+function syncReportPrefsForm() {
+  const emailInput = document.querySelector("#reportEmail");
+  if (!emailInput || !currentUser) return;
+  const prefs = getReportPrefs(currentUser);
+  emailInput.value = currentUser.profile?.email || "";
+  fillHourOptions(document.querySelector("#reportMorningHour"), prefs.morning.hour);
+  fillHourOptions(document.querySelector("#reportEveningHour"), prefs.evening.hour);
+  document.querySelector("#reportMorningHour").value = String(prefs.morning.hour);
+  document.querySelector("#reportEveningHour").value = String(prefs.evening.hour);
+  document.querySelector("#reportMorningEnabled").checked = prefs.morning.enabled;
+  document.querySelector("#reportEveningEnabled").checked = prefs.evening.enabled;
+  document.querySelector("#reportDeadlineEnabled").checked = prefs.deadlineAlerts.enabled;
+  document.querySelector("#reportChangeEnabled").checked = prefs.changeAlerts.enabled;
+}
+
+function saveReportPrefs() {
+  if (!currentUser) return;
+  const emailInput = document.querySelector("#reportEmail");
+  const status = document.querySelector("#reportPrefsStatus");
+  const email = emailInput.value.trim();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (status) status.textContent = text("reportEmailInvalid");
+    return;
+  }
+  const prev = getReportPrefs(currentUser);
+  currentUser.profile = {
+    ...(currentUser.profile || {}),
+    email,
+    reportPrefs: {
+      timezone: prev.timezone || "Asia/Baku",
+      morning: { enabled: document.querySelector("#reportMorningEnabled").checked, hour: Number(document.querySelector("#reportMorningHour").value) },
+      evening: { enabled: document.querySelector("#reportEveningEnabled").checked, hour: Number(document.querySelector("#reportEveningHour").value) },
+      deadlineAlerts: { enabled: document.querySelector("#reportDeadlineEnabled").checked, daysBefore: prev.deadlineAlerts.daysBefore },
+      changeAlerts: { enabled: document.querySelector("#reportChangeEnabled").checked }
+    }
+  };
+  saveUsers();
+  if (status) {
+    status.textContent = text("reportPrefsSaved");
+    setTimeout(() => { if (status) status.textContent = ""; }, 3000);
+  }
 }
 
 function changeLanguage(language) {
@@ -5952,6 +6029,8 @@ testMailButton.addEventListener("click", async () => {
   }
 });
 
+document.querySelector("#saveReportPrefs")?.addEventListener("click", saveReportPrefs);
+
 document.querySelector("#testTelegram")?.addEventListener("click", async () => {
   if (!canManageMailSettings()) return;
   const token = telegramBotTokenInput?.value.trim() || appSettings.telegramBotToken || "";
@@ -6400,6 +6479,7 @@ userList.addEventListener("submit", (event) => {
     user.role = profileForm.elements.role.value;
   }
   user.profile = {
+    ...(user.profile || {}),
     fullName: profileForm.elements.fullName.value.trim(),
     fatherName: profileForm.elements.fatherName.value.trim(),
     email: profileForm.elements.email.value.trim(),

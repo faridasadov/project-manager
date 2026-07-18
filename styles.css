@@ -3190,6 +3190,25 @@ form {
   background: var(--panel);
 }
 
+.settings-card label.report-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.settings-card label.report-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: var(--teal);
+  cursor: pointer;
+}
+.settings-card label.report-toggle span {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .settings-card h3 {
   margin: 0;
   padding-bottom: 12px;

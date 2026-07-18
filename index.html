@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20260717-btn">
+  <link rel="stylesheet" href="styles.css?v=20260718-report">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#136f63">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -836,6 +836,40 @@
                 <h3>Snapshotlar</h3>
                 <p class="field-hint" style="margin:0 0 10px">Hər sessiyada avtomatik 5 snapshot saxlanılır. Bərpa etmək üçün seçin.</p>
                 <div id="snapshotList" class="snapshot-list"><em style="color:var(--muted);font-size:.83rem">Snapshot yoxdur</em></div>
+              </div>
+              <div class="settings-card">
+                <h3 data-i18n="reportSettings">Bildiriş və Hesabatlar</h3>
+                <p class="field-hint" style="margin:0 0 10px" data-i18n="reportSettingsHint">Öz e-poçtunu və hesabat vaxtlarını təyin et. Hesabatlar yalnız sənə gəlir.</p>
+                <label>
+                  <span data-i18n="reportEmail">E-poçt (hesabat üçün)</span>
+                  <input id="reportEmail" type="email" placeholder="ad@example.com" autocomplete="email">
+                </label>
+                <label class="report-toggle">
+                  <input id="reportMorningEnabled" type="checkbox">
+                  <span data-i18n="reportMorning">🌅 Səhər hesabatı</span>
+                </label>
+                <label>
+                  <span data-i18n="reportMorningTime">Səhər saatı</span>
+                  <select id="reportMorningHour"></select>
+                </label>
+                <label class="report-toggle">
+                  <input id="reportEveningEnabled" type="checkbox">
+                  <span data-i18n="reportEvening">🌙 Gün sonu hesabatı</span>
+                </label>
+                <label>
+                  <span data-i18n="reportEveningTime">Axşam saatı</span>
+                  <select id="reportEveningHour"></select>
+                </label>
+                <label class="report-toggle">
+                  <input id="reportDeadlineEnabled" type="checkbox">
+                  <span data-i18n="reportDeadline">⏰ Deadline xəbərdarlıqları</span>
+                </label>
+                <label class="report-toggle">
+                  <input id="reportChangeEnabled" type="checkbox">
+                  <span data-i18n="reportChange">🔔 Anlıq dəyişiklik bildirişləri</span>
+                </label>
+                <button id="saveReportPrefs" type="button" class="primary" style="margin-top:10px" data-i18n="saveReportPrefs">Yadda saxla</button>
+                <p id="reportPrefsStatus" class="settings-status"></p>
               </div>
               <div class="settings-card">
                 <h3 data-i18n="appearanceSettings">Görünüş</h3>
@@ -1816,7 +1850,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="supabase/supabase-config.js"></script>
   <script src="modules/state.js?v=20260713-company"></script>
-  <script src="modules/translations.js?v=20260717-ui"></script>
+  <script src="modules/translations.js?v=20260718-report">
   <script src="modules/ids.js?v=20260713-company"></script>
   <script src="modules/crypto.js?v=20260713-company"></script>
   <script src="modules/seed-data.js?v=20260713-company"></script>
@@ -1838,7 +1872,7 @@
   <script src="modules/option-builders.js?v=20260715-options"></script>
   <script src="modules/render-markup.js?v=20260717-btn"></script>
   <script src="modules/onboarding.js?v=20260716-tour"></script>
-  <script src="script.js?v=20260717-green"></script>
+  <script src="script.js?v=20260718-report">
   <!-- vanilla Motion (framer-motion sibling) — KPI count-up & spring mikro-interaksiyalar -->
   <script type="module">
     import { animate } from "./modules/vendor/motion.js?v=20260714-motion";
