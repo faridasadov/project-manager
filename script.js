@@ -1735,6 +1735,21 @@ function replayAppEntrance() {
   });
 }
 
+// Giriş/yüklənmə splash-ı (kinetic loader) — refresh-də olduğu kimi login-dən
+// sonra da göstərilir. Ən azı 700ms görünür ki, "loading" hissi tam olsun,
+// sonra app giriş animasiyası (replayAppEntrance) ilə açılır.
+function beginAuthSplash() {
+  document.documentElement.classList.add("auth-restoring");
+  const shownAt = Date.now();
+  return () => {
+    const wait = Math.max(0, 700 - (Date.now() - shownAt));
+    setTimeout(() => {
+      document.documentElement.classList.remove("auth-restoring");
+      replayAppEntrance();
+    }, wait);
+  };
+}
+
 function syncAuthView() {
   const wasLoggedIn = document.body.classList.contains("logged-in");
   document.body.classList.toggle("logged-in", Boolean(currentUser));
@@ -5687,6 +5702,7 @@ loginForm.addEventListener("submit", async (event) => {
   // Online rejimdə həm email, həm də istifadəçi adı ilə giriş dəstəklənir
   // (username → email çevrilməsi login-by-username edge function ilə).
   if (canUseSupabase()) {
+    const endSplash = beginAuthSplash();
     try {
       const user = await supabaseLoginWorkspace(username, password);
       if (user) {
@@ -5695,9 +5711,12 @@ loginForm.addEventListener("submit", async (event) => {
         appSettings = loadSettings();
         ensureTenantSeedData();
         render();
+        endSplash();
         return;
       }
+      document.documentElement.classList.remove("auth-restoring");
     } catch (error) {
+      document.documentElement.classList.remove("auth-restoring");
       loginError.textContent = error.message;
       return;
     }
@@ -5729,7 +5748,9 @@ loginForm.addEventListener("submit", async (event) => {
   ensureTenantSeedData();
   loginError.textContent = "";
   loginPassword.value = "";
+  const endSplashLocal = beginAuthSplash();
   render();
+  endSplashLocal();
   if (localUser && canUseBackend()) {
     backendLogin(username, password).then(() => {
       syncBackendState();

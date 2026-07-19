@@ -193,18 +193,39 @@ html.auth-restoring #platformConsole { display: none !important; }
   letter-spacing: 1px;
   box-shadow: 0 14px 34px color-mix(in srgb, var(--teal) 32%, transparent);
 }
+/* Kinetic loader (jenning "Kinetic CSS loaders" → loader--3): fırlanan halqa +
+   ətrafında orbitləyən iki nöqtə. Köhnə sadə fırlanan çevrəni əvəz edir. */
 .auth-splash-spinner {
-  width: 30px;
-  height: 30px;
+  --sz: 36px;
+  --dot: 5px;
+  position: relative;
+  width: var(--sz);
+  height: var(--sz);
+  border: 1px solid color-mix(in srgb, var(--teal) 28%, transparent);
   border-radius: 50%;
-  border: 3px solid color-mix(in srgb, var(--teal) 22%, transparent);
-  border-top-color: var(--teal);
-  animation: authSpin 0.7s linear infinite;
+  color: var(--teal);
+  animation: authLoaderRing 3.6s linear infinite;
 }
-@keyframes authSpin { to { transform: rotate(360deg); } }
+.auth-splash-spinner::before,
+.auth-splash-spinner::after {
+  content: "";
+  position: absolute;
+  width: var(--dot);
+  height: var(--dot);
+  background: currentColor;
+  border-radius: 50%;
+  top: calc(var(--dot) / -2);
+  left: calc(50% - var(--dot) / 2);
+  transform-origin: center calc(var(--sz) / 2 + var(--dot) / 2 - 1px);
+  animation: authLoaderRing 1.2s cubic-bezier(0.27, 0.08, 0.26, 0.7) infinite;
+}
+.auth-splash-spinner::after { animation-delay: -0.4s; }
+@keyframes authLoaderRing { to { transform: rotate(1turn); } }
 .auth-splash-text { margin: 0; color: var(--muted); font-weight: 600; font-size: 14px; }
 @media (prefers-reduced-motion: reduce) {
-  .auth-splash-spinner { animation-duration: 1.5s; }
+  .auth-splash-spinner { animation-duration: 3s; }
+  .auth-splash-spinner::before,
+  .auth-splash-spinner::after { animation-duration: 2.4s; }
 }
 
 /* ── #21 Layihə açılış detal banneri ── */
