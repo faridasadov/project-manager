@@ -4,6 +4,7 @@
 node_modules
 .wrangler
 .playwright-mcp
+.impeccable
 server.js
 supabase/functions
 supabase/migrations

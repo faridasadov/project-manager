@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20260719-chat4">
+  <link rel="stylesheet" href="styles.css?v=20260719-team">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#136f63">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1180,6 +1180,47 @@
                 </div>
                 <button id="addUser" class="primary" type="button" data-i18n="addUser">İstifadəçi əlavə et</button>
               </div>
+
+              <div id="teamInviteCard" class="new-user-card team-supabase" hidden>
+                <p class="new-user-card-title" data-i18n="inviteMember">Komanda üzvü dəvət et</p>
+                <p class="team-supabase-hint" data-i18n="inviteHint">Real hesab dəvəti — istifadəçi linkdən öz parolunu qurur və girə bilir.</p>
+                <div class="new-user-fields">
+                  <label>
+                    <span data-i18n="email">Mail</span>
+                    <input id="inviteEmail" type="email" placeholder="user@example.com">
+                  </label>
+                  <label>
+                    <span data-i18n="fullName">Ad soyad</span>
+                    <input id="inviteFullName" type="text">
+                  </label>
+                  <label>
+                    <span data-i18n="role">Rol</span>
+                    <select id="inviteRole">
+                      <option value="user">User</option>
+                      <option value="manager">Manager</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </label>
+                </div>
+                <button id="inviteMemberBtn" class="primary" type="button" data-i18n="inviteMember">Dəvət et</button>
+                <div id="inviteResult" class="invite-result" hidden>
+                  <span class="invite-result-label" data-i18n="inviteLinkReady">Dəvət linki hazırdır — istifadəçiyə göndərin:</span>
+                  <div class="invite-link-row">
+                    <input id="inviteLinkField" type="text" readonly>
+                    <button id="copyInviteLink" type="button" class="small" data-i18n="copy">Kopyala</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="pendingMembersCard" class="new-user-card team-supabase" hidden>
+                <p class="new-user-card-title">
+                  <span data-i18n="pendingMembers">Gözləyən üzvlər</span>
+                  <small id="pendingCount">0</small>
+                </p>
+                <p class="team-supabase-hint" data-i18n="pendingHint">Şirkət adınızla qeydiyyatdan keçən istifadəçilər — təsdiq edin və rol təyin edin.</p>
+                <div id="pendingMembersList" class="resource-list"></div>
+              </div>
+
               <div id="userList" class="resource-list"></div>
             </div>
           </details>
@@ -1850,7 +1891,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="supabase/supabase-config.js"></script>
   <script src="modules/state.js?v=20260713-company"></script>
-  <script src="modules/translations.js?v=20260719-chat2"></script>
+  <script src="modules/translations.js?v=20260719-team"></script>
   <script src="modules/ids.js?v=20260713-company"></script>
   <script src="modules/crypto.js?v=20260713-company"></script>
   <script src="modules/seed-data.js?v=20260713-company"></script>
@@ -1872,8 +1913,8 @@
   <script src="modules/option-builders.js?v=20260715-options"></script>
   <script src="modules/render-markup.js?v=20260717-btn"></script>
   <script src="modules/onboarding.js?v=20260716-tour"></script>
-  <script src="modules/project-chat.js?v=20260719-chat4"></script>
-  <script src="script.js?v=20260719-chat2"></script>
+  <script src="modules/project-chat.js?v=20260719-team"></script>
+  <script src="script.js?v=20260719-team"></script>
   <!-- vanilla Motion (framer-motion sibling) — KPI count-up & spring mikro-interaksiyalar -->
   <script type="module">
     import { animate } from "./modules/vendor/motion.js?v=20260714-motion";

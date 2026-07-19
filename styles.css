@@ -3173,6 +3173,56 @@ form {
   .new-user-fields { grid-template-columns: 1fr; }
 }
 
+/* ── Komanda (Supabase) — dəvət + gözləyən üzvlər ── */
+.team-supabase { border-style: dashed; }
+.team-supabase-hint {
+  margin: -6px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.invite-result {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--teal) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--teal) 35%, transparent);
+}
+.invite-result-label { font-size: 0.8rem; font-weight: 600; }
+.invite-link-row { display: flex; gap: 8px; }
+.invite-link-row input {
+  flex: 1;
+  font-family: ui-monospace, monospace;
+  font-size: 0.76rem;
+}
+.pending-member {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+.pending-member + .pending-member { margin-top: 8px; }
+.pending-member-info { display: grid; gap: 2px; min-width: 0; }
+.pending-member-info small { color: var(--muted); font-size: 0.76rem; }
+.pending-member-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pending-member-actions select { min-width: 110px; }
+.pending-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.pending-badge-pending { background: color-mix(in srgb, orange 24%, transparent); color: #b06a00; }
+.pending-badge-invited { background: color-mix(in srgb, var(--teal) 22%, transparent); color: var(--teal); }
+.empty-hint { color: var(--muted); font-size: 0.82rem; margin: 6px 2px; }
+button.small.danger { color: #c0392b; border-color: color-mix(in srgb, #c0392b 40%, transparent); }
+
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(260px, 1fr));

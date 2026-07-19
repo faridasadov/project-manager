@@ -475,6 +475,7 @@ function applyTranslations() {
   updateRoleLabels();
   syncSettingsForm();
   renderWorkflowStatusList();
+  if (typeof applyChatWidgetLang === "function") applyChatWidgetLang();
 }
 
 function applyAppSettings() {
@@ -1940,6 +1941,7 @@ function renderResourceControls() {
   renderDateRequests();
   renderCustomerList();
   renderManagedFileList();
+  renderTeamSupabasePanels();
 }
 
 function pendingDateRequests() {
@@ -3788,7 +3790,7 @@ async function supabaseLoadSettings(workspaceId = supabaseWorkspaceId) {
 }
 
 function scheduleSupabaseSettingsSave() {
-  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin()) return;
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin() || currentUser?.role !== "admin") return;
   clearTimeout(supabaseSettingsSaveTimer);
   supabaseSettingsSaveTimer = setTimeout(() => {
     supabaseSaveSettings().catch((error) => console.warn("Supabase settings save failed", error));
@@ -3796,7 +3798,7 @@ function scheduleSupabaseSettingsSave() {
 }
 
 async function supabaseSaveSettings() {
-  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin()) return;
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin() || currentUser?.role !== "admin") return;
   await supabaseRequest("/rest/v1/app_settings?on_conflict=workspace_id", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates" },
@@ -3897,15 +3899,28 @@ async function supabaseRegisterWorkspace({ companyName, subdomain, username, pas
     throw new Error("Qeydiyyat yaradıldı. Supabase email təsdiqini tamamlayın, sonra email ilə daxil olun.");
   }
   saveSupabaseSession(session);
-  const userId = signup.user?.id || session.user?.id;
-  const workspace = await supabaseCreateWorkspaceProfile({ userId, companyName, companyId, subdomain, username, fullName, email });
-  // Workspace `pending` yaradıldı — RLS app_state yazmağa icazə vermir və hesab
-  // super-admin təsdiqini gözləyir. App-a giriş etmirik, sessiyanı bağlayırıq.
-  recordAudit("workspace.registered", "company", companyId, companyName);
+  // Join-or-create qərarını server verir (service-role):
+  //  • Şirkət adı bazadakı mövcud şirkətlə üst-üstə düşürsə → pending qoşulma sorğusu.
+  //  • Yeni şirkətdirsə → yeni workspace (super-admin təsdiqini gözləyir).
+  let result;
+  try {
+    result = await callSupabaseFunction("register-workspace", { companyName, subdomain, username, fullName, email });
+  } catch (err) {
+    saveSupabaseSession(null);
+    supabaseWorkspaceId = "";
+    currentUser = null;
+    throw err;
+  }
+  // Hər iki halda app-a giriş etmirik — sessiyanı bağlayırıq.
   saveSupabaseSession(null);
   supabaseWorkspaceId = "";
   localStorage.removeItem(supabaseWorkspaceKey);
   currentUser = null;
+  if (result?.mode === "join") {
+    recordAudit("workspace.join_requested", "company", companyId, companyName);
+    throw new Error(`Qoşulma sorğunuz “${result.companyName || companyName}” şirkətinə göndərildi — şirkət admini təsdiqindən sonra daxil ola bilərsiniz.`);
+  }
+  recordAudit("workspace.registered", "company", companyId, companyName);
   throw new Error("Qeydiyyat yaradıldı. Hesabınız super-admin təsdiqini gözləyir — təsdiqdən sonra email ilə daxil ola bilərsiniz.");
 }
 
@@ -3920,7 +3935,7 @@ async function supabaseLoginWorkspace(email, password) {
   const session = await supabasePasswordLogin(email, password);
   const userId = session.user?.id;
   if (!userId) throw new Error("Supabase istifadəçisi tapılmadı");
-  const profiles = await supabaseRequest(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id,workspace_id,username,full_name,email,role,profile_json`);
+  const profiles = await supabaseRequest(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id,workspace_id,username,full_name,email,role,status,profile_json`);
   let profile = Array.isArray(profiles) ? profiles[0] : null;
   // Super-admin heç bir tenant-a bağlı deyil (workspace_id=NULL) → platforma sessiyası.
   if (profile?.role === "super_admin") {
@@ -3963,6 +3978,19 @@ async function supabaseLoginWorkspace(email, password) {
       role: "admin",
       profile_json: { company: companyName }
     };
+  }
+  // Üzvlük gate — pending (qoşulma sorğusu) / invited (dəvət, parol gözləyir) girişi bloklanır.
+  if (profile.status === "pending" || profile.status === "invited") {
+    saveSupabaseSession(null);
+    supabaseWorkspaceId = "";
+    throw new Error(profile.status === "pending"
+      ? "Hesabınız şirkət admininin təsdiqini gözləyir — təsdiqdən sonra daxil ola biləcəksiniz."
+      : "Dəvətiniz hələ aktivləşməyib — dəvət linkindən parolunuzu qurun.");
+  }
+  if (profile.status === "disabled") {
+    saveSupabaseSession(null);
+    supabaseWorkspaceId = "";
+    throw new Error("Hesabınız deaktiv edilib. Şirkət admininizlə əlaqə saxlayın.");
   }
   const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(profile.workspace_id)}&select=id,company_key,name,status,approval_status,email_verified,rejected_reason,max_users,plan`);
   const workspace = Array.isArray(workspaces) ? workspaces[0] : null;
@@ -4059,7 +4087,7 @@ async function supabaseCompleteSession(session) {
   const email = tokenUser?.email || "";
   if (!userId || !email) throw new Error("Supabase təsdiq sessiyası oxunmadı");
   saveSupabaseSession({ ...session, user: tokenUser });
-  const profiles = await supabaseRequest(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id,workspace_id,username,full_name,email,role,profile_json`);
+  const profiles = await supabaseRequest(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id,workspace_id,username,full_name,email,role,status,profile_json`);
   let profile = Array.isArray(profiles) ? profiles[0] : null;
   // Super-admin heç bir tenant-a bağlı deyil → platforma sessiyası.
   if (profile?.role === "super_admin") {
@@ -4079,30 +4107,55 @@ async function supabaseCompleteSession(session) {
   if (!profile?.workspace_id) {
     const meta = tokenUser.user_metadata || {};
     const emailPrefix = email.split("@")[0];
-    // OAuth (Google) istifadəçilərində company_name olmur — şirkət adı email-in
-    // @-dən əvvəlki hissəsi olur; company_key isə userId ilə unikal edilir.
-    const companyName = meta.company_name || meta.company || emailPrefix;
-    const companyId = meta.company_key || `${companyIdFromName(companyName)}-${String(userId).slice(0, 8)}`;
     const username = meta.username || emailPrefix;
     const fullName = meta.full_name || meta.name || username;
-    const workspace = await supabaseCreateWorkspaceProfile({
-      userId,
-      companyName,
-      companyId,
-      subdomain: slugFromName(companyName),
-      username,
-      fullName,
-      email
-    });
-    profile = {
-      id: userId,
-      workspace_id: workspace.id,
-      username,
-      full_name: fullName,
-      email,
-      role: "admin",
-      profile_json: { company: companyName }
-    };
+    const typedCompany = meta.company_name || meta.company;
+    if (typedCompany) {
+      // Email/parol qeydiyyatı — join-or-create qərarını server (service-role) verir:
+      //  • Şirkət adı mövcud workspace-lə üst-üstə düşürsə → pending qoşulma sorğusu (giriş yox).
+      //  • Yeni şirkətdirsə → yeni workspace + admin profil (super-admin təsdiqini gözləyir).
+      let prov;
+      try {
+        prov = await callSupabaseFunction("register-workspace", {
+          companyName: typedCompany, subdomain: slugFromName(typedCompany), username, fullName, email
+        });
+      } catch (err) {
+        saveSupabaseSession(null); supabaseWorkspaceId = "";
+        throw err;
+      }
+      if (prov?.mode === "join") {
+        saveSupabaseSession(null); supabaseWorkspaceId = "";
+        throw new Error(`Qoşulma sorğunuz “${prov.companyName || typedCompany}” şirkətinə göndərildi — şirkət admini təsdiqindən sonra daxil ola bilərsiniz.`);
+      }
+      // create → profil indi mövcuddur, yenidən oxu və aşağıdakı təsdiq gate-inə burax.
+      const re = await supabaseRequest(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id,workspace_id,username,full_name,email,role,status,profile_json`);
+      profile = Array.isArray(re) ? re[0] : null;
+      if (!profile?.workspace_id) throw new Error("Profil yaradılmadı");
+    } else {
+      // OAuth (Google) — company adı yoxdur; email prefiksi ilə unikal workspace yarat.
+      const companyName = emailPrefix;
+      const companyId = meta.company_key || `${companyIdFromName(companyName)}-${String(userId).slice(0, 8)}`;
+      const workspace = await supabaseCreateWorkspaceProfile({
+        userId, companyName, companyId, subdomain: slugFromName(companyName), username, fullName, email
+      });
+      profile = {
+        id: userId, workspace_id: workspace.id, username, full_name: fullName, email,
+        role: "admin", status: "active", profile_json: { company: companyName }
+      };
+    }
+  }
+  // Üzvlük gate — pending (qoşulma sorğusu) / invited (dəvət, parol gözləyir) girişi bloklanır.
+  if (profile.status === "pending" || profile.status === "invited") {
+    saveSupabaseSession(null);
+    supabaseWorkspaceId = "";
+    throw new Error(profile.status === "pending"
+      ? "Hesabınız şirkət admininin təsdiqini gözləyir — təsdiqdən sonra daxil ola biləcəksiniz."
+      : "Dəvətiniz hələ aktivləşməyib — dəvət linkindən parolunuzu qurun.");
+  }
+  if (profile.status === "disabled") {
+    saveSupabaseSession(null);
+    supabaseWorkspaceId = "";
+    throw new Error("Hesabınız deaktiv edilib. Şirkət admininizlə əlaqə saxlayın.");
   }
   const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(profile.workspace_id)}&select=id,company_key,name,status,approval_status,email_verified,rejected_reason,max_users,plan`);
   const workspace = Array.isArray(workspaces) ? workspaces[0] : null;
@@ -4254,7 +4307,7 @@ function supabaseGoogleAuth() {
 }
 
 function scheduleSupabaseSave() {
-  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin()) return;
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin() || currentUser?.role !== "admin") return;
   clearTimeout(supabaseSaveTimer);
   supabaseSaveTimer = setTimeout(() => {
     supabaseSaveState().catch((error) => console.warn("Supabase save failed", error));
@@ -4262,13 +4315,13 @@ function scheduleSupabaseSave() {
 }
 
 async function flushSupabaseSave() {
-  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin()) return;
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin() || currentUser?.role !== "admin") return;
   clearTimeout(supabaseSaveTimer);
   await supabaseSaveState();
 }
 
 async function supabaseSaveState() {
-  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin()) return;
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin() || currentUser?.role !== "admin") return;
   const payload = backupPayload();
   await supabaseRequest("/rest/v1/app_state?on_conflict=workspace_id", {
     method: "POST",
@@ -6258,6 +6311,143 @@ addUserButton.addEventListener("click", () => {
       if (data.ok) console.info(`Welcome email sent to ${user.profile.email}`);
       else console.info(`Welcome email skipped: ${data.reason || "unknown"}`);
     }).catch(() => {});
+  }
+});
+
+// ── Komanda (Supabase) — dəvət + gözləyən üzvlərin təsdiqi ─────────────────
+function teamSupabaseActive() {
+  return isSupabasePrimaryMode() && Boolean(supabaseWorkspaceId) && ["admin", "super_admin"].includes(currentUser?.role);
+}
+
+function renderTeamSupabasePanels() {
+  const inviteCard = document.querySelector("#teamInviteCard");
+  const pendingCard = document.querySelector("#pendingMembersCard");
+  if (!inviteCard || !pendingCard) return;
+  const active = teamSupabaseActive();
+  inviteCard.hidden = !active;
+  pendingCard.hidden = !active;
+  if (active) loadPendingMembers();
+}
+
+async function loadPendingMembers() {
+  const listEl = document.querySelector("#pendingMembersList");
+  const countEl = document.querySelector("#pendingCount");
+  if (!listEl) return;
+  try {
+    const rows = await supabaseRequest(`/rest/v1/profiles?workspace_id=eq.${encodeURIComponent(supabaseWorkspaceId)}&status=in.(pending,invited)&select=id,username,full_name,email,role,status&order=created_at.desc`);
+    const members = Array.isArray(rows) ? rows : [];
+    if (countEl) countEl.textContent = members.length;
+    if (!members.length) {
+      listEl.innerHTML = `<p class="empty-hint">${text("pendingEmpty")}</p>`;
+      return;
+    }
+    const roleOpts = (selected) => ["user", "manager", "admin"]
+      .map((r) => `<option value="${r}"${r === selected ? " selected" : ""}>${roleLabel(r)}</option>`).join("");
+    listEl.innerHTML = members.map((m) => {
+      const label = m.status === "pending" ? text("statusPending") : text("statusInvited");
+      const name = m.full_name || m.username || m.email || m.id;
+      return `<div class="pending-member" data-id="${escapeHtml(m.id)}">
+        <div class="pending-member-info">
+          <strong>${escapeHtml(name)}</strong>
+          <small>${escapeHtml(m.email || "")} · <span class="pending-badge pending-badge-${escapeHtml(m.status)}">${escapeHtml(label)}</span></small>
+        </div>
+        <div class="pending-member-actions">
+          <select data-role-for="${escapeHtml(m.id)}" aria-label="${escapeHtml(text("role"))}">${roleOpts(m.role || "user")}</select>
+          <button type="button" class="primary small" data-member-action="approve" data-id="${escapeHtml(m.id)}">${escapeHtml(text("approve"))}</button>
+          <button type="button" class="ghost small danger" data-member-action="reject" data-id="${escapeHtml(m.id)}">${escapeHtml(text("reject"))}</button>
+        </div>
+      </div>`;
+    }).join("");
+  } catch (err) {
+    listEl.innerHTML = `<p class="empty-hint">${escapeHtml(err?.message || "Xəta")}</p>`;
+  }
+}
+
+document.querySelector("#inviteMemberBtn")?.addEventListener("click", async () => {
+  if (!teamSupabaseActive()) return;
+  const emailEl = document.querySelector("#inviteEmail");
+  const fullNameEl = document.querySelector("#inviteFullName");
+  const roleEl = document.querySelector("#inviteRole");
+  const btn = document.querySelector("#inviteMemberBtn");
+  const email = (emailEl?.value || "").trim().toLowerCase();
+  const fullName = (fullNameEl?.value || "").trim();
+  const role = roleEl?.value || "user";
+  if (!email) { alert(text("inviteNeedEmail")); return; }
+  const username = (email.split("@")[0] || "user").replace(/[^a-z0-9._-]/gi, "") || "user";
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = text("inviteSending");
+  try {
+    const cfg = supabaseConfig();
+    const res = await callSupabaseFunction("manage-user", { action: "invite", email, username, fullName, role, redirectTo: cfg?.redirectTo });
+    const linkField = document.querySelector("#inviteLinkField");
+    const resultBox = document.querySelector("#inviteResult");
+    if (res?.inviteLink && linkField && resultBox) {
+      linkField.value = res.inviteLink;
+      resultBox.hidden = false;
+    }
+    if (emailEl) emailEl.value = "";
+    if (fullNameEl) fullNameEl.value = "";
+    recordAudit("user.invited", "user", res?.userId || "", email);
+    loadPendingMembers();
+  } catch (err) {
+    alert(text("inviteError") + ": " + (err?.message || err));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+});
+
+document.querySelector("#copyInviteLink")?.addEventListener("click", async () => {
+  const field = document.querySelector("#inviteLinkField");
+  const btn = document.querySelector("#copyInviteLink");
+  if (!field?.value) return;
+  try {
+    await navigator.clipboard.writeText(field.value);
+  } catch {
+    field.select();
+    try { document.execCommand("copy"); } catch { /* ignore */ }
+  }
+  const orig = btn.textContent;
+  btn.textContent = text("copied");
+  setTimeout(() => { btn.textContent = orig; }, 1500);
+});
+
+document.querySelector("#pendingMembersList")?.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-member-action]");
+  if (!button || !teamSupabaseActive()) return;
+  const id = button.dataset.id;
+  const action = button.dataset.memberAction;
+  // Uğurdan sonra sətri dərhal DOM-dan sil (PostgREST replica read-lag-a görə
+  // re-fetch bəzən köhnə sətri qaytarır) + sayğacı yenilə, sonra reconcile.
+  const dropRow = () => {
+    button.closest(".pending-member")?.remove();
+    const countEl = document.querySelector("#pendingCount");
+    if (countEl) countEl.textContent = String(Math.max(0, (parseInt(countEl.textContent, 10) || 1) - 1));
+    const list = document.querySelector("#pendingMembersList");
+    if (list && !list.querySelector(".pending-member")) list.innerHTML = `<p class="empty-hint">${text("pendingEmpty")}</p>`;
+  };
+  if (action === "reject") {
+    if (!confirm(text("rejectConfirm"))) return;
+    button.disabled = true;
+    try {
+      await callSupabaseFunction("manage-user", { action: "reject", profileId: id });
+      recordAudit("user.rejected", "user", id, "");
+      dropRow();
+      setTimeout(loadPendingMembers, 1200);
+    } catch (err) { alert(err?.message || err); button.disabled = false; }
+    return;
+  }
+  if (action === "approve") {
+    const roleSel = document.querySelector(`select[data-role-for="${CSS.escape(id)}"]`);
+    const role = roleSel?.value || "user";
+    button.disabled = true;
+    try {
+      await callSupabaseFunction("manage-user", { action: "approve", profileId: id, role });
+      recordAudit("user.approved", "user", id, role);
+      dropRow();
+      setTimeout(loadPendingMembers, 1200);
+    } catch (err) { alert(err?.message || err); button.disabled = false; }
   }
 });
 

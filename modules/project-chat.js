@@ -132,6 +132,24 @@ function refreshChannelOptions() {
   if (sel) sel.innerHTML = buildChannelOptions();
 }
 
+// Dil dəyişəndə widget-in statik mətnlərini yenilə (data-i18n YOXDUR — əl ilə).
+function applyChatWidgetLang() {
+  const panel = document.getElementById("pmChatPanel");
+  if (!panel) return;
+  document.getElementById("pmChatFab")?.setAttribute("aria-label", text("chatTitle"));
+  const title = panel.querySelector("#pmChatTitle");
+  if (title) title.textContent = pmChat.channelKey ? pmChatChannelLabel(pmChat.channelKey) : text("chatTitle");
+  panel.querySelector("#pmChatClose")?.setAttribute("aria-label", text("chatClose"));
+  const sel = panel.querySelector("#pmChatChannel");
+  if (sel) { sel.setAttribute("aria-label", text("chatPickChannel")); sel.innerHTML = buildChannelOptions(); }
+  const input = panel.querySelector("#pmChatInput");
+  if (input) input.placeholder = text("chatPlaceholder");
+  panel.querySelector("#pmChatForm .pm-chat-send")?.setAttribute("aria-label", text("chatSend"));
+  // Mesaj yüklü deyilsə görünən hint/empty mətnini də dilə uyğunlaşdır.
+  const hint = panel.querySelector(".pm-chat-scroll .pm-chat-hint");
+  if (hint) hint.textContent = pmChat.channelKey ? text("chatEmpty") : text("chatPickHint");
+}
+
 function toggleChatPanel(force) {
   const panel = document.getElementById("pmChatPanel");
   const fab = document.getElementById("pmChatFab");
