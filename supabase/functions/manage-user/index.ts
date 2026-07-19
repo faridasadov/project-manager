@@ -1,7 +1,8 @@
 // manage-user — komanda üzvü idarəetməsi (yalnız admin çağıra bilər).
 // Actions:
-//   invite  → yeni real auth user + profil(status=invited, rol) + dəvət/parol linki qaytarır
-//   approve → pending/invited profili status=active edir + rol təyin edir
+//   invite  → real auth user (parolsuz) + active profil + dəvət/parol linki qaytarır
+//   create  → real auth user (admin parolu təyin edir) + active profil → dərhal girə bilir
+//   approve → pending profili (self-register join sorğusu) status=active + rol
 //   reject  → profili + auth user-i silir
 // verify_jwt=true; çağıranın JWT-si yoxlanılır, profilindən workspace + admin rolu təsdiqlənir.
 
@@ -60,11 +61,16 @@ Deno.serve(async (req) => {
   const action = p.action;
 
   try {
+    // pm_role enum yalnız 4 dəyər dəstəkləyir; app-daxili incə rol (contributor/viewer/
+    // sponsor) profile_json.appRole-da saxlanılır, login-də bərpa olunur.
+    const toDbRole = (r: string) => (r === "admin" ? "admin" : r === "manager" ? "manager" : "user");
+
     if (action === "invite") {
       const email = String(p.email || "").trim().toLowerCase();
       const username = String(p.username || "").trim();
       const fullName = String(p.fullName || "").trim();
-      const role = ["manager", "user", "admin"].includes(p.role) ? p.role : "user";
+      const appRole = String(p.appRole || p.role || "user");
+      const role = toDbRole(String(p.role || appRole));
       const redirectTo = String(p.redirectTo || "");
       if (!email || !username) return json({ error: "Email və istifadəçi adı tələb olunur" }, 400);
       if (!workspaceId) return json({ error: "Workspace tapılmadı" }, 400);
@@ -77,9 +83,10 @@ Deno.serve(async (req) => {
       if (!created.ok) return json({ error: created.body?.msg || created.body?.error_description || "Auth user yaradılmadı", detail: created.body }, 502);
       const newId = created.body?.id || created.body?.user?.id;
 
-      // 2) Profil (invited, rol, workspace)
+      // 2) Profil (ADMIN dəvət edir → birbaşa active; parolsuz olduğu üçün link olmadan girə bilməz)
       const profIns = await adm(`/rest/v1/profiles`, "POST", {
-        id: newId, workspace_id: workspaceId, role, username, full_name: fullName, email, status: "invited"
+        id: newId, workspace_id: workspaceId, role, username, full_name: fullName, email,
+        status: "active", profile_json: { appRole }
       });
       if (!profIns.ok) return json({ error: "Profil yaradılmadı", detail: profIns.body }, 502);
 
@@ -89,6 +96,34 @@ Deno.serve(async (req) => {
       });
       const actionLink = linkRes.body?.action_link || linkRes.body?.properties?.action_link || null;
       return json({ ok: true, action: "invite", userId: newId, inviteLink: actionLink });
+    }
+
+    if (action === "create") {
+      // Şirkət admini paneldən birbaşa hesab yaradır — parolu admin təyin edir,
+      // hesab DƏRHAL active olur və email+parol ilə girə bilir.
+      const email = String(p.email || "").trim().toLowerCase();
+      const username = String(p.username || "").trim();
+      const fullName = String(p.fullName || "").trim();
+      const password = String(p.password || "");
+      const appRole = String(p.appRole || p.role || "user");
+      const role = toDbRole(String(p.role || appRole));
+      if (!email || !username) return json({ error: "Email və istifadəçi adı tələb olunur" }, 400);
+      if (password.length < 6) return json({ error: "Parol ən azı 6 simvol olmalıdır" }, 400);
+      if (!workspaceId) return json({ error: "Workspace tapılmadı" }, 400);
+
+      const created = await adm(`/auth/v1/admin/users`, "POST", {
+        email, password, email_confirm: true,
+        user_metadata: { username, full_name: fullName, company_key: workspaceId }
+      });
+      if (!created.ok) return json({ error: created.body?.msg || created.body?.error_description || "Auth user yaradılmadı", detail: created.body }, 502);
+      const newId = created.body?.id || created.body?.user?.id;
+
+      const profIns = await adm(`/rest/v1/profiles`, "POST", {
+        id: newId, workspace_id: workspaceId, role, username, full_name: fullName, email,
+        status: "active", profile_json: { appRole, position: String(p.position || "") }
+      });
+      if (!profIns.ok) return json({ error: "Profil yaradılmadı", detail: profIns.body }, 502);
+      return json({ ok: true, action: "create", userId: newId, role: appRole });
     }
 
     if (action === "approve") {

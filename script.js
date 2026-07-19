@@ -4035,7 +4035,7 @@ async function supabaseLoginWorkspace(email, password) {
     companyName,
     companyId,
     workspaceId: workspace.id,
-    role: profile.role || "admin"
+    role: profile.profile_json?.appRole || profile.role || "admin"
   });
   await supabaseLoadWorkspaceState(workspace.id);
   await supabaseLoadSettings(workspace.id);
@@ -4210,7 +4210,7 @@ async function supabaseCompleteSession(session) {
     companyName,
     companyId,
     workspaceId: workspace.id,
-    role: profile.role || "admin"
+    role: profile.profile_json?.appRole || profile.role || "admin"
   });
   await supabaseLoadWorkspaceState(workspace.id);
   await supabaseLoadSettings(workspace.id);
@@ -6273,6 +6273,46 @@ workflowStatusList.addEventListener("click", (event) => {
   render();
 });
 
+// Online rejimdə paneldən birbaşa hesab: real Supabase auth user (dərhal active,
+// email+parol ilə girə bilir) + appState.users-ə əlavə (siyahıda görünsün).
+async function onlineCreateUser() {
+  const companySlug = slugFromName(currentUser?.profile?.company || currentCompanyId());
+  const role = newUserRoleInput.value;
+  const username = newUsernameInput.value.trim() || uniqueUsername(`${role}${companySlug}`);
+  const email = newUserEmailInput.value.trim().toLowerCase();
+  const password = newUserPasswordInput.value;
+  const fullName = newUserFullNameInput.value.trim() || username;
+  const position = newUserPositionInput.value.trim();
+  if (!email) { alert("Online rejimdə email tələb olunur — istifadəçi bu email ilə giriş edəcək."); return; }
+  if (!password || password.length < 6) { alert("Parol ən azı 6 simvol olmalıdır."); return; }
+  if (appState.users.some((u) => u.username === username)) { alert("Bu istifadəçi adı artıq mövcuddur."); return; }
+  const orig = addUserButton.textContent;
+  addUserButton.disabled = true;
+  addUserButton.textContent = text("inviteSending");
+  try {
+    const res = await callSupabaseFunction("manage-user", { action: "create", email, password, username, fullName, role, appRole: role, position });
+    const newId = res?.userId || createId();
+    const managedRoles = ["user", "contributor", "viewer"];
+    const managerId = managedRoles.includes(role) ? (currentUser?.role === "manager" ? currentUser.id : appState.users.find((u) => u.role === "manager" && u.companyId === currentCompanyId())?.id || "") : "";
+    const user = normalizeUser({
+      id: newId, username, passwordHash: "", role, managerId, companyId: currentCompanyId(),
+      profile: { fullName, position, email, address: newUserAddressInput.value.trim(), company: currentUser?.profile?.company || "" }
+    });
+    appState.users = [...appState.users.filter((u) => u.id !== newId && u.username !== username), user];
+    newUsernameInput.value = ""; newUserPasswordInput.value = ""; newUserFullNameInput.value = "";
+    newUserPositionInput.value = ""; newUserEmailInput.value = ""; newUserAddressInput.value = "";
+    saveUsers();
+    recordAudit("user.created", "user", newId, username);
+    render();
+    if (typeof showToast === "function") showToast(`${username} yaradıldı — email + parol ilə girə bilər.`);
+  } catch (err) {
+    alert(text("inviteError") + ": " + (err?.message || err));
+  } finally {
+    addUserButton.disabled = false;
+    addUserButton.textContent = orig;
+  }
+}
+
 addUserButton.addEventListener("click", () => {
   // Telebe-Hotel: yalnız org admin istifadəçi əlavə edə bilər (manager/moderator yox)
   if (!canManageOrgUsers()) return;
@@ -6284,6 +6324,8 @@ addUserButton.addEventListener("click", () => {
       return;
     }
   }
+  // Online (Supabase) rejim: real, girə bilən hesab yarat.
+  if (teamSupabaseActive()) { onlineCreateUser(); return; }
   const companySlug = slugFromName(currentUser?.profile?.company || currentCompanyId());
   const password = newUserPasswordInput.value;
   const role = newUserRoleInput.value;
