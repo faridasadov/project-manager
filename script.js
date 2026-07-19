@@ -3712,6 +3712,23 @@ async function supabasePasswordLogin(email, password) {
   return payload;
 }
 
+// Email VƏ YA istifadəçi adı ilə giriş. Email deyilsə, login-by-username edge
+// function username-i (service-role) email-ə çevirib token qaytarır.
+async function supabaseResolveLogin(login, password) {
+  if (String(login).includes("@")) return supabasePasswordLogin(login, password);
+  const cfg = supabaseConfig();
+  if (!cfg) throw new Error("Supabase config yoxdur");
+  const res = await fetch(`${cfg.url}/functions/v1/login-by-username`, {
+    method: "POST",
+    headers: { apikey: cfg.anonKey, "content-type": "application/json" },
+    body: JSON.stringify({ login: String(login).trim(), password })
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || !body?.access_token) throw new Error(body?.error || "İstifadəçi adı və ya parol yanlışdır");
+  saveSupabaseSession(body);
+  return body;
+}
+
 async function supabaseCreateWorkspaceProfile({ userId, companyName, companyId, subdomain, username, fullName, email }) {
   const workspaceRows = await supabaseRequest("/rest/v1/workspaces", {
     method: "POST",
@@ -3949,7 +3966,7 @@ async function supabaseLoadWorkspaceState(workspaceId) {
 
 async function supabaseLoginWorkspace(email, password) {
   if (!canUseSupabase()) return null;
-  const session = await supabasePasswordLogin(email, password);
+  const session = await supabaseResolveLogin(email, password);
   const userId = session.user?.id;
   if (!userId) throw new Error("Supabase istifadəçisi tapılmadı");
   const profiles = await supabaseRequest(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id,workspace_id,username,full_name,email,role,status,profile_json`);
@@ -5667,10 +5684,8 @@ loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const username = loginUsername.value.trim();
   const password = loginPassword.value;
-  if (isSupabasePrimaryMode() && !username.includes("@")) {
-    loginError.textContent = "Online rejimdə dəyişikliklərin yadda qalması üçün email ilə Supabase login edin.";
-    return;
-  }
+  // Online rejimdə həm email, həm də istifadəçi adı ilə giriş dəstəklənir
+  // (username → email çevrilməsi login-by-username edge function ilə).
   if (canUseSupabase()) {
     try {
       const user = await supabaseLoginWorkspace(username, password);
@@ -6567,11 +6582,30 @@ userList.addEventListener("click", async (event) => {
   }
   if (button.dataset.userAction === "delete-user") {
     if (!isAdmin()) return;
-    appState.users = appState.users.filter((user) => user.id !== button.dataset.id);
-    appState.projects = appState.projects.map((project) => ({ ...project, managerIds: (project.managerIds || []).filter((id) => id !== button.dataset.id) }));
-    appState.users = appState.users.map((user) => user.managerId === button.dataset.id ? { ...user, managerId: "" } : user);
+    const delId = button.dataset.id;
+    const target = appState.users.find((u) => u.id === delId);
+    if (target?.role === "super_admin" || delId === currentUser?.id) return;
+    if (!confirm(`“${target?.profile?.fullName || target?.username || delId}” həm siyahıdan, həm də bazadan (login hesabı) silinsin?`)) return;
+    // Online rejim: real Supabase auth user + profili də sil (yoxsa email bazada qalır).
+    if (teamSupabaseActive()) {
+      button.disabled = true;
+      try {
+        await callSupabaseFunction("manage-user", { action: "reject", profileId: delId });
+      } catch (err) {
+        // Profil yoxdursa (yalnız local user) 404 → normaldır; başqa xətada dayan.
+        if (!/tapılmadı|not found|404/i.test(String(err?.message || err))) {
+          alert("Bazadan silinmədi: " + (err?.message || err));
+          button.disabled = false;
+          return;
+        }
+      }
+    }
+    appState.users = appState.users.filter((user) => user.id !== delId);
+    appState.projects = appState.projects.map((project) => ({ ...project, managerIds: (project.managerIds || []).filter((id) => id !== delId) }));
+    appState.users = appState.users.map((user) => user.managerId === delId ? { ...user, managerId: "" } : user);
     saveResources();
     saveUsers();
+    recordAudit("user.deleted", "user", delId, target?.username || "");
     render();
   }
 });
