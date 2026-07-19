@@ -7841,22 +7841,12 @@ function injectExportButtons() {
 // #9 — Service Worker registration
 // ════════════════════════════════════════════════════════════════════
 if ("serviceWorker" in navigator) {
-  // Yeni SW nəzarəti ələ alanda səhifəni bir dəfə avtomatik yenilə → deploy dərhal
-  // görünür, istifadəçi əl ilə cache təmizləmək məcburiyyətində qalmır.
-  const hadController = Boolean(navigator.serviceWorker.controller);
-  let swReloading = false;
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (swReloading || !hadController) return; // ilk quraşdırmada reload etmə
-    swReloading = true;
-    window.location.reload();
-  });
+  // Qeyd: controllerchange-də AVTOMATİK reload ETMİRİK — o, yeni SW aktivləşəndə
+  // gözlənilməz səhifə yüklənməsinə (login/welcome 1s flash) səbəb olurdu.
+  // Network-first HTML strategiyası onsuz da hər normal yükləmədə təzə versiyanı
+  // gətirir, ona görə əlavə reload lazım deyil.
   navigator.serviceWorker.register("./sw.js", { scope: "./" })
-    .then((r) => {
-      console.log("SW registered:", r.scope);
-      r.update?.();
-      // Səhifə açıq qalarkən yeni versiya çıxsa, aktivləşəndə controllerchange reload edəcək.
-      r.addEventListener?.("updatefound", () => console.log("SW: yeni versiya tapıldı"));
-    })
+    .then((r) => { console.log("SW registered:", r.scope); r.update?.(); })
     .catch(e => console.warn("SW registration failed:", e));
 }
 
