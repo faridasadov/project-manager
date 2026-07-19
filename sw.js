@@ -1,7 +1,7 @@
 // Project Manager — Service Worker
 // Strategy: Cache-first for static assets, network-only for API calls
 
-const CACHE = "pm-v63";
+const CACHE = "pm-v64";
 const STATIC = [
   "./",
   "./index.html",
@@ -59,8 +59,27 @@ self.addEventListener("fetch", (e) => {
     url.hostname.includes("resend.com")
   ) return;
 
-  // Cache-first for same-origin GET requests
   if (e.request.method !== "GET") return;
+
+  // HTML naviqasiyası (index.html) → NETWORK-FIRST.
+  // Səbəb: cache-first index.html köhnə qalır və deploy-lar görünmür (istifadəçilər
+  // köhnə versiyada ilişir). İndi hər açılışda təzə index.html gəlir → təzə ?v= assetlər.
+  // Offline olduqda cache-ə düşürük.
+  const isNavigation = e.request.mode === "navigate" ||
+    (e.request.destination === "document") ||
+    url.pathname === "/" || url.pathname.endsWith("/index.html");
+  if (isNavigation) {
+    e.respondWith(
+      fetch(e.request).then((res) => {
+        const clone = res.clone();
+        caches.open(CACHE).then((c) => c.put("./index.html", clone));
+        return res;
+      }).catch(() => caches.match("./index.html").then((r) => r || caches.match("./")))
+    );
+    return;
+  }
+
+  // Versiyalı statik assetlər (?v=) URL başına dəyişməzdir → cache-first.
   e.respondWith(
     caches.match(e.request).then((cached) => {
       if (cached) return cached;
