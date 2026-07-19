@@ -1720,9 +1720,26 @@ function closeProjectComposer() {
   activeProjectEditId = "";
 }
 
+// Login → app keçidində app-ın giriş animasiyasını (viewEnter/panelRise) yenidən oynat.
+// Refresh-də animasiya görünür, çünki view birbaşa render olunur; login-də isə view
+// auth ekranının arxasında "keçib" gedir — ona görə reflow ilə məcburi replay edirik.
+function replayAppEntrance() {
+  requestAnimationFrame(() => {
+    const view = document.querySelector(".active-view");
+    if (!view) return;
+    [view, ...view.querySelectorAll(".dashboard-panel")].forEach((el) => {
+      el.style.animation = "none";
+      void el.offsetWidth; // reflow
+      el.style.animation = "";
+    });
+  });
+}
+
 function syncAuthView() {
+  const wasLoggedIn = document.body.classList.contains("logged-in");
   document.body.classList.toggle("logged-in", Boolean(currentUser));
   document.body.classList.toggle("logged-out", !currentUser);
+  if (currentUser && !wasLoggedIn) replayAppEntrance();
   document.body.classList.toggle("super-admin-role", isSuperAdmin());
   document.body.classList.toggle("admin-role", isAdmin());
   document.body.classList.toggle("manager-role", currentUser?.role === "manager");
