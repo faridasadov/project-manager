@@ -5535,17 +5535,16 @@ workloadList?.addEventListener("click", (event) => {
 // Üzvə klik → mövcud currentOwnerFilter mexanizmi ilə task siyahısı süzülür.
 function renderSidebarTeams() {
   const list = document.querySelector("#sidebarTeamsList");
-  const countEl = document.querySelector("#sidebarTeamsCount");
-  const wrap = document.querySelector("#sidebarTeams");
-  if (!list || !wrap) return;
+  const label = document.querySelector("#sidebarTeamsLabel");
+  if (!list) return;
 
   const teams = appState.teams.filter((team) => !team.companyId || team.companyId === currentCompanyId());
-  if (countEl) countEl.textContent = String(teams.length);
-  // Komanda yoxdursa blok tamamilə gizlənsin — boş bölmə yer tutmasın.
-  wrap.hidden = !teams.length;
+  // Komanda yoxdursa bölmə tamamilə gizlənsin — boş başlıq yer tutmasın.
+  if (label) label.hidden = !teams.length;
   if (!teams.length) { list.innerHTML = ""; return; }
 
   const taskCountFor = (ownerValue) => appState.tasks.filter((task) => task.owner === ownerValue).length;
+  const initial = (name) => escapeHtml((String(name).trim().charAt(0) || "?").toUpperCase());
 
   list.innerHTML = teams.map((team) => {
     const values = (team.memberIds || []).map((id) => (id.includes(":") ? id : resourceValue("member", id)));
@@ -5553,14 +5552,16 @@ function renderSidebarTeams() {
     const rows = members.length
       ? members.map((m) => `
           <button type="button" class="sidebar-team-member" data-owner="${escapeHtml(m.value)}" title="${escapeHtml(m.label)}">
-            <span class="sidebar-team-avatar">${escapeHtml(m.label.trim().charAt(0).toUpperCase() || "?")}</span>
+            <span class="sidebar-team-dot">${initial(m.label)}</span>
             <span class="sidebar-team-name">${escapeHtml(m.label)}</span>
             <span class="sidebar-team-tasks">${taskCountFor(m.value)}</span>
           </button>`).join("")
       : `<p class="sidebar-team-empty">${text("empty")}</p>`;
+    // Naviqasiya düymələri ilə eyni ritm: 36px ikon + ad + sağda say.
     return `
       <details class="sidebar-team">
-        <summary>
+        <summary class="sidebar-team-head">
+          <span class="menu-icon">${initial(team.name)}</span>
           <span class="sidebar-team-title">${escapeHtml(team.name)}</span>
           <span class="sidebar-team-count">${members.length}</span>
         </summary>

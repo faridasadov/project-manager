@@ -7414,123 +7414,100 @@ body.dark-mode .insight-card {
 }
 body.dark-mode .health-score { --teal: #5eead4; --green: #6ee7a0; --red: #ff9d9d; --amber: #fbbf24; }
 
-/* ── Sol paneldəki "Komandalar" bloku ────────────────────────────────────── */
-.sidebar-teams {
-  margin: 6px 10px 0;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
-}
-.sidebar-teams[hidden] { display: none; }
-.sidebar-teams > summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 4px;
-  cursor: pointer;
-  list-style: none;
-  border-radius: 6px;
-}
-.sidebar-teams > summary::-webkit-details-marker { display: none; }
-.sidebar-teams > summary:hover { background: rgba(255, 255, 255, 0.08); }
-.sidebar-teams-count {
-  min-width: 20px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-align: center;
-}
-.sidebar-teams-list { margin-top: 4px; }
+/* ── Sol paneldəki "Komandalar" bölməsi ──────────────────────────────────
+   Naviqasiya düymələri ilə eyni ritm: 44px sətir, 36px ikon, 10px boşluq. */
+.sidebar-teams-list { display: grid; gap: 2px; }
+.sidebar-teams-list:empty { display: none; }
 
-.sidebar-team > summary {
-  display: flex;
+.sidebar-team-head {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 5px 6px;
+  gap: 10px;
+  padding: 0 10px;
+  border-radius: 10px;
+  color: #93d7c7;
+  font-size: 0.88rem;
+  font-weight: 500;
   cursor: pointer;
   list-style: none;
-  border-radius: 6px;
-  color: #dff3ec;
-  font-size: 0.82rem;
-  font-weight: 600;
+  transition: background 160ms ease, color 160ms ease;
 }
-.sidebar-team > summary::-webkit-details-marker { display: none; }
-.sidebar-team > summary::before {
-  content: "▸";
-  font-size: 0.7rem;
-  opacity: 0.7;
-  transition: transform 160ms ease;
-}
-.sidebar-team[open] > summary::before { transform: rotate(90deg); }
-.sidebar-team > summary:hover { background: rgba(255, 255, 255, 0.08); }
+.sidebar-team-head::-webkit-details-marker { display: none; }
+.sidebar-team-head:hover { background: rgba(255, 255, 255, 0.08); color: #eafaf4; }
+.sidebar-team[open] > .sidebar-team-head { color: #eafaf4; }
+
 .sidebar-team-title {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .sidebar-team-count {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(45, 212, 191, 0.16);
+  color: #93d7c7;
   font-size: 0.7rem;
   font-weight: 700;
-  opacity: 0.75;
+  text-align: center;
 }
-.sidebar-team-members { padding: 2px 0 4px 14px; }
 
+/* Üzvlər — ana sətirdən bir pillə kiçik, ikon oxu ilə hizalı. */
+.sidebar-team-members {
+  display: grid;
+  gap: 1px;
+  padding: 2px 0 4px;
+}
 .sidebar-team-member {
   width: 100%;
-  display: flex;
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 7px;
-  padding: 4px 6px;
+  gap: 8px;
+  padding: 0 10px 0 24px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: none;
-  color: #dff3ec;
-  font-size: 0.79rem;
+  color: #7fc4b4;
+  font-size: 0.82rem;
   text-align: left;
   cursor: pointer;
-  transition: background 140ms ease;
+  transition: background 140ms ease, color 140ms ease;
 }
-.sidebar-team-member:hover { background: rgba(255, 255, 255, 0.12); }
-.sidebar-team-member:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: -2px;
-}
-.sidebar-team-avatar {
-  flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
+.sidebar-team-member:hover { background: rgba(255, 255, 255, 0.08); color: #eafaf4; }
+.sidebar-team-member:focus-visible { outline: 2px solid #34d399; outline-offset: -2px; }
+
+.sidebar-team-dot {
+  width: 22px;
+  height: 22px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
-  font-size: 0.68rem;
+  background: rgba(45, 212, 191, 0.14);
+  color: #93d7c7;
+  font-size: 0.65rem;
   font-weight: 700;
 }
 .sidebar-team-name {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .sidebar-team-tasks {
-  flex: 0 0 auto;
-  min-width: 18px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.22);
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.65;
+  font-variant-numeric: tabular-nums;
 }
 .sidebar-team-empty {
-  margin: 2px 0 4px 6px;
-  font-size: 0.74rem;
+  margin: 0;
+  padding: 4px 10px 4px 24px;
+  font-size: 0.76rem;
+  color: #7fc4b4;
   opacity: 0.7;
 }
