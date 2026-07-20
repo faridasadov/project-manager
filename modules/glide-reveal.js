@@ -171,11 +171,12 @@
 
   function initFields() {
     if (REDUCED) return;
+    // YALNIZ parol xanaları. İstifadəçi adı / email / şirkət adı statik qalır —
+    // orada blur oxunuşu çətinləşdirir və heç nə "gizlətmir". Effektin mənası
+    // (pen: "Glide To Reveal Secret Code") məhz gizli dəyər üçündür.
     document.querySelectorAll(
-      "#loginForm input, #registerForm input, #resetPasswordForm input"
-    ).forEach((input) => {
-      if (["text", "email", "password", "tel"].includes(input.type)) initField(input);
-    });
+      "#loginForm input[type=password], #registerForm input[type=password], #resetPasswordForm input[type=password]"
+    ).forEach(initField);
   }
 
   function init() {
