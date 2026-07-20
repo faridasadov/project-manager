@@ -7251,3 +7251,188 @@ button.primary:active,
   .pm-chat-panel { animation: none; }
   .pm-chat-fab { transition: none; }
 }
+
+/* ── Şam tema keçidi (CodePen kevin_David_k/eYNeQVY əsasında uyğunlaşdırılıb) ──
+   İşıqlı rejim = şam yanır. Qaranlığa keçəndə şam üfürür, alov sönür, tüstü çıxır. */
+.candle-toggle {
+  position: relative;
+  width: 34px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+.candle-toggle:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.candle {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+/* gövdə */
+.candle__body {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 18px;
+  height: 20px;
+  background: #fff;
+  border: 2px solid #673c63;
+  border-bottom: 0;
+  border-radius: 3px 3px 0 0;
+  box-shadow: -2px 0 0 #95c6f2 inset;
+  transform: translateX(-50%);
+  transform-origin: center bottom;
+  transition: height 0.35s ease;
+}
+body.dark-mode .candle__body {
+  background: #2b2440;
+  border-color: #b9a7d6;
+  box-shadow: -2px 0 0 #4a3f6b inset;
+}
+
+/* gözlər */
+.candle__eye {
+  position: absolute;
+  top: 6px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #673c63;
+  animation: candleBlink 4s infinite linear;
+}
+.candle__eye--left { left: 4px; }
+.candle__eye--right { right: 4px; }
+body.dark-mode .candle__eye { background: #b9a7d6; }
+
+/* ağız — yalnız üfürərkən açılır */
+.candle__mouth {
+  position: absolute;
+  left: 50%;
+  top: 11px;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: #673c63;
+  transform: translateX(-50%);
+}
+body.dark-mode .candle__mouth { background: #b9a7d6; }
+
+/* piltə */
+.candle__stick {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  width: 2px;
+  height: 5px;
+  background: #673c63;
+  border-radius: 4px;
+  transform: translateX(-50%);
+  transform-origin: bottom center;
+}
+body.dark-mode .candle__stick { background: #b9a7d6; }
+
+/* alov */
+.candle__fire {
+  position: absolute;
+  left: 50%;
+  bottom: 25px;
+  width: 9px;
+  height: 12px;
+  background: #ff9800;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  transform: translateX(-50%);
+  transform-origin: center bottom;
+  box-shadow: 0 0 10px 3px rgba(255, 152, 0, 0.55);
+  animation: candleDance 1.1s infinite ease-in-out;
+  transition: opacity 0.18s linear, transform 0.18s ease-in;
+}
+/* qaranlıq rejim = sönmüş */
+body.dark-mode .candle__fire {
+  opacity: 0;
+  transform: translateX(-50%) scale(0.2);
+  animation: none;
+}
+
+/* tüstü — yalnız sönmə anında oynayır */
+.candle__smoke-one,
+.candle__smoke-two {
+  position: absolute;
+  left: 50%;
+  background: rgba(150, 150, 150, 0.75);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translateX(-50%);
+}
+.candle__smoke-one { bottom: 27px; width: 12px; height: 3px; }
+.candle__smoke-two { bottom: 31px; width: 6px; height: 6px; }
+
+/* "üfür" jesti — JS .is-blowing sinfini 900ms əlavə edir */
+.candle-toggle.is-blowing .candle__mouth { animation: candleUff 0.9s ease-out; }
+.candle-toggle.is-blowing .candle__body { animation: candlePuff 0.9s ease-out; }
+.candle-toggle.is-blowing .candle__stick { animation: candleStickBend 0.9s ease-out; }
+.candle-toggle.is-blowing .candle__smoke-one { animation: candleSmokeLeft 0.9s ease-out 0.25s; }
+.candle-toggle.is-blowing .candle__smoke-two { animation: candleSmokeUp 0.9s ease-out 0.3s; }
+
+/* yenidən yanma */
+.candle-toggle.is-lighting .candle__fire { animation: candleSpark 0.55s ease-out, candleDance 1.1s infinite ease-in-out 0.55s; }
+
+@keyframes candleDance {
+  0%, 100% { transform: translateX(-50%) scale(1, 1) rotate(-1deg); }
+  50% { transform: translateX(-50%) scale(0.94, 1.08) rotate(2deg); }
+}
+@keyframes candleSpark {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.1, 0.1); }
+  55% { opacity: 1; transform: translateX(-50%) scale(1.35, 1.35); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1, 1); }
+}
+@keyframes candleBlink {
+  0%, 92% { opacity: 1; }
+  94%, 97% { opacity: 0; }
+  98%, 100% { opacity: 1; }
+}
+@keyframes candleUff {
+  0% { width: 0; height: 0; }
+  30%, 55% { width: 7px; height: 7px; }
+  80% { width: 2px; height: 2px; }
+  100% { width: 0; height: 0; }
+}
+@keyframes candlePuff {
+  0% { transform: translateX(-50%) scale(1, 1); }
+  35% { transform: translateX(-50%) scale(1.12, 1.1); }
+  60% { transform: translateX(-50%) scale(0.9, 0.94); }
+  100% { transform: translateX(-50%) scale(1, 1); }
+}
+@keyframes candleStickBend {
+  0%, 25% { transform: translateX(-50%) rotate(0deg); }
+  45% { transform: translateX(-50%) rotate(-16deg); }
+  65% { transform: translateX(-50%) rotate(12deg); }
+  85% { transform: translateX(-50%) rotate(-4deg); }
+  100% { transform: translateX(-50%) rotate(0deg); }
+}
+@keyframes candleSmokeLeft {
+  0% { opacity: 0; width: 0; transform: translateX(-50%); }
+  30% { opacity: 0.8; width: 14px; transform: translateX(-70%); }
+  100% { opacity: 0; width: 0; transform: translateX(-110%); }
+}
+@keyframes candleSmokeUp {
+  0% { opacity: 0; width: 0; height: 0; transform: translate(-50%, 0); }
+  40% { opacity: 0.7; width: 7px; height: 7px; transform: translate(-60%, -8px); }
+  100% { opacity: 0; width: 0; height: 0; transform: translate(-75%, -18px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .candle__fire,
+  .candle__eye,
+  .candle-toggle.is-blowing .candle__body,
+  .candle-toggle.is-blowing .candle__mouth,
+  .candle-toggle.is-blowing .candle__stick { animation: none !important; }
+}

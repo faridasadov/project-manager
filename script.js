@@ -273,6 +273,7 @@ const addUserButton = document.querySelector("#addUser");
 const userList = document.querySelector("#userList");
 const userCount = document.querySelector("#userCount");
 const themeModeInput = document.querySelector("#themeMode");
+const candleToggle = document.querySelector("#candleThemeToggle");
 const backgroundStyleInput = document.querySelector("#backgroundStyle");
 const accentColorInput = document.querySelector("#accentColor");
 const workflowStatusNameInput = document.querySelector("#workflowStatusName");
@@ -494,6 +495,7 @@ function applyAppSettings() {
   document.body.classList.toggle("dark-mode", darkMode);
   document.body.dataset.background = appSettings.backgroundStyle;
   document.body.dataset.accent = appSettings.accentColor;
+  candleToggle?.setAttribute("aria-pressed", String(darkMode));
 }
 
 function syncSettingsForm() {
@@ -6217,6 +6219,30 @@ document.querySelector("#importDataBtn")?.addEventListener("change", (e) => {
     saveAppSettings();
     applyAppSettings();
   });
+});
+
+// Şam düyməsi = dark/light keçidi. Qaranlığa keçəndə şam üfürülüb sönür,
+// işığa qayıdanda alışır. Tema dəyişikliyi "üfür" jesti bitəndən sonra tətbiq olunur.
+candleToggle?.addEventListener("click", () => {
+  const goingDark = !document.body.classList.contains("dark-mode");
+  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  const commit = () => {
+    appSettings = { ...appSettings, themeMode: goingDark ? "dark" : "light" };
+    saveAppSettings();
+    applyAppSettings();
+    if (themeModeInput) themeModeInput.value = appSettings.themeMode;
+  };
+  if (reduced) { commit(); return; }
+  if (goingDark) {
+    // əvvəl üfür, sonra qaranlıq (alov CSS-də söndürülür)
+    candleToggle.classList.add("is-blowing");
+    setTimeout(commit, 380);
+    setTimeout(() => candleToggle.classList.remove("is-blowing"), 900);
+  } else {
+    commit();
+    candleToggle.classList.add("is-lighting");
+    setTimeout(() => candleToggle.classList.remove("is-lighting"), 700);
+  }
 });
 
 saveSettingsButton.addEventListener("click", () => {
