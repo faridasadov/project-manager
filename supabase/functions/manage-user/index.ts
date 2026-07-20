@@ -2,8 +2,9 @@
 // Actions:
 //   invite  → real auth user (parolsuz) + active profil + dəvət/parol linki qaytarır
 //   create  → real auth user (admin parolu təyin edir) + active profil → dərhal girə bilir
-//   approve → pending profili (self-register join sorğusu) status=active + rol
-//   reject  → profili + auth user-i silir
+//   approve  → pending profili (self-register join sorğusu) status=active + rol
+//   set-role → profiles.role-u yeniləyir (app-də rol dəyişəndə RLS ilə uyğun qalsın)
+//   reject   → profili + auth user-i silir
 // verify_jwt=true; çağıranın JWT-si yoxlanılır, profilindən workspace + admin rolu təsdiqlənir.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -137,6 +138,30 @@ Deno.serve(async (req) => {
       if (!upd.ok) return json({ error: "Təsdiq alınmadı", detail: upd.body }, 502);
       if (!Array.isArray(upd.body) || !upd.body.length) return json({ error: "Profil bu workspace-də tapılmadı" }, 404);
       return json({ ok: true, action: "approve", profile: upd.body[0] });
+    }
+
+    if (action === "set-role") {
+      // App-də rol dəyişəndə profiles.role də yenilənməlidir. Əks halda:
+      //  • admin edilən adam RLS-də admin OLMUR → app_state yazıları 403 alır
+      //    və dəyişiklikləri səssizcə itir
+      //  • adminlikdən salınan adam RLS-də admin QALIR (təhlükəsizlik boşluğu)
+      const profileId = String(p.profileId || "");
+      const appRole = String(p.appRole || p.role || "user");
+      if (!profileId) return json({ error: "profileId tələb olunur" }, 400);
+      if (profileId === callerId) return json({ error: "Öz rolunuzu dəyişə bilməzsiniz" }, 400);
+
+      const target = await admGet(`/rest/v1/profiles?id=eq.${profileId}&workspace_id=eq.${workspaceId}&select=id,role,profile_json`);
+      const row = Array.isArray(target.body) ? target.body[0] : null;
+      if (!row) return json({ error: "Profil bu workspace-də tapılmadı" }, 404);
+      // super_admin-i buradan dəyişmək olmaz.
+      if (row.role === "super_admin") return json({ error: "Super admin rolu dəyişdirilə bilməz" }, 403);
+
+      const upd = await adm(`/rest/v1/profiles?id=eq.${profileId}&workspace_id=eq.${workspaceId}`, "PATCH", {
+        role: toDbRole(appRole),
+        profile_json: { ...(row.profile_json || {}), appRole }
+      });
+      if (!upd.ok) return json({ error: "Rol yenilənmədi", detail: upd.body }, 502);
+      return json({ ok: true, action: "set-role", role: toDbRole(appRole), appRole });
     }
 
     if (action === "reject") {

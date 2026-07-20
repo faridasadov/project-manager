@@ -7678,3 +7678,20 @@ body[data-view="teams"] .summary {
     animation: none !important;
   }
 }
+/* C4: admin paneldə "Yeni istifadəçi əlavə et" başlığı qaranlıqda 2.68 kontrast
+   verirdi — əvvəlki qayda yalnız daxildəki <span>-ı əhatə edirdi. */
+body.dark-mode .new-user-card-title { color: #5eead4; }
+
+/* C5: uzun başlıq (məs. "Tarix dəyişiklik sorğuları") sətri artırıb badge-i
+   yuxarı dartırdı və kafel digərlərindən fərqli görünürdü. Başlıq 2 sətirlə
+   məhdudlaşır, badge həmişə aşağıda qalır. */
+.panel-launch-grid button strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.panel-launch-grid button > span {
+  align-self: end;
+}

@@ -382,6 +382,11 @@ let supabaseWorkspaceId = localStorage.getItem(supabaseWorkspaceKey) || "";
 // Cari workspace kvota limiti (0 = limitsiz/local rejim). supabaseLoginWorkspace təyin edir.
 let workspaceMaxUsers = 0;
 let workspacePlan = "standard";
+// RLS `profiles.role`-a və workspace təsdiqinə baxır, appRole-a YOX. Klient
+// qoruması eyni şərtə baxmalıdır, əks halda uğursuz olacağı bəlli sorğular
+// göndərilir və istifadəçi 403 səbəbini bilmədən dəyişikliklərini itirir.
+let workspaceDbRole = "";        // profiles.role (admin / manager / user / super_admin)
+let workspaceApproved = false;   // workspaces.approval_status === "active"
 let supabaseSaveTimer = null;
 // Remote app_state ən azı bir dəfə oxunana qədər HEÇ NƏ yazmırıq — əks halda
 // boot-dakı yerli/demo state real datanı əzir.
@@ -1586,6 +1591,9 @@ function openAdminSection(key) {
   if (!currentUser || !key) return;
   const section = [...document.querySelectorAll("[data-admin-section]")].find((item) => item.dataset.adminSection === key);
   if (!section) return;
+  // Rola görə gizlədilmiş bölmə (məs. .platform-only) açılmamalıdır: CSS içini
+  // gizlədir, amma modal başlıqla birlikdə BOŞ açılırdı.
+  if (getComputedStyle(section).display === "none") return;
   restoreAdminSection();
   activeAdminSection = section;
   activeAdminSectionPlaceholder = document.createComment(`admin-section:${key}`);
@@ -2088,10 +2096,19 @@ function renderRoleMatrix() {
         if (!userId || !newRole) return;
         const targetUser = appState.users.find((u) => u.id === userId);
         if (!targetUser || targetUser.id === currentUser?.id) return;
+        const previousRole = targetUser.role;
         targetUser.role = newRole;
         saveUsers();
         renderRoleMatrix();
         render();
+        // Baza uğursuz olsa geri qaytar — UI ilə DB fərqli qalmasın.
+        syncRoleToDatabase(userId, newRole).then((ok) => {
+          if (ok) { recordAudit("user.role_changed", "user", userId, `${previousRole} → ${newRole}`); return; }
+          targetUser.role = previousRole;
+          saveUsers();
+          renderRoleMatrix();
+          render();
+        });
       });
     });
 
@@ -2353,7 +2370,9 @@ function renderNotificationCenter() {
 function renderBackupPanel() {
   const backups = Array.isArray(appSettings.backups) ? appSettings.backups : [];
   if (backupCount) backupCount.textContent = backups.length;
-  if (backupSummary) backupSummary.textContent = backups[0]?.createdAt ? formatDateTime(backups[0].createdAt) : "-";
+  // Launcher badge-i digər kafellərlə eyni formatda (rəqəm) olsun — əvvəllər
+  // burada tarix, boş halda isə "-" görünürdü və sıradan çıxmış dəyər kimi oxunurdu.
+  if (backupSummary) backupSummary.textContent = String(backups.length);
   if (!backupList) return;
   backupList.innerHTML = backups.length ? backups.slice(0, 10).map((backup) => `
     <div class="resource-item">
@@ -3894,7 +3913,7 @@ async function supabaseLoadSettings(workspaceId = supabaseWorkspaceId) {
 }
 
 function scheduleSupabaseSettingsSave() {
-  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin() || currentUser?.role !== "admin") return;
+  if (!canWriteWorkspaceData()) return;
   clearTimeout(supabaseSettingsSaveTimer);
   supabaseSettingsSaveTimer = setTimeout(() => {
     supabaseSaveSettings().catch((error) => console.warn("Supabase settings save failed", error));
@@ -3902,7 +3921,7 @@ function scheduleSupabaseSettingsSave() {
 }
 
 async function supabaseSaveSettings() {
-  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin() || currentUser?.role !== "admin") return;
+  if (!canWriteWorkspaceData()) return;
   await supabaseRequest("/rest/v1/app_settings?on_conflict=workspace_id", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates" },
@@ -4127,6 +4146,8 @@ async function supabaseLoginWorkspace(email, password) {
   if (!workspace?.id) throw new Error("Workspace oxunmadı");
   workspaceMaxUsers = Number(workspace.max_users) || 0;
   workspacePlan = workspace.plan || "standard";
+  workspaceDbRole = profile.role || "";
+  workspaceApproved = workspace.approval_status === "active";
   // Təsdiq gate — super-admin bu yola düşmür (yuxarıda idarə olunur).
   if (workspace.approval_status === "rejected") {
     saveSupabaseSession(null);
@@ -4292,6 +4313,8 @@ async function supabaseCompleteSession(session) {
   if (!workspace?.id) throw new Error("Workspace oxunmadı");
   workspaceMaxUsers = Number(workspace.max_users) || 0;
   workspacePlan = workspace.plan || "standard";
+  workspaceDbRole = profile.role || "";
+  workspaceApproved = workspace.approval_status === "active";
   // Email təsdiqləndi — workspace-i email_verified=true et ki, təsdiq növbəsinə düşsün.
   if (!workspace.email_verified) {
     try {
@@ -4436,8 +4459,20 @@ function supabaseGoogleAuth() {
   window.location.href = `${cfg.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
 }
 
+// Yazma icazəsi — RLS şərtinin klient güzgüsü:
+//   pm_same_workspace AND pm_is_admin() AND pm_workspace_approved()
+// pm_is_admin() `profiles.role`-a baxır (appRole-a yox), ona görə burada da
+// workspaceDbRole yoxlanılır.
+function canWriteWorkspaceData() {
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId) return false;
+  if (isSuperAdmin()) return false;               // super-admin tenant datası yazmır
+  if (!["admin", "super_admin"].includes(workspaceDbRole)) return false;
+  if (!workspaceApproved) return false;
+  return true;
+}
+
 function scheduleSupabaseSave() {
-  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin() || currentUser?.role !== "admin") return;
+  if (!canWriteWorkspaceData()) return;
   clearTimeout(supabaseSaveTimer);
   supabaseSaveTimer = setTimeout(() => {
     supabaseSaveState().catch((error) => console.warn("Supabase save failed", error));
@@ -4445,13 +4480,13 @@ function scheduleSupabaseSave() {
 }
 
 async function flushSupabaseSave() {
-  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin() || currentUser?.role !== "admin") return;
+  if (!canWriteWorkspaceData()) return;
   clearTimeout(supabaseSaveTimer);
   await supabaseSaveState();
 }
 
 async function supabaseSaveState() {
-  if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin() || currentUser?.role !== "admin") return;
+  if (!canWriteWorkspaceData()) return;
   // Remote state hələ oxunmayıbsa yazma — boot state real datanı əzərdi.
   if (!supabaseStateLoaded) {
     console.warn("Supabase save atlandı: remote state hələ yüklənməyib");
@@ -6648,6 +6683,23 @@ workflowStatusList.addEventListener("click", (event) => {
 
 // Online rejimdə paneldən birbaşa hesab: real Supabase auth user (dərhal active,
 // email+parol ilə girə bilir) + appState.users-ə əlavə (siyahıda görünsün).
+// Rol dəyişikliyini BAZAYA da yazır. Yalnız local blob-u yeniləmək kifayət
+// deyil: RLS `profiles.role`-a baxır, ona görə local admin ≠ DB admin olur və
+// həmin adamın bütün app_state yazıları 403 alıb səssizcə itir (əks halda isə
+// adminlikdən salınan adam DB-də admin qalır — təhlükəsizlik boşluğu).
+async function syncRoleToDatabase(userId, appRole) {
+  if (!teamSupabaseActive()) return true;
+  try {
+    await callSupabaseFunction("manage-user", { action: "set-role", profileId: userId, appRole });
+    return true;
+  } catch (error) {
+    // Yalnız local istifadəçidirsə (Supabase profili yoxdur) 404 normaldır.
+    if (/tapılmadı|not found|404/i.test(String(error?.message || error))) return true;
+    alert("Rol bazada yenilənmədi: " + (error?.message || error));
+    return false;
+  }
+}
+
 async function onlineCreateUser() {
   const companySlug = slugFromName(currentUser?.profile?.company || currentCompanyId());
   const role = newUserRoleInput.value;
@@ -7230,7 +7282,17 @@ userList.addEventListener("submit", (event) => {
   }
   user.managerId = profileForm.elements.managerId?.value || "";
   if (isOrgAdmin() && user.id !== currentUser?.id && profileForm.elements.role?.value) {
-    user.role = profileForm.elements.role.value;
+    const nextRole = profileForm.elements.role.value;
+    if (nextRole !== user.role) {
+      const previousRole = user.role;
+      user.role = nextRole;
+      syncRoleToDatabase(user.id, nextRole).then((ok) => {
+        if (ok) { recordAudit("user.role_changed", "user", user.id, `${previousRole} → ${nextRole}`); return; }
+        user.role = previousRole;
+        saveUsers();
+        render();
+      });
+    }
   }
   user.profile = {
     ...(user.profile || {}),
