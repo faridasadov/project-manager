@@ -3,118 +3,184 @@
 // Orijinalda hərflər blur + kiçildilmiş vəziyyətdədir; kursor bir hərfin üstünə
 // gələndə o hərf tam kəskinləşir, qonşuları sinus ilə azalan dərəcədə. Pen sabit
 // 6 simvol üçün qonşu selektorları (`+ .digit + .digit …`) işlədir — bizdə mətn
-// dəyişkən uzunluqdadır (üç dil), ona görə düşmə əyrisini kursor MƏSAFƏSİNDƏN
-// hesablayırıq: həm hər uzunluqda işləyir, həm də keçid kəsik deyil, kəsilməzdir.
+// dəyişkən uzunluqdadır, ona görə düşmə əyrisini kursor MƏSAFƏSİNDƏN hesablayırıq:
+// həm hər uzunluqda işləyir, həm də keçid kəsik deyil, kəsilməzdir.
 //
 // İki yerdə tətbiq olunur:
 //   1. Welcome hero başlığı — kursorla oxunur
-//   2. Login formasının etiketləri — sahə fokuslananda pillələnmiş açılış
+//   2. Login/qeydiyyat/sıfırlama XANALARI — yazılan mətnin özü
 //
-// prefers-reduced-motion → hərflər bölünmür, heç nə blur olunmur.
+// XANA necə işləyir: <input> daxilində ayrı-ayrı hərfləri stilləmək mümkün
+// deyil, ona görə xananın üstünə "güzgü" qatı qoyulur — eyni şrift/ölçü/padding
+// ilə hərflər <span>-lara bölünür. Əsl input-un mətni şəffaf edilir, kursor
+// (caret) görünən qalır, seçim/autofill/klaviatura toxunulmaz qalır.
+//
+// Dil asılılığı yoxdur: güzgü yazılan DƏYƏRDƏN qurulur, tərcümədən yox.
+// Azərbaycan (ə, ı, ş, ç, ğ, ö, ü), kiril və emoji üçün `for...of` işlədilir —
+// kod nöqtələri düzgün bölünür, surroqat cütlər parçalanmır.
+//
+// prefers-reduced-motion → heç bir bölmə/blur tətbiq olunmur.
 
 /* eslint-disable no-unused-vars */
 
 (function () {
   const REDUCED = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  // Təsir radiusu şriftin ölçüsünə görə fərqlidir: başlıq iri, xana kiçikdir.
+  const RADIUS_TITLE = 120;
+  const RADIUS_FIELD = 46;
+  const smoothstep = (t) => t * t * (3 - 2 * t);
 
-  // Mətni hərf-hərf <span>-lara bölür. Boşluqlar ayrıca saxlanılır ki, sətir
-  // sonu qırılması təbii qalsın. data-glide təkrar bölünmənin qarşısını alır.
-  function splitChars(el) {
-    if (!el) return [];
-    const source = el.dataset.glideText || el.textContent;
-    el.dataset.glideText = source;           // dil dəyişəndə orijinal mətn lazımdır
-    el.textContent = "";
+  // ── Ortaq: mətni hərf-hərf <span>-lara böl ────────────────────────────────
+  function buildChars(host, source) {
+    host.textContent = "";
     const chars = [];
     for (const ch of source) {
-      if (ch === " ") {
-        el.appendChild(document.createTextNode(" "));
-        continue;
-      }
       const span = document.createElement("span");
       span.className = "glide-char";
+      // Simvol OLDUĞU KİMİ saxlanılır — boşluğu NBSP ilə əvəz etmək simvolu
+      // dəyişir və enini bir az fərqləndirir. Eni `white-space: pre` qoruyur.
       span.textContent = ch;
-      el.appendChild(span);
+      host.appendChild(span);
       chars.push(span);
     }
-    el.dataset.glide = "on";
     return chars;
   }
 
-  // ── 1) Hero başlığı: kursora görə kəsilməz açılış ─────────────────────────
+  function applyFalloff(chars, centers, clientX, radius) {
+    for (let i = 0; i < chars.length; i++) {
+      const t = Math.max(0, 1 - Math.abs(clientX - centers[i]) / radius);
+      chars[i].style.setProperty("--active", smoothstep(t).toFixed(3));
+    }
+  }
+
+  const centersOf = (chars) => chars.map((c) => {
+    const r = c.getBoundingClientRect();
+    return r.left + r.width / 2;
+  });
+
+  // ── 1) Hero başlığı ───────────────────────────────────────────────────────
   function initHeroTitle() {
     const title = document.querySelector(".login-hero-title");
     if (!title || REDUCED) return;
 
-    let chars = splitChars(title);
+    let chars = [];
     let centers = [];
 
-    const measure = () => {
-      centers = chars.map((c) => {
-        const r = c.getBoundingClientRect();
-        return r.left + r.width / 2;
-      });
+    const split = () => {
+      const source = title.dataset.glideText || title.textContent;
+      title.dataset.glideText = source;
+      chars = buildChars(title, source);
+      title.dataset.glide = "on";
+      centers = [];
+      chars.forEach((c) => c.style.setProperty("--active", "0"));
     };
 
-    const clear = () => chars.forEach((c) => c.style.setProperty("--active", "0"));
-
-    const onMove = (event) => {
-      if (!centers.length) measure();
-      // Təsir radiusu: təxminən 4 hərf eni. Bundan uzaqda hərf tam blur qalır.
-      const radius = 120;
-      for (let i = 0; i < chars.length; i++) {
-        const d = Math.abs(event.clientX - centers[i]);
-        const t = Math.max(0, 1 - d / radius);
-        // Kosinus yumşaltma — xətti düşmədən daha təbii görünür.
-        chars[i].style.setProperty("--active", (t * t * (3 - 2 * t)).toFixed(3));
-      }
-    };
-
+    split();
     title.classList.add("glide-title");
-    title.addEventListener("pointermove", onMove);
-    title.addEventListener("pointerleave", clear);
+
+    title.addEventListener("pointermove", (event) => {
+      if (!centers.length) centers = centersOf(chars);
+      applyFalloff(chars, centers, event.clientX, RADIUS_TITLE);
+    });
+    title.addEventListener("pointerleave", () =>
+      chars.forEach((c) => c.style.setProperty("--active", "0")));
     window.addEventListener("resize", () => { centers = []; }, { passive: true });
-    clear();
 
     // Dil dəyişəndə applyTranslations() textContent-i əvəz edir → yenidən böl.
-    const observer = new MutationObserver(() => {
-      if (title.dataset.glide === "on" && title.querySelector(".glide-char")) return;
+    new MutationObserver(() => {
+      if (title.querySelector(".glide-char")) return;
       delete title.dataset.glideText;
-      chars = splitChars(title);
-      centers = [];
-      clear();
-    });
-    observer.observe(title, { childList: true });
+      split();
+    }).observe(title, { childList: true });
   }
 
-  // ── 2) Login etiketləri: fokusda pillələnmiş açılış ───────────────────────
-  function initFieldLabels() {
+  // ── 2) Xanalar ────────────────────────────────────────────────────────────
+  function initField(input) {
+    if (input.dataset.glideField === "on") return;
+    input.dataset.glideField = "on";
+
+    const wrap = document.createElement("span");
+    wrap.className = "glide-field";
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+
+    const mirror = document.createElement("span");
+    mirror.className = "glide-field-mirror";
+    mirror.setAttribute("aria-hidden", "true");   // ekran oxuyucusu əsl input-u oxuyur
+    wrap.appendChild(mirror);
+
+    // Güzgü input ilə piksel-bərabər olmalıdır.
+    const syncMetrics = () => {
+      const cs = getComputedStyle(input);
+      mirror.style.font = cs.font;
+      mirror.style.letterSpacing = cs.letterSpacing;
+      mirror.style.paddingLeft = cs.paddingLeft;
+      mirror.style.paddingRight = cs.paddingRight;
+      mirror.style.paddingTop = cs.paddingTop;
+      mirror.style.paddingBottom = cs.paddingBottom;
+      mirror.style.borderLeftWidth = cs.borderLeftWidth;
+      mirror.style.lineHeight = cs.lineHeight;
+    };
+
+    let chars = [];
+    let centers = [];
+
+    const render = () => {
+      const value = input.value;
+      if (!value) {
+        mirror.textContent = "";
+        chars = [];
+        wrap.classList.remove("has-value");
+        return;
+      }
+      wrap.classList.add("has-value");
+      chars = buildChars(mirror, value);
+      centers = [];
+      // Yeni yazılan simvol qısa açılışla görünür, sonra yenidən blur olur.
+      chars.forEach((c, i) => c.style.setProperty("--active", i === chars.length - 1 ? "1" : "0"));
+      if (chars.length) {
+        const last = chars[chars.length - 1];
+        setTimeout(() => last.style.setProperty("--active", "0"), 420);
+      }
+      mirror.style.transform = `translateX(${-input.scrollLeft}px)`;
+    };
+
+    syncMetrics();
+    render();
+
+    input.addEventListener("input", render);
+    input.addEventListener("change", render);
+    input.addEventListener("scroll", () => {
+      mirror.style.transform = `translateX(${-input.scrollLeft}px)`;
+      centers = [];
+    });
+
+    wrap.addEventListener("pointermove", (event) => {
+      if (!chars.length) return;
+      if (!centers.length) centers = centersOf(chars);
+      applyFalloff(chars, centers, event.clientX, RADIUS_FIELD);
+    });
+    wrap.addEventListener("pointerleave", () =>
+      chars.forEach((c) => c.style.setProperty("--active", "0")));
+
+    window.addEventListener("resize", () => { syncMetrics(); centers = []; }, { passive: true });
+
+    // Autofill dəyəri "input" hadisəsi yaratmaya bilər — bir dəfə sonra yoxla.
+    setTimeout(render, 350);
+  }
+
+  function initFields() {
     if (REDUCED) return;
-    document.querySelectorAll("#loginForm label, #registerForm label, #resetPasswordForm label")
-      .forEach((label) => {
-        const span = label.querySelector("span");
-        const field = label.querySelector("input, select");
-        if (!span || !field) return;
-
-        const play = () => {
-          const chars = span.dataset.glide === "on"
-            ? [...span.querySelectorAll(".glide-char")]
-            : splitChars(span);
-          span.classList.add("glide-label");
-          // Gecikməni CSS dəyişəni ilə veririk: `animation` qısayolunu sıfırlamaq
-          // animation-delay-i də silir, ona görə inline delay işləmirdi.
-          chars.forEach((c, i) => c.style.setProperty("--i", String(i)));
-          span.classList.remove("glide-playing");
-          void span.offsetWidth;                      // reflow → animasiya yenidən oynasın
-          span.classList.add("glide-playing");
-        };
-
-        field.addEventListener("focus", play);
-      });
+    document.querySelectorAll(
+      "#loginForm input, #registerForm input, #resetPasswordForm input"
+    ).forEach((input) => {
+      if (["text", "email", "password", "tel"].includes(input.type)) initField(input);
+    });
   }
 
   function init() {
     initHeroTitle();
-    initFieldLabels();
+    initFields();
   }
 
   if (document.readyState === "loading") {

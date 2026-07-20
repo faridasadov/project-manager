@@ -7633,14 +7633,40 @@ body[data-view="teams"] .summary {
 /* Başlıq: kursor gəzdikcə oxunur. */
 .glide-title { cursor: default; }
 
-/* Etiket: sahə fokuslananda hərflər pillə-pillə açılır. */
-.glide-label.glide-playing .glide-char {
-  animation: glideLabelReveal 620ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  animation-delay: calc(var(--i, 0) * 26ms);
+/* ── Xana (input) — güzgü qatı ────────────────────────────────────────────
+   <input> daxilində ayrı hərfləri stilləmək mümkün deyil, ona görə üstünə
+   eyni metrikalı güzgü qoyulur. Əsl input-un MƏTNİ şəffaf edilir, amma caret,
+   seçim, autofill və klaviatura davranışı toxunulmaz qalır. */
+.glide-field {
+  position: relative;
+  display: block;
 }
-@keyframes glideLabelReveal {
-  from { filter: blur(0.34rem); opacity: 0.35; scale: 0.9; }
-  to   { filter: blur(0);       opacity: 1;    scale: 1; }
+.glide-field.has-value > input {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--ink);
+}
+.glide-field-mirror {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: pre;
+  pointer-events: none;
+  color: var(--ink);
+  border-left-style: solid;
+  border-left-color: transparent;
+}
+/* Xanadakı hərflər başlıqdan zərif olsun — blur azdır, ölçü sabitdir ki,
+   mətn "tullanmasın" və kursor mövqeyi ilə uyğun qalsın. */
+.glide-field-mirror .glide-char {
+  scale: 1;
+  filter: blur(calc((1 - var(--active, 0)) * 0.2rem));
+  opacity: calc(var(--active, 0) * 0.4 + 0.6);
+  transition:
+    filter calc(((1 - var(--active, 0)) + 0.2) * 0.4s),
+    opacity calc(((1 - var(--active, 0)) + 0.2) * 0.4s);
 }
 
 @media (prefers-reduced-motion: reduce) {
