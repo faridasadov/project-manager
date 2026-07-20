@@ -6299,10 +6299,11 @@ textarea:focus {
   position: relative;
   z-index: 2;
   opacity: 1;
+  /* Sabit #ffffff idi → qaranlıq temada ağ panel üstündə ağ yazı. İndi token. */
   background:
     linear-gradient(145deg, rgba(15, 118, 110, 0.10), transparent 34%),
     linear-gradient(225deg, rgba(37, 99, 235, 0.08), transparent 30%),
-    #ffffff;
+    var(--panel);
 }
 
 .modal-shell.open .admin-modal,
@@ -7252,187 +7253,127 @@ button.primary:active,
   .pm-chat-fab { transition: none; }
 }
 
-/* ── Şam tema keçidi (CodePen kevin_David_k/eYNeQVY əsasında uyğunlaşdırılıb) ──
-   İşıqlı rejim = şam yanır. Qaranlığa keçəndə şam üfürür, alov sönür, tüstü çıxır. */
-.candle-toggle {
-  position: relative;
-  width: 34px;
-  height: 40px;
+/* ── Tema keçidi: ay ⇄ günəş (CodePen mrozilla/OJJNjRb uyğunlaşdırması) ──
+   İşarələnmiş = işıqlı rejim (günəş). İşarəsiz = qaranlıq rejim (ay).
+   Bütün forma yalnız box-shadow ilə qurulub — heç bir ikon faylı yoxdur. */
+.theme-toggle {
+  --size: 1.35rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  flex: 0 0 auto;
+  margin: 0 0.15rem;
   padding: 0;
   border: 0;
-  background: none;
+  outline: none;
   cursor: pointer;
-  flex: 0 0 auto;
-  line-height: 0;
+  width: var(--size);
+  height: var(--size);
+  box-shadow: inset calc(var(--size) * 0.33) calc(var(--size) * -0.25) 0;
+  border-radius: 999px;
+  color: #cfd6ff;
+  transition: color 500ms, transform 500ms, box-shadow 500ms;
 }
-.candle-toggle:focus-visible {
+.theme-toggle:checked {
+  --ray-size: calc(var(--size) * -0.4);
+  --offset-orthogonal: calc(var(--size) * 0.65);
+  --offset-diagonal: calc(var(--size) * 0.45);
+  transform: scale(0.75);
+  color: #ffaa00;
+  box-shadow:
+    inset 0 0 0 var(--size),
+    calc(var(--offset-orthogonal) * -1) 0 0 var(--ray-size),
+    var(--offset-orthogonal) 0 0 var(--ray-size),
+    0 calc(var(--offset-orthogonal) * -1) 0 var(--ray-size),
+    0 var(--offset-orthogonal) 0 var(--ray-size),
+    calc(var(--offset-diagonal) * -1) calc(var(--offset-diagonal) * -1) 0 var(--ray-size),
+    var(--offset-diagonal) var(--offset-diagonal) 0 var(--ray-size),
+    calc(var(--offset-diagonal) * -1) var(--offset-diagonal) 0 var(--ray-size),
+    var(--offset-diagonal) calc(var(--offset-diagonal) * -1) 0 var(--ray-size);
+}
+.theme-toggle:focus-visible {
   outline: 2px solid var(--teal);
-  outline-offset: 3px;
-  border-radius: 6px;
+  outline-offset: 6px;
 }
-
-.candle {
-  position: absolute;
-  inset: 0;
-  display: block;
-}
-
-/* gövdə */
-.candle__body {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: 18px;
-  height: 20px;
-  background: #fff;
-  border: 2px solid #673c63;
-  border-bottom: 0;
-  border-radius: 3px 3px 0 0;
-  box-shadow: -2px 0 0 #95c6f2 inset;
-  transform: translateX(-50%);
-  transform-origin: center bottom;
-  transition: height 0.35s ease;
-}
-body.dark-mode .candle__body {
-  background: #2b2440;
-  border-color: #b9a7d6;
-  box-shadow: -2px 0 0 #4a3f6b inset;
-}
-
-/* gözlər */
-.candle__eye {
-  position: absolute;
-  top: 6px;
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: #673c63;
-  animation: candleBlink 4s infinite linear;
-}
-.candle__eye--left { left: 4px; }
-.candle__eye--right { right: 4px; }
-body.dark-mode .candle__eye { background: #b9a7d6; }
-
-/* ağız — yalnız üfürərkən açılır */
-.candle__mouth {
-  position: absolute;
-  left: 50%;
-  top: 11px;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: #673c63;
-  transform: translateX(-50%);
-}
-body.dark-mode .candle__mouth { background: #b9a7d6; }
-
-/* piltə */
-.candle__stick {
-  position: absolute;
-  left: 50%;
-  bottom: 20px;
-  width: 2px;
-  height: 5px;
-  background: #673c63;
-  border-radius: 4px;
-  transform: translateX(-50%);
-  transform-origin: bottom center;
-}
-body.dark-mode .candle__stick { background: #b9a7d6; }
-
-/* alov */
-.candle__fire {
-  position: absolute;
-  left: 50%;
-  bottom: 25px;
-  width: 9px;
-  height: 12px;
-  background: #ff9800;
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  transform: translateX(-50%);
-  transform-origin: center bottom;
-  box-shadow: 0 0 10px 3px rgba(255, 152, 0, 0.55);
-  animation: candleDance 1.1s infinite ease-in-out;
-  transition: opacity 0.18s linear, transform 0.18s ease-in;
-}
-/* qaranlıq rejim = sönmüş */
-body.dark-mode .candle__fire {
-  opacity: 0;
-  transform: translateX(-50%) scale(0.2);
-  animation: none;
-}
-
-/* tüstü — yalnız sönmə anında oynayır */
-.candle__smoke-one,
-.candle__smoke-two {
-  position: absolute;
-  left: 50%;
-  background: rgba(150, 150, 150, 0.75);
-  border-radius: 50%;
-  opacity: 0;
-  transform: translateX(-50%);
-}
-.candle__smoke-one { bottom: 27px; width: 12px; height: 3px; }
-.candle__smoke-two { bottom: 31px; width: 6px; height: 6px; }
-
-/* "üfür" jesti — JS .is-blowing sinfini 900ms əlavə edir */
-.candle-toggle.is-blowing .candle__mouth { animation: candleUff 0.9s ease-out; }
-.candle-toggle.is-blowing .candle__body { animation: candlePuff 0.9s ease-out; }
-.candle-toggle.is-blowing .candle__stick { animation: candleStickBend 0.9s ease-out; }
-.candle-toggle.is-blowing .candle__smoke-one { animation: candleSmokeLeft 0.9s ease-out 0.25s; }
-.candle-toggle.is-blowing .candle__smoke-two { animation: candleSmokeUp 0.9s ease-out 0.3s; }
-
-/* yenidən yanma */
-.candle-toggle.is-lighting .candle__fire { animation: candleSpark 0.55s ease-out, candleDance 1.1s infinite ease-in-out 0.55s; }
-
-@keyframes candleDance {
-  0%, 100% { transform: translateX(-50%) scale(1, 1) rotate(-1deg); }
-  50% { transform: translateX(-50%) scale(0.94, 1.08) rotate(2deg); }
-}
-@keyframes candleSpark {
-  0% { opacity: 0; transform: translateX(-50%) scale(0.1, 0.1); }
-  55% { opacity: 1; transform: translateX(-50%) scale(1.35, 1.35); }
-  100% { opacity: 1; transform: translateX(-50%) scale(1, 1); }
-}
-@keyframes candleBlink {
-  0%, 92% { opacity: 1; }
-  94%, 97% { opacity: 0; }
-  98%, 100% { opacity: 1; }
-}
-@keyframes candleUff {
-  0% { width: 0; height: 0; }
-  30%, 55% { width: 7px; height: 7px; }
-  80% { width: 2px; height: 2px; }
-  100% { width: 0; height: 0; }
-}
-@keyframes candlePuff {
-  0% { transform: translateX(-50%) scale(1, 1); }
-  35% { transform: translateX(-50%) scale(1.12, 1.1); }
-  60% { transform: translateX(-50%) scale(0.9, 0.94); }
-  100% { transform: translateX(-50%) scale(1, 1); }
-}
-@keyframes candleStickBend {
-  0%, 25% { transform: translateX(-50%) rotate(0deg); }
-  45% { transform: translateX(-50%) rotate(-16deg); }
-  65% { transform: translateX(-50%) rotate(12deg); }
-  85% { transform: translateX(-50%) rotate(-4deg); }
-  100% { transform: translateX(-50%) rotate(0deg); }
-}
-@keyframes candleSmokeLeft {
-  0% { opacity: 0; width: 0; transform: translateX(-50%); }
-  30% { opacity: 0.8; width: 14px; transform: translateX(-70%); }
-  100% { opacity: 0; width: 0; transform: translateX(-110%); }
-}
-@keyframes candleSmokeUp {
-  0% { opacity: 0; width: 0; height: 0; transform: translate(-50%, 0); }
-  40% { opacity: 0.7; width: 7px; height: 7px; transform: translate(-60%, -8px); }
-  100% { opacity: 0; width: 0; height: 0; transform: translate(-75%, -18px); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .candle__fire,
-  .candle__eye,
-  .candle-toggle.is-blowing .candle__body,
-  .candle-toggle.is-blowing .candle__mouth,
-  .candle-toggle.is-blowing .candle__stick { animation: none !important; }
+  .theme-toggle { transition: none; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   DARK MODE OXUNAQLILIQ DÜZƏLİŞLƏRİ
+   Problem: bəzi komponentlər sabit açıq fon işlədirdi (və ya təyin
+   olunmamış var(--card, #fff) fallback-inə düşürdü) — mətn rəngi isə
+   qaranlıq temada açıq olduğu üçün yazılar görünmürdü.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* 1) Chat vidcetində istifadə olunan, heç yerdə təyin edilməmiş tokenlər.
+      Fallback #fff idi → qaranlıq temada ağ panel + ağ yazı. */
+body {
+  --card: var(--panel);
+  --border: var(--line);
+  --bg-soft: var(--soft);
+}
+
+/* 2) Sticky başlıq — sabit açıq fon idi, qaranlıqda ağ üstündə ağ yazı. */
+body.dark-mode .top-shell {
+  background: rgba(13, 20, 32, 0.88);
+  border-bottom-color: rgba(45, 212, 191, 0.16);
+}
+
+/* 3) Panel/kompozer fonlarını qaranlıq temada zəmanətlə token-ə bağla. */
+body.dark-mode .composer,
+body.dark-mode .panel,
+body.dark-mode .summary article,
+body.dark-mode .control-strip,
+body.dark-mode .task-composer-modal,
+body.dark-mode .platform-hero,
+body.dark-mode .platform-stats article,
+body.dark-mode .platform-company-card,
+body.dark-mode .platform-section {
+  background: var(--panel);
+  color: var(--ink);
+}
+
+/* 4) Vurğu rəngləri qaranlıq panel üzərində çox tünd qalırdı (kontrast < 3:1).
+      Qaranlıq temada açıq variantlara keçirik — WCAG AA (4.5:1) təmin olunur. */
+body.dark-mode {
+  --teal: #2dd4bf;
+  --blue: #7aa7ff;
+  --red: #ff8080;
+  --amber: #fbbf24;
+  --green: #4ade80;
+}
+body.dark-mode .kicker,
+body.dark-mode .kpi-num,
+body.dark-mode .reg-badge.reg-milestone,
+body.dark-mode .governance-score-preview {
+  color: #2dd4bf;
+}
+body.dark-mode .badge.active { color: #93b8ff; }
+body.dark-mode .badge.high,
+body.dark-mode .reg-badge.reg-risk { color: #ff8f8f; }
+body.dark-mode .workload-pct { color: #4ade80; }
+
+/* 5) Yardımçı/sönük mətn — panel üstündə oxunaqlı qalsın. */
+body.dark-mode .empty,
+body.dark-mode .empty-hint,
+body.dark-mode .team-supabase-hint,
+body.dark-mode small,
+body.dark-mode .pm-chat-hint,
+body.dark-mode .pm-msg-who {
+  color: #c3cede;
+}
+
+/* 6) Qaranlıq temada --teal açıq çalara keçdiyi üçün üzərindəki ağ mətn
+      oxunmurdu (1.86:1). Doldurulmuş düymələrdə tünd mətnə keçirik. */
+body.dark-mode button.primary,
+body.dark-mode .primary,
+body.dark-mode .kb-btn-primary,
+body.dark-mode .snapshot-restore-btn:hover,
+body.dark-mode .proj-add:hover,
+body.dark-mode .proj-gate:hover,
+body.dark-mode .proj-danger:hover {
+  color: #06231f;
+}
+body.dark-mode .pm-msg-mine .pm-msg-bubble { color: #06231f; }
+body.dark-mode .modal-head .kicker { color: #34c3e0; }
