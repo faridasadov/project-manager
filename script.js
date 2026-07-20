@@ -1056,7 +1056,10 @@ function loadProjects() {
 // loadProjectLinks → modules/storage.js
 
 function loadCustomers() {
-  return loadJson(customersKey, () => [{ id: "customer-clinic", name: "Klinika", contact: "Klinika İT Şöbəsi", email: "" }]).map(normalizeCustomer);
+  // Default BOŞ olmalıdır. Əvvəllər burada demo "Klinika" sifarişçisi vardı və
+  // companyId-siz olduğu üçün istənilən tenant-ın state-inə düşüb onun adına
+  // möhürlənirdi (faridasadov şirkətində "Klinika" məhz belə peyda olmuşdu).
+  return loadJson(customersKey, () => []).map(normalizeCustomer);
 }
 
 // loadManagedFiles → modules/storage.js
@@ -5616,13 +5619,21 @@ function teamsMemberValues(team) {
   return (team.memberIds || []).map((id) => (id.includes(":") ? id : resourceValue("member", id)));
 }
 
-function teamsTaskCount(values) {
-  const set = new Set(values);
+// Komandanın taskları = üzvlərə təyin olunanlar + BİRBAŞA KOMANDAYA təyin
+// olunanlar. Task sahibi "team:<id>" ola bilər (layihə formasında komanda
+// seçiləndə belə yazılır) — əvvəllər bunlar sayılmırdı və kartda "0 task"
+// görünürdü, halbuki komandanın taskı vardı.
+function teamsOwnerSet(team) {
+  return new Set([...teamsMemberValues(team), resourceValue("team", team.id)]);
+}
+
+function teamsTaskCount(team) {
+  const set = teamsOwnerSet(team);
   return appState.tasks.filter((task) => set.has(task.owner)).length;
 }
 
-function teamsStatusBreakdown(values) {
-  const set = new Set(values);
+function teamsStatusBreakdown(team) {
+  const set = teamsOwnerSet(team);
   const counts = {};
   appState.tasks.filter((task) => set.has(task.owner))
     .forEach((task) => { counts[task.status] = (counts[task.status] || 0) + 1; });
@@ -5663,7 +5674,7 @@ function renderTeamsView() {
     const open = teamsOpenTeamId === team.id;
     let dash = "";
     if (open) {
-      const breakdown = teamsStatusBreakdown(values);
+      const breakdown = teamsStatusBreakdown(team);
       const cells = Object.entries(breakdown)
         .map(([status, n]) => `<span class="team-dash-cell"><strong>${n}</strong>${escapeHtml(statusLabel(status))}</span>`)
         .join("");
@@ -5675,7 +5686,7 @@ function renderTeamsView() {
           <span class="team-card-avatar">${teamsInitial(team.name)}</span>
           <span class="team-card-titles">
             <strong>${escapeHtml(team.name)}</strong>
-            <small>${members.length} üzv · ${teamsTaskCount(values)} task</small>
+            <small>${members.length} üzv · ${teamsTaskCount(team)} task</small>
           </span>
           <span class="team-card-chevron" aria-hidden="true">›</span>
         </button>
