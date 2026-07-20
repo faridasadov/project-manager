@@ -7996,3 +7996,6 @@ if ("serviceWorker" in navigator) {
     }
   };
 })();
+
+// Welcome ekranının canvas fon animasiyası (modules/hero-signal-field.js).
+if (typeof initHeroSignalField === "function") initHeroSignalField();
