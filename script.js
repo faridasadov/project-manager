@@ -998,28 +998,37 @@ function ensureTenantSeedData() {
   let changedResources = false;
   let changedUsers = false;
 
-  tenantSeedUsers.forEach((user) => {
+  // TENANT İZOLYASİYASI: seed massivləri BÜTÜN nümunə şirkətlərin datasını
+  // saxlayır. Əvvəllər hamısı fərq qoyulmadan appState-ə əlavə edilirdi →
+  // bir şirkət digərlərinin sifarişçilərini/layihələrini görürdü.
+  // İndi yalnız cari şirkətə aid sətirlər əlavə olunur.
+  const companyId = currentCompanyId();
+  const mine = (item) => (item?.companyId || "company-default") === companyId;
+  const seedProjectNames = new Set(tenantSeedProjects.filter(mine).map((p) => p.name));
+
+  tenantSeedUsers.filter(mine).forEach((user) => {
     if (!appState.users.some((item) => item.id === user.id || item.username === user.username)) {
       appState.users.push(normalizeUser({ ...user }));
       changedUsers = true;
     }
   });
 
-  tenantSeedCustomers.forEach((customer) => {
+  tenantSeedCustomers.filter(mine).forEach((customer) => {
     if (!appState.customers.some((item) => item.id === customer.id || item.name === customer.name)) {
       appState.customers.push(normalizeCustomer({ ...customer }));
       changedResources = true;
     }
   });
 
-  tenantSeedProjects.forEach((project) => {
+  tenantSeedProjects.filter(mine).forEach((project) => {
     if (!appState.projects.some((item) => item.id === project.id || item.name === project.name)) {
       appState.projects.push(normalizeProject({ ...project }));
       changedResources = true;
     }
   });
 
-  tenantSeedTasks.forEach((task) => {
+  // Tasklarda companyId yoxdur — layihə adı ilə cari şirkətə bağlayırıq.
+  tenantSeedTasks.filter((task) => seedProjectNames.has(task.project)).forEach((task) => {
     if (!appState.tasks.some((item) => item.id === task.id || (item.project === task.project && item.name === task.name))) {
       appState.tasks.push(normalizeTask({ ...task }));
       changedTasks = true;
@@ -1512,7 +1521,7 @@ function renderManagerPanel() {
   );
   const myRegisters = visibleRegisters().filter((r) => r.status !== "Resolved");
   const myTeamGroups = appState.teams.filter((t) => isSameCompany(t));
-  const myCustomers = appState.customers.filter((c) => !c.companyId || c.companyId === companyId);
+  const myCustomers = appState.customers.filter((c) => (c.companyId || "company-default") === companyId);
   const myLinks = appState.projectLinks.filter((l) => isSameCompany(l));
   const myTrash = appState.trash.filter((t) => !t.companyId || t.companyId === companyId);
   const myDateRequests = (appSettings.dateRequests || []).filter(
@@ -3541,24 +3550,28 @@ function listAutoSnapshots() {
 
 function backupPayload() {
   const companyId = currentCompanyId();
-  const scopedProjects = isSuperAdmin() ? [] : appState.projects.filter((project) => !project.companyId || project.companyId === companyId);
+  // TENANT İZOLYASİYASI: `!x.companyId ||` şərti companyId-siz sətri HƏR şirkətə
+  // sızdırırdı və bu payload birbaşa app_state-ə yazıldığı üçün sızma qalıcı olurdu.
+  // İndi isSameCompany ilə eyni qayda: companyId yoxdursa "company-default" sayılır.
+  const owns = (item) => (item?.companyId || "company-default") === companyId;
+  const scopedProjects = isSuperAdmin() ? [] : appState.projects.filter(owns);
   const projectNames = new Set(scopedProjects.map((project) => project.name));
   const scopedUsers = isSuperAdmin()
     ? appState.users.filter((user) => user.role === "super_admin" && user.id === currentUser?.id)
-    : appState.users.filter((user) => user.role !== "super_admin" && (!user.companyId || user.companyId === companyId));
+    : appState.users.filter((user) => user.role !== "super_admin" && owns(user));
   return {
     version: backupVersion,
     exportedAt: new Date().toISOString(),
     tasks: appState.tasks.filter((task) => projectNames.has(task.project)),
     projects: scopedProjects,
-    members: isSuperAdmin() ? [] : appState.members.filter((member) => !member.companyId || member.companyId === companyId),
-    teams: isSuperAdmin() ? [] : appState.teams.filter((team) => !team.companyId || team.companyId === companyId),
-    customers: isSuperAdmin() ? [] : appState.customers.filter((customer) => !customer.companyId || customer.companyId === companyId),
-    managedFiles: isSuperAdmin() ? [] : appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId),
+    members: isSuperAdmin() ? [] : appState.members.filter(owns),
+    teams: isSuperAdmin() ? [] : appState.teams.filter(owns),
+    customers: isSuperAdmin() ? [] : appState.customers.filter(owns),
+    managedFiles: isSuperAdmin() ? [] : appState.managedFiles.filter(owns),
     projectLinks: isSuperAdmin() ? [] : appState.projectLinks.filter((link) => projectNames.has(link.project)),
     registers: isSuperAdmin() ? [] : appState.registers.filter((item) => projectNames.has(item.project)),
     users: scopedUsers,
-    trash: isSuperAdmin() ? [] : appState.trash.filter((item) => !item.companyId || item.companyId === companyId),
+    trash: isSuperAdmin() ? [] : appState.trash.filter(owns),
     companyRegistry: isSuperAdmin() ? companyRegistryFromLocalState() : companyRegistryFromLocalState().filter((company) => company.id === companyId)
   };
 }
@@ -4776,17 +4789,28 @@ function importBackup(payload) {
   appState.trash = Array.isArray(payload.trash) ? payload.trash : appState.trash;
   companyRegistry = Array.isArray(payload.companyRegistry) ? payload.companyRegistry : companyRegistry;
   if (currentUser && !isSuperAdmin()) {
-    appState.projects = appState.projects.map((project) => ({ ...project, companyId })).filter((project) => project.companyId === companyId);
+    // TENANT İZOLYASİYASI: əvvəllər burada HƏR sətrə cari companyId "möhürlənir",
+    // sonra süzülürdü — yəni yad şirkətin sətri atılmır, MƏNİMSƏNİLİRDİ və sızma
+    // qalıcı olurdu. İndi:
+    //   • companyId YOXDURSA → köhnə data sayılır, cari şirkətə bağlanır
+    //   • companyId BAŞQA şirkətindirsə → ATILIR
+    const adopt = (item) => (item?.companyId ? item : { ...item, companyId });
+    const ownsRaw = (item) => !item?.companyId || item.companyId === companyId;
+    const scopeList = (list, normalizer) => list
+      .filter(ownsRaw)
+      .map((item) => (normalizer ? normalizer(adopt(item)) : adopt(item)));
+
+    appState.projects = scopeList(appState.projects, normalizeProject);
     const projectNames = new Set(appState.projects.map((project) => project.name));
     appState.tasks = appState.tasks.filter((task) => projectNames.has(task.project));
-    appState.members = appState.members.map((member) => ({ ...member, companyId })).filter((member) => member.companyId === companyId);
-    appState.teams = appState.teams.map((team) => ({ ...team, companyId })).filter((team) => team.companyId === companyId);
-    appState.customers = appState.customers.map((customer) => normalizeCustomer({ ...customer, companyId })).filter((customer) => customer.companyId === companyId);
-    appState.managedFiles = appState.managedFiles.map((file) => ({ ...file, companyId })).filter((file) => file.companyId === companyId);
+    appState.members = scopeList(appState.members);
+    appState.teams = scopeList(appState.teams);
+    appState.customers = scopeList(appState.customers, normalizeCustomer);
+    appState.managedFiles = scopeList(appState.managedFiles);
     appState.projectLinks = appState.projectLinks.filter((link) => projectNames.has(link.project));
     appState.registers = appState.registers.filter((item) => projectNames.has(item.project));
-    appState.users = appState.users.filter((user) => user.role !== "super_admin" && user.companyId === companyId);
-    appState.trash = appState.trash.map((item) => ({ ...item, companyId })).filter((item) => item.companyId === companyId);
+    appState.users = appState.users.filter((user) => user.role !== "super_admin" && ownsRaw(user));
+    appState.trash = scopeList(appState.trash);
     companyRegistry = companyRegistryFromLocalState().filter((company) => company.id === companyId);
   }
   saveTasks();
