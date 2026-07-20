@@ -7338,26 +7338,6 @@ body.dark-mode .platform-section {
   color: var(--ink);
 }
 
-/* 4) Vurğu rəngləri qaranlıq panel üzərində çox tünd qalırdı (kontrast < 3:1).
-      Qaranlıq temada açıq variantlara keçirik — WCAG AA (4.5:1) təmin olunur. */
-body.dark-mode {
-  --teal: #2dd4bf;
-  --blue: #7aa7ff;
-  --red: #ff8080;
-  --amber: #fbbf24;
-  --green: #4ade80;
-}
-body.dark-mode .kicker,
-body.dark-mode .kpi-num,
-body.dark-mode .reg-badge.reg-milestone,
-body.dark-mode .governance-score-preview {
-  color: #2dd4bf;
-}
-body.dark-mode .badge.active { color: #93b8ff; }
-body.dark-mode .badge.high,
-body.dark-mode .reg-badge.reg-risk { color: #ff8f8f; }
-body.dark-mode .workload-pct { color: #4ade80; }
-
 /* 5) Yardımçı/sönük mətn — panel üstündə oxunaqlı qalsın. */
 body.dark-mode .empty,
 body.dark-mode .empty-hint,
@@ -7368,16 +7348,68 @@ body.dark-mode .pm-msg-who {
   color: #c3cede;
 }
 
-/* 6) Qaranlıq temada --teal açıq çalara keçdiyi üçün üzərindəki ağ mətn
-      oxunmurdu (1.86:1). Doldurulmuş düymələrdə tünd mətnə keçirik. */
-body.dark-mode button.primary,
-body.dark-mode .primary,
-body.dark-mode .kb-btn-primary,
-body.dark-mode .snapshot-restore-btn:hover,
-body.dark-mode .proj-add:hover,
-body.dark-mode .proj-gate:hover,
-body.dark-mode .proj-danger:hover {
-  color: #06231f;
+
+/* Qeyd: qaranlıq temada --teal/--blue/... QLOBAL dəyişdirilmir.
+   Səbəb: bu tokenlər həm mətn, həm də dolğu (button, badge, sidebar) üçün
+   işlənir; açıq çalara keçirsək üzərindəki ağ mətn oxunmaz olur.
+   Ona görə yalnız PANEL ÜSTÜNDƏ MƏTN kimi işlənən yerlər açıqlaşdırılır. */
+body.dark-mode .kicker,
+body.dark-mode .kpi-num,
+body.dark-mode .reg-badge.reg-milestone,
+body.dark-mode .governance-score-preview {
+  color: #5eead4;
 }
-body.dark-mode .pm-msg-mine .pm-msg-bubble { color: #06231f; }
-body.dark-mode .modal-head .kicker { color: #34c3e0; }
+body.dark-mode .modal-head .kicker { color: #67d9ee; }
+body.dark-mode .badge.active { color: #9dc0ff; }
+body.dark-mode .badge.high,
+body.dark-mode .reg-badge.reg-risk { color: #ff9d9d; }
+body.dark-mode .workload-pct { color: #6ee7a0; }
+
+/* Doldurulmuş (accent fonlu) düymələrdə mətn ağ qalsın — fon tünd teal-dir. */
+body.dark-mode .header-actions .header-btn-primary,
+body.dark-mode button.primary,
+body.dark-mode .kb-btn-primary {
+  color: #ffffff;
+}
+
+/* Qalan "accent rəngi mətn kimi" işlənən sinifler — mənbə qaydaları daha
+   spesifik olduğu üçün eyni formada təkrarlanır. */
+body.dark-mode .governance-rows .report-row strong { color: #5eead4; }
+body.dark-mode .new-user-card-title span { color: #5eead4; }
+body.dark-mode .reg-type-badge.reg-milestone { color: #5eead4; }
+body.dark-mode .reg-type-badge.reg-risk { color: #ff9d9d; }
+body.dark-mode .reg-status-chip { color: #cbd5e5; }
+body.dark-mode .reg-status-chip.reg-status-Open { color: #6ee7a0; }
+body.dark-mode strong.kpi-num { color: #5eead4; }
+body.dark-mode span.workload-pct { color: #6ee7a0; }
+
+/* JS bəzi yerlərdə INLINE `style="color:var(--teal)"` yazır — inline stil
+   heç bir CSS qaydası ilə əvəzlənmir. Ona görə tokeni MƏHZ HƏMİN elementlərdə
+   yenidən təyin edirik: inline `var(--teal)` artıq açıq çaları həll edir.
+   Qlobal tokenlərə toxunmadığımız üçün dolğular (düymə/badge/sidebar) qorunur. */
+body.dark-mode .kpi-num,
+body.dark-mode .workload-pct,
+body.dark-mode .governance-score-preview,
+body.dark-mode #settingsMessage,
+body.dark-mode .report-row th {
+  --teal: #5eead4;
+  --green: #6ee7a0;
+  --red: #ff9d9d;
+  --danger: #ff9d9d;
+  --amber: #fbbf24;
+  --blue: #9dc0ff;
+}
+/* Sinifsiz, inline rəngli mətn saxlayan konteynerlər (yalnız mətn — dolğu yoxdur). */
+body.dark-mode .task-meta,
+body.dark-mode .dash-kpi,
+body.dark-mode .report-row,
+body.dark-mode .metric,
+body.dark-mode .insight-card {
+  --teal: #5eead4;
+  --green: #6ee7a0;
+  --red: #ff9d9d;
+  --danger: #ff9d9d;
+  --amber: #fbbf24;
+  --blue: #9dc0ff;
+}
+body.dark-mode .health-score { --teal: #5eead4; --green: #6ee7a0; --red: #ff9d9d; --amber: #fbbf24; }
