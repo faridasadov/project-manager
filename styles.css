@@ -7254,15 +7254,18 @@ button.primary:active,
 }
 
 /* ── Tema keçidi: ay ⇄ günəş (CodePen mrozilla/OJJNjRb uyğunlaşdırması) ──
-   İşarələnmiş = işıqlı rejim (günəş). İşarəsiz = qaranlıq rejim (ay).
-   Bütün forma yalnız box-shadow ilə qurulub — heç bir ikon faylı yoxdur. */
+   Digər header düymələri kimi 38×38 çərçivəyə oturur; forma özü yalnız
+   box-shadow ilə qurulub, ona görə çərçivəni <label> daşıyır. */
+.theme-toggle-wrap {
+  cursor: pointer;
+  flex: 0 0 auto;
+}
 .theme-toggle {
-  --size: 1.35rem;
+  --size: 1rem;
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  flex: 0 0 auto;
-  margin: 0 0.15rem;
+  margin: 0;
   padding: 0;
   border: 0;
   outline: none;
@@ -7271,15 +7274,15 @@ button.primary:active,
   height: var(--size);
   box-shadow: inset calc(var(--size) * 0.33) calc(var(--size) * -0.25) 0;
   border-radius: 999px;
-  color: #cfd6ff;
-  transition: color 500ms, transform 500ms, box-shadow 500ms;
+  color: currentColor;
+  transition: color 400ms ease, transform 400ms ease, box-shadow 400ms ease;
 }
 .theme-toggle:checked {
   --ray-size: calc(var(--size) * -0.4);
   --offset-orthogonal: calc(var(--size) * 0.65);
   --offset-diagonal: calc(var(--size) * 0.45);
-  transform: scale(0.75);
-  color: #ffaa00;
+  transform: scale(0.72);
+  color: #f5a623;
   box-shadow:
     inset 0 0 0 var(--size),
     calc(var(--offset-orthogonal) * -1) 0 0 var(--ray-size),
@@ -7291,9 +7294,10 @@ button.primary:active,
     calc(var(--offset-diagonal) * -1) var(--offset-diagonal) 0 var(--ray-size),
     var(--offset-diagonal) calc(var(--offset-diagonal) * -1) 0 var(--ray-size);
 }
-.theme-toggle:focus-visible {
+.theme-toggle-wrap:hover { color: var(--ink); }
+.theme-toggle-wrap:has(.theme-toggle:focus-visible) {
   outline: 2px solid var(--teal);
-  outline-offset: 6px;
+  outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {
   .theme-toggle { transition: none; }
