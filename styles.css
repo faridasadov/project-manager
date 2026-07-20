@@ -7274,13 +7274,22 @@ button.primary:active,
   cursor: pointer;
   width: var(--size);
   height: var(--size);
-  box-shadow: inset calc(var(--size) * 0.33) calc(var(--size) * -0.25) 0;
+  /* Ay: DİSK currentColor ilə doldurulur, "dişlək" isə düymənin fonu rəngi ilə
+     kəsilir. Əvvəllər dişlək şəffaf idi və altdakı fonun görünməsindən asılı
+     idi — bəzi hallarda bütün dairə eyni rəngə düşüb ay itirdi. İndi hər iki
+     rəng açıq verilir, heç bir mirasdan asılılıq yoxdur. */
+  background: currentColor;
+  box-shadow: inset calc(var(--size) * 0.33) calc(var(--size) * -0.25) 0 0 var(--toggle-bite);
   border-radius: 999px;
-  color: #5b6577;
+  color: #4a5568;
+  --toggle-bite: #ffffff;
   transition: color 400ms ease, transform 400ms ease, box-shadow 400ms ease;
 }
-body.dark-mode .theme-toggle { color: #d6e0f0; }
-.theme-toggle-wrap:hover .theme-toggle { color: #2f3948; }
+body.dark-mode .theme-toggle {
+  color: #e2e8f5;
+  --toggle-bite: #162132;
+}
+.theme-toggle-wrap:hover .theme-toggle { color: #1f2937; }
 body.dark-mode .theme-toggle-wrap:hover .theme-toggle { color: #ffffff; }
 .theme-toggle:checked,
 body.dark-mode .theme-toggle:checked,
@@ -7291,8 +7300,9 @@ body.dark-mode .theme-toggle-wrap:hover .theme-toggle:checked {
   --offset-diagonal: calc(var(--size) * 0.45);
   transform: scale(0.72);
   color: #f5a623;
+  background: currentColor;
   box-shadow:
-    inset 0 0 0 var(--size),
+    inset 0 0 0 var(--size) currentColor,
     calc(var(--offset-orthogonal) * -1) 0 0 var(--ray-size),
     var(--offset-orthogonal) 0 0 var(--ray-size),
     0 calc(var(--offset-orthogonal) * -1) 0 var(--ray-size),
@@ -7603,4 +7613,42 @@ body.dark-mode .health-score { --teal: #5eead4; --green: #6ee7a0; --red: #ff9d9d
 body[data-view="teams"] .control-strip,
 body[data-view="teams"] .summary {
   display: none;
+}
+
+/* ── "Glide to reveal" (CodePen jh3y/JjxPKXz uyğunlaşdırması) ──────────────
+   Hərflər blur + kiçildilmiş durur; --active 0→1 olduqca kəskinləşir.
+   --active dəyərini JS təyin edir (hero: kursor məsafəsi, etiket: animasiya). */
+.glide-char {
+  display: inline-block;
+  scale: calc(var(--active, 0) * 0.18 + 0.86);
+  filter: blur(calc((1 - var(--active, 0)) * 0.42rem));
+  opacity: calc(var(--active, 0) * 0.45 + 0.55);
+  transition:
+    scale calc(((1 - var(--active, 0)) + 0.2) * 0.5s),
+    filter calc(((1 - var(--active, 0)) + 0.2) * 0.5s),
+    opacity calc(((1 - var(--active, 0)) + 0.2) * 0.5s);
+  will-change: filter, scale;
+}
+
+/* Başlıq: kursor gəzdikcə oxunur. */
+.glide-title { cursor: default; }
+
+/* Etiket: sahə fokuslananda hərflər pillə-pillə açılır. */
+.glide-label.glide-playing .glide-char {
+  animation: glideLabelReveal 620ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 26ms);
+}
+@keyframes glideLabelReveal {
+  from { filter: blur(0.34rem); opacity: 0.35; scale: 0.9; }
+  to   { filter: blur(0);       opacity: 1;    scale: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glide-char {
+    scale: 1;
+    filter: none;
+    opacity: 1;
+    transition: none;
+    animation: none !important;
+  }
 }
