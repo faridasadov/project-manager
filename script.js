@@ -2141,7 +2141,6 @@ function renderSummary() {
   hoursSummary.textContent = `${planned} / ${actual}`;
   // Sidebar "Komanda yüklənməsi" — statik 40h deyil, cari şirkətin real plan saat yükü.
   if (sidebarCapacityLabel) sidebarCapacityLabel.textContent = `${planned}h`;
-  renderSidebarTeams();
 
   if (!shownTasks.length) {
     dateRange.textContent = "-";
@@ -2988,6 +2987,7 @@ function renderViews() {
   views.forEach((view) => view.classList.toggle("active-view", view.id === `${currentView}View`));
   document.body.dataset.view = currentView;
   renderProjectDetailBar();
+  if (currentView === "teams") renderTeamsView();
   if (typeof ensureChatWidget === "function") ensureChatWidget();
 }
 
@@ -5554,56 +5554,230 @@ workloadList?.addEventListener("click", (event) => {
   setView("list");
 });
 
-// ── Sol paneldəki "Komandalar" bloku ────────────────────────────────────────
-// Task axınından çıxmadan komanda üzvünü görüb onun tapşırıqlarına keçmək üçün.
-// Üzvə klik → mövcud currentOwnerFilter mexanizmi ilə task siyahısı süzülür.
-function renderSidebarTeams() {
-  const list = document.querySelector("#sidebarTeamsList");
-  const label = document.querySelector("#sidebarTeamsLabel");
-  if (!list) return;
+// ── Tam səhifə "Komandalar" görünüşü ────────────────────────────────────────
+// Komanda kartları + sərbəst istifadəçi hovuzu. Üzvü hovuzdan karta sürüşdürmək
+// komandaya əlavə edir, kartdan hovuza sürüşdürmək çıxarır (drag & drop).
+// Klaviatura/toxunma üçün hər üzv çipində ✕ düyməsi də var.
 
-  const teams = appState.teams.filter((team) => !team.companyId || team.companyId === currentCompanyId());
-  // Komanda yoxdursa bölmə tamamilə gizlənsin — boş başlıq yer tutmasın.
-  if (label) label.hidden = !teams.length;
-  if (!teams.length) { list.innerHTML = ""; return; }
+let teamsDragPayload = null;   // { value, fromTeamId }
+let teamsOpenTeamId = "";      // açıq kartda mini-dashboard göstərilir
 
-  const taskCountFor = (ownerValue) => appState.tasks.filter((task) => task.owner === ownerValue).length;
-  const initial = (name) => escapeHtml((String(name).trim().charAt(0) || "?").toUpperCase());
-
-  list.innerHTML = teams.map((team) => {
-    const values = (team.memberIds || []).map((id) => (id.includes(":") ? id : resourceValue("member", id)));
-    const members = values.map((value) => ({ value, label: resourceLabel(value) })).filter((m) => m.label);
-    const rows = members.length
-      ? members.map((m) => `
-          <button type="button" class="sidebar-team-member" data-owner="${escapeHtml(m.value)}" title="${escapeHtml(m.label)}">
-            <span class="sidebar-team-dot">${initial(m.label)}</span>
-            <span class="sidebar-team-name">${escapeHtml(m.label)}</span>
-            <span class="sidebar-team-tasks">${taskCountFor(m.value)}</span>
-          </button>`).join("")
-      : `<p class="sidebar-team-empty">${text("empty")}</p>`;
-    // Naviqasiya düymələri ilə eyni ritm: 36px ikon + ad + sağda say.
-    return `
-      <details class="sidebar-team">
-        <summary class="sidebar-team-head">
-          <span class="menu-icon">${initial(team.name)}</span>
-          <span class="sidebar-team-title">${escapeHtml(team.name)}</span>
-          <span class="sidebar-team-count">${members.length}</span>
-        </summary>
-        <div class="sidebar-team-members">${rows}</div>
-      </details>`;
-  }).join("");
+function teamsScoped() {
+  return appState.teams.filter((team) => !team.companyId || team.companyId === currentCompanyId());
 }
 
-document.querySelector("#sidebarTeamsList")?.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-owner]");
-  if (!button) return;
-  currentOwnerFilter = button.dataset.owner;
-  currentFilter = "Hamısı";
-  currentPriorityFilter = "Hamısı";
-  currentSmartFilter = "Hamısı";
-  setView("list");
+// Komandaya təyin oluna bilən adamlar: resurs üzvləri + şirkət istifadəçiləri.
+function teamsAssignablePeople() {
+  const companyId = currentCompanyId();
+  const people = [];
+  appState.members
+    .filter((m) => (m.companyId || "company-default") === companyId)
+    .forEach((m) => people.push({ value: resourceValue("member", m.id), label: m.name || "" }));
+  appState.users
+    .filter((u) => u.role !== "super_admin" && (u.companyId || "company-default") === companyId)
+    .forEach((u) => people.push({
+      value: resourceValue("user", u.id),
+      label: u.profile?.fullName || u.username || ""
+    }));
+  return people.filter((p) => p.label);
+}
+
+function teamsMemberValues(team) {
+  return (team.memberIds || []).map((id) => (id.includes(":") ? id : resourceValue("member", id)));
+}
+
+function teamsTaskCount(values) {
+  const set = new Set(values);
+  return appState.tasks.filter((task) => set.has(task.owner)).length;
+}
+
+function teamsStatusBreakdown(values) {
+  const set = new Set(values);
+  const counts = {};
+  appState.tasks.filter((task) => set.has(task.owner))
+    .forEach((task) => { counts[task.status] = (counts[task.status] || 0) + 1; });
+  return counts;
+}
+
+function teamsInitial(label) {
+  return escapeHtml((String(label).trim().charAt(0) || "?").toUpperCase());
+}
+
+function teamsPersonChip(person, teamId) {
+  // teamId boşdursa hovuz çipidir; əks halda komanda üzvüdür (çıxarıla bilər).
+  const action = teamId
+    ? `<button type="button" class="team-chip-x" data-team-remove="${escapeHtml(teamId)}" data-value="${escapeHtml(person.value)}" aria-label="Komandadan çıxar" title="Komandadan çıxar">✕</button>`
+    : "";
+  return `
+    <div class="team-chip" draggable="true" data-value="${escapeHtml(person.value)}" data-from-team="${escapeHtml(teamId || "")}" title="${escapeHtml(person.label)}">
+      <span class="team-chip-avatar">${teamsInitial(person.label)}</span>
+      <span class="team-chip-name">${escapeHtml(person.label)}</span>
+      ${action}
+    </div>`;
+}
+
+function renderTeamsView() {
+  const grid = document.querySelector("#teamsGrid");
+  const pool = document.querySelector("#teamsPool");
+  if (!grid || !pool) return;
+
+  const teams = teamsScoped();
+  const people = teamsAssignablePeople();
+  const labelOf = new Map(people.map((p) => [p.value, p.label]));
+
+  grid.innerHTML = teams.length ? teams.map((team) => {
+    const values = teamsMemberValues(team);
+    const members = values
+      .map((v) => ({ value: v, label: labelOf.get(v) || resourceLabel(v) }))
+      .filter((m) => m.label);
+    const open = teamsOpenTeamId === team.id;
+    let dash = "";
+    if (open) {
+      const breakdown = teamsStatusBreakdown(values);
+      const cells = Object.entries(breakdown)
+        .map(([status, n]) => `<span class="team-dash-cell"><strong>${n}</strong>${escapeHtml(statusLabel(status))}</span>`)
+        .join("");
+      dash = `<div class="team-card-dash">${cells || `<span class="team-dash-empty">${text("empty")}</span>`}</div>`;
+    }
+    return `
+      <article class="team-card${open ? " open" : ""}" data-team-id="${escapeHtml(team.id)}">
+        <button type="button" class="team-card-head" data-team-open="${escapeHtml(team.id)}">
+          <span class="team-card-avatar">${teamsInitial(team.name)}</span>
+          <span class="team-card-titles">
+            <strong>${escapeHtml(team.name)}</strong>
+            <small>${members.length} üzv · ${teamsTaskCount(values)} task</small>
+          </span>
+          <span class="team-card-chevron" aria-hidden="true">›</span>
+        </button>
+        ${dash}
+        <div class="team-card-drop" data-team-drop="${escapeHtml(team.id)}">
+          ${members.length
+            ? members.map((m) => teamsPersonChip(m, team.id)).join("")
+            : `<p class="team-card-empty">${text("empty")}</p>`}
+        </div>
+        <div class="team-card-foot">
+          <button type="button" class="small danger" data-team-delete="${escapeHtml(team.id)}">Sil</button>
+        </div>
+      </article>`;
+  }).join("") : `<p class="empty-hint">${text("empty")}</p>`;
+
+  const assigned = new Set(teams.flatMap(teamsMemberValues));
+  const free = people.filter((p) => !assigned.has(p.value));
+  pool.innerHTML = free.length
+    ? free.map((p) => teamsPersonChip(p, "")).join("")
+    : `<p class="team-card-empty">${text("empty")}</p>`;
+}
+
+function teamsSetMembership(value, targetTeamId, fromTeamId) {
+  if (targetTeamId === fromTeamId) return;
+  let changed = false;
+  appState.teams = appState.teams.map((team) => {
+    const values = teamsMemberValues(team);
+    if (team.id === fromTeamId && values.includes(value)) {
+      changed = true;
+      return { ...team, memberIds: values.filter((v) => v !== value) };
+    }
+    if (team.id === targetTeamId && !values.includes(value)) {
+      changed = true;
+      return { ...team, memberIds: [...values, value] };
+    }
+    return team;
+  });
+  if (!changed) return;
+  saveResources();
+  recordAudit("team.membership_changed", "team", targetTeamId || fromTeamId, resourceLabel(value));
+  renderTeamsView();
+}
+
+// ── Drag & drop ─────────────────────────────────────────────────────────────
+document.addEventListener("dragstart", (event) => {
+  const chip = event.target.closest?.(".team-chip");
+  if (!chip) return;
+  teamsDragPayload = { value: chip.dataset.value, fromTeamId: chip.dataset.fromTeam || "" };
+  chip.classList.add("dragging");
+  event.dataTransfer.effectAllowed = "move";
+  // Firefox sürükləməni yalnız data təyin ediləndə başladır.
+  event.dataTransfer.setData("text/plain", chip.dataset.value);
 });
 
+document.addEventListener("dragend", (event) => {
+  event.target.closest?.(".team-chip")?.classList.remove("dragging");
+  document.querySelectorAll(".drop-hover").forEach((el) => el.classList.remove("drop-hover"));
+  teamsDragPayload = null;
+});
+
+document.addEventListener("dragover", (event) => {
+  if (!teamsDragPayload) return;
+  const zone = event.target.closest?.("[data-team-drop], #teamsPool");
+  if (!zone) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+  if (!zone.classList.contains("drop-hover")) {
+    document.querySelectorAll(".drop-hover").forEach((el) => el.classList.remove("drop-hover"));
+    zone.classList.add("drop-hover");
+  }
+});
+
+document.addEventListener("drop", (event) => {
+  if (!teamsDragPayload) return;
+  const zone = event.target.closest?.("[data-team-drop], #teamsPool");
+  if (!zone) return;
+  event.preventDefault();
+  zone.classList.remove("drop-hover");
+  // #teamsPool-a buraxmaq = komandadan çıxarmaq (hədəf komanda yoxdur).
+  const targetTeamId = zone.dataset.teamDrop || "";
+  teamsSetMembership(teamsDragPayload.value, targetTeamId, teamsDragPayload.fromTeamId);
+  teamsDragPayload = null;
+});
+
+// ── Kliklər ─────────────────────────────────────────────────────────────────
+document.querySelector("#teamsGrid")?.addEventListener("click", (event) => {
+  const openBtn = event.target.closest("[data-team-open]");
+  if (openBtn) {
+    const id = openBtn.dataset.teamOpen;
+    teamsOpenTeamId = teamsOpenTeamId === id ? "" : id;
+    renderTeamsView();
+    return;
+  }
+  const removeBtn = event.target.closest("[data-team-remove]");
+  if (removeBtn) {
+    teamsSetMembership(removeBtn.dataset.value, "", removeBtn.dataset.teamRemove);
+    return;
+  }
+  const delBtn = event.target.closest("[data-team-delete]");
+  if (delBtn) {
+    if (!isAdmin()) return;
+    const team = appState.teams.find((t) => t.id === delBtn.dataset.teamDelete);
+    if (!team || !confirm(`"${team.name}" komandası silinsin?`)) return;
+    appState.teams = appState.teams.filter((t) => t.id !== team.id);
+    saveResources();
+    recordAudit("team.deleted", "team", team.id, team.name);
+    renderTeamsView();
+  }
+});
+
+document.querySelector("#teamsAddTeam")?.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  const name = prompt("Komandanın adı:");
+  if (!name || !name.trim()) return;
+  appState.teams.push({ id: createId("team"), companyId: currentCompanyId(), name: name.trim(), memberIds: [] });
+  saveResources();
+  recordAudit("team.created", "team", "", name.trim());
+  renderTeamsView();
+});
+
+document.querySelector("#teamsAddUser")?.addEventListener("click", () => {
+  if (!isAdmin()) return;
+  // Admin panelindəki mövcud istifadəçi yaratma axınına yönləndiririk —
+  // ikinci forma saxlamaq eyni datanı iki yerdən idarə etmək demək olardı.
+  document.querySelector("#openAdminPanel")?.click();
+  setTimeout(() => {
+    document.querySelector('[data-admin-section="users"]')?.setAttribute("open", "");
+    document.querySelector("#newUserName")?.focus();
+  }, 220);
+});
+
+refreshAuditLogsButton?.addEventListener("click", fetchAuditLogs);
 refreshAuditLogsButton?.addEventListener("click", fetchAuditLogs);
 refreshMailHistoryButton?.addEventListener("click", fetchMailHistory);
 refreshPlatformCompaniesButton?.addEventListener("click", () => {

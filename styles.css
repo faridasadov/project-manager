@@ -7414,102 +7414,167 @@ body.dark-mode .insight-card {
 }
 body.dark-mode .health-score { --teal: #5eead4; --green: #6ee7a0; --red: #ff9d9d; --amber: #fbbf24; }
 
-/* ── Sol paneldəki "Komandalar" bölməsi ──────────────────────────────────
-   Naviqasiya düymələri ilə eyni ritm: 44px sətir, 36px ikon, 10px boşluq. */
-.sidebar-teams-list { display: grid; gap: 2px; }
-.sidebar-teams-list:empty { display: none; }
+/* ── Komandalar görünüşü (tam səhifə) ───────────────────────────────────── */
+.teams-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-.sidebar-team-head {
-  min-height: 44px;
+.teams-grid {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) auto;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.team-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--soft);
+  overflow: hidden;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.team-card.open { border-color: var(--teal); }
+
+.team-card-head {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 16px;
   align-items: center;
   gap: 10px;
-  padding: 0 10px;
-  border-radius: 10px;
-  color: #93d7c7;
-  font-size: 0.88rem;
-  font-weight: 500;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: left;
   cursor: pointer;
-  list-style: none;
-  transition: background 160ms ease, color 160ms ease;
 }
-.sidebar-team-head::-webkit-details-marker { display: none; }
-.sidebar-team-head:hover { background: rgba(255, 255, 255, 0.08); color: #eafaf4; }
-.sidebar-team[open] > .sidebar-team-head { color: #eafaf4; }
-
-.sidebar-team-title {
-  min-width: 0;
+.team-card-head:hover { background: color-mix(in srgb, var(--teal) 8%, transparent); }
+.team-card-avatar {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--teal) 16%, transparent);
+  color: var(--teal);
+  font-weight: 800;
+}
+.team-card-titles { min-width: 0; display: grid; gap: 2px; }
+.team-card-titles strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.sidebar-team-count {
-  min-width: 20px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: rgba(45, 212, 191, 0.16);
-  color: #93d7c7;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-align: center;
-}
+.team-card-titles small { color: var(--muted); font-size: 0.78rem; }
+.team-card-chevron { color: var(--muted); transition: transform 160ms ease; }
+.team-card.open .team-card-chevron { transform: rotate(90deg); }
 
-/* Üzvlər — ana sətirdən bir pillə kiçik, ikon oxu ilə hizalı. */
-.sidebar-team-members {
+.team-card-dash {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 12px 10px;
+}
+.team-dash-cell {
   display: grid;
   gap: 1px;
-  padding: 2px 0 4px;
-}
-.sidebar-team-member {
-  width: 100%;
-  min-height: 34px;
-  display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  padding: 0 10px 0 24px;
-  border: 0;
+  padding: 6px 10px;
   border-radius: 8px;
-  background: none;
-  color: #7fc4b4;
-  font-size: 0.82rem;
-  text-align: left;
-  cursor: pointer;
-  transition: background 140ms ease, color 140ms ease;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  font-size: 0.72rem;
+  color: var(--muted);
 }
-.sidebar-team-member:hover { background: rgba(255, 255, 255, 0.08); color: #eafaf4; }
-.sidebar-team-member:focus-visible { outline: 2px solid #34d399; outline-offset: -2px; }
+.team-dash-cell strong { font-size: 1rem; color: var(--ink); }
+.team-dash-empty { font-size: 0.78rem; color: var(--muted); padding: 0 2px; }
 
-.sidebar-team-dot {
+/* Buraxma zonaları */
+.team-card-drop,
+.teams-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 52px;
+  padding: 10px 12px;
+  border-top: 1px dashed var(--line);
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.teams-pool {
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  margin-top: 8px;
+}
+.team-card-drop.drop-hover,
+.teams-pool.drop-hover {
+  background: color-mix(in srgb, var(--teal) 12%, transparent);
+  border-color: var(--teal);
+}
+
+.team-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  font-size: 0.8rem;
+  cursor: grab;
+  user-select: none;
+}
+.team-chip:active { cursor: grabbing; }
+.team-chip.dragging { opacity: 0.45; }
+.team-chip-avatar {
   width: 22px;
   height: 22px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: rgba(45, 212, 191, 0.14);
-  color: #93d7c7;
-  font-size: 0.65rem;
+  background: color-mix(in srgb, var(--teal) 16%, transparent);
+  color: var(--teal);
+  font-size: 0.68rem;
   font-weight: 700;
 }
-.sidebar-team-name {
-  min-width: 0;
+.team-chip-name {
+  max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.sidebar-team-tasks {
+.team-chip-x {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
   font-size: 0.7rem;
-  font-weight: 600;
-  opacity: 0.65;
-  font-variant-numeric: tabular-nums;
+  cursor: pointer;
 }
-.sidebar-team-empty {
-  margin: 0;
-  padding: 4px 10px 4px 24px;
-  font-size: 0.76rem;
-  color: #7fc4b4;
-  opacity: 0.7;
+.team-chip-x:hover { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); }
+
+.team-card-empty { margin: 0; font-size: 0.78rem; color: var(--muted); }
+.team-card-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+}
+
+.teams-pool-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 22px;
+}
+.teams-pool-head h3 { margin: 0; font-size: 0.95rem; }
+.teams-pool-head small { color: var(--muted); font-size: 0.78rem; }
+
+@media (max-width: 640px) {
+  .teams-grid { grid-template-columns: 1fr; }
 }
 
 /* Welcome hero — "signal field" zərrəcik fonu (canvas). */

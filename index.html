@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20260720-signal1">
+  <link rel="stylesheet" href="styles.css?v=20260720-teamsview1">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#136f63">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -264,8 +264,7 @@
         <button class="view-tab" data-view="kanban" type="button"><span class="menu-icon" data-menu-icon="K">K</span><span>Kanban</span></button>
         <button class="view-tab" data-view="calendar" type="button"><span class="menu-icon" data-menu-icon="C">C</span><span data-i18n="calendar">Təqvim</span></button>
         <button class="view-tab" data-view="gantt" type="button"><span class="menu-icon" data-menu-icon="G">G</span><span>Gantt</span></button>
-        <span id="sidebarTeamsLabel" class="sidebar-section-label" data-i18n="teams" hidden>Komandalar</span>
-        <div id="sidebarTeamsList" class="sidebar-teams-list"></div>
+        <button class="view-tab" data-view="teams" type="button"><span class="menu-icon" data-menu-icon="M">M</span><span data-i18n="teams">Komandalar</span></button>
         <button class="view-tab" data-view="reports" type="button"><span class="menu-icon" data-menu-icon="R">R</span><span data-i18n="reports">Hesabat</span></button>
       </nav>
       <div class="sidebar-footer">
@@ -1879,6 +1878,27 @@
           </div>
         </section>
 
+        <section id="teamsView" class="view">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <p class="kicker" data-i18n="teams">Komandalar</p>
+                <h2 data-i18n="teamsViewTitle">Komanda idarəetməsi</h2>
+              </div>
+              <div class="teams-actions">
+                <button id="teamsAddTeam" class="primary" type="button" data-i18n="newTeamBtn">+ Komanda</button>
+                <button id="teamsAddUser" type="button" data-i18n="newUserBtn">+ İstifadəçi</button>
+              </div>
+            </div>
+            <div id="teamsGrid" class="teams-grid"></div>
+            <div class="teams-pool-head">
+              <h3 data-i18n="freeUsers">Sərbəst istifadəçilər</h3>
+              <small data-i18n="freeUsersHint">Kartlara sürüşdürərək komandaya əlavə et</small>
+            </div>
+            <div id="teamsPool" class="teams-pool"></div>
+          </div>
+        </section>
+
         <section id="reportsView" class="view">
           <div class="panel">
             <div class="section-head">
@@ -1921,7 +1941,7 @@
   <script src="modules/onboarding.js?v=20260716-tour"></script>
   <script src="modules/project-chat.js?v=20260719-team"></script>
   <script src="modules/hero-signal-field.js?v=20260720-signal"></script>
-  <script src="script.js?v=20260720-signal1"></script>
+  <script src="script.js?v=20260720-teamsview1"></script>
   <!-- vanilla Motion (framer-motion sibling) — KPI count-up & spring mikro-interaksiyalar -->
   <script type="module">
     import { animate } from "./modules/vendor/motion.js?v=20260714-motion";
