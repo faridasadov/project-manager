@@ -2987,6 +2987,14 @@ function renderViews() {
   views.forEach((view) => view.classList.toggle("active-view", view.id === `${currentView}View`));
   document.body.dataset.view = currentView;
   renderProjectDetailBar();
+  // Başlıq görünüşə uyğunlaşsın — Komandalar səhifəsində "Plan, task və icra
+  // paneli" yazısı yanlış kontekst verirdi.
+  const shellTitle = document.querySelector('.top-shell h1[data-i18n="appTitle"]');
+  if (shellTitle) {
+    const perView = { teams: "teamsViewTitle" };
+    const key = perView[currentView];
+    shellTitle.textContent = key ? text(key) : text("appTitle");
+  }
   if (currentView === "teams") renderTeamsView();
   if (typeof ensureChatWidget === "function") ensureChatWidget();
 }
@@ -5778,26 +5786,17 @@ document.querySelector("#teamsGrid")?.addEventListener("click", (event) => {
   }
 });
 
-document.querySelector("#teamsAddTeam")?.addEventListener("click", () => {
+// Komanda/istifadəçi yaratma admin paneldə ARTIQ tam funksionaldır (validasiya,
+// rol seçimi, Supabase inteqrasiyası). Burada ikinci forma qurmuruq — eyni datanı
+// iki yerdən idarə etmək buq mənbəyidir. Mövcud openAdminSection() ilə həmin
+// bölməni açırıq və qayıdanda siyahını yeniləyirik.
+function openAdminSectionForTeams(key) {
   if (!isAdmin()) return;
-  const name = prompt("Komandanın adı:");
-  if (!name || !name.trim()) return;
-  appState.teams.push({ id: createId("team"), companyId: currentCompanyId(), name: name.trim(), memberIds: [] });
-  saveResources();
-  recordAudit("team.created", "team", "", name.trim());
-  renderTeamsView();
-});
+  openAdminSection(key);
+}
 
-document.querySelector("#teamsAddUser")?.addEventListener("click", () => {
-  if (!isAdmin()) return;
-  // Admin panelindəki mövcud istifadəçi yaratma axınına yönləndiririk —
-  // ikinci forma saxlamaq eyni datanı iki yerdən idarə etmək demək olardı.
-  document.querySelector("#openAdminPanel")?.click();
-  setTimeout(() => {
-    document.querySelector('[data-admin-section="users"]')?.setAttribute("open", "");
-    document.querySelector("#newUserName")?.focus();
-  }, 220);
-});
+document.querySelector("#teamsAddTeam")?.addEventListener("click", () => openAdminSectionForTeams("teams"));
+document.querySelector("#teamsAddUser")?.addEventListener("click", () => openAdminSectionForTeams("users"));
 
 refreshAuditLogsButton?.addEventListener("click", fetchAuditLogs);
 refreshAuditLogsButton?.addEventListener("click", fetchAuditLogs);

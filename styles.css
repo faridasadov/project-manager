@@ -7262,6 +7262,8 @@ button.primary:active,
 }
 .theme-toggle {
   --size: 1rem;
+  /* Rəngi currentColor-dan MİRAS ALMIRIQ: miras zənciri temaya görə dəyişə bilir
+     və ay görünməz qalırdı. Hər iki temada açıq-aydın dəyər veririk. */
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -7274,10 +7276,16 @@ button.primary:active,
   height: var(--size);
   box-shadow: inset calc(var(--size) * 0.33) calc(var(--size) * -0.25) 0;
   border-radius: 999px;
-  color: currentColor;
+  color: #5b6577;
   transition: color 400ms ease, transform 400ms ease, box-shadow 400ms ease;
 }
-.theme-toggle:checked {
+body.dark-mode .theme-toggle { color: #d6e0f0; }
+.theme-toggle-wrap:hover .theme-toggle { color: #2f3948; }
+body.dark-mode .theme-toggle-wrap:hover .theme-toggle { color: #ffffff; }
+.theme-toggle:checked,
+body.dark-mode .theme-toggle:checked,
+.theme-toggle-wrap:hover .theme-toggle:checked,
+body.dark-mode .theme-toggle-wrap:hover .theme-toggle:checked {
   --ray-size: calc(var(--size) * -0.4);
   --offset-orthogonal: calc(var(--size) * 0.65);
   --offset-diagonal: calc(var(--size) * 0.45);
@@ -7588,4 +7596,11 @@ body.dark-mode .health-score { --teal: #5eead4; --green: #6ee7a0; --red: #ff9d9d
   /* Aurora ləkələri ilə qarışsın, sərt qara kvadrat kimi görünməsin. */
   mix-blend-mode: screen;
   opacity: 0.95;
+}
+
+/* Komandalar səhifəsində task axtarışı/filtrləri və task KPI-ları məntiqsizdir —
+   həmin görünüşdə gizlədilir (body[data-view] setView tərəfindən təyin olunur). */
+body[data-view="teams"] .control-strip,
+body[data-view="teams"] .summary {
+  display: none;
 }
