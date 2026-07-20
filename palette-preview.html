@@ -245,8 +245,9 @@ body {
 .link { color: var(--brand-ink); font-size: 0.8rem; font-weight: 600; cursor: pointer; }
 
 /* sütun qrafiki */
-.chart { display: flex; align-items: flex-end; gap: 12px; height: 150px; padding-top: 8px; }
-.bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.chart { display: flex; align-items: flex-end; gap: 12px; height: 160px; padding-top: 8px; }
+/* .bar tam hündürlük almalıdır, yoxsa daxildəki faizli hündürlük 0-a həll olunur. */
+.bar { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 8px; }
 .bar i { display: block; width: 100%; border-radius: 8px 8px 4px 4px; background: var(--brand-soft); }
 .bar.on i { background: var(--brand); }
 .bar span { font-size: 0.72rem; color: var(--muted); }
