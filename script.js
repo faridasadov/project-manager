@@ -3905,15 +3905,29 @@ async function supabaseSaveSettings() {
 }
 
 async function syncSupabaseAuditLogs() {
+  // Audit sinxronu KÖMƏKÇİ əməliyyatdır — login yolunda await olunur, ona görə
+  // xətası heç vaxt yuxarı qalxmamalıdır (əks halda istifadəçi girə bilmir).
+  try {
+    await syncSupabaseAuditLogsInner();
+  } catch (error) {
+    console.warn("Audit log sinxronu alınmadı:", error?.message || error);
+  }
+}
+
+async function syncSupabaseAuditLogsInner() {
   if (!supabaseSession?.access_token || !supabaseWorkspaceId) return;
   const pending = localAuditLogs
     .filter((entry) => entry?.id && !supabaseAuditSyncedIds.has(entry.id))
     .slice(0, 25);
   if (!pending.length) return;
-  await supabaseRequest("/rest/v1/audit_logs", {
+  // legacy_id + on_conflict → təkrar göndərilən log XƏTA vermir, sadəcə atlanır.
+  // (Əvvəllər unikal indeks 409 qaytarırdı və istifadəçi girişdə xəbərdarlıq görürdü.)
+  await supabaseRequest("/rest/v1/audit_logs?on_conflict=workspace_id,legacy_id", {
     method: "POST",
+    headers: { Prefer: "resolution=ignore-duplicates" },
     body: JSON.stringify(pending.map((entry) => ({
       workspace_id: supabaseWorkspaceId,
+      legacy_id: entry.id,
       actor_id: currentUser?.id || null,
       actor_label: entry.actor || currentUser?.username || "system",
       action: entry.action || "local.audit",
@@ -3928,6 +3942,14 @@ async function syncSupabaseAuditLogs() {
 }
 
 async function syncSupabaseNotifications() {
+  try {
+    await syncSupabaseNotificationsInner();
+  } catch (error) {
+    console.warn("Bildiriş sinxronu alınmadı:", error?.message || error);
+  }
+}
+
+async function syncSupabaseNotificationsInner() {
   if (!supabaseSession?.access_token || !supabaseWorkspaceId) return;
   const pending = notifications
     .filter((entry) => entry?.id && !supabaseNotificationSyncedIds.has(entry.id))
