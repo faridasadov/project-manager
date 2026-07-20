@@ -16,6 +16,11 @@ const localAuditKey = "project-manager-local-audit-v1";
 const notificationsKey = "project-manager-notifications-v1";
 const supabaseSessionKey = "project-manager-supabase-session-v1";
 const supabaseWorkspaceKey = "project-manager-supabase-workspace-v1";
+// Supabase-ə artıq göndərilmiş local log/bildiriş id-ləri. Yaddaşda saxlanmalıdır:
+// əvvəllər yalnız RAM-da idi → hər səhifə yenilənişində eyni loglar təkrar
+// göndərilirdi (bazada eyni sətir onlarla dəfə görünürdü).
+const supabaseAuditSyncedKey = "project-manager-audit-synced-v1";
+const supabaseNotificationSyncedKey = "project-manager-notify-synced-v1";
 const backupVersion = 1;
 const defaultWorkflowStatuses = ["Plan", "Davam edir", "Bitib"];
 const protectedWorkflowStatuses = new Set(defaultWorkflowStatuses);
@@ -382,8 +387,20 @@ let supabaseSaveTimer = null;
 // boot-dakı yerli/demo state real datanı əzir.
 let supabaseStateLoaded = false;
 let supabaseSettingsSaveTimer = null;
-let supabaseAuditSyncedIds = new Set();
-let supabaseNotificationSyncedIds = new Set();
+function loadSyncedIdSet(key) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(key) || "[]");
+    return new Set(Array.isArray(raw) ? raw : []);
+  } catch {
+    return new Set();
+  }
+}
+function persistSyncedIdSet(key, set) {
+  // Yalnız son 500 id saxlanılır — localStorage-i şişirtməmək üçün kifayətdir.
+  try { localStorage.setItem(key, JSON.stringify([...set].slice(-500))); } catch { /* kvota */ }
+}
+let supabaseAuditSyncedIds = loadSyncedIdSet(supabaseAuditSyncedKey);
+let supabaseNotificationSyncedIds = loadSyncedIdSet(supabaseNotificationSyncedKey);
 let auditLogs = [];
 let mailHistory = [];
 let localAuditLogs = loadLocalAuditLogs();
@@ -2115,6 +2132,7 @@ function renderSummary() {
   hoursSummary.textContent = `${planned} / ${actual}`;
   // Sidebar "Komanda yüklənməsi" — statik 40h deyil, cari şirkətin real plan saat yükü.
   if (sidebarCapacityLabel) sidebarCapacityLabel.textContent = `${planned}h`;
+  renderSidebarTeams();
 
   if (!shownTasks.length) {
     dateRange.textContent = "-";
@@ -3893,6 +3911,7 @@ async function syncSupabaseAuditLogs() {
     })))
   });
   pending.forEach((entry) => supabaseAuditSyncedIds.add(entry.id));
+  persistSyncedIdSet(supabaseAuditSyncedKey, supabaseAuditSyncedIds);
 }
 
 async function syncSupabaseNotifications() {
@@ -3915,6 +3934,7 @@ async function syncSupabaseNotifications() {
     })))
   });
   pending.forEach((entry) => supabaseNotificationSyncedIds.add(entry.id));
+  persistSyncedIdSet(supabaseNotificationSyncedKey, supabaseNotificationSyncedIds);
 }
 
 async function supabaseFetchAuditLogs() {
@@ -5504,6 +5524,55 @@ workloadList?.addEventListener("click", (event) => {
   if (!button) return;
   const owner = button.dataset.owner;
   currentOwnerFilter = owner;
+  currentFilter = "Hamısı";
+  currentPriorityFilter = "Hamısı";
+  currentSmartFilter = "Hamısı";
+  setView("list");
+});
+
+// ── Sol paneldəki "Komandalar" bloku ────────────────────────────────────────
+// Task axınından çıxmadan komanda üzvünü görüb onun tapşırıqlarına keçmək üçün.
+// Üzvə klik → mövcud currentOwnerFilter mexanizmi ilə task siyahısı süzülür.
+function renderSidebarTeams() {
+  const list = document.querySelector("#sidebarTeamsList");
+  const countEl = document.querySelector("#sidebarTeamsCount");
+  const wrap = document.querySelector("#sidebarTeams");
+  if (!list || !wrap) return;
+
+  const teams = appState.teams.filter((team) => !team.companyId || team.companyId === currentCompanyId());
+  if (countEl) countEl.textContent = String(teams.length);
+  // Komanda yoxdursa blok tamamilə gizlənsin — boş bölmə yer tutmasın.
+  wrap.hidden = !teams.length;
+  if (!teams.length) { list.innerHTML = ""; return; }
+
+  const taskCountFor = (ownerValue) => appState.tasks.filter((task) => task.owner === ownerValue).length;
+
+  list.innerHTML = teams.map((team) => {
+    const values = (team.memberIds || []).map((id) => (id.includes(":") ? id : resourceValue("member", id)));
+    const members = values.map((value) => ({ value, label: resourceLabel(value) })).filter((m) => m.label);
+    const rows = members.length
+      ? members.map((m) => `
+          <button type="button" class="sidebar-team-member" data-owner="${escapeHtml(m.value)}" title="${escapeHtml(m.label)}">
+            <span class="sidebar-team-avatar">${escapeHtml(m.label.trim().charAt(0).toUpperCase() || "?")}</span>
+            <span class="sidebar-team-name">${escapeHtml(m.label)}</span>
+            <span class="sidebar-team-tasks">${taskCountFor(m.value)}</span>
+          </button>`).join("")
+      : `<p class="sidebar-team-empty">${text("empty")}</p>`;
+    return `
+      <details class="sidebar-team">
+        <summary>
+          <span class="sidebar-team-title">${escapeHtml(team.name)}</span>
+          <span class="sidebar-team-count">${members.length}</span>
+        </summary>
+        <div class="sidebar-team-members">${rows}</div>
+      </details>`;
+  }).join("");
+}
+
+document.querySelector("#sidebarTeamsList")?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-owner]");
+  if (!button) return;
+  currentOwnerFilter = button.dataset.owner;
   currentFilter = "Hamısı";
   currentPriorityFilter = "Hamısı";
   currentSmartFilter = "Hamısı";
