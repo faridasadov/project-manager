@@ -121,7 +121,13 @@ Deno.serve(async (req) => {
       profile_json: { company: companyName, subdomain, position: "Company Admin" },
       status: "active"
     });
-    if (!profIns.ok) return json({ error: "Profil yaradılmadı", detail: profIns.body }, 502);
+    if (!profIns.ok) {
+      // GERİ ALMA: profil yaradılmadısa workspace sahibsiz qalır və həmin
+      // company_key bir daha istifadə oluna bilmir (unikal). Yarımçıq qeydiyyat
+      // heç bir iz buraxmamalıdır.
+      await adm(`/rest/v1/workspaces?id=eq.${workspace.id}`, "DELETE");
+      return json({ error: "Profil yaradılmadı", detail: profIns.body }, 502);
+    }
     return json({ ok: true, mode: "create", workspaceId: workspace.id, companyName });
   } catch (err) {
     return json({ error: String((err as Error)?.message || err) }, 500);
