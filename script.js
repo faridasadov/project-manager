@@ -377,6 +377,9 @@ let supabaseWorkspaceId = localStorage.getItem(supabaseWorkspaceKey) || "";
 let workspaceMaxUsers = 0;
 let workspacePlan = "standard";
 let supabaseSaveTimer = null;
+// Remote app_state ən azı bir dəfə oxunana qədər HEÇ NƏ yazmırıq — əks halda
+// boot-dakı yerli/demo state real datanı əzir.
+let supabaseStateLoaded = false;
 let supabaseSettingsSaveTimer = null;
 let supabaseAuditSyncedIds = new Set();
 let supabaseNotificationSyncedIds = new Set();
@@ -390,7 +393,14 @@ let ganttDragState = null;
 let ganttManuallyCollapsed = false;
 let activeAdminSection = null;
 let activeAdminSectionPlaceholder = null;
-enforceClinicOnlyState();
+// DİQQƏT: enforceClinicOnlyState() appState.projects-i YALNIZ Klinika layihəsinə
+// (companyId "company-default") endirir. Supabase tenant-ında (məs. company-studentstay)
+// bu layihə scope-dan kənarda qalır → backupPayload() bütün taskları süzüb ATIR və
+// növbəti save app_state-i BOŞ yazır (data itkisi). Ona görə Supabase sessiyası varsa
+// boot-da bu demo enforce-u işlətmirik — real state remote-dan yüklənəcək.
+if (!supabaseSession?.access_token && !supabaseWorkspaceId) {
+  enforceClinicOnlyState();
+}
 if (currentUser) ensureTenantSeedData();
 saveUsers();
 
@@ -3977,6 +3987,8 @@ async function supabaseLoadWorkspaceState(workspaceId) {
   const rows = await supabaseRequest(`/rest/v1/app_state?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=state_json&limit=1`);
   const state = Array.isArray(rows) ? rows[0]?.state_json : null;
   if (state?.tasks) importBackup(state);
+  // Yalnız uğurlu oxumadan sonra yazmağa icazə veririk (sorğu atarsa flag qalxmır).
+  supabaseStateLoaded = true;
 }
 
 async function supabaseLoginWorkspace(email, password) {
@@ -4371,7 +4383,21 @@ async function flushSupabaseSave() {
 
 async function supabaseSaveState() {
   if (!supabaseSession?.access_token || !supabaseWorkspaceId || isSuperAdmin() || currentUser?.role !== "admin") return;
+  // Remote state hələ oxunmayıbsa yazma — boot state real datanı əzərdi.
+  if (!supabaseStateLoaded) {
+    console.warn("Supabase save atlandı: remote state hələ yüklənməyib");
+    return;
+  }
   const payload = backupPayload();
+  // TƏHLÜKƏSİZLİK KLAPANI: yaddaşda data var, amma scope filtri hər şeyi süzüb atıbsa
+  // (məs. layihələrin companyId-si cari tenant ilə uyğun gəlmirsə) BOŞ payload yazmırıq.
+  const payloadEmpty = !payload.tasks.length && !payload.projects.length;
+  const memoryHasData = appState.tasks.length > 0 || appState.projects.length > 0;
+  if (payloadEmpty && memoryHasData) {
+    console.error("Supabase save BLOKLANDI: boş payload real datanı əzəcəkdi.",
+      { memoryTasks: appState.tasks.length, memoryProjects: appState.projects.length, companyId: currentCompanyId() });
+    return;
+  }
   await supabaseRequest("/rest/v1/app_state?on_conflict=workspace_id", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates" },
