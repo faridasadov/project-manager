@@ -388,6 +388,7 @@ let workspacePlan = "standard";
 // göndərilir və istifadəçi 403 səbəbini bilmədən dəyişikliklərini itirir.
 let workspaceDbRole = "";        // profiles.role (admin / manager / user / super_admin)
 let workspaceApproved = false;   // workspaces.approval_status === "active"
+let workspaceMemberActive = false; // profiles.status === "active" (yazma icazəsi)
 let supabaseSaveTimer = null;
 // Remote app_state ən azı bir dəfə oxunana qədər HEÇ NƏ yazmırıq — əks halda
 // boot-dakı yerli/demo state real datanı əzir.
@@ -4247,6 +4248,7 @@ async function supabaseLoginWorkspace(email, password) {
   workspaceMaxUsers = Number(workspace.max_users) || 0;
   workspacePlan = workspace.plan || "standard";
   workspaceDbRole = profile.role || "";
+  workspaceMemberActive = profile.status ? profile.status === "active" : true;
   workspaceApproved = workspace.approval_status === "active";
   // Təsdiq gate — super-admin bu yola düşmür (yuxarıda idarə olunur).
   if (workspace.approval_status === "rejected") {
@@ -4417,6 +4419,7 @@ async function supabaseCompleteSession(session) {
   workspaceMaxUsers = Number(workspace.max_users) || 0;
   workspacePlan = workspace.plan || "standard";
   workspaceDbRole = profile.role || "";
+  workspaceMemberActive = profile.status ? profile.status === "active" : true;
   workspaceApproved = workspace.approval_status === "active";
   // Email təsdiqləndi — workspace-i email_verified=true et ki, təsdiq növbəsinə düşsün.
   if (!workspace.email_verified) {
@@ -4537,6 +4540,7 @@ async function refreshWorkspaceGate(workspaceId) {
     const workspace = Array.isArray(workspaces) ? workspaces[0] : null;
     if (!profile || !workspace) return false;
     workspaceDbRole = profile.status === "active" ? (profile.role || "") : "";
+    workspaceMemberActive = profile.status === "active";
     workspaceApproved = workspace.approval_status === "active";
     workspacePlan = workspace.plan || "standard";
     workspaceMaxUsers = Number(workspace.max_users) || 0;
@@ -4591,13 +4595,15 @@ function supabaseGoogleAuth() {
 }
 
 // Yazma icazəsi — RLS şərtinin klient güzgüsü:
-//   pm_same_workspace AND pm_is_admin() AND pm_workspace_approved()
-// pm_is_admin() `profiles.role`-a baxır (appRole-a yox), ona görə burada da
-// workspaceDbRole yoxlanılır.
+//   pm_same_workspace AND pm_is_active_member() AND pm_workspace_approved()
+// Əvvəl burada (və RLS-də) admin tələb olunurdu: manager/user task yaradırdı,
+// ekranda görürdü, amma yazı 403 alıb SƏSSİZCƏ itirdi. İndi iş sahəsinin
+// aktiv üzvü yaza bilir; köhnə vəziyyətin əzilməsinin qarşısını
+// state_version optimistik kilidi alır.
 function canWriteWorkspaceData() {
   if (!supabaseSession?.access_token || !supabaseWorkspaceId) return false;
   if (isSuperAdmin()) return false;               // super-admin tenant datası yazmır
-  if (!["admin", "super_admin"].includes(workspaceDbRole)) return false;
+  if (!workspaceMemberActive) return false;       // profiles.status === "active"
   if (!workspaceApproved) return false;
   return true;
 }
