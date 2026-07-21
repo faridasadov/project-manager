@@ -392,6 +392,7 @@ let supabaseSaveTimer = null;
 // boot-dakı yerli/demo state real datanı əzir.
 let supabaseStateLoaded = false;
 let supabaseRemoteTaskCount = 0;
+let supabaseStateVersion = null;
 let supabaseSettingsSaveTimer = null;
 function loadSyncedIdSet(key) {
   try {
@@ -4088,8 +4089,11 @@ async function supabaseRegisterWorkspace({ companyName, subdomain, username, pas
 }
 
 async function supabaseLoadWorkspaceState(workspaceId) {
-  const rows = await supabaseRequest(`/rest/v1/app_state?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=state_json&limit=1`);
-  const state = Array.isArray(rows) ? rows[0]?.state_json : null;
+  const rows = await supabaseRequest(`/rest/v1/app_state?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=state_json,state_version&limit=1`);
+  const row = Array.isArray(rows) ? rows[0] : null;
+  const state = row?.state_json || null;
+  // Optimistik kilid üçün oxuduğumuz versiya. null = sətir hələ yoxdur (ilk yazılış).
+  supabaseStateVersion = row ? Number(row.state_version) || 0 : null;
   // Serverdə NEÇƏ task olduğunu yadda saxlayırıq — save zamanı "hamısı yoxa çıxdı"
   // ssenarisini bloklamaq üçün yeganə etibarlı ölçü budur.
   supabaseRemoteTaskCount = Array.isArray(state?.tasks) ? state.tasks.length : 0;
@@ -4297,6 +4301,9 @@ function supabaseRealtimeConnect(workspaceId) {
       const remoteTs = record.state_json.meta?.savedAt || 0;
       const localTs  = appData?.meta?.savedAt || 0;
       if (remoteTs > localTs) {
+        // Realtime ilə gələn versiyanı da qeyd et, yoxsa optimistik kilid
+        // köhnə versiya nömrəsi ilə hər yazılışda konflikt verər.
+        if (record.state_version != null) supabaseStateVersion = Number(record.state_version) || 0;
         importBackup(record.state_json);
         render();
         showToast(text("realtimeConnected") || "↺ Realtime sync");
@@ -4592,17 +4599,61 @@ async function supabaseSaveState() {
       return;
     }
   }
-  await supabaseRequest("/rest/v1/app_state?on_conflict=workspace_id", {
-    method: "POST",
-    headers: { Prefer: "resolution=merge-duplicates" },
-    body: JSON.stringify({
-      workspace_id: supabaseWorkspaceId,
-      state_json: payload,
-      saved_by: currentUser?.id || null,
-      updated_at: new Date().toISOString()
-    })
-  });
-  supabaseRemoteTaskCount = payload.tasks.length;
+  const body = {
+    state_json: payload,
+    saved_by: currentUser?.id || null,
+    updated_at: new Date().toISOString()
+  };
+  // İlk yazılış (sətir yoxdur) → adi upsert.
+  if (supabaseStateVersion === null) {
+    await supabaseRequest("/rest/v1/app_state?on_conflict=workspace_id", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+      body: JSON.stringify({ workspace_id: supabaseWorkspaceId, ...body })
+    });
+    await supabaseRefreshStateVersion();
+    supabaseRemoteTaskCount = payload.tasks.length;
+    return;
+  }
+  // OPTİMİSTİK KİLİD: yalnız oxuduğumuz versiya hələ də serverdədirsə yazırıq.
+  // Əks halda başqa tab/cihaz aradan dəyişiklik edib — onu əzmək köhnə
+  // vəziyyəti geri qaytarır (silinən komanda/istifadəçi "dirilir").
+  const updated = await supabaseRequest(
+    `/rest/v1/app_state?workspace_id=eq.${encodeURIComponent(supabaseWorkspaceId)}&state_version=eq.${supabaseStateVersion}`,
+    { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(body) }
+  );
+  if (Array.isArray(updated) && updated.length) {
+    supabaseStateVersion = Number(updated[0].state_version) || supabaseStateVersion + 1;
+    supabaseRemoteTaskCount = payload.tasks.length;
+    return;
+  }
+  // Konflikt: heç bir sətir yenilənmədi.
+  const keepMine = confirm(
+    "Bu iş sahəsi başqa bir sessiyada (digər tab və ya cihaz) dəyişdirilib.\n\n" +
+    "OK — sizin cari vəziyyətiniz yazılsın (digər dəyişikliklər itə bilər)\n" +
+    "Ləğv et — serverdəki son vəziyyət yüklənsin (sizin son dəyişikliyiniz itə bilər)"
+  );
+  if (keepMine) {
+    await supabaseRefreshStateVersion();
+    if (supabaseStateVersion === null) return;
+    await supabaseRequest(`/rest/v1/app_state?workspace_id=eq.${encodeURIComponent(supabaseWorkspaceId)}`, {
+      method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(body)
+    });
+    await supabaseRefreshStateVersion();
+    supabaseRemoteTaskCount = payload.tasks.length;
+    return;
+  }
+  await supabaseLoadWorkspaceState(supabaseWorkspaceId);
+  render();
+  if (typeof showToast === "function") showToast("Serverdəki son vəziyyət yükləndi");
+}
+
+async function supabaseRefreshStateVersion() {
+  try {
+    const rows = await supabaseRequest(`/rest/v1/app_state?workspace_id=eq.${encodeURIComponent(supabaseWorkspaceId)}&select=state_version&limit=1`);
+    const row = Array.isArray(rows) ? rows[0] : null;
+    supabaseStateVersion = row ? Number(row.state_version) || 0 : null;
+  } catch { /* növbəti yükləmədə düzələcək */ }
 }
 
 function connectSSE() {
