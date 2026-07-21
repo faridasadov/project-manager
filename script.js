@@ -833,23 +833,35 @@ function renderStatusControls() {
 
   const counts = filterCounts();
 
-  statusFilters.innerHTML = [
-    `<span class="filter-group-label">${text("status")}</span>`,
-    `<span class="filter-track">`,
-    filterChipMarkup("data-filter", "Hamısı", text("all"), counts.status("Hamısı"), currentFilter === "Hamısı"),
-    ...statuses.map((status) => filterChipMarkup("data-filter", status, statusLabel(status), counts.status(status), currentFilter === status)),
-    `</span>`
-  ].join("");
+  statusFilters.innerHTML = filterMenuMarkup({
+    groupLabel: text("status"),
+    attr: "data-filter",
+    dataKey: "status",
+    activeValue: currentFilter,
+    activeLabel: currentFilter === "Hamısı" ? text("all") : statusLabel(currentFilter),
+    totalCount: counts.status(currentFilter),
+    items: [
+      { value: "Hamısı", label: text("all"), count: counts.status("Hamısı") },
+      ...statuses.map((status) => ({ value: status, label: statusLabel(status), count: counts.status(status) }))
+    ]
+  });
+
   if (priorityFilters) {
     const priorities = ["Kritik", "Yüksək", "Normal", "Aşağı"];
-    priorityFilters.innerHTML = [
-      `<span class="filter-group-label">${text("priority")}</span>`,
-      `<span class="filter-track">`,
-      filterChipMarkup("data-priority-filter", "Hamısı", text("all"), counts.priority("Hamısı"), currentPriorityFilter === "Hamısı"),
-      ...priorities.map((priority) => filterChipMarkup("data-priority-filter", priority, priorityLabel(priority), counts.priority(priority), currentPriorityFilter === priority)),
-      `</span>`
-    ].join("");
+    priorityFilters.innerHTML = filterMenuMarkup({
+      groupLabel: text("priority"),
+      attr: "data-priority-filter",
+      dataKey: "priority",
+      activeValue: currentPriorityFilter,
+      activeLabel: currentPriorityFilter === "Hamısı" ? text("all") : priorityLabel(currentPriorityFilter),
+      totalCount: counts.priority(currentPriorityFilter),
+      items: [
+        { value: "Hamısı", label: text("all"), count: counts.priority("Hamısı") },
+        ...priorities.map((priority) => ({ value: priority, label: priorityLabel(priority), count: counts.priority(priority) }))
+      ]
+    });
   }
+
   if (smartFilters) {
     const smartItems = [
       ["Hamısı", text("all")],
@@ -858,12 +870,16 @@ function renderStatusControls() {
       ["risk", text("riskFocus")],
       ["mine", text("myTasks")]
     ];
-    smartFilters.innerHTML = [
-      `<span class="filter-group-label">${text("smartFilters")}</span>`,
-      `<span class="filter-track">`,
-      ...smartItems.map(([value, label]) => filterChipMarkup("data-smart-filter", value, label, counts.smart(value), currentSmartFilter === value)),
-      `</span>`
-    ].join("");
+    const smartLabel = (smartItems.find(([value]) => value === currentSmartFilter) || smartItems[0])[1];
+    smartFilters.innerHTML = filterMenuMarkup({
+      groupLabel: text("smartFilters"),
+      attr: "data-smart-filter",
+      dataKey: "smart",
+      activeValue: currentSmartFilter,
+      activeLabel: smartLabel,
+      totalCount: counts.smart(currentSmartFilter),
+      items: smartItems.map(([value, label]) => ({ value, label, count: counts.smart(value) }))
+    });
   }
   renderActiveFilterBar();
   filters = document.querySelectorAll(".filter");
@@ -1982,6 +1998,28 @@ function filterChipMarkup(attr, value, label, count, isActive) {
     + `<span class="filter-label">${escapeHtml(label)}</span>`
     + `<span class="filter-count">${count}</span>`
     + `</button>`;
+}
+
+// Filtr qrupu artıq bütün variantları sətirdə yaymır — bir düymə göstərir,
+// klikləyəndə variantlar açılır. Beləliklə axtarış + bütün filtrlər tək sətrə
+// yerləşir və panel səhifə boyu uzanmır.
+// Variantların data-atributları əvvəlki kimidir, ona görə mövcud klik
+// işləyiciləri (statusFilters/priorityFilters/smartFilters) dəyişmədən işləyir.
+function filterMenuMarkup({ groupLabel, attr, items, activeValue, activeLabel, totalCount, dataKey }) {
+  const isFiltered = activeValue !== "Hamısı";
+  return [
+    `<div class="filter-menu-wrap" data-filter-menu="${dataKey}">`,
+    `<button type="button" class="filter-trigger ${isFiltered ? "is-filtered" : ""}" aria-haspopup="true" aria-expanded="false">`,
+    `<span class="filter-trigger-group">${escapeHtml(groupLabel)}</span>`,
+    `<span class="filter-trigger-value">${escapeHtml(activeLabel)}</span>`,
+    `<span class="filter-count">${totalCount}</span>`,
+    `<svg class="filter-caret" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>`,
+    `</button>`,
+    `<div class="filter-menu" hidden role="menu">`,
+    ...items.map(({ value, label, count }) => filterChipMarkup(attr, value, label, count, activeValue === value)),
+    `</div>`,
+    `</div>`
+  ].join("");
 }
 
 function visibleTasks() {
@@ -6039,6 +6077,36 @@ smartFilters?.addEventListener("click", (event) => {
   render();
 });
 
+// ── Filtr menyularının açılıb-bağlanması ─────────────────────────────────────
+function closeFilterMenus(except = null) {
+  document.querySelectorAll(".filter-menu-wrap").forEach((wrap) => {
+    if (wrap === except) return;
+    wrap.querySelector(".filter-menu")?.setAttribute("hidden", "");
+    wrap.querySelector(".filter-trigger")?.setAttribute("aria-expanded", "false");
+  });
+}
+
+document.addEventListener("click", (event) => {
+  const trigger = event.target.closest(".filter-trigger");
+  if (trigger) {
+    const wrap = trigger.closest(".filter-menu-wrap");
+    const menu = wrap?.querySelector(".filter-menu");
+    if (!menu) return;
+    const willOpen = menu.hasAttribute("hidden");
+    closeFilterMenus(wrap);
+    if (willOpen) { menu.removeAttribute("hidden"); trigger.setAttribute("aria-expanded", "true"); }
+    else { menu.setAttribute("hidden", ""); trigger.setAttribute("aria-expanded", "false"); }
+    return;
+  }
+  // Variant seçiləndə render() menyunu onsuz da yenidən qurur; kənara
+  // klikləndikdə isə açıq menyu bağlanmalıdır.
+  if (!event.target.closest(".filter-menu")) closeFilterMenus();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeFilterMenus();
+});
+
 // Aktiv filtr xülasəsində "×" və "Təmizlə" düymələri.
 document.querySelector("#activeFilterBar")?.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-clear-filter]");
@@ -7917,10 +7985,25 @@ plannedHoursInput?.addEventListener("input", () => {
   if (hint) hint.textContent = `Əl ilə dəyişilib — avtomat: ${autoPlannedHours({ start: startDate.value, end: endDate.value })} saat`;
 });
 
+// Layihə resursu = işi GÖRƏN (icraçı). Məsul şəxs = ona NƏZARƏT EDƏN (cavabdeh).
+// Əvvəl bura sadəcə eyni dəyəri kopyalayırdı — iki sahə var idi, məlumat isə bir.
+// İndi icraçının rəhbəri (user.managerId) məsul şəxs kimi təklif olunur:
+// məs. Fuad seçilirsə, məsul şəxsə onun rəhbəri Zaur düşür.
+// Rəhbər təyin olunmayıbsa və ya komanda seçilibsə, köhnə davranış qalır.
+function supervisorResourceFor(resourceValueString) {
+  if (!resourceValueString || !resourceValueString.startsWith("user:")) return resourceValueString;
+  const userId = resourceValueString.split(":")[1];
+  const user = appState.users.find((item) => item.id === userId);
+  if (!user?.managerId) return resourceValueString;
+  const manager = appState.users.find((item) => item.id === user.managerId);
+  return manager ? resourceValue("user", manager.id) : resourceValueString;
+}
+
 projectResourceInput.addEventListener("change", () => {
-  if (projectResourceInput.value) {
-    ownerInput.value = projectResourceInput.value;
-  }
+  if (!projectResourceInput.value) return;
+  const supervisor = supervisorResourceFor(projectResourceInput.value);
+  ensureSelectOption(ownerInput, supervisor, resourceLabel(supervisor));
+  ownerInput.value = supervisor;
 });
 
 focusNewProjectButton.addEventListener("click", () => {

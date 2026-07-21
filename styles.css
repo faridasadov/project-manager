@@ -3755,6 +3755,30 @@ textarea:focus {
 }
 
 /* ── Row 1: search + project ──────────────────────────────── */
+/* Hər şey tək sətirdə: axtarış + layihə + üç açılan filtr menyusu. */
+.tools-main-row {
+  gap: 8px;
+  align-items: center;
+}
+
+/* Axtarış artıq səhifə boyu uzanmır — rahat oxunan sabit en. */
+.tools-main-row #searchInput {
+  flex: 0 1 300px;
+  min-width: 180px;
+  min-height: 34px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  padding: 0 12px 0 34px;
+  background-repeat: no-repeat;
+  background-position: 11px center;
+}
+
+.tools-main-row .filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
 .tools-search-row {
   gap: 8px;
 }
@@ -3827,6 +3851,92 @@ textarea:focus {
   border-radius: 9px;
   background: var(--soft);
   border: 1px solid var(--line);
+}
+
+/* ── Açılan filtr menyusu ─────────────────────────────────── */
+.filter-menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.filter-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.filter-trigger:hover {
+  background: var(--soft);
+  border-color: color-mix(in srgb, var(--teal) 30%, var(--line));
+}
+
+.filter-trigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--teal) 55%, transparent);
+  outline-offset: 1px;
+}
+
+/* Filtr seçilibsə düymə brend rəngi ilə işarələnir */
+.filter-trigger.is-filtered {
+  border-color: color-mix(in srgb, var(--teal) 50%, var(--line));
+  background: color-mix(in srgb, var(--teal) 8%, var(--panel));
+}
+
+.filter-trigger-group {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.filter-trigger-value {
+  font-weight: 600;
+}
+
+.filter-trigger.is-filtered .filter-trigger-value {
+  color: var(--teal);
+}
+
+.filter-caret {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.filter-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 190px;
+  padding: 5px;
+  border-radius: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+}
+
+.filter-menu[hidden] {
+  display: none;
+}
+
+/* Menyu daxilində çiplər tam enli sətir kimi davranır */
+.filter-menu .filter {
+  justify-content: space-between;
+  width: 100%;
+  min-height: 30px;
 }
 
 /* Group label — kiçik, amma oxunaqlı kateqoriya etiketi */
@@ -4508,10 +4618,18 @@ textarea:focus {
 }
 
 .compact-list,
-.task-list,
 .calendar-grid {
   display: grid;
   gap: 10px;
+}
+
+/* Tasklar da layihələr kimi kart şəbəkəsindədir — əvvəl tək sütun idi və hər
+   task səhifə boyu uzanırdı, geniş ekranda sətir çox uzun olub oxunmurdu. */
+.task-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 12px;
+  align-items: start;
 }
 
 .project-cards {

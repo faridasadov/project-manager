@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20260722-filtr2">
+  <link rel="stylesheet" href="styles.css?v=20260722-nezaret">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#136f63">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -428,6 +428,7 @@
               <select id="owner">
                 <option value="" data-i18n="noOwnerSelect">Seçilməyib</option>
               </select>
+              <small class="field-hint" data-i18n="ownerHint">Nəzarət edən — icraçının rəhbəri avtomat gəlir</small>
             </label>
             <label>
               <span data-i18n="progress">Progress %</span>
@@ -467,6 +468,7 @@
                 <select id="projectResource">
                   <option value="" data-i18n="noResource">Resurs seçilməyib</option>
                 </select>
+                <small class="field-hint" data-i18n="projectResourceHint">İşi görən icraçı — seçdikdə məsul şəxsə onun rəhbəri düşür</small>
               </label>
               <div class="form-grid">
                 <label>
@@ -1602,8 +1604,8 @@
         <section class="control-strip">
           <div class="tools">
 
-            <!-- Row 1: search + project select -->
-            <div class="tools-row tools-search-row">
+            <!-- Tək sətir: axtarış + layihə + açılan filtr menyuları -->
+            <div class="tools-row tools-main-row">
               <input id="searchInput" type="search" placeholder="Task, layihə, məsul şəxs axtar…" data-i18n-placeholder="searchPlaceholder">
               <label class="filter-select-label">
                 <span class="filter-select-prefix" data-i18n="project">Layihə</span>
@@ -1611,33 +1613,10 @@
                   <option value="Hamısı">Bütün layihələr</option>
                 </select>
               </label>
-            </div>
-
-            <!-- Row 2: labeled filter groups -->
-            <div class="tools-row tools-filter-row">
-              <div id="statusFilters" class="filters" aria-label="Status filteri" data-i18n-aria="statusFilterAria">
-                <span class="filter-group-label">Status</span>
-                <button class="filter active" data-filter="Hamısı" type="button">Hamısı</button>
-                <button class="filter" data-filter="Plan" type="button">Plan</button>
-                <button class="filter" data-filter="Davam edir" type="button">Davam edir</button>
-                <button class="filter" data-filter="Bitib" type="button">Bitib</button>
-              </div>
-              <div id="priorityFilters" class="filters priority-filters" aria-label="Prioritet filteri" data-i18n-aria="priorityFilterAria">
-                <span class="filter-group-label">Prioritet</span>
-                <button class="filter active" data-priority-filter="Hamısı" type="button">Hamısı</button>
-                <button class="filter" data-priority-filter="Kritik" type="button">Kritik</button>
-                <button class="filter" data-priority-filter="Yüksək" type="button">Yüksək</button>
-                <button class="filter" data-priority-filter="Normal" type="button">Normal</button>
-                <button class="filter" data-priority-filter="Aşağı" type="button">Aşağı</button>
-              </div>
-              <div id="smartFilters" class="filters smart-filters" aria-label="Ağıllı filterlər">
-                <span class="filter-group-label">Ağıllı</span>
-                <button class="filter active" data-smart-filter="Hamısı" type="button">Hamısı</button>
-                <button class="filter" data-smart-filter="blocked" type="button">Bloklanmış</button>
-                <button class="filter" data-smart-filter="overdue" type="button">Gecikən</button>
-                <button class="filter" data-smart-filter="risk" type="button">Risk</button>
-                <button class="filter" data-smart-filter="mine" type="button">Mənim</button>
-              </div>
+              <!-- Aşağıdakı üç qrupun daxili renderFilters() tərəfindən qurulur -->
+              <div id="statusFilters" class="filters" aria-label="Status filteri" data-i18n-aria="statusFilterAria"></div>
+              <div id="priorityFilters" class="filters priority-filters" aria-label="Prioritet filteri" data-i18n-aria="priorityFilterAria"></div>
+              <div id="smartFilters" class="filters smart-filters" aria-label="Ağıllı filterlər"></div>
             </div>
 
             <!-- Row 3: aktiv filtrlərin xülasəsi (yalnız nəsə seçiləndə görünür) -->
@@ -1932,33 +1911,33 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="supabase/supabase-config.js"></script>
-  <script src="modules/state.js?v=20260722-filtr2"></script>
-  <script src="modules/translations.js?v=20260722-filtr2"></script>
-  <script src="modules/ids.js?v=20260722-filtr2"></script>
-  <script src="modules/crypto.js?v=20260722-filtr2"></script>
-  <script src="modules/seed-data.js?v=20260722-filtr2"></script>
-  <script src="modules/utils.js?v=20260722-filtr2"></script>
-  <script src="modules/labels.js?v=20260722-filtr2"></script>
-  <script src="modules/format.js?v=20260722-filtr2"></script>
-  <script src="modules/normalize.js?v=20260722-filtr2"></script>
-  <script src="modules/storage.js?v=20260722-filtr2"></script>
-  <script src="modules/tenant.js?v=20260722-filtr2"></script>
-  <script src="modules/scope.js?v=20260722-filtr2"></script>
-  <script src="modules/dependencies.js?v=20260722-filtr2"></script>
-  <script src="modules/notifications.js?v=20260722-filtr2"></script>
-  <script src="modules/company.js?v=20260722-filtr2"></script>
-  <script src="modules/governance.js?v=20260722-filtr2"></script>
-  <script src="modules/permissions.js?v=20260722-filtr2"></script>
-  <script src="modules/project-crud.js?v=20260722-filtr2"></script>
-  <script src="modules/metrics.js?v=20260722-filtr2"></script>
-  <script src="modules/lookups.js?v=20260722-filtr2"></script>
-  <script src="modules/option-builders.js?v=20260722-filtr2"></script>
-  <script src="modules/render-markup.js?v=20260722-filtr2"></script>
-  <script src="modules/onboarding.js?v=20260722-filtr2"></script>
-  <script src="modules/project-chat.js?v=20260722-filtr2"></script>
-  <script src="modules/hero-signal-field.js?v=20260722-filtr2"></script>
-  <script src="modules/glide-reveal.js?v=20260722-filtr2"></script>
-  <script src="script.js?v=20260722-filtr2"></script>
+  <script src="modules/state.js?v=20260722-nezaret"></script>
+  <script src="modules/translations.js?v=20260722-nezaret"></script>
+  <script src="modules/ids.js?v=20260722-nezaret"></script>
+  <script src="modules/crypto.js?v=20260722-nezaret"></script>
+  <script src="modules/seed-data.js?v=20260722-nezaret"></script>
+  <script src="modules/utils.js?v=20260722-nezaret"></script>
+  <script src="modules/labels.js?v=20260722-nezaret"></script>
+  <script src="modules/format.js?v=20260722-nezaret"></script>
+  <script src="modules/normalize.js?v=20260722-nezaret"></script>
+  <script src="modules/storage.js?v=20260722-nezaret"></script>
+  <script src="modules/tenant.js?v=20260722-nezaret"></script>
+  <script src="modules/scope.js?v=20260722-nezaret"></script>
+  <script src="modules/dependencies.js?v=20260722-nezaret"></script>
+  <script src="modules/notifications.js?v=20260722-nezaret"></script>
+  <script src="modules/company.js?v=20260722-nezaret"></script>
+  <script src="modules/governance.js?v=20260722-nezaret"></script>
+  <script src="modules/permissions.js?v=20260722-nezaret"></script>
+  <script src="modules/project-crud.js?v=20260722-nezaret"></script>
+  <script src="modules/metrics.js?v=20260722-nezaret"></script>
+  <script src="modules/lookups.js?v=20260722-nezaret"></script>
+  <script src="modules/option-builders.js?v=20260722-nezaret"></script>
+  <script src="modules/render-markup.js?v=20260722-nezaret"></script>
+  <script src="modules/onboarding.js?v=20260722-nezaret"></script>
+  <script src="modules/project-chat.js?v=20260722-nezaret"></script>
+  <script src="modules/hero-signal-field.js?v=20260722-nezaret"></script>
+  <script src="modules/glide-reveal.js?v=20260722-nezaret"></script>
+  <script src="script.js?v=20260722-nezaret"></script>
   <!-- vanilla Motion (framer-motion sibling) — KPI count-up & spring mikro-interaksiyalar -->
   <script type="module">
     import { animate } from "./modules/vendor/motion.js?v=20260714-motion";
