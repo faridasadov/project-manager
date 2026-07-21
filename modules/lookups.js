@@ -61,6 +61,7 @@ function roleLabel(role) {
   if (role === "super_admin") return text("superAdminRole");
   if (role === "admin") return text("adminRole");
   if (role === "manager") return text("managerRole");
+  if (role === "rehberlik") return text("rehberlikRole");
   if (role === "contributor") return text("contributorRole");
   if (role === "viewer") return text("viewerRole");
   if (role === "sponsor") return text("sponsorRole");

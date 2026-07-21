@@ -13,6 +13,7 @@ type MailPayload = {
 type StateUser = {
   id?: string;
   username?: string;
+  role?: string;
   profile?: {
     email?: string;
     fullName?: string;
@@ -113,6 +114,11 @@ function userProjects(projects: StateProject[], uid: string): StateProject[] {
   return projects.filter((p) => !p.archived &&
     ((p.managerIds || []).includes(uid) || (p.teamMemberIds || []).includes(uid)));
 }
+// Rəhbərlik bütün şirkət layihələrini görür — gündəlik hesabatı da bütün
+// portfel üzrə olmalıdır, yalnız üzvü olduğu layihələr üzrə deyil.
+function isLeadership(user: StateUser): boolean {
+  return user.role === "rehberlik";
+}
 function userTasks(tasks: StateTask[], myProjects: StateProject[], uid: string): StateTask[] {
   const keys = new Set<string>();
   for (const p of myProjects) { if (p.id) keys.add(p.id); if (p.name) keys.add(p.name); }
@@ -121,7 +127,7 @@ function userTasks(tasks: StateTask[], myProjects: StateProject[], uid: string):
 function ownerTag(t: StateTask) { return t.owner ? ` (${t.owner})` : ""; }
 
 // ── Digest builders (Azerbaijani) ─────────────────────────────────────────
-function morningDigest(user: StateUser, mine: StateTask[], myProjects: StateProject[], today: string, daysBefore: number[]) {
+function morningDigest(user: StateUser, mine: StateTask[], myProjects: StateProject[], today: string, daysBefore: number[], leadership = false) {
   const open = mine.filter(isOpen);
   const soon = (daysBefore && daysBefore.length ? daysBefore : [3, 1]);
   const maxSoon = Math.max(...soon);
@@ -143,7 +149,7 @@ function morningDigest(user: StateUser, mine: StateTask[], myProjects: StateProj
     for (const t of dueSoon) lines.push(`  • ${t.name} — ${fmtDate(t.end)}`);
   }
   if (myProjects.length) {
-    lines.push(""); lines.push(`📁 Aid olduğun layihələr: ${myProjects.length}`);
+    lines.push(""); lines.push(leadership ? `📁 Şirkət layihələri: ${myProjects.length}` : `📁 Aid olduğun layihələr: ${myProjects.length}`);
     for (const p of myProjects.slice(0, 20)) lines.push(`  • ${p.name} [${p.status || "-"}, ${p.progress ?? 0}%]`);
   }
   lines.push(""); lines.push("— Project Manager");
@@ -201,29 +207,36 @@ async function runDigests() {
 
     for (const user of users) {
       const email = user.profile?.email?.trim();
+      // Rəhbərlik üçün hesabat məcburidir: reportPrefs ümumiyyətlə yoxdursa da
+      // (məsələn rol təzəcə verilib, blob hələ yenilənməyib) mail getməlidir.
+      const forced = isLeadership(user);
       const prefs = user.profile?.reportPrefs;
-      if (!email || !prefs) continue;
-      const tz = prefs.timezone || "Asia/Baku";
+      if (!email || (!prefs && !forced)) continue;
+      const tz = prefs?.timezone || "Asia/Baku";
       const hour = hourInTz(tz);
       const today = todayInTz(tz);
 
-      const wantMorning = prefs.morning?.enabled && hour === (prefs.morning.hour ?? 9);
-      const wantEvening = prefs.evening?.enabled && hour === (prefs.evening.hour ?? 18);
+      const wantMorning = (forced || prefs?.morning?.enabled) && hour === (prefs?.morning?.hour ?? 9);
+      const wantEvening = (forced || prefs?.evening?.enabled) && hour === (prefs?.evening?.hour ?? 18);
       if (!wantMorning && !wantEvening) continue;
 
-      const myProjects = userProjects(projects, user.id!);
+      const myProjects = forced
+        ? projects.filter((p) => !p.archived)
+        : userProjects(projects, user.id!);
       const mine = userTasks(tasks, myProjects, user.id!);
 
       const jobs: Array<{ kind: string; subject: string; text: string; empty: boolean }> = [];
       if (wantMorning) {
-        jobs.push({ kind: "morning", ...morningDigest(user, mine, myProjects, today, prefs.deadlineAlerts?.daysBefore || [3, 1]) });
+        jobs.push({ kind: "morning", ...morningDigest(user, mine, myProjects, today, prefs?.deadlineAlerts?.daysBefore || [3, 1], forced) });
       }
       if (wantEvening) {
         jobs.push({ kind: "evening", ...eveningDigest(user, mine, today) });
       }
 
       for (const job of jobs) {
-        if (job.empty) continue; // boş hesabat göndərmə
+        // Boş hesabat göndərilmir — AMMA rəhbərlik üçün hesabat məcburidir:
+        // "bu gün açıq iş yoxdur" məlumatı da rəhbərlik üçün nəticədir.
+        if (job.empty && !forced) continue;
         try {
           await transporter.sendMail({ from, to: email, subject: job.subject, text: job.text });
           sent.push({ email, kind: job.kind });

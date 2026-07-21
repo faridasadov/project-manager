@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20260721-fix11">
+  <link rel="stylesheet" href="styles.css?v=20260722-rehberlik">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#136f63">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -563,6 +563,7 @@
               <span>Rol</span>
               <select id="quickManagerRole">
                 <option value="manager">Manager (layihə rəhbəri)</option>
+                <option value="rehberlik">Rəhbərlik (bütün layihələrə baxış)</option>
                 <option value="contributor">Contributor</option>
                 <option value="user">User (icraçı)</option>
                 <option value="viewer">Viewer (izləyici)</option>
@@ -880,6 +881,7 @@
                   <input id="reportChangeEnabled" type="checkbox">
                   <span data-i18n="reportChange">🔔 Anlıq dəyişiklik bildirişləri</span>
                 </label>
+                <p id="reportMandatoryHint" class="settings-status" hidden data-i18n="reportMandatoryHint">Rəhbərlik rolu üçün gündəlik hesabat məcburidir — söndürmək olmaz. Yalnız saatı dəyişə bilərsiniz.</p>
                 <button id="saveReportPrefs" type="button" class="primary" style="margin-top:10px" data-i18n="saveReportPrefs">Yadda saxla</button>
                 <p id="reportPrefsStatus" class="settings-status"></p>
               </div>
@@ -1164,6 +1166,7 @@
                     <span data-i18n="role">Rol</span>
                     <select id="newUserRole">
                       <option value="user">User</option>
+                      <option value="rehberlik">Rəhbərlik</option>
                       <option value="contributor">Contributor</option>
                       <option value="viewer">Viewer</option>
                       <option value="sponsor">Sponsor</option>
@@ -1209,6 +1212,7 @@
                     <span data-i18n="role">Rol</span>
                     <select id="inviteRole">
                       <option value="user">User</option>
+                      <option value="rehberlik">Rəhbərlik</option>
                       <option value="manager">Manager</option>
                       <option value="admin">Admin</option>
                     </select>
@@ -1923,33 +1927,33 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="supabase/supabase-config.js"></script>
-  <script src="modules/state.js?v=20260721-fix11"></script>
-  <script src="modules/translations.js?v=20260721-fix11"></script>
-  <script src="modules/ids.js?v=20260721-fix11"></script>
-  <script src="modules/crypto.js?v=20260721-fix11"></script>
-  <script src="modules/seed-data.js?v=20260721-fix11"></script>
-  <script src="modules/utils.js?v=20260721-fix11"></script>
-  <script src="modules/labels.js?v=20260721-fix11"></script>
-  <script src="modules/format.js?v=20260721-fix11"></script>
-  <script src="modules/normalize.js?v=20260721-fix11"></script>
-  <script src="modules/storage.js?v=20260721-fix11"></script>
-  <script src="modules/tenant.js?v=20260721-fix11"></script>
-  <script src="modules/scope.js?v=20260721-fix11"></script>
-  <script src="modules/dependencies.js?v=20260721-fix11"></script>
-  <script src="modules/notifications.js?v=20260721-fix11"></script>
-  <script src="modules/company.js?v=20260721-fix11"></script>
-  <script src="modules/governance.js?v=20260721-fix11"></script>
-  <script src="modules/permissions.js?v=20260721-fix11"></script>
-  <script src="modules/project-crud.js?v=20260721-fix11"></script>
-  <script src="modules/metrics.js?v=20260721-fix11"></script>
-  <script src="modules/lookups.js?v=20260721-fix11"></script>
-  <script src="modules/option-builders.js?v=20260721-fix11"></script>
-  <script src="modules/render-markup.js?v=20260721-fix11"></script>
-  <script src="modules/onboarding.js?v=20260721-fix11"></script>
-  <script src="modules/project-chat.js?v=20260721-fix11"></script>
-  <script src="modules/hero-signal-field.js?v=20260721-fix11"></script>
-  <script src="modules/glide-reveal.js?v=20260721-fix11"></script>
-  <script src="script.js?v=20260721-fix11"></script>
+  <script src="modules/state.js?v=20260722-rehberlik"></script>
+  <script src="modules/translations.js?v=20260722-rehberlik"></script>
+  <script src="modules/ids.js?v=20260722-rehberlik"></script>
+  <script src="modules/crypto.js?v=20260722-rehberlik"></script>
+  <script src="modules/seed-data.js?v=20260722-rehberlik"></script>
+  <script src="modules/utils.js?v=20260722-rehberlik"></script>
+  <script src="modules/labels.js?v=20260722-rehberlik"></script>
+  <script src="modules/format.js?v=20260722-rehberlik"></script>
+  <script src="modules/normalize.js?v=20260722-rehberlik"></script>
+  <script src="modules/storage.js?v=20260722-rehberlik"></script>
+  <script src="modules/tenant.js?v=20260722-rehberlik"></script>
+  <script src="modules/scope.js?v=20260722-rehberlik"></script>
+  <script src="modules/dependencies.js?v=20260722-rehberlik"></script>
+  <script src="modules/notifications.js?v=20260722-rehberlik"></script>
+  <script src="modules/company.js?v=20260722-rehberlik"></script>
+  <script src="modules/governance.js?v=20260722-rehberlik"></script>
+  <script src="modules/permissions.js?v=20260722-rehberlik"></script>
+  <script src="modules/project-crud.js?v=20260722-rehberlik"></script>
+  <script src="modules/metrics.js?v=20260722-rehberlik"></script>
+  <script src="modules/lookups.js?v=20260722-rehberlik"></script>
+  <script src="modules/option-builders.js?v=20260722-rehberlik"></script>
+  <script src="modules/render-markup.js?v=20260722-rehberlik"></script>
+  <script src="modules/onboarding.js?v=20260722-rehberlik"></script>
+  <script src="modules/project-chat.js?v=20260722-rehberlik"></script>
+  <script src="modules/hero-signal-field.js?v=20260722-rehberlik"></script>
+  <script src="modules/glide-reveal.js?v=20260722-rehberlik"></script>
+  <script src="script.js?v=20260722-rehberlik"></script>
   <!-- vanilla Motion (framer-motion sibling) — KPI count-up & spring mikro-interaksiyalar -->
   <script type="module">
     import { animate } from "./modules/vendor/motion.js?v=20260714-motion";

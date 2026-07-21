@@ -32,6 +32,16 @@ function isSuperAdmin() {
   return currentUser?.role === "super_admin";
 }
 
+// Rəhbərlik: bütün şirkət layihələrini və tapşırıqlarını GÖRÜR və oxuyur,
+// komment yaza bilir — amma heç nəyi redaktə/idarə edə bilmir. Yəni admin
+// səviyyəsində görünürlük + user səviyyəsindən də dar yazma hüququ.
+// Görünürlük admin-lə eyni olduğu üçün canSeeProject/canSeeTask-da admin
+// yoxlamasının yanında dayanır; idarəetmə gate-lərinə (canManageTasks,
+// canManageProjects, canManageRegister və s.) QƏSDƏN əlavə edilmir.
+function isRehberlik() {
+  return currentUser?.role === "rehberlik";
+}
+
 // ── Visibility / access control ──────────────────────────────────────────────
 // These reference resourceInCurrentScope / linkedResourcesForProject (hoisted
 // globals still in script.js) at call time — cross-file runtime calls are fine.
@@ -55,7 +65,7 @@ function canSeeProject(project) {
   if (!currentUser) return true;
   if (isSuperAdmin()) return false;
   if (projectCompanyId(project) !== currentCompanyId()) return false;
-  if (isAdmin()) return true;
+  if (isAdmin() || isRehberlik()) return true;
   return projectHasRoleAccess(project)
     || projectHasResourceAccess(project.name)
     || appState.tasks.some((task) => task.project === project.name && taskHasDirectAccess(task));
@@ -70,7 +80,7 @@ function canSeeTask(task) {
   if (isSuperAdmin()) return false;
   if (taskCompanyId(task) !== currentCompanyId()) return false;
   const project = appState.projects.find((item) => item.name === task.project);
-  if (isAdmin() && (!project || isSameCompany(project))) return true;
+  if ((isAdmin() || isRehberlik()) && (!project || isSameCompany(project))) return true;
   return projectHasRoleAccess(project)
     || taskHasDirectAccess(task)
     || projectHasResourceAccess(task.project);

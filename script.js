@@ -558,15 +558,56 @@ const DEFAULT_REPORT_PREFS = {
   changeAlerts: { enabled: false }
 };
 
+// Rəhbərlik rolu üçün gündəlik hesabat MƏCBURİDİR — hər günün əvvəli və sonu
+// mütləq mail getməlidir, istifadəçi söndürə bilməz. Ona görə oxunuş burada,
+// yazılış isə enforceRehberlikReportPrefs()-də məcbur edilir (blob-da da
+// enabled:true durmalıdır, çünki mail edge function birbaşa blob-u oxuyur).
+function reportsAreMandatory(user) {
+  return user?.role === "rehberlik";
+}
+
 function getReportPrefs(user) {
   const p = user?.profile?.reportPrefs || {};
+  const forced = reportsAreMandatory(user);
   return {
     timezone: p.timezone || DEFAULT_REPORT_PREFS.timezone,
-    morning: { enabled: Boolean(p.morning?.enabled), hour: Number(p.morning?.hour ?? 9) },
-    evening: { enabled: Boolean(p.evening?.enabled), hour: Number(p.evening?.hour ?? 18) },
+    morning: { enabled: forced || Boolean(p.morning?.enabled), hour: Number(p.morning?.hour ?? 9) },
+    evening: { enabled: forced || Boolean(p.evening?.enabled), hour: Number(p.evening?.hour ?? 18) },
     deadlineAlerts: { enabled: Boolean(p.deadlineAlerts?.enabled), daysBefore: Array.isArray(p.deadlineAlerts?.daysBefore) ? p.deadlineAlerts.daysBefore : [3, 1] },
     changeAlerts: { enabled: Boolean(p.changeAlerts?.enabled) }
   };
+}
+
+// Blob-dakı rəhbərlik istifadəçilərinin hesabat quşlarını məcburi açıq saxlayır.
+// Mail göndərən edge function app_state blob-unu birbaşa oxuyur — orada
+// enabled:false qalsa, UI "açıq" göstərsə də mail GETMƏZ. Rol dəyişəndən və
+// serverdən state yüklənəndən sonra çağırılır. Dəyişiklik olubsa true qaytarır.
+function enforceRehberlikReportPrefs() {
+  let changed = false;
+  appState.users = appState.users.map((user) => {
+    if (!reportsAreMandatory(user)) return user;
+    const prefs = user.profile?.reportPrefs || {};
+    if (prefs.morning?.enabled && prefs.evening?.enabled) return user;
+    changed = true;
+    return {
+      ...user,
+      profile: {
+        ...(user.profile || {}),
+        reportPrefs: {
+          timezone: prefs.timezone || DEFAULT_REPORT_PREFS.timezone,
+          morning: { enabled: true, hour: Number(prefs.morning?.hour ?? 9) },
+          evening: { enabled: true, hour: Number(prefs.evening?.hour ?? 18) },
+          deadlineAlerts: prefs.deadlineAlerts || { ...DEFAULT_REPORT_PREFS.deadlineAlerts },
+          changeAlerts: prefs.changeAlerts || { ...DEFAULT_REPORT_PREFS.changeAlerts }
+        }
+      }
+    };
+  });
+  if (changed && currentUser && reportsAreMandatory(currentUser)) {
+    const stored = appState.users.find((user) => user.id === currentUser.id);
+    if (stored) currentUser = stored;
+  }
+  return changed;
 }
 
 function fillHourOptions(select, selected) {
@@ -601,10 +642,22 @@ function syncReportPrefsForm() {
   fillHourOptions(document.querySelector("#reportEveningHour"), prefs.evening.hour);
   document.querySelector("#reportMorningHour").value = String(prefs.morning.hour);
   document.querySelector("#reportEveningHour").value = String(prefs.evening.hour);
-  document.querySelector("#reportMorningEnabled").checked = prefs.morning.enabled;
-  document.querySelector("#reportEveningEnabled").checked = prefs.evening.enabled;
+  const morningBox = document.querySelector("#reportMorningEnabled");
+  const eveningBox = document.querySelector("#reportEveningEnabled");
+  morningBox.checked = prefs.morning.enabled;
+  eveningBox.checked = prefs.evening.enabled;
   document.querySelector("#reportDeadlineEnabled").checked = prefs.deadlineAlerts.enabled;
   document.querySelector("#reportChangeEnabled").checked = prefs.changeAlerts.enabled;
+
+  // Rəhbərlik gündəlik hesabatı söndürə bilmir — quşlar açıq və deaktivdir.
+  // Saat seçimi açıq qalır: "nə vaxt" dəyişdirilə bilər, "göndərilsinmi" yox.
+  const forced = reportsAreMandatory(currentUser);
+  [morningBox, eveningBox].forEach((box) => {
+    box.disabled = forced;
+    box.title = forced ? text("reportMandatoryHint") : "";
+  });
+  const hint = document.querySelector("#reportMandatoryHint");
+  if (hint) hint.hidden = !forced;
 }
 
 function saveReportPrefs() {
@@ -617,13 +670,15 @@ function saveReportPrefs() {
     return;
   }
   const prev = getReportPrefs(currentUser);
+  // disabled checkbox-un .checked-inə güvənmirik — məcburi rolda həmişə true.
+  const forced = reportsAreMandatory(currentUser);
   currentUser.profile = {
     ...(currentUser.profile || {}),
     email,
     reportPrefs: {
       timezone: prev.timezone || "Asia/Baku",
-      morning: { enabled: document.querySelector("#reportMorningEnabled").checked, hour: Number(document.querySelector("#reportMorningHour").value) },
-      evening: { enabled: document.querySelector("#reportEveningEnabled").checked, hour: Number(document.querySelector("#reportEveningHour").value) },
+      morning: { enabled: forced || document.querySelector("#reportMorningEnabled").checked, hour: Number(document.querySelector("#reportMorningHour").value) },
+      evening: { enabled: forced || document.querySelector("#reportEveningEnabled").checked, hour: Number(document.querySelector("#reportEveningHour").value) },
       deadlineAlerts: { enabled: document.querySelector("#reportDeadlineEnabled").checked, daysBefore: prev.deadlineAlerts.daysBefore },
       changeAlerts: { enabled: document.querySelector("#reportChangeEnabled").checked }
     }
@@ -855,6 +910,7 @@ function updateRoleLabels() {
     if (option.value === "admin") option.textContent = text("adminRole");
     if (option.value === "super_admin") option.textContent = text("superAdminRole");
     if (option.value === "manager") option.textContent = text("managerRole");
+    if (option.value === "rehberlik") option.textContent = text("rehberlikRole");
     if (option.value === "user") option.textContent = text("userRole");
     if (option.value === "contributor") option.textContent = text("contributorRole");
     if (option.value === "viewer") option.textContent = text("viewerRole");
@@ -2086,8 +2142,8 @@ function renderRoleMatrix() {
     const scopedUsers = appState.users.filter((u) => u.companyId === companyId && u.role !== "super_admin");
     if (roleUserCount) roleUserCount.textContent = scopedUsers.length;
 
-    const roleOptions = ["admin", "manager", "contributor", "sponsor", "viewer", "user"];
-    const roleAccent = { admin: "var(--teal)", manager: "var(--blue,#2563eb)", contributor: "#16a34a", sponsor: "#7c3aed", viewer: "var(--muted)", user: "var(--text)" };
+    const roleOptions = ["admin", "manager", "rehberlik", "contributor", "sponsor", "viewer", "user"];
+    const roleAccent = { admin: "var(--teal)", manager: "var(--blue,#2563eb)", rehberlik: "#b45309", contributor: "#16a34a", sponsor: "#7c3aed", viewer: "var(--muted)", user: "var(--text)" };
 
     // markup → render-markup.js: roleUserListMarkup
     userMgmtContainer.innerHTML = roleUserListMarkup(scopedUsers, roleOptions, roleAccent, currentUser?.id);
@@ -2119,6 +2175,8 @@ function renderRoleMatrix() {
         if (!targetUser || targetUser.id === currentUser?.id) return;
         const previousRole = targetUser.role;
         targetUser.role = newRole;
+        // Rəhbərlik olan kimi gündəlik hesabat quşları blob-da da açılmalıdır.
+        enforceRehberlikReportPrefs();
         saveUsers();
         renderRoleMatrix();
         render();
@@ -2146,8 +2204,8 @@ function renderRoleMatrix() {
   }
 
   // ─── İcazə cədvəli (arayış üçün — aşağıda) ───────────────────────────────────
-  const displayRoles = ["admin", "manager", "contributor", "sponsor", "viewer", "user"];
-  const roleColors = { admin: "var(--teal)", manager: "var(--blue,#2563eb)", contributor: "#16a34a", sponsor: "#7c3aed", viewer: "var(--muted)", user: "var(--text)" };
+  const displayRoles = ["admin", "manager", "rehberlik", "contributor", "sponsor", "viewer", "user"];
+  const roleColors = { admin: "var(--teal)", manager: "var(--blue,#2563eb)", rehberlik: "#b45309", contributor: "#16a34a", sponsor: "#7c3aed", viewer: "var(--muted)", user: "var(--text)" };
   const perms = [
     { label: "Bütün layihələri idarə et",  roles: ["admin"] },
     { label: "Öz layihələrini idarə et",   roles: ["admin", "manager"] },
@@ -2157,10 +2215,12 @@ function renderRoleMatrix() {
     { label: "Müştəriləri idarə et",       roles: ["admin"] },
     { label: "Register idarə et",          roles: ["admin", "manager"] },
     { label: "Müştəri sorğuları",          roles: ["admin", "manager"] },
-    { label: "Hesabata bax",               roles: ["admin", "manager", "sponsor"] },
-    { label: "Layihə/taskə bax",           roles: ["admin", "manager", "contributor", "sponsor", "viewer", "user"] },
-    { label: "Komment yaz",                roles: ["admin", "manager", "contributor", "user"] },
+    { label: "Hesabata bax",               roles: ["admin", "manager", "rehberlik", "sponsor"] },
+    { label: "Bütün şirkət layihələrinə bax", roles: ["admin", "rehberlik"] },
+    { label: "Layihə/taskə bax",           roles: ["admin", "manager", "rehberlik", "contributor", "sponsor", "viewer", "user"] },
+    { label: "Komment yaz",                roles: ["admin", "manager", "rehberlik", "contributor", "user"] },
     { label: "Tarix sorğusu göndər",       roles: ["user", "contributor", "viewer"] },
+    { label: "Gündəlik hesabat (məcburi)", roles: ["rehberlik"] },
     { label: "Şirkət ayarları",            roles: ["admin"] },
     { label: "Fayl/backup idarəsi",        roles: ["admin"] },
   ];
@@ -5117,6 +5177,7 @@ function importBackup(payload) {
     appState.trash = scopeList(appState.trash);
     companyRegistry = companyRegistryFromLocalState().filter((company) => company.id === companyId);
   }
+  enforceRehberlikReportPrefs();
   saveTasks();
   saveResources();
   saveRegisters();
@@ -5561,7 +5622,7 @@ async function submitTaskComment(event) {
   const commentForm = event.target.closest(".comment-form");
   if (!commentForm || !currentUser) return;
   event.preventDefault();
-  if (!canContribute()) return;
+  if (!canComment()) return;
   const task = appState.tasks.find((item) => item.id === commentForm.dataset.taskId);
   const input = commentForm.elements.comment;
   const value = input.value.trim();
@@ -7068,7 +7129,7 @@ async function loadPendingMembers() {
       listEl.innerHTML = `<p class="empty-hint">${text("pendingEmpty")}</p>`;
       return;
     }
-    const roleOpts = (selected) => ["user", "manager", "admin"]
+    const roleOpts = (selected) => ["user", "manager", "rehberlik", "admin"]
       .map((r) => `<option value="${r}"${r === selected ? " selected" : ""}>${roleLabel(r)}</option>`).join("");
     listEl.innerHTML = members.map((m) => {
       const label = m.status === "pending" ? text("statusPending") : text("statusInvited");
@@ -7815,6 +7876,7 @@ quickManagerCancelBtn?.addEventListener("click", () => {
 });
 const QUICK_ROLE_POSITIONS = {
   manager: "Project Manager",
+  rehberlik: "Rəhbərlik",
   contributor: "Contributor",
   user: "İcraçı",
   viewer: "İzləyici",

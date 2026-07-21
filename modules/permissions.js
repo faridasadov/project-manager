@@ -44,6 +44,14 @@ function canContribute() {
   return ["admin", "manager", "user", "contributor"].includes(currentUser?.role);
 }
 
+// Komment yazmaq üçün ayrıca gate. Əvvəl komment formaları canContribute()-ə
+// bağlı idi, amma o eyni zamanda "tarix dəyişikliyi sorğusu" və "tamamlandı
+// sorğusu" kimi datanı dəyişən əməliyyatları da açır. Rəhbərlik YALNIZ komment
+// yaza bilməlidir, ona görə iki səlahiyyət ayrıldı.
+function canComment() {
+  return canContribute() || isRehberlik();
+}
+
 function canApproveGovernance() {
   return ["admin", "manager", "sponsor"].includes(currentUser?.role);
 }
