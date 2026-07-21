@@ -6146,6 +6146,91 @@ function handleDashboardTaskClick(event) {
   return true;
 }
 
+// ── Dashboard axtarışı ───────────────────────────────────────────────────────
+// Dashboard filtrlərə tabe deyil (renderDashboard bütün portfeli göstərir), ona
+// görə burada filtr paneli yoxdur — yalnız axtarış. Nəticəyə klikləyəndə
+// Tasklar görünüşünə keçib həmin kart işıqlandırılır.
+const dashSearchInput = document.querySelector("#dashSearchInput");
+const dashSearchResults = document.querySelector("#dashSearchResults");
+
+function openTaskFromDashboard(taskId) {
+  currentFilter = "Hamısı";
+  currentPriorityFilter = "Hamısı";
+  currentSmartFilter = "Hamısı";
+  currentOwnerFilter = "";
+  taskListPage = 1;
+  setView("list");
+  requestAnimationFrame(() => {
+    const card = document.querySelector(`[data-task-card-id="${CSS.escape(taskId)}"]`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.classList.add("highlight-flash");
+    setTimeout(() => card.classList.remove("highlight-flash"), 1800);
+  });
+}
+
+function renderDashSearchResults() {
+  if (!dashSearchInput || !dashSearchResults) return;
+  const query = dashSearchInput.value.trim().toLowerCase();
+  if (query.length < 2) {
+    dashSearchResults.hidden = true;
+    dashSearchResults.innerHTML = "";
+    dashSearchInput.setAttribute("aria-expanded", "false");
+    return;
+  }
+  const matches = accessibleTasks().filter((task) => (
+    [task.name, task.project, resourceLabel(task.owner), task.notes]
+      .some((value) => String(value || "").toLowerCase().includes(query))
+  ));
+  dashSearchResults.hidden = false;
+  dashSearchInput.setAttribute("aria-expanded", "true");
+  if (!matches.length) {
+    dashSearchResults.innerHTML = `<p class="dash-search-empty">${text("noResults")}</p>`;
+    return;
+  }
+  dashSearchResults.innerHTML = matches.slice(0, 8).map((task) => `
+    <button type="button" class="dash-search-item" data-open-task="${escapeHtml(task.id)}" role="option">
+      <span class="dash-search-name">${escapeHtml(task.name)}</span>
+      <span class="dash-search-meta">${escapeHtml(getProject(task))}${task.owner ? " · " + escapeHtml(resourceLabel(task.owner)) : ""}</span>
+    </button>
+  `).join("") + (matches.length > 8
+    ? `<button type="button" class="dash-search-more" data-search-all="1">${matches.length} nəticənin hamısına bax</button>`
+    : "");
+}
+
+dashSearchInput?.addEventListener("input", renderDashSearchResults);
+
+dashSearchResults?.addEventListener("click", (event) => {
+  const all = event.target.closest("button[data-search-all]");
+  if (all) {
+    // Bütün nəticələr: sorğunu əsas axtarışa köçürüb Tasklar görünüşünə keç.
+    searchInput.value = dashSearchInput.value;
+    dashSearchResults.hidden = true;
+    taskListPage = 1;
+    setView("list");
+    return;
+  }
+  const item = event.target.closest("button[data-open-task]");
+  if (!item) return;
+  dashSearchResults.hidden = true;
+  openTaskFromDashboard(item.dataset.openTask);
+});
+
+dashSearchInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") { dashSearchResults.hidden = true; dashSearchInput.setAttribute("aria-expanded", "false"); return; }
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  const first = dashSearchResults?.querySelector("button[data-open-task]");
+  if (first) { dashSearchResults.hidden = true; openTaskFromDashboard(first.dataset.openTask); }
+});
+
+document.addEventListener("click", (event) => {
+  if (!dashSearchResults || dashSearchResults.hidden) return;
+  if (event.target.closest(".dash-search-wrap")) return;
+  dashSearchResults.hidden = true;
+  dashSearchInput?.setAttribute("aria-expanded", "false");
+});
+
 deadlineAlerts?.addEventListener("click", (event) => { handleDashboardTaskClick(event); });
 upcomingList?.addEventListener("click", (event) => { handleDashboardTaskClick(event); });
 
