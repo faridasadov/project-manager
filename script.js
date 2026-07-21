@@ -138,6 +138,7 @@ const quickManagerForm = document.querySelector("#quickManagerForm");
 const quickManagerFullNameInput = document.querySelector("#quickManagerFullName");
 const quickManagerUsernameInput = document.querySelector("#quickManagerUsername");
 const quickManagerPasswordInput = document.querySelector("#quickManagerPassword");
+const quickManagerEmailInput = document.querySelector("#quickManagerEmail");
 const quickManagerRoleInput = document.querySelector("#quickManagerRole");
 const quickManagerSaveBtn = document.querySelector("#quickManagerSave");
 const quickManagerCancelBtn = document.querySelector("#quickManagerCancel");
@@ -7753,9 +7754,10 @@ const QUICK_ROLE_POSITIONS = {
   viewer: "İzləyici",
   sponsor: "Sponsor"
 };
-quickManagerSaveBtn?.addEventListener("click", () => {
+quickManagerSaveBtn?.addEventListener("click", async () => {
   if (!isAdmin()) { alert("İstifadəçi yaratmaq üçün admin icazəsi tələb olunur."); return; }
   const username = quickManagerUsernameInput.value.trim();
+  const email = (quickManagerEmailInput?.value || "").trim().toLowerCase();
   const password = quickManagerPasswordInput.value;
   const fullName = quickManagerFullNameInput.value.trim();
   const role = quickManagerRoleInput?.value || "manager";
@@ -7766,16 +7768,41 @@ quickManagerSaveBtn?.addEventListener("click", () => {
   }
   const companyId = currentCompanyId();
   const companyName = appState.customers.find((c) => c.companyId === companyId)?.name || "";
+  // Bu sürətli forma əvvəl YALNIZ lokal qeyd yaradırdı (md5 parol, createId):
+  // auth hesabı olmadığı üçün belə istifadəçi HEÇ VAXT giriş edə bilmirdi.
+  // Online rejimdə admin panelindəki ilə eyni yolla real hesab yaradılır.
+  let newId = createId();
+  if (teamSupabaseActive()) {
+    if (!email) { alert("Online rejimdə email tələb olunur — istifadəçi bu email ilə giriş edəcək."); quickManagerEmailInput?.focus(); return; }
+    if (password.length < 6) { alert("Parol ən azı 6 simvol olmalıdır."); return; }
+    quickManagerSaveBtn.disabled = true;
+    try {
+      const res = await callSupabaseFunction("manage-user", {
+        action: "create", email, password, username, fullName: fullName || username,
+        role, appRole: role, position: QUICK_ROLE_POSITIONS[role] || ""
+      });
+      newId = res?.userId || newId;
+    } catch (err) {
+      alert("İstifadəçi yaradılmadı: " + (err?.message || err));
+      return;
+    } finally {
+      quickManagerSaveBtn.disabled = false;
+    }
+  } else if (isSupabasePrimaryMode()) {
+    alert("İstifadəçi yaradıla bilmədi: online sessiya yoxdur və ya admin hüququnuz yoxdur.\nLokal qeyd yaratmaq həmin şəxsin giriş edə bilməməsi deməkdir — ona görə dayandırıldı.");
+    return;
+  }
   const newUser = normalizeUser({
-    id: createId(),
+    id: newId,
     username,
-    passwordHash: md5(password),
+    passwordHash: teamSupabaseActive() ? "" : md5(password),
     role,
     managerId: role === "user" ? (currentUser?.role === "manager" ? currentUser.id : "") : "",
     companyId,
-    profile: { fullName: fullName || username, position: QUICK_ROLE_POSITIONS[role] || "", company: companyName, email: "", fatherName: "", phone: "", address: "" }
+    profile: { fullName: fullName || username, position: QUICK_ROLE_POSITIONS[role] || "", company: companyName, email, fatherName: "", phone: "", address: "" }
   });
   appState.users.push(newUser);
+  saveUsers();
   recordAudit("user.created", "user", newUser.id, `${username} (${role})`);
   saveResources();
   renderResourceControls();
@@ -7791,7 +7818,11 @@ quickManagerSaveBtn?.addEventListener("click", () => {
   quickManagerFullNameInput.value = "";
   quickManagerUsernameInput.value = "";
   quickManagerPasswordInput.value = "";
+  if (quickManagerEmailInput) quickManagerEmailInput.value = "";
   if (quickManagerRoleInput) quickManagerRoleInput.value = "manager";
+  if (typeof showToast === "function" && teamSupabaseActive()) {
+    showToast(`${username} yaradıldı — ${email} + parol ilə girə bilər.`);
+  }
 });
 
 // ── #20 Layihə formasında sürətli komanda yaratma (sifarişçidəki kimi) ──
@@ -7816,8 +7847,11 @@ quickTeamSaveBtn?.addEventListener("click", () => {
   }
   // seçilmiş üzvlər: quickTeamMembers dəyərləri "user:<id>" formatındadır
   const memberValues = [...quickTeamMembersInput.selectedOptions].map((o) => o.value);
-  const memberIds = memberValues.map((v) => v.split(":")[1]).filter(Boolean);
-  const team = { id: createId(), companyId, name, memberIds };
+  // Üzvlər "user:<id>" formatında saxlanılmalıdır — bütün digər yerlər (komanda
+  // paneli, resurs uyğunlaşdırma, task sayğacı) bu formatı gözləyir. Burada
+  // ":"-dən sonrakı hissə çıxarılıb xam id yazılırdı, ona görə bu formadan
+  // yaradılan komanda "0 task" göstərirdi və üzvləri tanınmırdı.
+  const team = { id: createId(), companyId, name, memberIds: memberValues };
   appState.teams.push(team);
   recordAudit("team.created", "team", team.id, name);
   saveResources();

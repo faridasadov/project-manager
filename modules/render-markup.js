@@ -893,11 +893,15 @@ function resourceProjectListMarkup(scopedProjects, scopedTasks) {
 
 function resourceTeamListMarkup(scopedTeams) {
   return scopedTeams.length ? scopedTeams.map((team) => {
-    const values = (team.memberIds || []).map((id) => id.includes(":") ? id : resourceValue("member", id));
+    // Silinmiş üzvləri göstərmirik və ad ilə siyahı arasında ayırıcı qoyuruq —
+    // əvvəl "helpdeskuser:9eb20b61-..." kimi bitişik xam id çıxırdı.
+    const values = (team.memberIds || [])
+      .map((id) => id.includes(":") ? id : resourceValue("user", id))
+      .filter(resourceExists);
     const names = values.map(resourceLabel).filter(Boolean);
     return `
       <details class="user-profile-card">
-        <summary><span><strong>${escapeHtml(team.name)}</strong>${escapeHtml(names.join(", ") || text("empty"))}</span></summary>
+        <summary><span><strong>${escapeHtml(team.name)}</strong> · ${escapeHtml(names.join(", ") || text("empty"))} (${values.length})</span></summary>
         <div class="resource-body">
           <label>
             <span>${text("newTeam")}</span>
