@@ -8429,8 +8429,10 @@ async function renderSnapshotList() {
         users: snap.payload?.users?.length || 0
       }));
   if (!snapshotRows.length) { container.innerHTML = snapshotEmptyMarkup; return; }
+  const enKohne = snapshotRows.length ? new Date(snapshotRows[snapshotRows.length - 1].at) : null;
+  const gunFerqi = enKohne ? Math.max(1, Math.round((Date.now() - enKohne.getTime()) / 86400000)) : 0;
   const badge = isServer
-    ? `<p class="field-hint" style="margin:0 0 8px">Server arxivi · ${snapshotRows.length} versiya</p>`
+    ? `<p class="field-hint" style="margin:0 0 8px">Server arxivi · ${snapshotRows.length} versiya · son ${gunFerqi} gün</p>`
     : `<p class="field-hint" style="margin:0 0 8px">Yalnız bu brauzerin lokal nüsxələri (${snapshotRows.length})</p>`;
   container.innerHTML = badge + snapshotRows.map((row, index) => `
     <div class="snapshot-item">
