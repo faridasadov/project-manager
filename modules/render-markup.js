@@ -1005,6 +1005,7 @@ function resourceUserListMarkup(scopedUsers) {
         <label><span>Rol</span>
           <select name="role">
             <option value="user" ${user.role === "user" ? "selected" : ""}>${roleLabel("user")}</option>
+            <option value="rehberlik" ${user.role === "rehberlik" ? "selected" : ""}>${roleLabel("rehberlik")}</option>
             <option value="contributor" ${user.role === "contributor" ? "selected" : ""}>${roleLabel("contributor")}</option>
             <option value="viewer" ${user.role === "viewer" ? "selected" : ""}>${roleLabel("viewer")}</option>
             <option value="sponsor" ${user.role === "sponsor" ? "selected" : ""}>${roleLabel("sponsor")}</option>

@@ -31,14 +31,62 @@ function portfolioMetrics(sourceTasks = accessibleTasks()) {
   return { active: activeTasks.length, done: doneTasks.length, overdue, blocked, risks, issues, highRisks, completion, governanceScore, score };
 }
 
-function plannedHoursForTask(task) {
-  return Number(task.plannedHours) || 0;
+// ── İş saatı hesablaması ─────────────────────────────────────────────────────
+// Plan və fakt saat tarixlərdən avtomat hesablanır, amma YALNIZ REAL İŞ
+// GÜNLƏRİ sayılır: şənbə/bazar çıxılır. Gündəlik iş saatı həftəlik capacity-dən
+// gəlir (Parametrlər → Capacity saat, defolt 40 → gündə 8 saat).
+function dailyWorkHours() {
+  return (Number(appSettings.capacityHours) || 40) / 5;
 }
 
+// Hər iki tarix daxil olmaqla aralıqdakı iş günlərinin sayı.
+function workingDaysBetween(startIso, endIso) {
+  if (!startIso || !endIso) return 0;
+  const start = new Date(String(startIso).slice(0, 10) + "T00:00:00Z");
+  const end = new Date(String(endIso).slice(0, 10) + "T00:00:00Z");
+  if (isNaN(start) || isNaN(end) || end < start) return 0;
+  let days = 0;
+  for (let d = start.getTime(); d <= end.getTime(); d += 86400000) {
+    const dow = new Date(d).getUTCDay();
+    if (dow !== 0 && dow !== 6) days += 1;
+  }
+  return days;
+}
+
+function workingHoursBetween(startIso, endIso) {
+  return Math.round(workingDaysBetween(startIso, endIso) * dailyWorkHours() * 100) / 100;
+}
+
+// PLAN: başlama → bitmə tarixi arasındakı bütün iş saatları.
+function autoPlannedHours(task) {
+  return workingHoursBetween(task?.start, task?.end);
+}
+
+// FAKT: başlama → BU GÜN (tapşırıq bitibsə tamamlanma tarixi) arasında KEÇƏN
+// iş saatları. Plan ilə eyni düsturdan hesablansaydı, fakt həmişə plana bərabər
+// çıxardı və müqayisə mənasını itirərdi — ona görə son hədd fərqlidir.
+function autoActualHours(task) {
+  if (!task?.start) return 0;
+  const today = isoDate(new Date());
+  const finish = task.status === "Bitib"
+    ? (String(task.completedAt || task.end || today).slice(0, 10))
+    : today;
+  if (finish < String(task.start).slice(0, 10)) return 0; // hələ başlamayıb
+  return workingHoursBetween(task.start, finish);
+}
+
+// Əl ilə yazılmış dəyər varsa o üstündür — avtomat yalnız boş qalanda işləyir.
+function plannedHoursForTask(task) {
+  return Number(task.plannedHours) || autoPlannedHours(task);
+}
+
+// Üstünlük sırası: real vaxt qeydləri → əl ilə yazılmış fakt → avtomat keçən saat.
 function actualHoursForTask(task) {
   const entries = Array.isArray(task.timeEntries) ? task.timeEntries : [];
-  if (!entries.length) return Number(task.actualHours) || 0;
-  return Math.round(entries.reduce((sum, entry) => sum + (Number(entry.hours) || 0), 0) * 100) / 100;
+  if (entries.length) {
+    return Math.round(entries.reduce((sum, entry) => sum + (Number(entry.hours) || 0), 0) * 100) / 100;
+  }
+  return Number(task.actualHours) || autoActualHours(task);
 }
 
 function workloadRows() {

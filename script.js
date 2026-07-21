@@ -2039,13 +2039,23 @@ function renderResourceControls() {
   ownerInput.value = options.some((option) => option.value === currentOwner) ? currentOwner : "";
   if (currentOwner && ownerInput.value !== currentOwner) ownerInput.value = currentOwner;
 
+  // Layihə resursunda ŞİRKƏTİN BÜTÜN resursları görünür (rəhbərlik daxil).
+  // Əvvəl siyahı yalnız layihəyə bağlı olanlarla məhdudlaşırdı və layihəyə hələ
+  // bağlanmamış adamı seçmək mümkün deyildi. İndi hamısı var, sadəcə layihəyə
+  // bağlı olanlar ayrıca qrupda yuxarıda dayanır ki, seçim asan olsun.
   const selectedProject = projectInput.value.trim();
-  const linked = selectedProject ? linkedResourcesForProject(selectedProject) : [];
-  const projectOptions = linked.length ? options.filter((option) => linked.includes(option.value)) : options;
+  const linked = new Set(selectedProject ? linkedResourcesForProject(selectedProject) : []);
+  const projectOptions = options;
+  const optionMarkup = (option) => `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`;
+  const linkedOptions = options.filter((option) => linked.has(option.value));
+  const otherOptions = options.filter((option) => !linked.has(option.value));
   const currentProjectResource = projectResourceInput.value;
   projectResourceInput.innerHTML = [
     `<option value="">${text("noResource")}</option>`,
-    ...projectOptions.map((option) => `<option value="${option.value}">${option.type}: ${escapeHtml(option.label)}</option>`)
+    linkedOptions.length ? `<optgroup label="${text("linkedToProject")}">${linkedOptions.map(optionMarkup).join("")}</optgroup>` : "",
+    otherOptions.length
+      ? (linkedOptions.length ? `<optgroup label="${text("otherCompanyResources")}">${otherOptions.map(optionMarkup).join("")}</optgroup>` : otherOptions.map(optionMarkup).join(""))
+      : ""
   ].join("");
   ensureSelectOption(projectResourceInput, currentProjectResource, resourceLabel(currentProjectResource));
   projectResourceInput.value = projectOptions.some((option) => option.value === currentProjectResource) ? currentProjectResource : "";
@@ -3461,6 +3471,54 @@ function render() {
   if (typeof maybeAutoStartTour === "function") maybeAutoStartTour();
 }
 
+// Plan/fakt saatı forma tarixlərindən avtomat doldurur.
+// Plan saat: başlama → bitmə (bütün iş saatları) — istifadəçi əl ilə dəyişə bilər,
+// dəyişdiyi anda "manual" işarələnir və sonrakı tarix dəyişikliyi onu əzmir.
+// Fakt saat: başlama → bu gün (bitibsə tamamlanma) — yalnız oxunur, çünki o,
+// hesablanan kəmiyyətdir; real dəqiq rəqəm üçün tapşırığa vaxt qeydi yazılır.
+function syncHourFieldsFromDates() {
+  if (!plannedHoursInput || !actualHoursInput) return;
+  const draft = {
+    start: startDate.value,
+    end: endDate.value,
+    status: statusInput.value,
+    completedAt: editingTaskCompletedAt
+  };
+  const planHint = document.querySelector("#plannedHoursHint");
+  const factHint = document.querySelector("#actualHoursHint");
+
+  const autoPlan = autoPlannedHours(draft);
+  if (plannedHoursInput.dataset.manual !== "1") {
+    plannedHoursInput.value = autoPlan;
+  }
+  if (planHint) {
+    const days = workingDaysBetween(draft.start, draft.end);
+    planHint.textContent = days
+      ? `${days} iş günü × ${dailyWorkHours()} saat = ${autoPlan} saat${plannedHoursInput.dataset.manual === "1" ? " (əl ilə dəyişilib)" : ""}`
+      : "Tarixləri seçin — avtomat hesablanacaq";
+  }
+
+  const entries = Array.isArray(editingTaskTimeEntries) ? editingTaskTimeEntries : [];
+  if (entries.length) {
+    const sum = Math.round(entries.reduce((total, entry) => total + (Number(entry.hours) || 0), 0) * 100) / 100;
+    actualHoursInput.value = sum;
+    if (factHint) factHint.textContent = `${entries.length} vaxt qeydinin cəmi`;
+  } else {
+    const autoFact = autoActualHours(draft);
+    actualHoursInput.value = autoFact;
+    if (factHint) {
+      factHint.textContent = draft.start
+        ? (draft.status === "Bitib" ? `Başlama → tamamlanma: ${autoFact} saat` : `Başlama → bu gün: ${autoFact} saat (keçən)`)
+        : "Başlama tarixi seçilməyib";
+    }
+  }
+}
+
+// Formada redaktə olunan taskın hesablama üçün lazım olan sahələri.
+// Forma inputlarında qarşılığı yoxdur, ona görə ayrıca saxlanılır.
+let editingTaskCompletedAt = "";
+let editingTaskTimeEntries = [];
+
 function taskFormFields() {
   return [
     taskName, projectInput, projectResourceInput, startDate, endDate, statusInput, priorityInput,
@@ -3481,9 +3539,13 @@ function resetForm() {
   progressInput.value = 0;
   plannedHoursInput.value = 0;
   actualHoursInput.value = 0;
+  delete plannedHoursInput.dataset.manual;
+  editingTaskCompletedAt = "";
+  editingTaskTimeEntries = [];
   parentTaskInput.value = "";
   taskDependenciesInput.innerHTML = taskOptionItems();
   if (taskExtraDetails) taskExtraDetails.open = false;
+  syncHourFieldsFromDates();
 }
 
 function moveForward(task) {
@@ -3522,8 +3584,17 @@ function handleTaskAction(action, id) {
     priorityInput.value = task.priority;
     ownerInput.value = task.owner;
     progressInput.value = Number(task.progress) || 0;
+    editingTaskCompletedAt = task.completedAt || "";
+    editingTaskTimeEntries = Array.isArray(task.timeEntries) ? task.timeEntries : [];
+    // Saxlanılmış plan saat avtomat hesablanandan fərqlidirsə, demək əl ilə
+    // qoyulub — tarix dəyişəndə onu əzməmək üçün "manual" işarələnir.
     plannedHoursInput.value = Number(task.plannedHours) || 0;
-    actualHoursInput.value = Number(task.actualHours) || 0;
+    if (Number(task.plannedHours) && Number(task.plannedHours) !== autoPlannedHours(task)) {
+      plannedHoursInput.dataset.manual = "1";
+    } else {
+      delete plannedHoursInput.dataset.manual;
+    }
+    syncHourFieldsFromDates();
     notesInput.value = task.notes;
     { const ac = document.querySelector("#taskAcceptance"); if (ac) ac.value = task.acceptanceCriteria || ""; }
     parentTaskInput.value = task.parentTaskId || "";
@@ -3623,8 +3694,15 @@ function editTask(id, options = {}) {
   priorityInput.value = task.priority;
   ownerInput.value = task.owner;
   progressInput.value = Number(task.progress) || 0;
+  editingTaskCompletedAt = task.completedAt || "";
+  editingTaskTimeEntries = Array.isArray(task.timeEntries) ? task.timeEntries : [];
   plannedHoursInput.value = Number(task.plannedHours) || 0;
-  actualHoursInput.value = Number(task.actualHours) || 0;
+  if (Number(task.plannedHours) && Number(task.plannedHours) !== autoPlannedHours(task)) {
+    plannedHoursInput.dataset.manual = "1";
+  } else {
+    delete plannedHoursInput.dataset.manual;
+  }
+  syncHourFieldsFromDates();
   notesInput.value = task.notes;
   { const ac = document.querySelector("#taskAcceptance"); if (ac) ac.value = task.acceptanceCriteria || ""; }
   parentTaskInput.value = task.parentTaskId || "";
@@ -7652,6 +7730,8 @@ userList.addEventListener("submit", (event) => {
     address: profileForm.elements.address.value.trim(),
     company: profileForm.elements.company.value.trim()
   };
+  // Rəhbərlik seçilibsə gündəlik hesabat quşları burada da məcburi açılmalıdır.
+  enforceRehberlikReportPrefs();
   saveUsers();
   render();
 });
@@ -7721,6 +7801,17 @@ managedFileList.addEventListener("click", async (event) => {
 });
 
 projectInput.addEventListener("change", renderResourceControls);
+// Tarix/status dəyişdikcə plan və fakt saat yenidən hesablanır.
+[startDate, endDate, statusInput].forEach((field) => {
+  field?.addEventListener("change", syncHourFieldsFromDates);
+});
+// İstifadəçi plan saatı əl ilə yazarsa, avtomat hesablama onu artıq əzmir.
+plannedHoursInput?.addEventListener("input", () => {
+  plannedHoursInput.dataset.manual = "1";
+  const hint = document.querySelector("#plannedHoursHint");
+  if (hint) hint.textContent = `Əl ilə dəyişilib — avtomat: ${autoPlannedHours({ start: startDate.value, end: endDate.value })} saat`;
+});
+
 projectResourceInput.addEventListener("change", () => {
   if (projectResourceInput.value) {
     ownerInput.value = projectResourceInput.value;
