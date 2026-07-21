@@ -4139,8 +4139,19 @@ async function supabaseMergeProfilesIntoUsers(workspaceId) {
     if (!existing || JSON.stringify(existing) !== JSON.stringify(merged)) changed = true;
     byId.set(row.id, merged);
   });
+  // Online rejimdə `profiles` YEGANƏ həqiqət mənbəyidir: bazada olmayan adam
+  // blob-da qalmamalıdır. Əks halda bir cihazdan silinən istifadəçi digər
+  // cihazların blob-unda "zombi" kimi yaşayır və növbəti yazılışla geri qayıdır.
+  // RLS: workspace üzvü bütün workspace profillərini oxuyur → siyahı tamdır.
+  const dbIds = new Set(rows.map((row) => row.id));
+  const survivors = [...byId.values()].filter((user) => (
+    dbIds.has(user.id) ||
+    user.id === currentUser?.id ||
+    (user.companyId || "company-default") !== companyId
+  ));
+  if (survivors.length !== byId.size) changed = true;
   if (!changed) return;
-  appState.users = [...byId.values()];
+  appState.users = survivors;
   saveUsers();
 }
 
