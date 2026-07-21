@@ -30,7 +30,7 @@ function managerMultiOptions(selectedIds = []) {
 function allResourceOptions() {
   const companyId = currentCompanyId();
   return [
-    ...appState.users.filter((user) => !["admin", "super_admin"].includes(user.role) && user.companyId === companyId).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) })),
+    ...appState.users.filter((user) => user.role !== "super_admin" && user.companyId === companyId).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) })),
     ...appState.teams.filter((team) => isSameCompany(team)).map((team) => ({ value: resourceValue("team", team.id), label: team.name, type: text("team") }))
   ];
 }
@@ -38,7 +38,7 @@ function allResourceOptions() {
 function teamMemberOptions(selectedIds = []) {
   const companyId = currentCompanyId();
   return [
-    ...appState.users.filter((user) => !["admin", "super_admin"].includes(user.role) && user.companyId === companyId).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) }))
+    ...appState.users.filter((user) => user.role !== "super_admin" && user.companyId === companyId).map((user) => ({ value: resourceValue("user", user.id), label: user.profile?.fullName || user.username, type: roleLabel(user.role) }))
   ].map((option) => `<option value="${option.value}" ${selectedIds.includes(option.value) ? "selected" : ""}>${option.type}: ${escapeHtml(option.label)}</option>`).join("");
 }
 

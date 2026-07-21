@@ -391,6 +391,7 @@ let supabaseSaveTimer = null;
 // Remote app_state ən azı bir dəfə oxunana qədər HEÇ NƏ yazmırıq — əks halda
 // boot-dakı yerli/demo state real datanı əzir.
 let supabaseStateLoaded = false;
+let supabaseRemoteTaskCount = 0;
 let supabaseSettingsSaveTimer = null;
 function loadSyncedIdSet(key) {
   try {
@@ -4074,9 +4075,58 @@ async function supabaseRegisterWorkspace({ companyName, subdomain, username, pas
 async function supabaseLoadWorkspaceState(workspaceId) {
   const rows = await supabaseRequest(`/rest/v1/app_state?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=state_json&limit=1`);
   const state = Array.isArray(rows) ? rows[0]?.state_json : null;
+  // Serverdə NEÇƏ task olduğunu yadda saxlayırıq — save zamanı "hamısı yoxa çıxdı"
+  // ssenarisini bloklamaq üçün yeganə etibarlı ölçü budur.
+  supabaseRemoteTaskCount = Array.isArray(state?.tasks) ? state.tasks.length : 0;
   if (state?.tasks) importBackup(state);
   // Yalnız uğurlu oxumadan sonra yazmağa icazə veririk (sorğu atarsa flag qalxmır).
   supabaseStateLoaded = true;
+  await supabaseMergeProfilesIntoUsers(workspaceId);
+}
+
+// `profiles` cədvəli — istifadəçilər üçün HƏQİQƏT MƏNBƏYİDİR. Əvvəl istifadəçi
+// siyahısı yalnız app_state blob-undan gəlirdi: admin panel real auth hesabı
+// yaradırdı (profiles-a düşürdü), amma blob yalnız həmin admin brauzerindən
+// yazıldığı üçün yeni adam öz sessiyasında siyahıda YOX idi → giriş edə bilmirdi.
+// İndi hər yükləmədə baza blob-un üstünə merge olunur (heç kim silinmir).
+async function supabaseMergeProfilesIntoUsers(workspaceId) {
+  if (!workspaceId) return;
+  let rows = null;
+  try {
+    rows = await supabaseRequest(`/rest/v1/profiles?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=id,username,full_name,email,role,status,profile_json`);
+  } catch (error) {
+    console.warn("Profiles merge atlandı:", error?.message || error);
+    return;
+  }
+  if (!Array.isArray(rows) || !rows.length) return;
+  const companyId = currentCompanyId();
+  const byId = new Map(appState.users.map((user) => [user.id, user]));
+  let changed = false;
+  rows.forEach((row) => {
+    if (row.role === "super_admin" || row.status === "disabled") return;
+    const existing = byId.get(row.id);
+    const appRole = row.profile_json?.appRole || row.role || "user";
+    const merged = normalizeUser({
+      ...(existing || {}),
+      id: row.id,
+      username: existing?.username || row.username || row.email,
+      passwordHash: existing?.passwordHash || "",
+      role: appRole,
+      managerId: existing?.managerId || "",
+      companyId,
+      profile: {
+        ...(existing?.profile || {}),
+        fullName: existing?.profile?.fullName || row.full_name || row.username || "",
+        email: row.email || existing?.profile?.email || "",
+        position: row.profile_json?.position || existing?.profile?.position || ""
+      }
+    });
+    if (!existing || JSON.stringify(existing) !== JSON.stringify(merged)) changed = true;
+    byId.set(row.id, merged);
+  });
+  if (!changed) return;
+  appState.users = [...byId.values()];
+  saveUsers();
 }
 
 async function supabaseLoginWorkspace(email, password) {
@@ -4502,6 +4552,20 @@ async function supabaseSaveState() {
       { memoryTasks: appState.tasks.length, memoryProjects: appState.projects.length, companyId: currentCompanyId() });
     return;
   }
+  // İKİNCİ KLAPAN: serverdə tasklar var idisə, sıfır task yazmaq həmişə xətadır.
+  // (Köhnə klapan yalnız tasks VƏ projects birlikdə boş olanda işləyirdi — 1 layihə
+  // qalmışdısa 19 taskın silinməsini buraxırdı.) Real toplu silmə istəyi varsa
+  // istifadəçi təsdiqləyir.
+  if (supabaseRemoteTaskCount > 0 && !payload.tasks.length) {
+    const ok = confirm(
+      `DİQQƏT: serverdə ${supabaseRemoteTaskCount} task var, indi 0 task yazılacaq — hamısı silinəcək.\n\n` +
+      `Bunu həqiqətən istəyirsinizsə OK basın. Əmin deyilsinizsə LƏĞV edin (data qorunacaq).`
+    );
+    if (!ok) {
+      console.error("Supabase save BLOKLANDI: bütün tasklar silinəcəkdi.", { remote: supabaseRemoteTaskCount });
+      return;
+    }
+  }
   await supabaseRequest("/rest/v1/app_state?on_conflict=workspace_id", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates" },
@@ -4512,6 +4576,7 @@ async function supabaseSaveState() {
       updated_at: new Date().toISOString()
     })
   });
+  supabaseRemoteTaskCount = payload.tasks.length;
 }
 
 function connectSSE() {
@@ -4868,15 +4933,24 @@ function importBackup(payload) {
       .filter(ownsRaw)
       .map((item) => (normalizer ? normalizer(adopt(item)) : adopt(item)));
 
+    // Tasklarda companyId YOXDUR — layihəyə yalnız ADI ilə bağlıdırlar. Əvvəl
+    // burada "layihə adı siyahıda yoxdursa → taskı sil" məntiqi vardı; o, hər
+    // login-də layihəsi silinmiş / adı dəyişmiş / layihəsiz taskları səssizcə
+    // məhv edirdi (2026-07-21: bütün tasklar itdi). İndi task YALNIZ öz layihəsi
+    // SÜBUT OLUNMUŞ şəkildə başqa şirkətə aid olanda atılır.
+    const foreignProjectNames = new Set(
+      (Array.isArray(payload.projects) ? payload.projects : [])
+        .filter((project) => project?.companyId && project.companyId !== companyId)
+        .map((project) => project.name)
+    );
     appState.projects = scopeList(appState.projects, normalizeProject);
-    const projectNames = new Set(appState.projects.map((project) => project.name));
-    appState.tasks = appState.tasks.filter((task) => projectNames.has(task.project));
+    appState.tasks = appState.tasks.filter((task) => !foreignProjectNames.has(task.project));
     appState.members = scopeList(appState.members);
     appState.teams = scopeList(appState.teams);
     appState.customers = scopeList(appState.customers, normalizeCustomer);
     appState.managedFiles = scopeList(appState.managedFiles);
-    appState.projectLinks = appState.projectLinks.filter((link) => projectNames.has(link.project));
-    appState.registers = appState.registers.filter((item) => projectNames.has(item.project));
+    appState.projectLinks = appState.projectLinks.filter((link) => !foreignProjectNames.has(link.project));
+    appState.registers = appState.registers.filter((item) => !foreignProjectNames.has(item.project));
     appState.users = appState.users.filter((user) => user.role !== "super_admin" && ownsRaw(user));
     appState.trash = scopeList(appState.trash);
     companyRegistry = companyRegistryFromLocalState().filter((company) => company.id === companyId);
@@ -6751,6 +6825,13 @@ addUserButton.addEventListener("click", () => {
   }
   // Online (Supabase) rejim: real, girə bilən hesab yarat.
   if (teamSupabaseActive()) { onlineCreateUser(); return; }
+  // Supabase əsas rejimdirsə, aşağıdakı lokal yol YALNIZ blob-da user yaradır —
+  // auth hesabı olmadığı üçün həmin adam heç vaxt giriş edə bilmir. Səssiz
+  // yaratmaqdansa səbəbi deyirik.
+  if (isSupabasePrimaryMode()) {
+    alert("İstifadəçi yaradıla bilmədi: online sessiya yoxdur və ya sizdə admin hüququ yoxdur.\nYalnız lokal qeyd yaratmaq həmin şəxsin giriş edə bilməməsi deməkdir — ona görə dayandırıldı.");
+    return;
+  }
   const companySlug = slugFromName(currentUser?.profile?.company || currentCompanyId());
   const password = newUserPasswordInput.value;
   const role = newUserRoleInput.value;
@@ -7163,6 +7244,31 @@ platformConsole?.addEventListener("click", async (event) => {
     };
     if (lifecycleButton.dataset.lifecycleAction === "activate") payload.status = "active";
     if (lifecycleButton.dataset.lifecycleAction === "suspend") payload.status = "suspended";
+    // Supabase rejimi: plan/status BAZAYA yazılmalıdır. Əvvəl yalnız köhnə Node
+    // backend-inə (updateBackendCompany) gedirdi; o əlçatmaz olduğu üçün catch
+    // bloku yalnız lokal blob-u yeniləyirdi və "pro" növbəti girişdə yenidən
+    // "standard" görünürdü (workspaces.plan heç vaxt dəyişmirdi).
+    if (isSupabasePrimaryMode() && company.workspaceId) {
+      const planLimits = { standard: 10, pro: 50, enterprise: 0 };
+      const patch = { plan: payload.plan, max_users: planLimits[payload.plan] ?? 10 };
+      if (payload.status === "active") patch.status = "active";
+      if (payload.status === "suspended") patch.status = "disabled";
+      try {
+        await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(company.workspaceId)}`, {
+          method: "PATCH",
+          body: JSON.stringify(patch)
+        });
+        recordAudit("workspace.plan_changed", "company", company.id, `${company.plan || "standard"} → ${payload.plan}`);
+        showToast(`${company.name}: plan “${payload.plan}” yadda saxlanıldı (limit: ${patch.max_users || "limitsiz"})`);
+      } catch (error) {
+        alert("Plan bazada yenilənmədi: " + (error?.message || error));
+        return;
+      }
+      _platformCompaniesLoaded = false;
+      await refreshPlatformCompanies();
+      render();
+      return;
+    }
     try {
       const updated = await updateBackendCompany(company.id, payload);
       companyRegistry = (companyRegistry.length ? companyRegistry : companyRegistryFromLocalState()).map((item) => item.id === company.id ? updated : item);

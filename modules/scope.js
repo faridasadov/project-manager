@@ -7,8 +7,13 @@
 // ── Resource scope ───────────────────────────────────────────────────────────
 function linkedResourcesForProject(project) {
   const directLinks = appState.projectLinks.filter((link) => link.project === project).map((link) => link.resource);
-  const projectMembers = appState.projects.find((item) => item.name === project)?.teamMemberIds || [];
-  return [...new Set([...directLinks, ...projectMembers])];
+  const record = appState.projects.find((item) => item.name === project);
+  const projectMembers = record?.teamMemberIds || [];
+  // Layihə menecerləri də resursdur. Əvvəl yalnız teamMemberIds sayılırdı, ona
+  // görə task formasında "Resurs" siyahısında yalnız adi userlər görünürdü —
+  // menecer seçmək mümkün deyildi.
+  const projectManagers = (record?.managerIds || []).map((id) => resourceValue("user", id));
+  return [...new Set([...directLinks, ...projectMembers, ...projectManagers])];
 }
 
 function resourceIncludesUser(resource, userId) {
