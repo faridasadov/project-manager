@@ -6,13 +6,20 @@
 //   projectHasOpenRisk/resourceInCurrentScope/visibleRegisters (scope.js),
 //   projectGovernanceAudit (governance.js).
 
-function taskMatchesSmartFilter(task) {
-  if (currentSmartFilter === "Hamısı") return true;
-  if (currentSmartFilter === "blocked") return isTaskBlocked(task);
-  if (currentSmartFilter === "overdue") return task.status !== "Bitib" && daysUntil(task.end) < 0;
-  if (currentSmartFilter === "risk") return task.priority === "Yüksək" || projectHasOpenRisk(task.project);
-  if (currentSmartFilter === "mine") return !currentUser || [task.owner, task.projectResource].some(resourceInCurrentScope);
+// Ağıllı filtr məntiqi dəyərə görə ayrıldı ki, filtr sayğacları da eyni
+// qaydadan istifadə etsin (çipin yanındakı rəqəm faktiki nəticə ilə üst-üstə
+// düşməlidir — iki yerdə təkrarlanan məntiq gec-tez ayrılır).
+function taskMatchesSmartValue(task, value) {
+  if (value === "Hamısı") return true;
+  if (value === "blocked") return isTaskBlocked(task);
+  if (value === "overdue") return task.status !== "Bitib" && daysUntil(task.end) < 0;
+  if (value === "risk") return task.priority === "Yüksək" || projectHasOpenRisk(task.project);
+  if (value === "mine") return !currentUser || [task.owner, task.projectResource].some(resourceInCurrentScope);
   return true;
+}
+
+function taskMatchesSmartFilter(task) {
+  return taskMatchesSmartValue(task, currentSmartFilter);
 }
 
 function portfolioMetrics(sourceTasks = accessibleTasks()) {

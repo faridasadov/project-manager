@@ -831,17 +831,23 @@ function renderStatusControls() {
   statusInput.value = statuses.includes(taskStatus) ? taskStatus : "Plan";
   projectStatusInput.value = statuses.includes(projectStatus) ? projectStatus : "Plan";
 
+  const counts = filterCounts();
+
   statusFilters.innerHTML = [
     `<span class="filter-group-label">${text("status")}</span>`,
-    `<button class="filter ${currentFilter === "Hamısı" ? "active" : ""}" data-filter="Hamısı" type="button">${text("all")}</button>`,
-    ...statuses.map((status) => `<button class="filter ${currentFilter === status ? "active" : ""}" data-filter="${escapeHtml(status)}" type="button">${escapeHtml(statusLabel(status))}</button>`)
+    `<span class="filter-track">`,
+    filterChipMarkup("data-filter", "Hamısı", text("all"), counts.status("Hamısı"), currentFilter === "Hamısı"),
+    ...statuses.map((status) => filterChipMarkup("data-filter", status, statusLabel(status), counts.status(status), currentFilter === status)),
+    `</span>`
   ].join("");
   if (priorityFilters) {
     const priorities = ["Kritik", "Yüksək", "Normal", "Aşağı"];
     priorityFilters.innerHTML = [
       `<span class="filter-group-label">${text("priority")}</span>`,
-      `<button class="filter ${currentPriorityFilter === "Hamısı" ? "active" : ""}" data-priority-filter="Hamısı" type="button">${text("all")}</button>`,
-      ...priorities.map((priority) => `<button class="filter ${currentPriorityFilter === priority ? "active" : ""}" data-priority-filter="${escapeHtml(priority)}" type="button">${escapeHtml(priorityLabel(priority))}</button>`)
+      `<span class="filter-track">`,
+      filterChipMarkup("data-priority-filter", "Hamısı", text("all"), counts.priority("Hamısı"), currentPriorityFilter === "Hamısı"),
+      ...priorities.map((priority) => filterChipMarkup("data-priority-filter", priority, priorityLabel(priority), counts.priority(priority), currentPriorityFilter === priority)),
+      `</span>`
     ].join("");
   }
   if (smartFilters) {
@@ -854,20 +860,31 @@ function renderStatusControls() {
     ];
     smartFilters.innerHTML = [
       `<span class="filter-group-label">${text("smartFilters")}</span>`,
-      ...smartItems.map(([value, label]) => `<button class="filter ${currentSmartFilter === value ? "active" : ""}" data-smart-filter="${escapeHtml(value)}" type="button">${escapeHtml(label)}</button>`)
+      `<span class="filter-track">`,
+      ...smartItems.map(([value, label]) => filterChipMarkup("data-smart-filter", value, label, counts.smart(value), currentSmartFilter === value)),
+      `</span>`
     ].join("");
   }
+  renderActiveFilterBar();
   filters = document.querySelectorAll(".filter");
   priorityFilterButtons = document.querySelectorAll("[data-priority-filter]");
   smartFilterButtons = document.querySelectorAll("[data-smart-filter]");
 }
 
+// Dil dəyişəndə YALNIZ etiket span-ı yenilənir — sayğac span-ı olduğu kimi
+// qalır. Əvvəl bütün button.textContent əvəz olunurdu, bu isə sayğacları silərdi.
+function setChipLabel(button, label) {
+  const labelNode = button.querySelector(".filter-label");
+  if (labelNode) labelNode.textContent = label;
+  else button.textContent = label;
+}
+
 function updateFilterLabels() {
   document.querySelectorAll("[data-filter]").forEach((button) => {
-    button.textContent = button.dataset.filter === "Hamısı" ? text("all") : statusLabel(button.dataset.filter);
+    setChipLabel(button, button.dataset.filter === "Hamısı" ? text("all") : statusLabel(button.dataset.filter));
   });
   document.querySelectorAll("[data-priority-filter]").forEach((button) => {
-    button.textContent = button.dataset.priorityFilter === "Hamısı" ? text("all") : priorityLabel(button.dataset.priorityFilter);
+    setChipLabel(button, button.dataset.priorityFilter === "Hamısı" ? text("all") : priorityLabel(button.dataset.priorityFilter));
   });
   document.querySelectorAll("[data-smart-filter]").forEach((button) => {
     const labels = {
@@ -877,8 +894,38 @@ function updateFilterLabels() {
       risk: text("riskFocus"),
       mine: text("myTasks")
     };
-    button.textContent = labels[button.dataset.smartFilter] || button.dataset.smartFilter;
+    setChipLabel(button, labels[button.dataset.smartFilter] || button.dataset.smartFilter);
   });
+}
+
+// Aktiv filtrlərin xülasəsi + tək kliklə təmizləmə. Yalnız nəsə seçiləndə
+// görünür — heç nə seçilməyəndə panel yer tutmasın.
+function renderActiveFilterBar() {
+  const bar = document.querySelector("#activeFilterBar");
+  if (!bar) return;
+  const smartLabels = {
+    blocked: text("blockedTasks"), overdue: text("overdueTasks"),
+    risk: text("riskFocus"), mine: text("myTasks")
+  };
+  const chips = [];
+  if (currentFilter !== "Hamısı") chips.push([text("status"), statusLabel(currentFilter), "status"]);
+  if (currentPriorityFilter !== "Hamısı") chips.push([text("priority"), priorityLabel(currentPriorityFilter), "priority"]);
+  if (currentSmartFilter !== "Hamısı") chips.push([text("smartFilters"), smartLabels[currentSmartFilter] || currentSmartFilter, "smart"]);
+  if (projectFilter.value && projectFilter.value !== "Hamısı") chips.push([text("project"), projectFilter.value, "project"]);
+  if (searchInput.value.trim()) chips.push([text("searchLabel"), `"${searchInput.value.trim()}"`, "search"]);
+
+  bar.hidden = chips.length === 0;
+  if (!chips.length) { bar.innerHTML = ""; return; }
+  bar.innerHTML = [
+    `<span class="active-filter-count">${visibleTasks().length} / ${accessibleTasks().length}</span>`,
+    ...chips.map(([group, value, key]) => `
+      <span class="active-filter-chip">
+        <span class="active-filter-group">${escapeHtml(group)}</span>
+        <span class="active-filter-value">${escapeHtml(value)}</span>
+        <button type="button" class="active-filter-remove" data-clear-filter="${key}" aria-label="${escapeHtml(group)} filtrini götür">×</button>
+      </span>`),
+    `<button type="button" class="active-filter-reset" data-clear-filter="all">${text("clearFilters")}</button>`
+  ].join("");
 }
 
 function updateViewLabels() {
@@ -1892,6 +1939,49 @@ function syncAuthView() {
   document.body.classList.toggle("readonly-role", ["viewer", "sponsor"].includes(currentUser?.role));
   document.body.classList.toggle("non-manager-role", Boolean(currentUser) && !canManageTasks());
   currentUserBadge.textContent = currentUser ? `${currentUser.username} (${roleLabel(currentUser.role)})` : "";
+}
+
+// ── Filtr sayğacları (faceted counts) ────────────────────────────────────────
+// Hər çipin yanındakı rəqəm "bu variantı seçsəm neçə task qalacaq" deməkdir.
+// Ona görə sayğac ÖZ ölçüsündən başqa bütün aktiv filtrləri tətbiq edir —
+// klassik faset axtarışı. Əks halda bir status seçilən kimi qalan statusların
+// hamısı 0 görünərdi və panel yanıldıcı olardı.
+function facetTasks(ignore = "") {
+  const query = searchInput.value.trim().toLowerCase();
+  const selectedProject = projectFilter.value;
+  return accessibleTasks()
+    .filter((task) => ignore === "status" || currentFilter === "Hamısı" || task.status === currentFilter)
+    .filter((task) => ignore === "priority" || currentPriorityFilter === "Hamısı" || task.priority === currentPriorityFilter)
+    .filter((task) => ignore === "smart" || taskMatchesSmartFilter(task))
+    .filter((task) => selectedProject === "Hamısı" || getProject(task) === selectedProject)
+    .filter((task) => !currentOwnerFilter || task.owner === currentOwnerFilter || task.projectResource === currentOwnerFilter)
+    .filter((task) => {
+      if (!query) return true;
+      return [task.name, task.project, resourceLabel(task.owner), task.notes]
+        .some((value) => String(value || "").toLowerCase().includes(query));
+    });
+}
+
+function filterCounts() {
+  const byStatus = facetTasks("status");
+  const byPriority = facetTasks("priority");
+  const bySmart = facetTasks("smart");
+  const count = (list, predicate) => list.filter(predicate).length;
+  return {
+    status: (value) => value === "Hamısı" ? byStatus.length : count(byStatus, (task) => task.status === value),
+    priority: (value) => value === "Hamısı" ? byPriority.length : count(byPriority, (task) => task.priority === value),
+    smart: (value) => value === "Hamısı" ? bySmart.length : count(bySmart, (task) => taskMatchesSmartValue(task, value))
+  };
+}
+
+// Çip markupu — etiket və sayğac ayrı span-lardadır ki, dil dəyişəndə
+// updateFilterLabels() yalnız etiketi əvəz etsin, sayğacı silməsin.
+function filterChipMarkup(attr, value, label, count, isActive) {
+  const classes = ["filter", isActive ? "active" : "", count === 0 ? "filter-empty" : ""].filter(Boolean).join(" ");
+  return `<button class="${classes}" ${attr}="${escapeHtml(value)}" type="button">`
+    + `<span class="filter-label">${escapeHtml(label)}</span>`
+    + `<span class="filter-count">${count}</span>`
+    + `</button>`;
 }
 
 function visibleTasks() {
@@ -5946,6 +6036,21 @@ smartFilters?.addEventListener("click", (event) => {
   currentSmartFilter = button.dataset.smartFilter || "Hamısı";
   taskListPage = 1;
   smartFilterButtons.forEach((item) => item.classList.toggle("active", item === button));
+  render();
+});
+
+// Aktiv filtr xülasəsində "×" və "Təmizlə" düymələri.
+document.querySelector("#activeFilterBar")?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-clear-filter]");
+  if (!button) return;
+  const target = button.dataset.clearFilter;
+  if (target === "status" || target === "all") currentFilter = "Hamısı";
+  if (target === "priority" || target === "all") currentPriorityFilter = "Hamısı";
+  if (target === "smart" || target === "all") currentSmartFilter = "Hamısı";
+  if (target === "project" || target === "all") projectFilter.value = "Hamısı";
+  if (target === "search" || target === "all") searchInput.value = "";
+  if (target === "all") currentOwnerFilter = "";
+  taskListPage = 1;
   render();
 });
 

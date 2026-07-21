@@ -3801,77 +3801,125 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
-.tools-filter-row .filters {
-  display: flex;
+/* Qruplar artıq şaquli xətlə deyil, öz "track"ı ilə ayrılır — hər qrup
+   segmentli idarəedici kimi oxunur, divider divarına ehtiyac qalmır. */
+.tools-filter-row {
+  gap: 10px 16px;
   align-items: center;
-  gap: 3px;
+}
+
+.tools-filter-row .filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   background: none;
   border: none;
-  padding: 0 14px 0 14px;
+  padding: 0;
   min-height: 0;
-  border-left: 1.5px solid var(--line);
 }
 
-.tools-filter-row .filters:first-child {
-  border-left: none;
-  padding-left: 0;
+/* Segmentli track — çiplər bir qabın içində yaşayır */
+.filter-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--soft);
+  border: 1px solid var(--line);
 }
 
-/* Group label — small uppercase category tag */
+/* Group label — kiçik, amma oxunaqlı kateqoriya etiketi */
 .filter-group-label {
   display: inline-flex;
   align-items: center;
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   color: var(--muted);
   white-space: nowrap;
-  margin-right: 4px;
-  opacity: 0.75;
   user-select: none;
 }
 
 /* ── Filter pill buttons ──────────────────────────────────── */
 .tools .filter {
-  min-height: 28px;
+  min-height: 27px;
   min-width: 0;
-  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
   border-radius: 6px;
   font-size: 0.79rem;
   font-weight: 500;
-  border: 1px solid var(--line);
-  background: var(--panel);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--muted);
-  transition: background 120ms, border-color 120ms, color 120ms;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
   white-space: nowrap;
   cursor: pointer;
 }
 
 .tools .filter:hover {
-  background: var(--soft);
+  background: var(--panel);
   color: var(--ink);
-  border-color: color-mix(in srgb, var(--teal) 30%, var(--line));
+}
+
+.tools .filter:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--teal) 55%, transparent);
+  outline-offset: 1px;
+}
+
+/* Sayğac — "bu variantı seçsəm neçə task qalacaq" */
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--muted) 15%, transparent);
+  color: var(--muted);
+  transition: background 140ms ease, color 140ms ease;
+}
+
+/* Nəticəsi olmayan variant sönük, amma yenə klikləndir */
+.tools .filter.filter-empty {
+  opacity: 0.42;
 }
 
 /* STATUS active */
 .view-tab.active,
 .filter.active {
-  background: color-mix(in srgb, var(--teal) 13%, var(--panel));
+  background: var(--panel);
   border-color: color-mix(in srgb, var(--teal) 45%, var(--line));
   color: var(--teal);
   font-weight: 700;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.filter.active .filter-count {
+  background: color-mix(in srgb, var(--teal) 16%, transparent);
+  color: var(--teal);
 }
 
 /* PRIORITY active */
 .priority-filters .filter.active {
-  background: color-mix(in srgb, var(--amber) 14%, var(--panel));
-  border-color: color-mix(in srgb, var(--amber) 45%, var(--line));
+  border-color: color-mix(in srgb, var(--amber) 50%, var(--line));
   color: color-mix(in srgb, var(--amber) 75%, var(--ink));
-  font-weight: 700;
 }
 
-/* SMART active — solid fill */
+.priority-filters .filter.active .filter-count {
+  background: color-mix(in srgb, var(--amber) 18%, transparent);
+  color: color-mix(in srgb, var(--amber) 78%, var(--ink));
+}
+
+/* SMART — hər çipin öz semantik rəngi var ki, gözlə seçilsin */
 .smart-filters {
   background: none;
 }
@@ -3882,6 +3930,138 @@ textarea:focus {
   color: #fff;
   font-weight: 700;
   box-shadow: 0 2px 6px color-mix(in srgb, var(--teal) 28%, transparent);
+}
+
+.smart-filters .filter.active .filter-count {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
+.smart-filters .filter[data-smart-filter="overdue"].active {
+  background: var(--red);
+  border-color: var(--red);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--red) 30%, transparent);
+}
+
+.smart-filters .filter[data-smart-filter="blocked"].active {
+  background: var(--amber);
+  border-color: var(--amber);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--amber) 30%, transparent);
+}
+
+/* "Risk" və "Mənim" brend rəngində qalır: brend indiqodur (--teal: #4f46e5),
+   bənövşəyi əlavə etsək iki yaxın çalar yan-yana düşür və fərq oxunmur. */
+
+/* Diqqət tələb edən vəziyyətlər seçilməyəndə də sayğacı ilə göz oxşayır */
+.smart-filters .filter[data-smart-filter="overdue"]:not(.active):not(.filter-empty) .filter-count {
+  background: color-mix(in srgb, var(--red) 15%, transparent);
+  color: var(--red);
+}
+
+.smart-filters .filter[data-smart-filter="blocked"]:not(.active):not(.filter-empty) .filter-count {
+  background: color-mix(in srgb, var(--amber) 20%, transparent);
+  color: color-mix(in srgb, var(--amber) 80%, var(--ink));
+}
+
+/* ── Aktiv filtr xülasəsi ─────────────────────────────────── */
+.active-filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 7px;
+  border-top: 1px dashed var(--line);
+}
+
+.active-filter-bar[hidden] {
+  display: none;
+}
+
+.active-filter-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  margin-right: 2px;
+}
+
+.active-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 4px 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--teal) 9%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--teal) 28%, var(--line));
+  font-size: 0.74rem;
+}
+
+.active-filter-group {
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.active-filter-value {
+  font-weight: 600;
+  color: var(--ink);
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.active-filter-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.active-filter-remove:hover {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
+}
+
+.active-filter-reset {
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.active-filter-reset:hover {
+  background: var(--soft);
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--teal) 30%, var(--line));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tools .filter,
+  .filter-count,
+  .active-filter-remove,
+  .active-filter-reset {
+    transition: none;
+  }
 }
 
 .summary {
