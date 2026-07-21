@@ -4495,12 +4495,40 @@ async function resumeSupabaseSession() {
     return true;
   }
 
+  // KRİTİK: bu qol (sessiya localStorage-dan bərpa olunub) əvvəl gate
+  // dəyişənlərini QURMURDU — workspaceDbRole="" və workspaceApproved=false
+  // qalırdı, deməli canWriteWorkspaceData() false idi və səhifə yeniləndikdən
+  // sonra HEÇ NƏ serverə yazılmırdı (hər şey yalnız localStorage-da qalıb
+  // növbəti importBackup ilə itirdi).
+  await refreshWorkspaceGate(supabaseWorkspaceId);
   await supabaseLoadWorkspaceState(supabaseWorkspaceId);
   await supabaseLoadSettings(supabaseWorkspaceId);
   await syncSupabaseAuditLogs();
   await syncSupabaseNotifications();
   supabaseRealtimeConnect(supabaseWorkspaceId);
   return true;
+}
+
+// profiles.role + workspaces.approval_status/plan/max_users dəyərlərini
+// serverdən oxuyub yazma icazəsi dəyişənlərini qurur.
+async function refreshWorkspaceGate(workspaceId) {
+  const userId = currentUser?.id;
+  if (!userId || !workspaceId) return false;
+  try {
+    const profiles = await supabaseRequest(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=role,status`);
+    const profile = Array.isArray(profiles) ? profiles[0] : null;
+    const workspaces = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(workspaceId)}&select=approval_status,plan,max_users`);
+    const workspace = Array.isArray(workspaces) ? workspaces[0] : null;
+    if (!profile || !workspace) return false;
+    workspaceDbRole = profile.status === "active" ? (profile.role || "") : "";
+    workspaceApproved = workspace.approval_status === "active";
+    workspacePlan = workspace.plan || "standard";
+    workspaceMaxUsers = Number(workspace.max_users) || 0;
+    return true;
+  } catch (error) {
+    console.warn("Workspace gate oxunmadı:", error?.message || error);
+    return false;
+  }
 }
 
 async function handleSupabaseAuthRedirect() {
