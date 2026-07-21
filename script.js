@@ -3694,7 +3694,9 @@ async function supabaseRequest(path, options = {}) {
     // Offline — return cached local state for read-only GET requests
     if (!options.method || options.method === "GET") {
       console.warn("Offline — supabaseRequest falling back to local state:", path);
-      if (path.includes("/app_state")) return [{ state_json: backupPayload() }];
+      // __offline: versiya nömrəsi bilinmir — save zamanı serverdən təzələnməlidir,
+      // yoxsa köhnə/uydurma versiya ilə yazıb serverdəkini əzərik.
+      if (path.includes("/app_state")) return [{ state_json: backupPayload(), __offline: true }];
       return [];
     }
     throw new Error("Offline: " + networkErr.message);
@@ -4093,8 +4095,9 @@ async function supabaseLoadWorkspaceState(workspaceId) {
   const rows = await supabaseRequest(`/rest/v1/app_state?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=state_json,state_version&limit=1`);
   const row = Array.isArray(rows) ? rows[0] : null;
   const state = row?.state_json || null;
-  // Optimistik kilid üçün oxuduğumuz versiya. null = sətir hələ yoxdur (ilk yazılış).
-  supabaseStateVersion = row ? Number(row.state_version) || 0 : null;
+  // Optimistik kilid üçün oxuduğumuz versiya. null = sətir hələ yoxdur (ilk
+  // yazılış), "unknown" = offline fallback, save-dən əvvəl serverdən təzələnir.
+  supabaseStateVersion = !row ? null : row.__offline ? "unknown" : Number(row.state_version) || 0;
   // Serverdə NEÇƏ task olduğunu yadda saxlayırıq — save zamanı "hamısı yoxa çıxdı"
   // ssenarisini bloklamaq üçün yeganə etibarlı ölçü budur.
   supabaseRemoteTaskCount = Array.isArray(state?.tasks) ? state.tasks.length : 0;
@@ -4569,7 +4572,18 @@ async function flushSupabaseSave() {
   await supabaseSaveState();
 }
 
-async function supabaseSaveState() {
+// Saxlamalar SIRA ilə getməlidir. Paralel iki save eyni state_version-u oxuyur,
+// ikincisi qaçılmaz olaraq "konflikt" alır və istifadəçiyə yalançı xəbərdarlıq
+// çıxır. Bu növbə yalnız ÖZ sorğularımızı sıralayır — başqa cihazın yazısı
+// yenə də real konflikt kimi tutulur.
+let supabaseSaveQueue = Promise.resolve();
+function supabaseSaveState() {
+  const run = () => supabaseSaveStateInner();
+  supabaseSaveQueue = supabaseSaveQueue.then(run, run);
+  return supabaseSaveQueue;
+}
+
+async function supabaseSaveStateInner() {
   if (!canWriteWorkspaceData()) return;
   // Remote state hələ oxunmayıbsa yazma — boot state real datanı əzərdi.
   if (!supabaseStateLoaded) {
@@ -4605,6 +4619,8 @@ async function supabaseSaveState() {
     saved_by: currentUser?.id || null,
     updated_at: new Date().toISOString()
   };
+  // Offline oxunubsa versiya bilinmir — yazmadan əvvəl serverdən götürürük.
+  if (supabaseStateVersion === "unknown") await supabaseRefreshStateVersion();
   // İlk yazılış (sətir yoxdur) → adi upsert.
   if (supabaseStateVersion === null) {
     await supabaseRequest("/rest/v1/app_state?on_conflict=workspace_id", {
