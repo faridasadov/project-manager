@@ -3587,7 +3587,9 @@ function saveAutoSnapshot() {
     snaps.unshift({ savedAt: new Date().toISOString(), payload: backupPayload() });
     if (snaps.length > AUTO_SNAP_MAX) snaps.length = AUTO_SNAP_MAX;
     localStorage.setItem(AUTO_SNAP_KEY, JSON.stringify(snaps));
-    showToast(text("autoSnapshotSaved"));
+    // Toast qəsdən göstərilmir: istifadəçinin edə biləcəyi bir şey yoxdur və
+    // əsl backup artıq serverdədir (app_state_history). Bu lokal nüsxə yalnız
+    // offline hal üçün ehtiyatdır.
   } catch (e) {
     console.warn("Auto-snapshot failed:", e.message);
   }
@@ -8377,28 +8379,96 @@ function showKeyboardHelp() {
 // ════════════════════════════════════════════════════════════════════
 // #2 — Snapshot restore UI
 // ════════════════════════════════════════════════════════════════════
-function renderSnapshotList() {
+// Bərpa paneli. Əsas mənbə SERVER arxividir (app_state_history — hər yazılışda
+// bir versiya, workspace başına son 200). Lokal localStorage nüsxələri (cəmi 5,
+// yalnız bu brauzerdə) yalnız offline / server oxunmayan halda göstərilir.
+const snapshotEmptyMarkup = '<em style="color:var(--muted);font-size:.83rem">Snapshot yoxdur</em>';
+let snapshotRows = [];
+
+async function fetchServerSnapshots() {
+  if (!supabaseSession?.access_token || !supabaseWorkspaceId) return null;
+  try {
+    const rows = await supabaseRequest(
+      `/rest/v1/app_state_history?workspace_id=eq.${encodeURIComponent(supabaseWorkspaceId)}` +
+      `&select=id,archived_at,task_count,project_count,user_count&order=id.desc&limit=200`
+    );
+    return Array.isArray(rows) ? rows : null;
+  } catch (error) {
+    console.warn("Server arxivi oxunmadı:", error?.message || error);
+    return null;
+  }
+}
+
+async function restoreServerSnapshot(id) {
+  const rows = await supabaseRequest(
+    `/rest/v1/app_state_history?id=eq.${encodeURIComponent(id)}&select=state_json&limit=1`
+  );
+  const state = Array.isArray(rows) ? rows[0]?.state_json : null;
+  if (!state) throw new Error("Versiya oxunmadı");
+  importBackup(state);
+  await flushSupabaseSave();
+  render();
+}
+
+async function renderSnapshotList() {
   const container = document.querySelector("#snapshotList");
   if (!container) return;
-  const snaps = listAutoSnapshots();
-  if (!snaps.length) { container.innerHTML = '<em style="color:var(--muted);font-size:.83rem">Snapshot yoxdur</em>'; return; }
-  container.innerHTML = snaps.map((s, i) => `
+  container.innerHTML = '<em style="color:var(--muted);font-size:.83rem">Yüklənir…</em>';
+  const server = await fetchServerSnapshots();
+  const local = listAutoSnapshots();
+  const isServer = Array.isArray(server) && server.length > 0;
+  snapshotRows = isServer
+    ? server.map((row) => ({
+        source: "server", id: row.id, at: row.archived_at,
+        tasks: row.task_count || 0, projects: row.project_count || 0, users: row.user_count || 0
+      }))
+    : local.map((snap, index) => ({
+        source: "local", id: index, at: snap.savedAt,
+        tasks: snap.payload?.tasks?.length || 0,
+        projects: snap.payload?.projects?.length || 0,
+        users: snap.payload?.users?.length || 0
+      }));
+  if (!snapshotRows.length) { container.innerHTML = snapshotEmptyMarkup; return; }
+  const badge = isServer
+    ? `<p class="field-hint" style="margin:0 0 8px">Server arxivi · ${snapshotRows.length} versiya</p>`
+    : `<p class="field-hint" style="margin:0 0 8px">Yalnız bu brauzerin lokal nüsxələri (${snapshotRows.length})</p>`;
+  container.innerHTML = badge + snapshotRows.map((row, index) => `
     <div class="snapshot-item">
-      <span class="snapshot-date">${new Date(s.savedAt).toLocaleString("az-AZ")}</span>
-      <span class="snapshot-meta">${(s.payload?.tasks?.length || 0)} task · ${(s.payload?.projects?.length || 0)} layihə</span>
-      <button class="snapshot-restore-btn" data-snap="${i}" type="button">Bərpa et</button>
+      <span class="snapshot-date">${new Date(row.at).toLocaleString("az-AZ")}</span>
+      <span class="snapshot-meta">${row.tasks} task · ${row.projects} layihə · ${row.users} user</span>
+      <button class="snapshot-restore-btn" data-snap="${index}" type="button">Bərpa et</button>
     </div>`).join("");
-  container.addEventListener("click", (e) => {
-    const btn = e.target.closest(".snapshot-restore-btn");
-    if (!btn) return;
-    const snap = snaps[parseInt(btn.dataset.snap)];
-    if (!snap?.payload) return;
-    if (!confirm("Bu snapshot bərpa edilsin? Cari data əvəz olunacaq.")) return;
-    importBackup(snap.payload);
-    saveState(); render();
-    showToast("✅ Snapshot bərpa edildi");
-  }, { once: true });
 }
+
+document.querySelector("#snapshotList")?.addEventListener("click", async (event) => {
+  const btn = event.target.closest(".snapshot-restore-btn");
+  if (!btn) return;
+  const row = snapshotRows[Number(btn.dataset.snap)];
+  if (!row) return;
+  if (!confirm(
+    `Bu versiya bərpa edilsin?\n\n${new Date(row.at).toLocaleString("az-AZ")}\n` +
+    `${row.tasks} task · ${row.projects} layihə · ${row.users} user\n\n` +
+    "Cari vəziyyət bununla əvəz olunacaq (cari vəziyyət də arxivdə qalır)."
+  )) return;
+  btn.disabled = true;
+  try {
+    if (row.source === "server") {
+      await restoreServerSnapshot(row.id);
+    } else {
+      const snap = listAutoSnapshots()[row.id];
+      if (!snap?.payload) throw new Error("Lokal nüsxə tapılmadı");
+      importBackup(snap.payload);
+      await flushSupabaseSave();
+      render();
+    }
+    showToast("✅ Bərpa edildi");
+    renderSnapshotList();
+  } catch (error) {
+    alert("Bərpa alınmadı: " + (error?.message || error));
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 // Re-render snapshot list whenever settings view opens
 const _origSetView = setView;
