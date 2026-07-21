@@ -1229,20 +1229,26 @@ function loadTasks() {
 
 function companyBackupPayload(companyId = "") {
   const projectScope = companyId ? appState.projects.filter((project) => (project.companyId || "company-default") === companyId) : appState.projects;
-  const projectNames = new Set(projectScope.map((project) => project.name));
+  // Backup faylı da layihəsiz/silinmiş layihəli taskları atmamalıdır — belə
+  // backup natamam olur və bərpa zamanı itki yaradır. Yalnız başqa şirkətin
+  // layihəsinə aid tasklar kənarlaşdırılır.
+  const foreignNames = new Set(
+    companyId ? appState.projects.filter((project) => (project.companyId || "company-default") !== companyId).map((project) => project.name) : []
+  );
+  const notForeign = (name) => !foreignNames.has(name);
   return {
     version: backupVersion,
     exportedAt: new Date().toISOString(),
     companyId: companyId || "platform",
     company: companyId ? (companyRegistryFromLocalState().find((item) => item.id === companyId)?.name || companyId) : "All tenants",
-    tasks: appState.tasks.filter((task) => projectNames.has(task.project) || (!companyId && task.project)),
+    tasks: appState.tasks.filter((task) => notForeign(task.project)),
     projects: projectScope,
     members: companyId ? appState.members.filter((member) => !member.companyId || member.companyId === companyId) : appState.members,
     teams: companyId ? appState.teams.filter((team) => !team.companyId || team.companyId === companyId) : appState.teams,
     customers: companyId ? appState.customers.filter((customer) => !customer.companyId || customer.companyId === companyId) : appState.customers,
     managedFiles: companyId ? appState.managedFiles.filter((file) => !file.companyId || file.companyId === companyId) : appState.managedFiles,
-    projectLinks: appState.projectLinks.filter((link) => projectNames.has(link.project) || !companyId),
-    registers: appState.registers.filter((item) => projectNames.has(item.project) || !companyId),
+    projectLinks: appState.projectLinks.filter((link) => notForeign(link.project)),
+    registers: appState.registers.filter((item) => notForeign(item.project)),
     users: companyId ? appState.users.filter((user) => user.companyId === companyId) : appState.users,
     companyRegistry: companyId ? companyRegistryFromLocalState().filter((company) => company.id === companyId) : companyRegistryFromLocalState()
   };
@@ -3599,21 +3605,29 @@ function backupPayload() {
   // İndi isSameCompany ilə eyni qayda: companyId yoxdursa "company-default" sayılır.
   const owns = (item) => (item?.companyId || "company-default") === companyId;
   const scopedProjects = isSuperAdmin() ? [] : appState.projects.filter(owns);
-  const projectNames = new Set(scopedProjects.map((project) => project.name));
+  // Tasklarda companyId YOXDUR — layihəyə yalnız adı ilə bağlıdırlar. Burada
+  // əvvəl "layihə adı siyahıda yoxdursa taskı at" filtri vardı; bu, SERVERƏ
+  // YAZILAN payload olduğu üçün layihəsi silinmiş / adı dəyişmiş / layihəsiz
+  // taskları həmişəlik məhv edirdi (2026-07-21 data itkisi). İndi yalnız
+  // BAŞQA şirkətə aid layihənin taskları atılır.
+  const foreignProjectNames = new Set(
+    appState.projects.filter((project) => !owns(project)).map((project) => project.name)
+  );
+  const notForeign = (name) => !foreignProjectNames.has(name);
   const scopedUsers = isSuperAdmin()
     ? appState.users.filter((user) => user.role === "super_admin" && user.id === currentUser?.id)
     : appState.users.filter((user) => user.role !== "super_admin" && owns(user));
   return {
     version: backupVersion,
     exportedAt: new Date().toISOString(),
-    tasks: appState.tasks.filter((task) => projectNames.has(task.project)),
+    tasks: isSuperAdmin() ? [] : appState.tasks.filter((task) => notForeign(task.project)),
     projects: scopedProjects,
     members: isSuperAdmin() ? [] : appState.members.filter(owns),
     teams: isSuperAdmin() ? [] : appState.teams.filter(owns),
     customers: isSuperAdmin() ? [] : appState.customers.filter(owns),
     managedFiles: isSuperAdmin() ? [] : appState.managedFiles.filter(owns),
-    projectLinks: isSuperAdmin() ? [] : appState.projectLinks.filter((link) => projectNames.has(link.project)),
-    registers: isSuperAdmin() ? [] : appState.registers.filter((item) => projectNames.has(item.project)),
+    projectLinks: isSuperAdmin() ? [] : appState.projectLinks.filter((link) => notForeign(link.project)),
+    registers: isSuperAdmin() ? [] : appState.registers.filter((item) => notForeign(item.project)),
     users: scopedUsers,
     trash: isSuperAdmin() ? [] : appState.trash.filter(owns),
     companyRegistry: isSuperAdmin() ? companyRegistryFromLocalState() : companyRegistryFromLocalState().filter((company) => company.id === companyId)
