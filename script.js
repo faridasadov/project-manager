@@ -579,6 +579,16 @@ function fillHourOptions(select, selected) {
   if (selected != null) select.value = String(selected);
 }
 
+// `currentUser` appState.users massivindən AYRI obyekt ola bilər: importBackup()
+// massivi blob-dan tam əvəz edir və sessiya obyekti massivdən qopur. Onda
+// currentUser.profile-a yazılan hər şey (hesabat bildiriş quşları, email və s.)
+// saveUsers()-ə DÜŞMÜR — istifadəçi "yadda saxlandı" görür, növbəti render-də
+// isə hər şey sıfırlanır. Bu funksiya sessiya obyektini massivə geri yazır.
+function commitCurrentUser() {
+  if (!currentUser) return;
+  appState.users = [...appState.users.filter((user) => user.id !== currentUser.id), currentUser];
+}
+
 function syncReportPrefsForm() {
   const emailInput = document.querySelector("#reportEmail");
   if (!emailInput || !currentUser) return;
@@ -615,6 +625,7 @@ function saveReportPrefs() {
       changeAlerts: { enabled: document.querySelector("#reportChangeEnabled").checked }
     }
   };
+  commitCurrentUser();
   saveUsers();
   if (status) {
     status.textContent = text("reportPrefsSaved");
@@ -3873,14 +3884,18 @@ function applySupabaseWorkspaceSession({ userId, email, username, fullName, comp
   ];
   // Super-admin heç bir tenant deyil — saxta şirkət registry-yə düşməməlidir.
   if (role !== "super_admin") {
+    // Mövcud qeydi qoru: burada plan "standard" hardcode edilirdi, ona görə
+    // super-adminin verdiyi "pro" HƏR girişdə geri "standard" olurdu.
+    const prior = companyRegistry.find((company) => company.id === companyId);
     companyRegistry = [
       ...companyRegistry.filter((company) => company.id !== companyId),
       {
+        ...(prior || {}),
         id: companyId,
         name: companyName,
         subdomain: slugFromName(companyName),
-        status: "active",
-        plan: "standard",
+        status: prior?.status || "active",
+        plan: workspacePlan || prior?.plan || "standard",
         adminUsername: username,
         userCount: 1,
         projectCount: 0,
@@ -4952,6 +4967,24 @@ function importBackup(payload) {
     appState.projectLinks = appState.projectLinks.filter((link) => !foreignProjectNames.has(link.project));
     appState.registers = appState.registers.filter((item) => !foreignProjectNames.has(item.project));
     appState.users = appState.users.filter((user) => user.role !== "super_admin" && ownsRaw(user));
+    // Sessiya obyektini massivə geri bağla: blob-dakı şəxsi ayarları (reportPrefs
+    // və s.) götür, sessiyanın rolunu/emailini qoru. Bu olmadan currentUser
+    // massivdən qopur və ona yazılan hər şey itir.
+    if (currentUser) {
+      const stored = appState.users.find((user) => user.id === currentUser.id);
+      if (stored) {
+        currentUser = normalizeUser({
+          ...stored,
+          role: currentUser.role,
+          profile: {
+            ...(stored.profile || {}),
+            ...(currentUser.profile || {}),
+            reportPrefs: stored.profile?.reportPrefs || currentUser.profile?.reportPrefs
+          }
+        });
+      }
+      appState.users = [...appState.users.filter((user) => user.id !== currentUser.id), currentUser];
+    }
     appState.trash = scopeList(appState.trash);
     companyRegistry = companyRegistryFromLocalState().filter((company) => company.id === companyId);
   }
@@ -7092,9 +7125,28 @@ userList.addEventListener("click", async (event) => {
       }
     }
     appState.users = appState.users.filter((user) => user.id !== delId);
-    appState.projects = appState.projects.map((project) => ({ ...project, managerIds: (project.managerIds || []).filter((id) => id !== delId) }));
+    // Silinən adam layihələrə/komandalara/tasklara resurs kimi bağlı qalırdı:
+    // "Layihəyə bağla" siyahısında və resurs seçimlərində silinmiş test
+    // istifadəçiləri görünməyə davam edirdi. İndi bütün istinadlar təmizlənir.
+    const delResource = resourceValue("user", delId);
+    appState.projects = appState.projects.map((project) => ({
+      ...project,
+      managerIds: (project.managerIds || []).filter((id) => id !== delId),
+      teamMemberIds: (project.teamMemberIds || []).filter((id) => id !== delResource && id !== delId)
+    }));
+    appState.projectLinks = appState.projectLinks.filter((link) => link.resource !== delResource);
+    appState.teams = appState.teams.map((team) => ({
+      ...team,
+      memberIds: (team.memberIds || []).filter((id) => id !== delResource && id !== delId)
+    }));
+    appState.tasks = appState.tasks.map((task) => ({
+      ...task,
+      owner: task.owner === delResource ? "" : task.owner,
+      projectResource: task.projectResource === delResource ? "" : task.projectResource
+    }));
     appState.users = appState.users.map((user) => user.managerId === delId ? { ...user, managerId: "" } : user);
     saveResources();
+    saveTasks();
     saveUsers();
     recordAudit("user.deleted", "user", delId, target?.username || "");
     render();
