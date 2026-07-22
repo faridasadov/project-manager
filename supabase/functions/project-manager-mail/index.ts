@@ -116,8 +116,16 @@ function userProjects(projects: StateProject[], uid: string): StateProject[] {
 }
 // Rəhbərlik bütün şirkət layihələrini görür — gündəlik hesabatı da bütün
 // portfel üzrə olmalıdır, yalnız üzvü olduğu layihələr üzrə deyil.
+// isLeadership → hesabat MƏCBURİDİR (söndürülə bilməz, boş gündə də gedir).
 function isLeadership(user: StateUser): boolean {
   return user.role === "rehberlik";
+}
+// isWholePortfolio → hesabatın ƏHATƏSİ bütün şirkətdir. Admin bütün iş sahəsini
+// idarə etdiyi üçün (heç bir layihədə üzv olmasa da) hesabatı bütün portfeli
+// əhatə etməlidir; rəhbərlik də eyni. Fərq: admin öz açarını (enabled) saxlayır,
+// rəhbərlik məcburidir.
+function isWholePortfolio(user: StateUser): boolean {
+  return user.role === "rehberlik" || user.role === "admin";
 }
 function userTasks(tasks: StateTask[], myProjects: StateProject[], uid: string): StateTask[] {
   const keys = new Set<string>();
@@ -210,6 +218,7 @@ async function runDigests() {
       // Rəhbərlik üçün hesabat məcburidir: reportPrefs ümumiyyətlə yoxdursa da
       // (məsələn rol təzəcə verilib, blob hələ yenilənməyib) mail getməlidir.
       const forced = isLeadership(user);
+      const wide = isWholePortfolio(user);
       const prefs = user.profile?.reportPrefs;
       if (!email || (!prefs && !forced)) continue;
       const tz = prefs?.timezone || "Asia/Baku";
@@ -220,14 +229,14 @@ async function runDigests() {
       const wantEvening = (forced || prefs?.evening?.enabled) && hour === (prefs?.evening?.hour ?? 18);
       if (!wantMorning && !wantEvening) continue;
 
-      const myProjects = forced
+      const myProjects = wide
         ? projects.filter((p) => !p.archived)
         : userProjects(projects, user.id!);
       const mine = userTasks(tasks, myProjects, user.id!);
 
       const jobs: Array<{ kind: string; subject: string; text: string; empty: boolean }> = [];
       if (wantMorning) {
-        jobs.push({ kind: "morning", ...morningDigest(user, mine, myProjects, today, prefs?.deadlineAlerts?.daysBefore || [3, 1], forced) });
+        jobs.push({ kind: "morning", ...morningDigest(user, mine, myProjects, today, prefs?.deadlineAlerts?.daysBefore || [3, 1], wide) });
       }
       if (wantEvening) {
         jobs.push({ kind: "evening", ...eveningDigest(user, mine, today) });
@@ -246,6 +255,10 @@ async function runDigests() {
       }
     }
   }
+  // Görünmə üçün log — cron cavabı atır, ona görə nəticə burada qeyd olunur.
+  console.log(`[digests] sent=${sent.length} errors=${errors.length}` +
+    (sent.length ? ` → ${sent.map((s) => `${s.email}:${s.kind}`).join(", ")}` : "") +
+    (errors.length ? ` ⛔ ${errors.map((e) => `${e.email}:${e.error}`).join(" | ")}` : ""));
   return { ok: true, mode: "digests", sent, errors };
 }
 
