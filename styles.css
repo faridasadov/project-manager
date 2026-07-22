@@ -4273,62 +4273,60 @@ textarea:focus {
 
 .panel-size-controls {
   display: inline-flex;
-  gap: 2px;
   flex: 0 0 auto;
-  padding: 2px;
-  border-radius: 9px;
-  background: color-mix(in srgb, var(--line) 55%, transparent);
 }
 
-.panel-size-controls button {
-  width: 28px;
-  height: 28px;
-  min-height: 28px;
+.panel-size-toggle {
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
   padding: 0;
   display: inline-grid;
   place-items: center;
-  border: 0;
-  background: transparent;
-  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 8px;
   color: var(--muted);
   cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+  transition: color 0.18s ease, border-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
 }
 
-.panel-size-controls button svg {
+.panel-size-toggle svg {
   width: 15px;
   height: 15px;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  grid-area: 1 / 1; /* hər iki ikon eyni yerdə üst-üstə */
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.panel-size-controls button:hover {
-  background: var(--panel);
+.panel-size-toggle:hover {
   color: var(--ink);
+  border-color: color-mix(in srgb, var(--teal) 42%, var(--line));
 }
 
-.panel-size-controls button:hover svg { transform: scale(1.1); }
-.panel-size-controls button:active { transform: scale(0.88); }
+.panel-size-toggle:hover svg { transform: scale(1.12); }
+.panel-size-toggle:active { transform: scale(0.9); }
 
-.panel-size-controls button.active {
-  background: var(--teal);
-  color: #fff;
-  border-color: var(--teal);
-  box-shadow: 0 1px 5px color-mix(in srgb, var(--teal) 42%, transparent);
-  animation: panel-size-pop 0.3s ease;
+.panel-size-toggle.active {
+  color: var(--teal);
+  border-color: color-mix(in srgb, var(--teal) 48%, var(--line));
+  box-shadow: 0 1px 5px color-mix(in srgb, var(--teal) 30%, transparent);
 }
 
-.panel-size-controls button.active svg { transform: scale(1.05); }
+/* İkon dəyişimi panel vəziyyətinə görə: normalda böyüt (expand), genişdə kiçilt (collapse) */
+.panel-size-toggle .ic-collapse { display: none; }
+.dashboard-panel.panel-wide .panel-size-toggle .ic-expand { display: none; }
+.dashboard-panel.panel-wide .panel-size-toggle .ic-collapse { display: block; }
 
-@keyframes panel-size-pop {
-  0% { transform: scale(0.82); }
-  55% { transform: scale(1.12); }
-  100% { transform: scale(1); }
+/* Görünən ikon dəyişəndə (display:none→block) yumşaq daxilolma animasiyası */
+@keyframes panel-icon-swap {
+  0% { transform: scale(0.55) rotate(-24deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
 }
+.panel-size-toggle svg { animation: panel-icon-swap 0.24s ease; }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel-size-controls button,
-  .panel-size-controls button svg { transition: none; }
-  .panel-size-controls button.active { animation: none; }
+  .panel-size-toggle,
+  .panel-size-toggle svg { transition: none; animation: none; }
 }
 
 .field-hint {

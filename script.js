@@ -455,15 +455,17 @@ function normalizeDashboardPanelSizes(value = {}) {
 function applyDashboardPanelSizes() {
   const sizes = normalizeDashboardPanelSizes(appSettings.dashboardPanelSizes);
   dashboardPanels.forEach((panel) => {
-    const size = sizes[panel.dataset.dashboardPanel] || "normal";
-    panel.classList.toggle("panel-compact", size === "compact");
-    panel.classList.toggle("panel-wide", size === "wide");
-    panel.querySelectorAll("[data-panel-size]").forEach((button) => {
-      const active = button.dataset.panelSize === size;
-      button.classList.toggle("active", active);
-      button.setAttribute("aria-pressed", String(active));
-      button.title = text(button.dataset.panelSize === "compact" ? "panelCompact" : "panelWide");
-    });
+    const wide = (sizes[panel.dataset.dashboardPanel] || "normal") === "wide";
+    panel.classList.remove("panel-compact"); // köhnə compact vəziyyəti ləğv edildi
+    panel.classList.toggle("panel-wide", wide);
+    // Tək toggle düyməsi: geniş isə "kiçilt", normal isə "böyüt" göstərir (ikon CSS ilə dəyişir).
+    const toggle = panel.querySelector("[data-panel-size-toggle]");
+    if (toggle) {
+      toggle.classList.toggle("active", wide);
+      toggle.setAttribute("aria-pressed", String(wide));
+      toggle.title = text(wide ? "panelCompact" : "panelWide");
+      toggle.setAttribute("aria-label", toggle.title);
+    }
   });
 }
 
@@ -6046,12 +6048,11 @@ dashboardPanels.forEach((panel) => {
     applyDashboardPanelOrder();
   });
   panel.addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-panel-size]");
+    const button = event.target.closest("button[data-panel-size-toggle]");
     if (!button) return;
     const panelKey = panel.dataset.dashboardPanel;
     const currentSizes = normalizeDashboardPanelSizes(appSettings.dashboardPanelSizes);
-    const requestedSize = button.dataset.panelSize;
-    currentSizes[panelKey] = currentSizes[panelKey] === requestedSize ? "normal" : requestedSize;
+    currentSizes[panelKey] = currentSizes[panelKey] === "wide" ? "normal" : "wide";
     appSettings = { ...appSettings, dashboardPanelSizes: currentSizes };
     saveAppSettings();
     applyDashboardPanelSizes();
