@@ -6595,15 +6595,16 @@ textarea:focus {
 .kanban-card.kb-active::before { background: var(--blue); }
 .kanban-card.kb-done::before { background: var(--green); }
 
+/* #2 Kart hover/seçim — qalxma + teal parıltı */
 .task-card:hover,
 .kanban-card:hover,
 .project-card:hover,
 .calendar-day:hover,
 .resource-item:hover,
 .report-row:hover {
-  border-color: color-mix(in srgb, var(--teal) 40%, var(--line));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
-  transform: none;
+  border-color: color-mix(in srgb, var(--teal) 55%, var(--line));
+  box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--teal) 32%, transparent), 0 2px 6px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
 }
 
 .task-card,
@@ -6612,7 +6613,46 @@ textarea:focus {
 .calendar-day,
 .resource-item,
 .report-row {
-  transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 180ms ease, border-color 180ms ease;
+}
+
+/* sol aksent zolağı hover-də genişlənir/parlayır */
+.metric::before,
+.project-card::before,
+.task-card::before,
+.kanban-card::before {
+  transition: width 180ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 180ms ease;
+}
+.project-card:hover::before,
+.task-card:hover::before,
+.kanban-card:hover::before {
+  width: 6px;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--teal) 65%, transparent);
+}
+
+/* seçim / fokus halqası — klaviatura ilə seçəndə */
+.task-card:focus-visible,
+.project-card:focus-visible,
+.kanban-card:focus-visible,
+.resource-item:focus-visible,
+.calendar-day:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px color-mix(in srgb, var(--teal) 60%, transparent);
+  transform: translateY(-2px);
+}
+
+/* klik/basma feedback */
+.task-card:active,
+.project-card:active,
+.kanban-card:active {
+  transform: translateY(-1px) scale(0.994);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-card, .kanban-card, .project-card, .calendar-day, .resource-item, .report-row,
+  .metric::before, .project-card::before, .task-card::before, .kanban-card::before { transition: none; }
+  .task-card:hover, .kanban-card:hover, .project-card:hover, .calendar-day:hover, .resource-item:hover, .report-row:hover { transform: none; }
+  .task-card:focus-visible, .project-card:focus-visible, .kanban-card:focus-visible, .resource-item:focus-visible, .calendar-day:focus-visible { transform: none; }
 }
 
 .project-card h3,
