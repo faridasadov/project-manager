@@ -75,15 +75,24 @@ function visibleProjects() {
   return appState.projects.filter((project) => !project.archived).filter(canSeeProject);
 }
 
+// Task görünürlüyü rola görə DAR-dan GENİŞ-ə:
+//   • adi istifadəçi (user/contributor/viewer) → YALNIZ öz taskları
+//     (məsul şəxs və ya layihə resursu özü/komandasıdır)
+//   • manager/sponsor → idarə etdiyi layihənin bütün taskları + öz taskları
+//   • admin/rəhbərlik → şirkətin hamısı
+// Əvvəl adi istifadəçi üçün də projectHasRoleAccess/projectHasResourceAccess
+// işləyirdi: manageri layihə meneceri olan (və ya layihəyə bağlı hər hansı
+// resurs onun scope-una düşən) adam LAYİHƏNİN BÜTÜN tasklarını görürdü.
 function canSeeTask(task) {
   if (!currentUser) return true;
   if (isSuperAdmin()) return false;
   if (taskCompanyId(task) !== currentCompanyId()) return false;
   const project = appState.projects.find((item) => item.name === task.project);
   if ((isAdmin() || isRehberlik()) && (!project || isSameCompany(project))) return true;
-  return projectHasRoleAccess(project)
-    || taskHasDirectAccess(task)
-    || projectHasResourceAccess(task.project);
+  if (["manager", "sponsor"].includes(currentUser.role)) {
+    return projectHasRoleAccess(project) || taskHasDirectAccess(task);
+  }
+  return taskHasDirectAccess(task);
 }
 
 function accessibleTasks() {

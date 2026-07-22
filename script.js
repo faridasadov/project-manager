@@ -3570,8 +3570,9 @@ function setView(view) {
   render();
 }
 
-window.addEventListener("resize", positionNavIndicator);
-window.addEventListener("load", positionNavIndicator);
+// Test mühitində window stub-dur (addEventListener olmaya bilər) → müdafiəli.
+window.addEventListener?.("resize", positionNavIndicator);
+window.addEventListener?.("load", positionNavIndicator);
 
 function applyStatusFilter(status) {
   currentFilter = status || "Hamısı";
@@ -8439,15 +8440,20 @@ projectCards.addEventListener("click", (event) => {
   if (!button) return;
   const projectName = button.dataset.project;
   if (!projectName) return;
+  // İcazə gate-ləri: əvvəl bu əməliyyatların HEÇ BİRİNDƏ yoxlama yox idi —
+  // adi istifadəçi layihəni redaktə (status daxil), arxiv və hətta SİLƏ bilirdi.
   if (button.dataset.projectAction === "add-task") {
+    if (!canManageTasks()) return;
     openTaskComposerForProject(projectName);
     return;
   }
   if (button.dataset.projectAction === "edit") {
+    if (!canManageProjects()) return;
     openProjectEditor(projectName);
     return;
   }
   if (button.dataset.projectAction === "archive") {
+    if (!canManageProjects()) return;
     const project = appState.projects.find((item) => item.name === projectName);
     if (project) {
       project.archived = true;
@@ -8479,6 +8485,7 @@ projectCards.addEventListener("click", (event) => {
     return;
   }
   if (button.dataset.projectAction === "restore-archive") {
+    if (!canManageProjects()) return;
     const project = appState.projects.find((item) => item.name === projectName);
     if (project) {
       project.archived = false;
@@ -8488,6 +8495,7 @@ projectCards.addEventListener("click", (event) => {
     return;
   }
   if (button.dataset.projectAction === "delete") {
+    if (!canManageOrgUsers()) return; // silmə yalnız admin
     const project = appState.projects.find((item) => item.name === projectName);
     if (project) {
       appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
@@ -8513,12 +8521,14 @@ archivedProjectCards.addEventListener("click", (event) => {
   const project = appState.projects.find((item) => item.name === projectName);
   if (!project) return;
   if (button.dataset.projectAction === "restore-archive") {
+    if (!canManageProjects()) return;
     project.archived = false;
     saveResources();
     render();
     return;
   }
   if (button.dataset.projectAction === "delete") {
+    if (!canManageOrgUsers()) return; // silmə yalnız admin
     appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "projectRecord", data: { ...project }, deletedAt: new Date().toISOString() });
     appState.projects = appState.projects.filter((item) => item.id !== project.id);
     appState.projectLinks = appState.projectLinks.filter((link) => link.project !== projectName);

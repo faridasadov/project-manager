@@ -154,8 +154,8 @@ function archivedProjectsMarkup(archived) {
         <div class="project-card-pct"><strong>${Number(project.progress) || 0}%</strong></div>
       </div>
       <div class="project-card-actions">
-        <button class="proj-btn proj-secondary" type="button" data-project-action="restore-archive" data-project="${escapeHtml(project.name)}">${text("restoreProject")}</button>
-        <button class="proj-btn proj-danger" type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>
+        ${canManageProjects() ? `<button class="proj-btn proj-secondary" type="button" data-project-action="restore-archive" data-project="${escapeHtml(project.name)}">${text("restoreProject")}</button>` : ""}
+        ${canManageOrgUsers() ? `<button class="proj-btn proj-danger" type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>` : ""}
       </div>
     </article>
   `).join("") : `<div class="empty">${text("empty")}</div>`;
@@ -814,11 +814,11 @@ function projectCardMarkup(project) {
         ${renderProjectGovernance(project)}
         <div class="project-card-actions">
           <button class="proj-btn proj-primary" type="button" data-project-action="open" data-project="${escapeHtml(project.name)}">${text("openProject")}</button>
-          <button class="proj-btn proj-add" type="button" data-project-action="add-task" data-project="${escapeHtml(project.name)}">${text("addTaskToProject")}</button>
-          <button class="proj-btn proj-secondary" type="button" data-project-action="edit" data-project="${escapeHtml(project.name)}">${text("editProject")}</button>
-          ${nextGate ? `<button class="proj-btn proj-gate" type="button" data-project-action="approve-gate" data-gate="${escapeHtml(nextGate)}" data-project="${escapeHtml(project.name)}">✓ ${text("gatesWord")}: ${escapeHtml(gateLabel(nextGate))}</button>` : ""}
-          <button class="proj-btn proj-archive" type="button" data-project-action="archive" data-project="${escapeHtml(project.name)}">${text("archiveProject")}</button>
-          <button class="proj-btn proj-danger" type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>
+          ${canManageTasks() ? `<button class="proj-btn proj-add" type="button" data-project-action="add-task" data-project="${escapeHtml(project.name)}">${text("addTaskToProject")}</button>` : ""}
+          ${canManageProjects() ? `<button class="proj-btn proj-secondary" type="button" data-project-action="edit" data-project="${escapeHtml(project.name)}">${text("editProject")}</button>` : ""}
+          ${nextGate && canApproveGovernance() ? `<button class="proj-btn proj-gate" type="button" data-project-action="approve-gate" data-gate="${escapeHtml(nextGate)}" data-project="${escapeHtml(project.name)}">✓ ${text("gatesWord")}: ${escapeHtml(gateLabel(nextGate))}</button>` : ""}
+          ${canManageProjects() ? `<button class="proj-btn proj-archive" type="button" data-project-action="archive" data-project="${escapeHtml(project.name)}">${text("archiveProject")}</button>` : ""}
+          ${canManageOrgUsers() ? `<button class="proj-btn proj-danger" type="button" data-project-action="delete" data-project="${escapeHtml(project.name)}">${text("delete")}</button>` : ""}
         </div>
       </article>
     `;
