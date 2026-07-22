@@ -3646,6 +3646,11 @@ function syncHourFieldsFromDates() {
 // Forma inputlarında qarşılığı yoxdur, ona görə ayrıca saxlanılır.
 let editingTaskCompletedAt = "";
 let editingTaskTimeEntries = [];
+// Məsul şəxs (owner) əl ilə seçilibmi? Avtomat təklifi (resursun rəhbəri) yalnız
+// TASK daxilində keçərlidir; əl ilə dəyişilərsə, resurs sonradan dəyişsə belə
+// avtomat onu ƏZMİR. Bu, avtomatı əl seçimindən izolyasiya edir və heç vaxt
+// daimi user.managerId-ə toxunmur — sadəcə həmin taskın owner sahəsidir.
+let ownerManuallySet = false;
 
 function taskFormFields() {
   return [
@@ -3662,6 +3667,7 @@ function resetForm() {
   formTitle.textContent = text("newTask");
   projectResourceInput.value = "";
   ownerInput.value = "";
+  ownerManuallySet = false;
   statusInput.value = "Plan";
   priorityInput.value = "Normal";
   progressInput.value = 0;
@@ -3711,6 +3717,7 @@ function handleTaskAction(action, id) {
     statusInput.value = task.status;
     priorityInput.value = task.priority;
     ownerInput.value = task.owner;
+    ownerManuallySet = !!task.owner;
     progressInput.value = Number(task.progress) || 0;
     editingTaskCompletedAt = task.completedAt || "";
     editingTaskTimeEntries = Array.isArray(task.timeEntries) ? task.timeEntries : [];
@@ -8086,10 +8093,17 @@ function supervisorResourceFor(resourceValueString) {
 
 projectResourceInput.addEventListener("change", () => {
   if (!projectResourceInput.value) return;
+  // Əl ilə seçilmiş məsul şəxsi əzmirik — avtomat yalnız boş/avtomat dəyəri doldurur.
+  if (ownerManuallySet && ownerInput.value) return;
   const supervisor = supervisorResourceFor(projectResourceInput.value);
   ensureSelectOption(ownerInput, supervisor, resourceLabel(supervisor));
   ownerInput.value = supervisor;
 });
+
+// İstifadəçi məsul şəxsi əl ilə seçəndə bunu qeyd edirik ki, sonrakı resurs
+// dəyişikliyi onu əzməsin. Bu dəyişiklik yalnız TASK daxilindədir — user.managerId
+// dəyişmir (o, yalnız istifadəçi profilindən idarə olunur).
+ownerInput.addEventListener("change", () => { ownerManuallySet = true; });
 
 focusNewProjectButton.addEventListener("click", () => {
   currentView = "projects";
