@@ -5749,7 +5749,15 @@ async function savePlatformState() {
   return response.json();
 }
 
+// Admin başqa istifadəçinin parolunu dəyişir.
+// KRİTİK: online giriş Supabase auth (GoTrue) ilə yoxlanılır. Əvvəllər burada
+// yalnız self-hosted backend çağırılırdı; cloud-da o əlçatan olmadığı üçün
+// parol DƏYİŞMİRDİ — blob-dakı md5 yenilənirdi, istifadəçi isə girə bilmirdi.
+// İndi Supabase aktivdirsə parol MÜTLƏQ auth-da yenilənir.
 async function changeBackendUserPassword(userId, password) {
+  if (supabaseSession?.access_token) {
+    return callSupabaseFunction("manage-user", { action: "set-password", profileId: userId, password });
+  }
   if (!canUseBackend()) return { skipped: true };
   const response = await fetch(backendUrl(`/api/users/${encodeURIComponent(userId)}/password`), {
     method: "PUT",
@@ -7618,10 +7626,16 @@ userList.addEventListener("click", async (event) => {
     const input = row?.querySelector("input[name='password']");
     const password = input?.value || "";
     if (!user || user.role === "super_admin" || user.id === currentUser?.id || user.companyId !== currentCompanyId() || !password) return;
+    // Xəta ARTIQ udulmur: əvvəllər burada səssiz catch var idi və admin
+    // "dəyişdi" sanırdı, halbuki auth parolu köhnə qalırdı → giriş alınmırdı.
     try {
-      await changeBackendUserPassword(user.id, password);
+      const res = await changeBackendUserPassword(user.id, password);
+      if (res?.skipped) {
+        alert(text("passwordChangeSkipped"));
+      }
     } catch (error) {
-      console.warn("Backend user password change failed", error);
+      alert(`${text("passwordChangeSkipped")}\n\n${error?.message || error}`);
+      return; // blob-u da dəyişmirik ki, UI ilə auth arasında uyğunsuzluq yaranmasın
     }
     user.passwordHash = md5(password);
     input.value = "";

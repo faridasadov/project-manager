@@ -4,6 +4,7 @@
 //   create  → real auth user (admin parolu təyin edir) + active profil → dərhal girə bilir
 //   approve  → pending profili (self-register join sorğusu) status=active + rol
 //   set-role → profiles.role-u yeniləyir (app-də rol dəyişəndə RLS ilə uyğun qalsın)
+//   set-password → istifadəçinin GoTrue (auth) parolunu dəyişir
 //   reject   → profili + auth user-i silir
 // verify_jwt=true; çağıranın JWT-si yoxlanılır, profilindən workspace + admin rolu təsdiqlənir.
 
@@ -162,6 +163,28 @@ Deno.serve(async (req) => {
       });
       if (!upd.ok) return json({ error: "Rol yenilənmədi", detail: upd.body }, 502);
       return json({ ok: true, action: "set-role", role: toDbRole(appRole), appRole });
+    }
+
+    if (action === "set-password") {
+      // Admin başqa istifadəçinin parolunu dəyişir. ƏSAS: online giriş GoTrue ilə
+      // yoxlanılır, ona görə parol MÜTLƏQ auth.users-də yenilənməlidir. Əvvəllər
+      // app yalnız blob-dakı md5-i dəyişirdi → istifadəçi girə bilmirdi.
+      const profileId = String(p.profileId || p.userId || "");
+      const password = String(p.password || "");
+      if (!profileId) return json({ error: "profileId tələb olunur" }, 400);
+      if (password.length < 6) return json({ error: "Parol ən azı 6 simvol olmalıdır" }, 400);
+
+      // Yalnız ÖZ workspace-indəki istifadəçi (super_admin toxunulmaz).
+      const target = await admGet(`/rest/v1/profiles?id=eq.${profileId}&workspace_id=eq.${workspaceId}&select=id,role`);
+      const row = Array.isArray(target.body) ? target.body[0] : null;
+      if (!row) return json({ error: "Profil bu workspace-də tapılmadı" }, 404);
+      if (row.role === "super_admin") return json({ error: "Super admin parolu dəyişdirilə bilməz" }, 403);
+
+      const upd = await adm(`/auth/v1/admin/users/${profileId}`, "PUT", { password });
+      if (!upd.ok) {
+        return json({ error: upd.body?.msg || upd.body?.error_description || "Parol yenilənmədi", detail: upd.body }, 502);
+      }
+      return json({ ok: true, action: "set-password", userId: profileId });
     }
 
     if (action === "reject") {
