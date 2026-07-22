@@ -3828,6 +3828,7 @@ function editTask(id, options = {}) {
   statusInput.value = task.status;
   priorityInput.value = task.priority;
   ownerInput.value = task.owner;
+  ownerManuallySet = !!task.owner;
   progressInput.value = Number(task.progress) || 0;
   editingTaskCompletedAt = task.completedAt || "";
   editingTaskTimeEntries = Array.isArray(task.timeEntries) ? task.timeEntries : [];
