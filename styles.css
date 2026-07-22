@@ -1640,6 +1640,48 @@ button:hover {
   border-color: var(--teal);
   color: #fff;
   font-weight: 800;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* #1 Button animasiyası — hover-də işıq süpürgəsi (shine sweep) */
+.primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 25%, rgba(255, 255, 255, 0.38) 50%, transparent 75%);
+  transform: translateX(-130%);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+.primary:hover::before { transform: translateX(130%); }
+
+/* klikdə mərkəzdən yayılan ripple */
+.primary::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+.primary:active::after { animation: primary-ripple 0.55s ease-out; }
+
+@keyframes primary-ripple {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0.55; }
+  100% { transform: translate(-50%, -50%) scale(26); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary::before { transition: none; }
+  .primary:hover::before { transform: translateX(-130%); }
+  .primary:active::after { animation: none; }
 }
 
 .novo-sidebar {
