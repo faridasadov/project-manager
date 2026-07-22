@@ -1856,6 +1856,33 @@ button:hover {
   color: #c2ede3;
 }
 
+/* #4 Animasiyalı ikonlar — hover-də yumşaq çəkilmə, aktiv olanda pop */
+.menu-icon svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sidebar-menu .view-tab:hover .menu-icon svg {
+  transform: scale(1.18) rotate(-5deg);
+}
+
+.sidebar-menu .view-tab.active .menu-icon svg {
+  animation: menu-icon-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes menu-icon-pop {
+  0% { transform: scale(0.6) rotate(-14deg); }
+  60% { transform: scale(1.18) rotate(4deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-icon svg { transition: none; }
+  .sidebar-menu .view-tab:hover .menu-icon svg { transform: none; }
+  .sidebar-menu .view-tab.active .menu-icon svg { animation: none; }
+}
+
 .sidebar-footer {
   display: flex;
   justify-content: space-between;
