@@ -8335,3 +8335,57 @@ body.dark-mode .new-user-card-title { color: #5eead4; }
 .panel-launch-grid button > span {
   align-self: end;
 }
+
+/* ── #5 Animasiyalı ilk giriş səhifəsi — orkestrləşdirilmiş entrance ─────────
+   Hero açılanda elementlər ardıcıl səhnəyə girir: topbar yuxarıdan,
+   mətn bloku aşağıdan, xüsusiyyət siyahısı soldan pilləli, IPMA və
+   statistika ən sonda. prefers-reduced-motion hamısını söndürür. */
+
+@keyframes hero-in-up {
+  from { opacity: 0; transform: translateY(26px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hero-in-down {
+  from { opacity: 0; transform: translateY(-18px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hero-in-left {
+  from { opacity: 0; transform: translateX(-22px); }
+  to { opacity: 1; transform: none; }
+}
+
+.login-hero-topbar { animation: hero-in-down 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.hero-eyebrow { animation: hero-in-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.14s both; }
+.login-hero-title { animation: hero-in-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both; }
+.login-hero-sub { animation: hero-in-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.36s both; }
+.hero-cta-row { animation: hero-in-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.48s both; }
+
+.login-feature-list li { animation: hero-in-left 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.login-feature-list li:nth-child(1) { animation-delay: 0.56s; }
+.login-feature-list li:nth-child(2) { animation-delay: 0.64s; }
+.login-feature-list li:nth-child(3) { animation-delay: 0.72s; }
+.login-feature-list li:nth-child(4) { animation-delay: 0.80s; }
+.login-feature-list li:nth-child(5) { animation-delay: 0.88s; }
+
+.hero-ipma-block { animation: hero-in-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.96s both; }
+.login-hero-stats { animation: hero-in-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.08s both; }
+
+/* Əsas CTA yumşaq nəbz parıltısı ilə diqqət çəkir */
+.hero-cta-primary { animation: hero-cta-pulse 2.6s ease-in-out 1.8s infinite; }
+@keyframes hero-cta-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.34); }
+  50% { box-shadow: 0 0 0 9px rgba(45, 212, 191, 0); }
+}
+
+/* Eyebrow nöqtəsi sakit yanıb-sönür */
+.hero-eyebrow-dot { animation: hero-dot-blink 2s ease-in-out infinite; }
+@keyframes hero-dot-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-hero-topbar, .hero-eyebrow, .login-hero-title, .login-hero-sub,
+  .hero-cta-row, .login-feature-list li, .hero-ipma-block, .login-hero-stats,
+  .hero-cta-primary, .hero-eyebrow-dot { animation: none; }
+}
