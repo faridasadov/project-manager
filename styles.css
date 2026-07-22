@@ -5035,31 +5035,69 @@ textarea:focus {
   background: var(--soft);
 }
 
-/* workload items */
+/* workload / resurs effektivliyi items */
 .workload-item { border-left-color: var(--line); }
-.workload-item.danger { border-left-color: var(--red); }
-.workload-item.warning { border-left-color: var(--amber); }
+.workload-item.status-behind { border-left-color: var(--red); }
+.workload-item.status-ontrack { border-left-color: var(--amber); }
+.workload-item.status-ahead { border-left-color: var(--green); }
 
 .workload-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.workload-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.workload-status .wl-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.workload-status .wl-delta {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.72;
+  font-weight: 600;
+}
+
+.workload-meters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.wl-meter { flex: 1 1 0; min-width: 0; }
+
+.wl-meter-head {
+  display: flex;
+  justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
+  font-size: 0.72rem;
+  color: var(--muted);
 }
 
-.workload-pct {
-  font-size: 0.88rem;
-  font-weight: 800;
+.wl-meter-val {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
 }
 
-.workload-bar {
-  margin-bottom: 6px;
-  height: 6px;
-}
+.wl-meter-val.over { color: var(--red); }
 
-.workload-bar span {
-  border-radius: inherit;
-}
+.workload-meters .progress-mini { height: 6px; }
+.workload-meters .progress-mini span { border-radius: inherit; }
 
 .health-panel {
   display: grid;

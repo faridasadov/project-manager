@@ -1100,16 +1100,34 @@ function upcomingListMarkup(upcoming) {
 }
 
 function workloadListMarkup(rows) {
+  const statusMeta = {
+    ahead: { color: "var(--green)", label: text("wlAhead") },
+    ontrack: { color: "var(--amber)", label: text("wlOnTrack") },
+    behind: { color: "var(--red)", label: text("wlBehind") }
+  };
   return rows.length ? rows.map((row) => {
-    const loadClass = row.load > 85 ? "danger" : row.load > 60 ? "warning" : "";
-    const barColor = row.load > 85 ? "var(--red)" : row.load > 60 ? "var(--amber)" : "var(--green)";
+    const st = statusMeta[row.status] || statusMeta.ontrack;
+    const sign = row.delta > 0 ? "+" : "";
+    const overBudget = row.spend > 100;
     return `
-    <button class="compact-item workload-item ${loadClass}" type="button" data-owner="${escapeHtml(row.owner)}" title="Tasklara bax: ${escapeHtml(resourceLabel(row.owner))}">
+    <button class="compact-item workload-item status-${row.status}" type="button" data-owner="${escapeHtml(row.owner)}" title="Tasklara bax: ${escapeHtml(resourceLabel(row.owner))}">
       <div class="workload-row">
         <strong>${escapeHtml(resourceLabel(row.owner))}</strong>
-        <span class="workload-pct" style="color:${barColor}">${row.load}%</span>
+        <span class="workload-status" style="color:${st.color}">
+          <span class="wl-dot" style="background:${st.color}"></span>${st.label}
+          <span class="wl-delta">${sign}${row.delta}</span>
+        </span>
       </div>
-      <div class="progress-mini workload-bar"><span style="width:${Math.min(100, row.load)}%; background:${barColor}"></span></div>
+      <div class="workload-meters">
+        <div class="wl-meter">
+          <div class="wl-meter-head"><span>${text("wlSpend")}</span><span class="wl-meter-val${overBudget ? " over" : ""}">${row.spend}%</span></div>
+          <div class="progress-mini"><span style="width:${Math.min(100, row.spend)}%; background:${overBudget ? "var(--red)" : "#c0872a"}"></span></div>
+        </div>
+        <div class="wl-meter">
+          <div class="wl-meter-head"><span>${text("wlDone")}</span><span class="wl-meter-val">${row.done}%</span></div>
+          <div class="progress-mini"><span style="width:${Math.min(100, row.done)}%; background:#158a70"></span></div>
+        </div>
+      </div>
       <div class="task-meta">
         <span>${row.count} ${text("tasks")}</span>
         <span>${text("plannedHours")}: ${row.planned} / ${row.actual}</span>

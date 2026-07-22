@@ -96,20 +96,34 @@ function actualHoursForTask(task) {
   return Number(task.actualHours) || autoActualHours(task);
 }
 
+// Resurs effektivliyi. Köhnə "yüklənmə" bütün-müddət plan saatını həftəlik
+// tutuma bölürdü → mənasız faiz (9420%). İndi iki real ölçü:
+//   • Sərf%       = fakt ÷ plan  (planlanan vaxtın nə qədəri xərclənib)
+//   • Tamamlanma% = progress (plan saatına görə çəkili) — iş faktiki nə qədər bitib
+//   • delta = Tamamlanma − Sərf → status (öndə / qrafikdə / geridə)
+// Yüklənmə İCRAÇIya (Layihə resursu) aid edilir; resurs boşdursa məsul şəxsə.
 function workloadRows() {
   const activeTasks = accessibleTasks().filter((task) => task.status !== "Bitib");
-  const capacity = Number(appSettings.capacityHours) || 40;
   const rows = new Map();
   activeTasks.forEach((task) => {
-    const owner = task.owner || task.projectResource || "";
-    if (!owner) return;
-    const current = rows.get(owner) || { owner, planned: 0, actual: 0, count: 0 };
-    current.planned += plannedHoursForTask(task);
+    const resource = task.projectResource || task.owner || "";
+    if (!resource) return;
+    const planned = plannedHoursForTask(task);
+    const progress = Math.max(0, Math.min(100, Number(task.progress) || 0));
+    const current = rows.get(resource) || { owner: resource, planned: 0, actual: 0, count: 0, progressWeighted: 0 };
+    current.planned += planned;
     current.actual += actualHoursForTask(task);
+    current.progressWeighted += progress * planned; // plan saatına görə çəkili tamamlanma
     current.count += 1;
-    rows.set(owner, current);
+    rows.set(resource, current);
   });
   return [...rows.values()]
-    .map((row) => ({ ...row, capacity, load: capacity ? Math.round((row.planned / capacity) * 100) : 0 }))
-    .sort((a, b) => b.load - a.load);
+    .map((row) => {
+      const spend = row.planned ? Math.round((row.actual / row.planned) * 100) : 0;
+      const done = row.planned ? Math.round(row.progressWeighted / row.planned) : 0;
+      const delta = done - spend;
+      const status = delta >= 10 ? "ahead" : delta <= -10 ? "behind" : "ontrack";
+      return { ...row, planned: Math.round(row.planned * 10) / 10, actual: Math.round(row.actual * 10) / 10, spend, done, delta, status };
+    })
+    .sort((a, b) => a.delta - b.delta); // ən riskli (ən aşağı delta) yuxarıda
 }
