@@ -180,7 +180,10 @@
   }
 
   function init() {
-    initHeroTitle();
+    // Hero başlığında effekt SÖNDÜRÜLDÜ (2026-07-23, Farid): defolt blur başlığı
+    // oxunmaz edirdi və ilk baxışda "xarab" görünürdü. Effekt yalnız parol
+    // xanalarında qalır — orada gizli dəyəri qorumaq mənası var.
+    // initHeroTitle();
     initFields();
   }
 

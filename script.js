@@ -554,6 +554,7 @@ function syncSettingsForm() {
 // ── Per-user report/notification preferences (stored in user.profile.reportPrefs) ──
 const DEFAULT_REPORT_PREFS = {
   timezone: "Asia/Baku",
+  language: "az",
   morning: { enabled: false, hour: 9 },
   evening: { enabled: false, hour: 18 },
   deadlineAlerts: { enabled: false, daysBefore: [3, 1] },
@@ -573,6 +574,7 @@ function getReportPrefs(user) {
   const forced = reportsAreMandatory(user);
   return {
     timezone: p.timezone || DEFAULT_REPORT_PREFS.timezone,
+    language: ["az", "ru", "en"].includes(p.language) ? p.language : "az",
     morning: { enabled: forced || Boolean(p.morning?.enabled), hour: Number(p.morning?.hour ?? 9) },
     evening: { enabled: forced || Boolean(p.evening?.enabled), hour: Number(p.evening?.hour ?? 18) },
     deadlineAlerts: { enabled: Boolean(p.deadlineAlerts?.enabled), daysBefore: Array.isArray(p.deadlineAlerts?.daysBefore) ? p.deadlineAlerts.daysBefore : [3, 1] },
@@ -597,6 +599,7 @@ function enforceRehberlikReportPrefs() {
         ...(user.profile || {}),
         reportPrefs: {
           timezone: prefs.timezone || DEFAULT_REPORT_PREFS.timezone,
+          language: prefs.language || DEFAULT_REPORT_PREFS.language,
           morning: { enabled: true, hour: Number(prefs.morning?.hour ?? 9) },
           evening: { enabled: true, hour: Number(prefs.evening?.hour ?? 18) },
           deadlineAlerts: prefs.deadlineAlerts || { ...DEFAULT_REPORT_PREFS.deadlineAlerts },
@@ -650,6 +653,8 @@ function syncReportPrefsForm() {
   eveningBox.checked = prefs.evening.enabled;
   document.querySelector("#reportDeadlineEnabled").checked = prefs.deadlineAlerts.enabled;
   document.querySelector("#reportChangeEnabled").checked = prefs.changeAlerts.enabled;
+  const langSelect = document.querySelector("#reportLanguage");
+  if (langSelect) langSelect.value = prefs.language;
 
   // Rəhbərlik gündəlik hesabatı söndürə bilmir — quşlar açıq və deaktivdir.
   // Saat seçimi açıq qalır: "nə vaxt" dəyişdirilə bilər, "göndərilsinmi" yox.
@@ -679,6 +684,7 @@ function saveReportPrefs() {
     email,
     reportPrefs: {
       timezone: prev.timezone || "Asia/Baku",
+      language: document.querySelector("#reportLanguage")?.value || prev.language || "az",
       morning: { enabled: forced || document.querySelector("#reportMorningEnabled").checked, hour: Number(document.querySelector("#reportMorningHour").value) },
       evening: { enabled: forced || document.querySelector("#reportEveningEnabled").checked, hour: Number(document.querySelector("#reportEveningHour").value) },
       deadlineAlerts: { enabled: document.querySelector("#reportDeadlineEnabled").checked, daysBefore: prev.deadlineAlerts.daysBefore },
