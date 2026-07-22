@@ -40,10 +40,15 @@ type StateProject = {
   managerIds?: string[]; teamMemberIds?: string[];
 };
 
+type StateTeam = {
+  id?: string; name?: string; memberIds?: string[];
+};
+
 type AppState = {
   users?: StateUser[];
   tasks?: StateTask[];
   projects?: StateProject[];
+  teams?: StateTeam[];
 };
 
 const corsHeaders = {
@@ -132,10 +137,27 @@ function userTasks(tasks: StateTask[], myProjects: StateProject[], uid: string):
   for (const p of myProjects) { if (p.id) keys.add(p.id); if (p.name) keys.add(p.name); }
   return tasks.filter((t) => (t.project && keys.has(t.project)) || t.owner === uid);
 }
-function ownerTag(t: StateTask) { return t.owner ? ` (${t.owner})` : ""; }
+// Məsul resursunu (owner) oxunaqlı ada çevirir: "user:<id>" → tam ad / username,
+// "team:<id>" → "<komanda adı> (komanda)". Tapılmasa xam dəyər qalır.
+type NameOf = (owner?: string) => string;
+function buildNameOf(users: StateUser[], teams: StateTeam[]): NameOf {
+  const byUser = new Map<string, string>();
+  for (const u of users) if (u.id) byUser.set(u.id, u.profile?.fullName || u.username || u.id);
+  const byTeam = new Map<string, string>();
+  for (const t of teams) if (t.id) byTeam.set(t.id, t.name || t.id);
+  return (owner?: string) => {
+    if (!owner) return "";
+    if (owner.startsWith("user:")) return byUser.get(owner.slice(5)) || owner;
+    if (owner.startsWith("team:")) { const n = byTeam.get(owner.slice(5)); return n ? `${n} (komanda)` : owner; }
+    return byUser.get(owner) || owner;
+  };
+}
+function ownerTag(t: StateTask, nameOf: NameOf) { const n = nameOf(t.owner); return n ? ` (${n})` : ""; }
 
 // ── Digest builders (Azerbaijani) ─────────────────────────────────────────
-function morningDigest(user: StateUser, mine: StateTask[], myProjects: StateProject[], today: string, daysBefore: number[], leadership = false) {
+// Portfel gövdəsi — həm səhər, həm axşam hesabatı üçün ortaq: açıq tapşırıqlar,
+// gecikmişlər, yaxın deadline-lar və layihələr.
+function portfolioLines(mine: StateTask[], myProjects: StateProject[], today: string, daysBefore: number[], nameOf: NameOf, leadership: boolean) {
   const open = mine.filter(isOpen);
   const soon = (daysBefore && daysBefore.length ? daysBefore : [3, 1]);
   const maxSoon = Math.max(...soon);
@@ -143,13 +165,11 @@ function morningDigest(user: StateUser, mine: StateTask[], myProjects: StateProj
   const overdue = open.filter((t) => { const d = daysUntil(t.end, today); return d !== null && d < 0; });
 
   const lines: string[] = [];
-  lines.push(`Salam, ${user.profile?.fullName || user.username || ""}!`);
-  lines.push("");
   lines.push(`📋 Üzərində qalan tapşırıqlar: ${open.length}`);
   for (const t of open.slice(0, 30)) {
     const d = daysUntil(t.end, today);
     const tail = d === null ? "" : d < 0 ? ` — ⛔ ${Math.abs(d)} gün gecikib` : d === 0 ? " — ⚠️ bu gün deadline" : ` — ${d} gün qalıb`;
-    lines.push(`  • ${t.name}${ownerTag(t)} [${t.status || "-"}, ${t.progress ?? 0}%]${tail}`);
+    lines.push(`  • ${t.name}${ownerTag(t, nameOf)} [${t.status || "-"}, ${t.progress ?? 0}%]${tail}`);
   }
   if (overdue.length) { lines.push(""); lines.push(`⛔ Gecikmiş: ${overdue.length}`); }
   if (dueSoon.length) {
@@ -158,33 +178,37 @@ function morningDigest(user: StateUser, mine: StateTask[], myProjects: StateProj
   }
   if (myProjects.length) {
     lines.push(""); lines.push(leadership ? `📁 Şirkət layihələri: ${myProjects.length}` : `📁 Aid olduğun layihələr: ${myProjects.length}`);
-    for (const p of myProjects.slice(0, 20)) lines.push(`  • ${p.name} [${p.status || "-"}, ${p.progress ?? 0}%]`);
+    for (const p of myProjects.slice(0, 20)) lines.push(`  • ${p.name} [${p.status || "-"}, ${(p as { progress?: number }).progress ?? 0}%]`);
   }
-  lines.push(""); lines.push("— Project Manager");
+  return { lines, open };
+}
+
+function morningDigest(user: StateUser, mine: StateTask[], myProjects: StateProject[], today: string, daysBefore: number[], nameOf: NameOf, leadership = false) {
+  const { lines: body, open } = portfolioLines(mine, myProjects, today, daysBefore, nameOf, leadership);
+  const lines = [`Salam, ${user.profile?.fullName || user.username || ""}!`, "", ...body, "", "— Project Manager"];
   return { subject: `🌅 Səhər hesabatı — ${today}`, text: lines.join("\n"), empty: open.length === 0 && myProjects.length === 0 };
 }
 
-function eveningDigest(user: StateUser, mine: StateTask[], today: string) {
+// Axşam hesabatı da səhər kimi tam informativdir; günün yekunu (tamamlanan,
+// bu gün deadline, sabaha qalan) sonda ayrıca blokda gəlir.
+function eveningDigest(user: StateUser, mine: StateTask[], myProjects: StateProject[], today: string, daysBefore: number[], nameOf: NameOf, leadership = false) {
+  const { lines: body, open } = portfolioLines(mine, myProjects, today, daysBefore, nameOf, leadership);
   const completedToday = mine.filter((t) => t.completedAt && t.completedAt.slice(0, 10) === today);
-  const openMine = mine.filter(isOpen);
-  const dueToday = openMine.filter((t) => t.end && t.end.slice(0, 10) === today);
-  const overdue = openMine.filter((t) => { const d = daysUntil(t.end, today); return d !== null && d < 0; });
+  const dueToday = open.filter((t) => t.end && t.end.slice(0, 10) === today);
 
-  const lines: string[] = [];
-  lines.push(`Salam, ${user.profile?.fullName || user.username || ""}!`);
+  const lines = [`Salam, ${user.profile?.fullName || user.username || ""}!`, "", ...body, ""];
+  lines.push("──────────────────────────");
+  lines.push(`🌙 Günün yekunu — ${today}:`);
   lines.push("");
   lines.push(`✅ Bu gün tamamlanan: ${completedToday.length}`);
-  for (const t of completedToday.slice(0, 30)) lines.push(`  • ${t.name}${ownerTag(t)}`);
+  for (const t of completedToday.slice(0, 30)) lines.push(`  • ${t.name}${ownerTag(t, nameOf)}`);
   lines.push("");
   lines.push(`📌 Bu gün deadline olan (açıq): ${dueToday.length}`);
-  for (const t of dueToday.slice(0, 30)) lines.push(`  • ${t.name}${ownerTag(t)} [${t.progress ?? 0}%]`);
-  if (overdue.length) {
-    lines.push(""); lines.push(`⛔ Gecikmiş (diqqət): ${overdue.length}`);
-    for (const t of overdue.slice(0, 30)) lines.push(`  • ${t.name} — ${fmtDate(t.end)}`);
-  }
-  lines.push(""); lines.push(`Sabaha qalan açıq tapşırıq: ${openMine.length}`);
+  for (const t of dueToday.slice(0, 30)) lines.push(`  • ${t.name}${ownerTag(t, nameOf)} [${t.progress ?? 0}%]`);
+  lines.push("");
+  lines.push(`Sabaha qalan açıq tapşırıq: ${open.length}`);
   lines.push(""); lines.push("— Project Manager");
-  return { subject: `🌙 Gün sonu hesabatı — ${today}`, text: lines.join("\n"), empty: mine.length === 0 };
+  return { subject: `🌙 Gün sonu hesabatı — ${today}`, text: lines.join("\n"), empty: open.length === 0 && myProjects.length === 0 && completedToday.length === 0 };
 }
 
 // ── Read all workspaces' app_state via service role ───────────────────────
@@ -212,6 +236,8 @@ async function runDigests() {
     const users = state.users || [];
     const tasks = state.tasks || [];
     const projects = state.projects || [];
+    const teams = state.teams || [];
+    const nameOf = buildNameOf(users, teams);
 
     for (const user of users) {
       const email = user.profile?.email?.trim();
@@ -235,11 +261,12 @@ async function runDigests() {
       const mine = userTasks(tasks, myProjects, user.id!);
 
       const jobs: Array<{ kind: string; subject: string; text: string; empty: boolean }> = [];
+      const daysBefore = prefs?.deadlineAlerts?.daysBefore || [3, 1];
       if (wantMorning) {
-        jobs.push({ kind: "morning", ...morningDigest(user, mine, myProjects, today, prefs?.deadlineAlerts?.daysBefore || [3, 1], wide) });
+        jobs.push({ kind: "morning", ...morningDigest(user, mine, myProjects, today, daysBefore, nameOf, wide) });
       }
       if (wantEvening) {
-        jobs.push({ kind: "evening", ...eveningDigest(user, mine, today) });
+        jobs.push({ kind: "evening", ...eveningDigest(user, mine, myProjects, today, daysBefore, nameOf, wide) });
       }
 
       for (const job of jobs) {
