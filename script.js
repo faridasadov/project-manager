@@ -3542,13 +3542,30 @@ function renderPlatformConsole() {
   }
 }
 
+// #3 Sol panel — sürüşən aktiv göstərici: pill aktiv menyu bəndinə köçür.
+function positionNavIndicator() {
+  const menu = document.querySelector(".sidebar-menu");
+  if (!menu) return;
+  const indicator = menu.querySelector(".nav-indicator");
+  if (!indicator) return;
+  const active = menu.querySelector(".view-tab.active");
+  if (!active) { indicator.style.opacity = "0"; return; }
+  indicator.style.opacity = "1";
+  indicator.style.height = active.offsetHeight + "px";
+  indicator.style.transform = "translateY(" + active.offsetTop + "px)";
+}
+
 function setView(view) {
   currentView = view;
   document.body.dataset.view = view;
   viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === currentView));
+  positionNavIndicator();
   if (view === "projects") projectFilter.value = "Hamısı";
   render();
 }
+
+window.addEventListener("resize", positionNavIndicator);
+window.addEventListener("load", positionNavIndicator);
 
 function applyStatusFilter(status) {
   currentFilter = status || "Hamısı";

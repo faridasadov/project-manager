@@ -1744,6 +1744,24 @@ button:hover {
   display: grid;
   align-content: start;
   gap: 8px;
+  position: relative;
+}
+
+/* #3 sürüşən aktiv göstərici — pill aktiv bəndə köçür */
+.nav-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(19, 111, 99, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.18);
+  transform: translateY(0);
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition: transform 0.36s cubic-bezier(0.34, 1.4, 0.5, 1), height 0.36s cubic-bezier(0.34, 1.4, 0.5, 1), opacity 0.2s ease;
 }
 
 .sidebar-section-label {
@@ -1772,7 +1790,25 @@ button:hover {
   text-align: left;
   padding: 0 10px;
   border-radius: 10px;
+  position: relative;
+  z-index: 1;
   transition: background 160ms ease, color 160ms ease;
+  /* pilləli giriş animasiyası */
+  animation: nav-in 0.44s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sidebar-menu .view-tab:nth-of-type(1) { animation-delay: 0.05s; }
+.sidebar-menu .view-tab:nth-of-type(2) { animation-delay: 0.10s; }
+.sidebar-menu .view-tab:nth-of-type(3) { animation-delay: 0.15s; }
+.sidebar-menu .view-tab:nth-of-type(4) { animation-delay: 0.20s; }
+.sidebar-menu .view-tab:nth-of-type(5) { animation-delay: 0.25s; }
+.sidebar-menu .view-tab:nth-of-type(6) { animation-delay: 0.30s; }
+.sidebar-menu .view-tab:nth-of-type(7) { animation-delay: 0.35s; }
+.sidebar-menu .view-tab:nth-of-type(8) { animation-delay: 0.40s; }
+
+@keyframes nav-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: none; }
 }
 
 .sidebar-menu .view-tab.text-only {
@@ -1785,9 +1821,15 @@ button:hover {
   color: #c2ede3;
 }
 
+/* aktiv fon artıq sürüşən göstərici (.nav-indicator) tərəfindən verilir */
 .sidebar-menu .view-tab.active {
-  background: rgba(19, 111, 99, 0.28);
+  background: transparent;
   color: #dff3ec;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-menu .view-tab { animation: none; }
+  .nav-indicator { transition: opacity 0.2s ease; }
 }
 
 .menu-icon {
