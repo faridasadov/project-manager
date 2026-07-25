@@ -2703,23 +2703,41 @@ function calendarTasksForDate(date) {
 }
 
 const AZ_WEEKDAYS = ["Bazar", "B.e", "Ç.a", "Çərş", "C.a", "Cümə", "Şənbə"];
+// Bazar ertəsi ilə başlayan qısa həftə adları (Lovable təqvim başlığı üçün).
+const AZ_WEEKDAYS_SHORT_MON = ["B.e", "Ç.a", "Ç", "C.a", "C", "Ş", "B"];
+function todayIsoLocal() {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+}
 function renderCalendarMarkup(compact = false) {
+  const todayIso = todayIsoLocal();
   return calendarDays().map((date) => {
     const dayTasks = calendarTasksForDate(date);
     const selected = date === selectedCalendarDay;
     const day = Number(date.slice(-2));
     const dow = new Date(date + "T00:00:00").getDay();
-    const weekday = currentLanguage === "az"
-      ? AZ_WEEKDAYS[dow]
-      : new Date(date + "T00:00:00").toLocaleDateString(translations[currentLanguage].locale, { weekday: "short" });
     const isWeekend = dow === 0 || dow === 6;
+    const isToday = date === todayIso;
+    const cls = `calendar-day ${compact ? "compact" : ""} ${selected ? "selected" : ""} ${isWeekend ? "weekend" : ""} ${isToday ? "today" : ""}`;
+    if (compact) {
+      // Dashboard mini — yığcam: gün nömrəsi + task sayı nöqtəsi.
+      return `
+        <button class="${cls}" type="button" data-calendar-day="${date}">
+          <span class="cal-daynum">${day}</span>
+          ${dayTasks.length ? `<span class="cal-count">${dayTasks.length}</span>` : ""}
+        </button>`;
+    }
+    // Tam board — Lovable üslubu: gün nömrəsi + layihəyə görə rəngli task çipləri.
+    const chips = dayTasks.slice(0, 3).map((t) => {
+      const hue = projectHue(getProject(t) || "");
+      return `<span class="cal-chip" style="--proj-hue:${hue}" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</span>`;
+    }).join("");
+    const more = dayTasks.length > 3 ? `<span class="cal-more">+${dayTasks.length - 3}</span>` : "";
     return `
-      <button class="calendar-day ${compact ? "compact" : ""} ${selected ? "selected" : ""} ${isWeekend ? "weekend" : ""}" type="button" data-calendar-day="${date}">
-        <strong>${day}</strong>
-        <em>${escapeHtml(weekday)}</em>
-        ${dayTasks.length ? `<span>${dayTasks.length} ${text("tasks")}</span><small>${escapeHtml(getProject(dayTasks[0]))}</small>` : `<span>${text("empty")}</span>`}
-      </button>
-    `;
+      <button class="${cls}" type="button" data-calendar-day="${date}">
+        <span class="cal-dayhead"><span class="cal-daynum">${day}</span>${more}</span>
+        <span class="cal-chips">${chips}</span>
+      </button>`;
   }).join("");
 }
 
@@ -2746,7 +2764,17 @@ function renderCalendar() {
   [calendarStart].forEach((input) => { if (input) input.value = calendarRange.start; });
   [calendarEnd].forEach((input) => { if (input) input.value = calendarRange.end; });
   dashboardCalendar.innerHTML = renderCalendarMarkup(true);
-  calendarBoard.innerHTML = renderCalendarMarkup(false);
+  // Tam board — Lovable üslubu: həftə günü başlığı (B.e-dən başlayır) + aylıq
+  // düzülüş üçün öncül boş xanalar (ilk tarix öz həftə gününə düşsün).
+  const head = AZ_WEEKDAYS_SHORT_MON.map((w) => `<div class="calendar-weekday">${w}</div>`).join("");
+  const days = calendarDays();
+  let leadBlanks = "";
+  if (days.length) {
+    const firstDow = new Date(days[0] + "T00:00:00").getDay(); // 0=Bazar
+    const offset = (firstDow + 6) % 7; // B.e ilə başlayan sürüşmə
+    leadBlanks = Array.from({ length: offset }).map(() => `<div class="calendar-day blank" aria-hidden="true"></div>`).join("");
+  }
+  calendarBoard.innerHTML = head + leadBlanks + renderCalendarMarkup(false);
   renderCalendarDetails();
   // update month label in dashboard nav (az üçün açıq ay adı, "M07" yox)
   if (dashCalMonthLabel && calendarRange.start) {
@@ -3193,6 +3221,67 @@ function ganttDeltaDays(event, state) {
   return Math.round((event.clientX - state.startX) / Math.max(12, cellWidth));
 }
 
+// Lovable üslubu Hesabat analitikası: layihələr üzrə task paylanması (bar) +
+// Plan vs Fakt saat (bar) + xülasə cədvəli. Hamısı real datadan.
+function reportsAnalyticsMarkup(reportTasks, shownProjects) {
+  const rows = shownProjects.map((p) => {
+    const pt = reportTasks.filter((t) => t.project === p.name);
+    const done = pt.filter((t) => t.status === "Bitib").length;
+    const active = pt.filter((t) => t.status === "Davam edir").length;
+    const plan = pt.length - done - active;
+    const planned = pt.reduce((s, t) => s + plannedHoursForTask(t), 0);
+    const actual = pt.reduce((s, t) => s + actualHoursForTask(t), 0);
+    return { name: p.name, done, active, plan, total: pt.length, planned, actual };
+  }).filter((r) => r.total || r.planned);
+  if (!rows.length) return "";
+  const maxTasks = Math.max(1, ...rows.map((r) => Math.max(r.plan, r.active, r.done)));
+  const maxHours = Math.max(1, ...rows.map((r) => Math.max(r.planned, r.actual)));
+  const shortName = (n) => escapeHtml(String(n).split(" ")[0]);
+  const bar = (cls, val, max, label) => `<span class="rep-bar ${cls}" style="height:${Math.round((val / max) * 100)}%" title="${label}: ${val}"></span>`;
+  const taskChart = `
+    <div class="rep-card">
+      <h3 class="rep-title">${text("reportTaskDistribution")}</h3>
+      <p class="rep-sub">${text("reportTaskDistributionSub")}</p>
+      <div class="rep-legend"><span class="lg lg-plan">${text("statusPlan")}</span><span class="lg lg-active">${text("statusActive")}</span><span class="lg lg-done">${text("statusDone")}</span></div>
+      <div class="rep-bars">
+        ${rows.map((r) => `<div class="rep-group"><div class="rep-bar-set">${bar("b-plan", r.plan, maxTasks, text("statusPlan"))}${bar("b-active", r.active, maxTasks, text("statusActive"))}${bar("b-done", r.done, maxTasks, text("statusDone"))}</div><span class="rep-glabel" title="${escapeHtml(r.name)}">${shortName(r.name)}</span></div>`).join("")}
+      </div>
+    </div>`;
+  const hoursChart = `
+    <div class="rep-card">
+      <h3 class="rep-title">${text("reportPlanVsActual")}</h3>
+      <p class="rep-sub">${text("reportPlanVsActualSub")}</p>
+      <div class="rep-legend"><span class="lg lg-plan">${text("plannedHours")}</span><span class="lg lg-done">${text("actualHours")}</span></div>
+      <div class="rep-bars">
+        ${rows.map((r) => `<div class="rep-group"><div class="rep-bar-set">${bar("b-plan", r.planned, maxHours, text("plannedHours"))}${bar("b-done", r.actual, maxHours, text("actualHours"))}</div><span class="rep-glabel" title="${escapeHtml(r.name)}">${shortName(r.name)}</span></div>`).join("")}
+      </div>
+    </div>`;
+  const tableRows = reportTasks.slice(0, 12).map((t) => {
+    const proj = getProject(t) || "";
+    const prog = Number(t.progress) || 0;
+    return `
+      <tr>
+        <td class="rt-name">${escapeHtml(t.name)}</td>
+        <td><span class="rt-proj"><span class="rt-dot" style="--proj-hue:${projectHue(proj)}"></span>${escapeHtml(proj)}</span></td>
+        <td class="rt-muted">${escapeHtml(resourceLabel(t.owner))}</td>
+        <td><span class="badge ${statusClass(t.status)}">${statusLabel(t.status)}</span></td>
+        <td><span class="badge ${priorityClass(t.priority)}">${priorityLabel(t.priority)}</span></td>
+        <td><div class="rt-prog"><div class="rt-prog-bar"><span style="width:${prog}%"></span></div><span class="rt-prog-val">${prog}%</span></div></td>
+      </tr>`;
+  }).join("");
+  const table = `
+    <div class="rep-table-card">
+      <div class="rep-table-head"><h3 class="rep-title">${text("reportProjectSummary")}</h3><p class="rep-sub">${text("reportProjectSummarySub")}</p></div>
+      <div class="rep-table-scroll">
+        <table class="rep-table">
+          <thead><tr><th>${text("taskWord")}</th><th>${text("project")}</th><th>${text("responsible")}</th><th>${text("statusWord")}</th><th>${text("priorityWord")}</th><th>${text("progress")}</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  return `<div class="rep-analytics"><div class="rep-charts">${taskChart}${hoursChart}</div>${table}</div>`;
+}
+
 function renderReports() {
   const selectedProject = projectFilter.value;
   const reportTasks = visibleTasks();
@@ -3266,7 +3355,7 @@ function renderReports() {
     </section>
   ` : "";
 
-  reports.innerHTML = timeChartHtml + summary + reports.innerHTML;
+  reports.innerHTML = reportsAnalyticsMarkup(reportTasks, shownProjects) + summary + timeChartHtml + reports.innerHTML;
 }
 
 // #21 — Layihə açılış detal banneri: task görünüşündə konkret layihə seçiləndə

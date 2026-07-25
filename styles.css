@@ -8666,3 +8666,132 @@ body.dark-mode .new-user-card-title { color: #5eead4; }
 @media (prefers-reduced-motion: reduce) {
   .view.active-view { view-transition-name: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOVABLE RESTYLE (2026-07-25) — "Layihə Vizual" dizaynına uyğun palitra.
+   Kaskadın sonunda авторитет blok: bütün token və sidebar görünüşünü yeniləyir.
+   Geri qaytarmaq üçün bu bloku silmək kifayətdir (backup: tag design-v1-vanilla-20260725).
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --bg: oklch(0.99 0.005 150);
+  --ink: oklch(0.18 0.02 250);
+  --muted: oklch(0.5 0.02 250);
+  --panel: oklch(1 0 0);
+  --line: oklch(0.92 0.008 250);
+  --field: oklch(0.965 0.008 250);
+  --soft: oklch(0.97 0.01 250);
+  --teal: oklch(0.52 0.12 175);   /* brend — canlı teal */
+  --blue: oklch(0.6 0.15 240);
+  --amber: oklch(0.72 0.15 75);
+  --green: oklch(0.6 0.16 155);
+  --red: oklch(0.6 0.22 27);
+  --shadow: 0 1px 2px rgba(2,6,23,.05), 0 12px 30px -16px rgba(2,6,23,.14);
+  --shadow-soft: 0 1px 2px rgba(2,6,23,.05), 0 8px 24px -14px rgba(2,6,23,.10);
+}
+body.dark-mode{
+  --bg: oklch(0.16 0.015 250);
+  --ink: oklch(0.96 0.005 250);
+  --muted: oklch(0.68 0.02 250);
+  --panel: oklch(0.21 0.018 250);
+  --line: oklch(1 0 0 / 8%);
+  --field: oklch(1 0 0 / 10%);
+  --soft: oklch(0.24 0.02 250);
+  --teal: oklch(0.72 0.13 172);
+  --blue: oklch(0.7 0.15 240);
+  --amber: oklch(0.8 0.15 75);
+  --green: oklch(0.72 0.16 155);
+  --red: oklch(0.62 0.22 27);
+}
+/* rounder cards + soft shadows */
+.panel,.dashboard-panel,.task-card,.project-card,.kpi,.stat-card,.platform-hero,.card,.resource-panel,.teams-card,.team-card{
+  border-radius:16px !important;
+}
+.primary,button.primary,.proj-btn,.btn,.view-tab{ border-radius:11px !important; }
+.badge{ border-radius:999px !important; }
+/* LIGHT sidebar — Lovable görünüşü (açıq fon, tünd mətn, teal aktiv) */
+body:not(.dark-mode) .novo-sidebar{
+  background: oklch(0.995 0.005 150) !important;
+  border-right: 1px solid oklch(0.92 0.008 250) !important;
+  box-shadow: 0 0 0 1px rgba(2,6,23,.02) !important;
+  color: oklch(0.3 0.02 250) !important;
+}
+body:not(.dark-mode) .novo-brand strong{ color: oklch(0.2 0.02 250) !important; }
+body:not(.dark-mode) .sidebar-section-label{ color: oklch(0.55 0.02 250) !important; }
+body:not(.dark-mode) .sidebar-menu .view-tab{ color: oklch(0.4 0.02 250) !important; }
+body:not(.dark-mode) .sidebar-menu .view-tab:hover{ background: oklch(0.95 0.04 175) !important; color: oklch(0.32 0.09 175) !important; }
+body:not(.dark-mode) .sidebar-menu .view-tab.active{ color: oklch(0.32 0.09 175) !important; }
+body:not(.dark-mode) .nav-indicator{ background: oklch(0.95 0.04 175) !important; box-shadow: inset 0 0 0 1px oklch(0.52 0.12 175 / .25) !important; }
+body:not(.dark-mode) .menu-icon{ background: oklch(0.96 0.008 250) !important; color: oklch(0.45 0.03 250) !important; }
+body:not(.dark-mode) .sidebar-menu .view-tab.active .menu-icon{ background: oklch(0.52 0.12 175) !important; color:#fff !important; box-shadow: 0 4px 14px oklch(0.52 0.12 175 / .35) !important; }
+body:not(.dark-mode) .sidebar-footer{ background: oklch(0.97 0.01 250) !important; border-color: oklch(0.92 0.008 250) !important; }
+/* DARK sidebar — dərin slate (tünd-yaşıl əvəzinə) */
+body.dark-mode .novo-sidebar{ background: oklch(0.185 0.015 250) !important; border-right: 1px solid oklch(1 0 0 / 6%) !important; }
+
+/* ── Təqvim — Lovable üslubu: aylıq grid + layihə rəngli task çipləri ── */
+#calendarBoard.calendar-grid{ gap:0 !important; border:1px solid var(--line); border-radius:16px; overflow:hidden; background:var(--panel); }
+.calendar-weekday{
+  padding:9px 10px; font-size:.68rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted); background:color-mix(in srgb, var(--soft) 70%, var(--panel));
+  border-bottom:1px solid var(--line); border-right:1px solid var(--line);
+}
+#calendarBoard.calendar-grid .calendar-day{
+  min-height:112px; border:0; border-right:1px solid var(--line); border-bottom:1px solid var(--line);
+  border-radius:0 !important; background:var(--panel); padding:8px; gap:6px; align-content:start;
+  outline:none;
+}
+#calendarBoard .calendar-day.blank{ background:color-mix(in srgb, var(--soft) 55%, var(--panel)); }
+#calendarBoard .calendar-day.today{ background:color-mix(in srgb, var(--teal) 7%, var(--panel)); }
+#calendarBoard .calendar-day.selected{ outline:2px solid var(--teal) !important; outline-offset:-2px; z-index:1; background:color-mix(in srgb, var(--teal) 5%, var(--panel)); }
+.cal-dayhead{ display:flex; align-items:center; justify-content:space-between; }
+.cal-daynum{ display:grid; place-items:center; height:24px; min-width:24px; padding:0 5px; border-radius:999px; font-size:.8rem; font-weight:700; color:var(--ink); }
+#calendarBoard .calendar-day.today .cal-daynum{ background:var(--teal); color:#fff; }
+.cal-chips{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+.cal-chip{
+  display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-size:.66rem; font-weight:600; line-height:1.55; padding:1px 6px; border-radius:6px;
+  color:hsl(var(--proj-hue) 45% 32%); background:hsl(var(--proj-hue) 60% 94%);
+}
+.cal-more{ font-size:.62rem; color:var(--muted); font-weight:700; }
+.cal-count{ display:inline-grid; place-items:center; min-width:18px; height:18px; padding:0 4px; border-radius:999px; font-size:.66rem; font-weight:700; background:color-mix(in srgb,var(--teal) 16%, var(--panel)); color:var(--teal); }
+body.dark-mode .cal-chip{ color:hsl(var(--proj-hue) 72% 80%); background:hsl(var(--proj-hue) 40% 22%); }
+
+/* ── Hesabat — Lovable üslubu analitika (bar chart + Plan/Fakt + cədvəl) ── */
+.rep-analytics{ display:flex; flex-direction:column; gap:16px; margin-bottom:18px; }
+.rep-charts{ display:grid; grid-template-columns:2fr 1fr; gap:16px; }
+.rep-card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:var(--shadow-soft); }
+.rep-title{ margin:0; font-size:.95rem; font-weight:700; color:var(--ink); }
+.rep-sub{ margin:2px 0 12px; font-size:.78rem; color:var(--muted); }
+.rep-legend{ display:flex; gap:14px; margin-bottom:12px; flex-wrap:wrap; }
+.rep-legend .lg{ font-size:.72rem; color:var(--muted); display:inline-flex; align-items:center; gap:6px; }
+.rep-legend .lg::before{ content:""; width:10px; height:10px; border-radius:3px; }
+.lg-plan::before{ background:color-mix(in srgb, var(--muted) 55%, var(--panel)); }
+.lg-active::before{ background:var(--teal); }
+.lg-done::before{ background:var(--green); }
+.rep-bars{ display:flex; align-items:flex-end; gap:14px; height:210px; padding-top:8px; overflow-x:auto; }
+.rep-group{ display:flex; flex-direction:column; align-items:center; gap:8px; flex:1 1 0; min-width:52px; height:100%; }
+.rep-bar-set{ display:flex; align-items:flex-end; justify-content:center; gap:5px; width:100%; flex:1; }
+.rep-bar{ width:16px; min-height:2px; border-radius:6px 6px 0 0; transition:height .5s cubic-bezier(.22,1,.36,1); }
+.rep-bar.b-plan{ background:color-mix(in srgb, var(--muted) 45%, var(--panel)); }
+.rep-bar.b-active{ background:var(--teal); }
+.rep-bar.b-done{ background:var(--green); }
+.rep-glabel{ font-size:.72rem; color:var(--muted); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.rep-table-card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:var(--shadow-soft); }
+.rep-table-head{ padding:16px 18px; }
+.rep-table-scroll{ overflow-x:auto; }
+.rep-table{ width:100%; border-collapse:collapse; font-size:.85rem; }
+.rep-table thead th{ text-align:left; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; padding:8px 16px; background:color-mix(in srgb, var(--soft) 70%, var(--panel)); border-top:1px solid var(--line); }
+.rep-table tbody td{ padding:11px 16px; border-top:1px solid var(--line); vertical-align:middle; }
+.rep-table tbody tr:hover{ background:color-mix(in srgb, var(--soft) 60%, transparent); }
+.rt-name{ font-weight:600; color:var(--ink); }
+.rt-muted{ color:var(--muted); }
+.rt-proj{ display:inline-flex; align-items:center; gap:7px; font-size:.8rem; }
+.rt-dot{ width:8px; height:8px; border-radius:50%; background:hsl(var(--proj-hue) 55% 50%); }
+.rt-prog{ display:flex; align-items:center; gap:8px; }
+.rt-prog-bar{ width:90px; height:6px; border-radius:999px; background:color-mix(in srgb, var(--muted) 22%, transparent); overflow:hidden; }
+.rt-prog-bar span{ display:block; height:100%; border-radius:999px; background:var(--teal); }
+.rt-prog-val{ font-size:.72rem; color:var(--muted); min-width:34px; }
+@media (max-width:900px){ .rep-charts{ grid-template-columns:1fr; } }
+
+/* "Layihə mühiti" (appKicker) sidebar-da açıq emerald idi → ağ fonda az kontrast.
+   Tünd teal → oxunaqlı. */
+body:not(.dark-mode) .novo-brand small{ color: oklch(0.44 0.10 175) !important; letter-spacing:.04em; }
