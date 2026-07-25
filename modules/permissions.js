@@ -40,6 +40,15 @@ function canManageTasks() {
   return ["admin", "manager"].includes(currentUser?.role);
 }
 
+// Komanda quruluşu (üzvlük drag&drop, üzv çıxarma, komanda yaratma/silmə):
+// yalnız admin + manager. Əvvəl teamsSetMembership/remove HEÇ yoxlanmırdı —
+// adi user komandaları sürüşdürüb dəyişə bilirdi (Farid: "istifadəçilər
+// komandaları edit ede bilir, bu bizim loqikaya ziddi"). Silmə hələ də yalnız
+// admin (aşağıda ayrıca isAdmin gate-i qalır) — bu ümumi redaktə gate-idir.
+function canManageTeams() {
+  return ["admin", "manager"].includes(currentUser?.role);
+}
+
 function canContribute() {
   return ["admin", "manager", "user", "contributor"].includes(currentUser?.role);
 }
@@ -48,12 +57,23 @@ function canContribute() {
 // bağlı idi, amma o eyni zamanda "tarix dəyişikliyi sorğusu" və "tamamlandı
 // sorğusu" kimi datanı dəyişən əməliyyatları da açır. Rəhbərlik YALNIZ komment
 // yaza bilməlidir, ona görə iki səlahiyyət ayrıldı.
-function canComment() {
-  return canContribute() || isRehberlik();
+//
+// Task ötürüləndə komment TASK-A GÖRƏ məhdudlaşır (Farid: "istifadəçilər ancaq
+// öz və ya olduqları komandaya aid tasklarda komment yaza bilsinlər"). canSeeTask
+// tam bunu verir: adi user (user/contributor) → yalnız öz/komanda taskı
+// (taskHasDirectAccess); manager → idarə etdiyi layihə tapşırıqları; admin/
+// rəhbərlik → bütün şirkət (nəzarət). viewer/sponsor onsuz da canContribute-dan
+// keçmir. Task verilməyəndə (ümumi yoxlama) yalnız rol yoxlanır.
+function canComment(task) {
+  if (!(canContribute() || isRehberlik())) return false;
+  if (!task) return true;
+  return canSeeTask(task);
 }
 
+// Sponsor artıq YALNIZ oxu rollarındandır (viewer kimi) — heç bir təsdiq/redaktə
+// edə bilməz. Ona görə aşağıdakı gate-lərdən çıxarıldı.
 function canApproveGovernance() {
-  return ["admin", "manager", "sponsor"].includes(currentUser?.role);
+  return ["admin", "manager"].includes(currentUser?.role);
 }
 
 // Register idarəsi: admin (bütün şirkət), manager (öz layihəsi)
@@ -68,11 +88,11 @@ function canManageRegister(item) {
   return false;
 }
 
-// Status dəyişikliyi: admin + manager (öz layihəsi) + sponsor (öz layihəsi)
+// Status dəyişikliyi: admin + manager (öz layihəsi). Sponsor artıq oxu-rejimidir.
 function canChangeRegisterStatus(item) {
   if (!currentUser) return false;
   if (isOrgAdmin()) return true;
-  if (["manager", "sponsor"].includes(currentUser.role)) {
+  if (currentUser.role === "manager") {
     const project = appState.projects.find((p) => p.name === item.project);
     return !!(project?.managerIds?.includes(currentUser.id));
   }
@@ -81,14 +101,14 @@ function canChangeRegisterStatus(item) {
 
 function canApproveDateRequest(task) {
   if (isOrgAdmin()) return true;
-  if (!["manager", "sponsor"].includes(currentUser?.role)) return false;
+  if (currentUser?.role !== "manager") return false;
   const project = appState.projects.find((item) => item.name === task.project);
   return Boolean(project?.managerIds?.includes(currentUser.id));
 }
 
 function canApproveTask(task) {
   if (isOrgAdmin()) return true;
-  if (!["manager", "sponsor"].includes(currentUser?.role)) return false;
+  if (currentUser?.role !== "manager") return false;
   const project = appState.projects.find((item) => item.name === task.project);
   return Boolean(project?.managerIds?.includes(currentUser.id));
 }

@@ -30,7 +30,7 @@ function visibleUserIdsForCurrentUser() {
   if (isSuperAdmin()) return [];
   // Rəhbərlik bütün şirkəti görür — resurs süzgəcləri də admin kimi geniş olmalıdır,
   // yoxsa task siyahısı görünsə də resurs adları "öz sahəsi" ilə məhdudlaşardı.
-  if (isAdmin() || isRehberlik()) return appState.users.filter((user) => user.companyId === currentCompanyId()).map((user) => user.id);
+  if (canReadWholeCompany()) return appState.users.filter((user) => user.companyId === currentCompanyId()).map((user) => user.id);
   if (currentUser.role === "manager") return [currentUser.id, ...managerUsers(currentUser.id).map((user) => user.id)];
   return [currentUser.id];
 }

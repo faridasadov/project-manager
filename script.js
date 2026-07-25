@@ -1635,6 +1635,51 @@ function closeManagerPanel() {
   managerPanelModal.setAttribute("aria-hidden", "true");
 }
 
+// ─── Şəxsi Parametrlər (hər rol üçün) ────────────────────────────────────────
+// Report/bildiriş VƏ görünüş (tema/fon/rəng) kartları admin Settings blokundan
+// bura köçürülür və bağlananda geri qaytarılır. Beləcə user/manager/admin —
+// hamısı öz report vaxtını VƏ temasını təyin edə bilir, DOM/ID tək nüsxə qalır
+// (duplikat forma buq mənbəyidir). Kartlar array-lə idarə olunur.
+const PERSONAL_SETTINGS_CARDS = ["reportPrefsCard", "appearanceCard", "passwordCard"];
+let personalSettingsPlaceholders = [];
+function openPersonalSettings() {
+  if (!currentUser) return;
+  const modal = document.querySelector("#personalSettingsModal");
+  const body = document.querySelector("#personalSettingsBody");
+  if (!modal || !body) return;
+  PERSONAL_SETTINGS_CARDS.forEach((id) => {
+    const card = document.getElementById(id);
+    if (!card) return;
+    if (!personalSettingsPlaceholders.some((p) => p.id === id)) {
+      const ph = document.createComment("personal-settings:" + id);
+      card.before(ph);
+      personalSettingsPlaceholders.push({ id, ph });
+    }
+    body.appendChild(card);
+  });
+  syncReportPrefsForm();
+  // Görünüş selektlərini cari appSettings-dən sinxronla (admin sahələrinə toxunmadan).
+  if (themeModeInput) themeModeInput.value = appSettings.themeMode;
+  if (backgroundStyleInput) backgroundStyleInput.value = appSettings.backgroundStyle;
+  if (accentColorInput) accentColorInput.value = appSettings.accentColor;
+  raiseModal(modal);
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+  document.querySelector("#closePersonalSettings")?.focus();
+}
+function closePersonalSettings() {
+  const modal = document.querySelector("#personalSettingsModal");
+  personalSettingsPlaceholders.forEach(({ ph, id }) => {
+    const card = document.getElementById(id);
+    if (card && ph.parentNode) ph.replaceWith(card);
+  });
+  personalSettingsPlaceholders = [];
+  if (modal) {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+  }
+}
+
 let activeMgrSection = null;
 let activeMgrSectionPlaceholder = null;
 
@@ -2174,6 +2219,10 @@ function renderResourceControls() {
   ensureSelectOption(ownerInput, currentOwner, resourceLabel(currentOwner));
   ownerInput.value = options.some((option) => option.value === currentOwner) ? currentOwner : "";
   if (currentOwner && ownerInput.value !== currentOwner) ownerInput.value = currentOwner;
+  // Sahib (məsul şəxs) YALNIZ manager/admin tərəfindən təyin olunur (Farid).
+  // Müdafiə qatı: composer hər hansı yolla açılsa belə, owner selekti adi user
+  // üçün deaktivdir. Submit onsuz da canManageTasks ilə qorunur.
+  ownerInput.disabled = !canManageTasks();
 
   // Layihə resursunda ŞİRKƏTİN BÜTÜN resursları görünür (rəhbərlik daxil).
   // Əvvəl siyahı yalnız layihəyə bağlı olanlarla məhdudlaşırdı və layihəyə hələ
@@ -2730,6 +2779,14 @@ function renderArchivedProjects() {
   archivedProjectCards.innerHTML = archivedProjectsMarkup(archived);
 }
 
+// Layihə adından deterministik rəng çaları (hue). Eyni layihə → həmişə eyni rəng.
+function projectHue(name) {
+  const s = String(name || "");
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h % 360;
+}
+
 function renderTaskList() {
   const shown = visibleTasks();
 
@@ -2747,15 +2804,53 @@ function renderTaskList() {
     return;
   }
 
-  const paged = shown.slice(0, taskListPage * TASK_PAGE_SIZE);
-  const hasMore = paged.length < shown.length;
-  const countLabel = shown.length > TASK_PAGE_SIZE
-    ? `<div class="task-list-count">${text("showingOf")(paged.length, shown.length)}</div>` : "";
+  // Birdən çox layihə varsa: tapşırıqları layihəyə görə qruplaşdır ki, hansı task
+  // hansı layihəyə aid olduğu ilk baxışdan bilinsin. Tək layihə (və ya filtr) → düz siyahı.
+  const distinctProjects = [...new Set(shown.map((t) => getProject(t) || ""))];
+  const grouped = distinctProjects.length > 1;
+
+  // Qruplaşdırma zamanı eyni layihənin taskları bitişik olsun deyə əvvəlcə
+  // layihə adına, sonra başlama tarixinə görə sırala.
+  const ordered = grouped
+    ? [...shown].sort((a, b) => {
+        const pa = getProject(a) || "", pb = getProject(b) || "";
+        if (pa !== pb) return pa.localeCompare(pb, "az");
+        return parseDate(a.start) - parseDate(b.start);
+      })
+    : shown;
+
+  const paged = ordered.slice(0, taskListPage * TASK_PAGE_SIZE);
+  const hasMore = paged.length < ordered.length;
+  const countLabel = ordered.length > TASK_PAGE_SIZE
+    ? `<div class="task-list-count">${text("showingOf")(paged.length, ordered.length)}</div>` : "";
   const loadMoreBtn = hasMore
-    ? `<button class="load-more-btn" type="button" id="taskLoadMore">${text("loadMore")} (${shown.length - paged.length})</button>` : "";
+    ? `<button class="load-more-btn" type="button" id="taskLoadMore">${text("loadMore")} (${ordered.length - paged.length})</button>` : "";
 
   // per-task card markup → modules/render-markup.js: taskCardMarkup
-  taskList.innerHTML = ownerBanner + countLabel + paged.map(taskCardMarkup).join("") + loadMoreBtn;
+  let body;
+  if (grouped) {
+    const groups = [];
+    let cur = null;
+    for (const task of paged) {
+      const name = getProject(task) || text("noProject");
+      if (!cur || cur.name !== name) { cur = { name, tasks: [] }; groups.push(cur); }
+      cur.tasks.push(task);
+    }
+    body = groups.map((g) => `
+      <section class="task-group" style="--proj-hue:${projectHue(g.name)}">
+        <header class="task-group-head">
+          <span class="task-group-dot"></span>
+          <span class="task-group-name">${escapeHtml(g.name)}</span>
+          <span class="task-group-count">${g.tasks.length}</span>
+        </header>
+        <div class="task-group-body">${g.tasks.map(taskCardMarkup).join("")}</div>
+      </section>
+    `).join("");
+  } else {
+    body = paged.map(taskCardMarkup).join("");
+  }
+
+  taskList.innerHTML = ownerBanner + countLabel + body + loadMoreBtn;
 
   document.querySelector("#clearOwnerFilter")?.addEventListener("click", () => { currentOwnerFilter = ""; taskListPage = 1; render(); });
   document.querySelector("#taskLoadMore")?.addEventListener("click", () => { taskListPage++; renderTaskList(); });
@@ -3562,12 +3657,25 @@ function positionNavIndicator() {
 }
 
 function setView(view) {
-  currentView = view;
-  document.body.dataset.view = view;
-  viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === currentView));
-  positionNavIndicator();
-  if (view === "projects") projectFilter.value = "Hamısı";
-  render();
+  // #6 Görünüşlər arası keçid (View Transitions API). Yalnız aktiv görünüş
+  // konteyneri (.active-view) animasiya olunur — header/sidebar sabit qalır
+  // (CSS-də view-transition-name). Dəstəklənməyən brauzer və ya reduced-motion
+  // olduqda birbaşa tətbiq (fallback). Eyni görünüşə keçiddə də render lazımdır.
+  const apply = () => {
+    currentView = view;
+    document.body.dataset.view = view;
+    viewTabs.forEach((item) => item.classList.toggle("active", item.dataset.view === currentView));
+    positionNavIndicator();
+    if (view === "projects") projectFilter.value = "Hamısı";
+    render();
+  };
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  const sameView = view === currentView;
+  if (!sameView && !reduce && typeof document.startViewTransition === "function") {
+    document.startViewTransition(apply);
+  } else {
+    apply();
+  }
 }
 
 // Test mühitində window stub-dur (addEventListener olmaya bilər) → müdafiəli.
@@ -4041,6 +4149,18 @@ async function createSupabaseSignedUrl(path, expiresIn = 604800) {
   return signedPath ? `${cfg.url}${signedPath}` : "";
 }
 
+// Storage-a göndəriləcək təhlükəsiz content-type. İcra oluna bilən tiplər
+// (html/svg/xhtml) signed URL ilə açılanda skript işlədə bilər — onları
+// octet-stream kimi saxlayırıq (yüklənən fayl, açılan səhifə yox). Naməlum/boş
+// tip də octet-stream olur; bucket allowlist-ində octet-stream var, ona görə
+// hər fayl keçir (əvvəl message/rfc822 kimi tiplər rədd olunurdu).
+function safeUploadContentType(file) {
+  const risky = ["text/html", "image/svg+xml", "application/xhtml+xml", "text/xml", "application/xml"];
+  const t = (file.type || "").toLowerCase();
+  if (!t || risky.includes(t)) return "application/octet-stream";
+  return file.type;
+}
+
 async function uploadSupabaseAttachment(file) {
   const maxFileSize = 10 * 1024 * 1024;
   if (file.size > maxFileSize) throw new Error(text("fileTooLarge"));
@@ -4052,7 +4172,7 @@ async function uploadSupabaseAttachment(file) {
     headers: {
       apikey: cfg.anonKey,
       authorization: `Bearer ${supabaseSession.access_token}`,
-      "content-type": file.type || "application/octet-stream",
+      "content-type": safeUploadContentType(file),
       "x-upsert": "true"
     },
     body: file
@@ -4868,6 +4988,8 @@ async function handleSupabaseAuthRedirect() {
     loginError.textContent = "";
     registerError.textContent = "";
     render();
+    // Recovery email linki: sessiya quruldu, indi istifadəçi yeni parol təyin etməlidir.
+    if (session.type === "recovery") openRecoveryPasswordModal();
     return true;
   } catch (error) {
     loginError.textContent = error.message;
@@ -5870,11 +5992,14 @@ async function submitTaskComment(event) {
   const commentForm = event.target.closest(".comment-form");
   if (!commentForm || !currentUser) return;
   event.preventDefault();
-  if (!canComment()) return;
   const task = appState.tasks.find((item) => item.id === commentForm.dataset.taskId);
+  if (!task) return;
+  // Task-a görə icazə: yalnız öz/komanda taskında (adi user) və ya nəzarət
+  // rollarında (manager öz layihəsi, admin/rəhbərlik hamısı) komment olar.
+  if (!canComment(task)) return;
   const input = commentForm.elements.comment;
   const value = input.value.trim();
-  if (!task || !value) return;
+  if (!value) return;
   const attachmentInput = commentForm.elements.attachments;
   let attachments = [];
   if (attachmentInput?.files?.length) {
@@ -6355,11 +6480,13 @@ function teamsInitial(label) {
 
 function teamsPersonChip(person, teamId) {
   // teamId boşdursa hovuz çipidir; əks halda komanda üzvüdür (çıxarıla bilər).
-  const action = teamId
+  // Adi user üçün komanda oxu-rejimidir: nə çıxarma düyməsi, nə də sürükləmə.
+  const editable = canManageTeams();
+  const action = teamId && editable
     ? `<button type="button" class="team-chip-x" data-team-remove="${escapeHtml(teamId)}" data-value="${escapeHtml(person.value)}" aria-label="Komandadan çıxar" title="Komandadan çıxar">✕</button>`
     : "";
   return `
-    <div class="team-chip" draggable="true" data-value="${escapeHtml(person.value)}" data-from-team="${escapeHtml(teamId || "")}" title="${escapeHtml(person.label)}">
+    <div class="team-chip" draggable="${editable ? "true" : "false"}" data-value="${escapeHtml(person.value)}" data-from-team="${escapeHtml(teamId || "")}" title="${escapeHtml(person.label)}">
       <span class="team-chip-avatar">${teamsInitial(person.label)}</span>
       <span class="team-chip-name">${escapeHtml(person.label)}</span>
       ${action}
@@ -6405,9 +6532,9 @@ function renderTeamsView() {
             ? members.map((m) => teamsPersonChip(m, team.id)).join("")
             : `<p class="team-card-empty">${text("empty")}</p>`}
         </div>
-        <div class="team-card-foot">
+        ${isAdmin() ? `<div class="team-card-foot">
           <button type="button" class="small danger" data-team-delete="${escapeHtml(team.id)}">Sil</button>
-        </div>
+        </div>` : ""}
       </article>`;
   }).join("") : `<p class="empty-hint">${text("empty")}</p>`;
 
@@ -6416,9 +6543,17 @@ function renderTeamsView() {
   pool.innerHTML = free.length
     ? free.map((p) => teamsPersonChip(p, "")).join("")
     : `<p class="team-card-empty">${text("empty")}</p>`;
+
+  // Komanda yaratma/istifadəçi düymələri yalnız admin-də; sürüşdürmə ipucu
+  // yalnız redaktə hüququ olanda mənalıdır (adi user üçün oxu-rejimi).
+  const actions = document.querySelector("#teamsView .teams-actions");
+  if (actions) actions.hidden = !isAdmin();
+  const poolHint = document.querySelector("#teamsView .freeUsersHint, #teamsView .teams-pool-head small");
+  if (poolHint) poolHint.hidden = !canManageTeams();
 }
 
 function teamsSetMembership(value, targetTeamId, fromTeamId) {
+  if (!canManageTeams()) return;
   if (targetTeamId === fromTeamId) return;
   let changed = false;
   appState.teams = appState.teams.map((team) => {
@@ -6683,12 +6818,21 @@ document.querySelector("#authBackBtn")?.addEventListener("click", closeAuthPanel
 
 // ── Password reset ────────────────────────────────────────────────────────
 async function supabaseResetPassword(email) {
-  const r = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
-    method: "POST",
-    headers: { apikey: SUPABASE_ANON_KEY, "content-type": "application/json" },
-    body: JSON.stringify({ email }),
-  });
-  return r.ok;
+  const cfg = supabaseConfig();
+  if (!cfg) return false;
+  // redirect_to: recovery email-dəki link app-ə qayıtsın → openRecoveryPasswordModal açılsın.
+  const redirect = encodeURIComponent(cfg.redirectTo);
+  try {
+    const r = await fetch(`${cfg.url}/auth/v1/recover?redirect_to=${redirect}`, {
+      method: "POST",
+      headers: { apikey: cfg.anonKey, "content-type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    return r.ok;
+  } catch (err) {
+    console.error("supabaseResetPassword:", err);
+    return false;
+  }
 }
 
 document.querySelector("#forgotPasswordLink")?.addEventListener("click", (e) => {
@@ -6716,6 +6860,78 @@ document.querySelector("#resetPasswordForm")?.addEventListener("submit", async (
   } else {
     msgEl.style.color = "var(--danger)";
     msgEl.textContent = text("resetPasswordError");
+  }
+});
+
+// ── Öz parolunu dəyiş (self-service) ────────────────────────────────────────
+// GoTrue: daxil olmuş (və ya recovery sessiyalı) istifadəçi öz parolunu sessiya
+// token-i ilə dəyişir. Current parol tələb olunmur — GoTrue sessiya ilə təsdiq edir.
+async function supabaseUpdateOwnPassword(newPassword) {
+  const cfg = supabaseConfig();
+  if (!cfg) throw new Error("Supabase konfiqurasiyası yoxdur");
+  const token = supabaseSession?.access_token;
+  if (!token) throw new Error("Sessiya yoxdur — yenidən daxil olun");
+  const r = await fetch(`${cfg.url}/auth/v1/user`, {
+    method: "PUT",
+    headers: { apikey: cfg.anonKey, authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ password: newPassword })
+  });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body?.msg || body?.error_description || body?.error || "Parol yenilənmədi");
+  return body;
+}
+
+function validateNewPasswordPair(pw1, pw2) {
+  if (pw1.length < 6) return text("passwordTooShort");
+  if (pw1 !== pw2) return text("passwordMismatch");
+  return "";
+}
+
+// Personal panel → "Parol" kartı: öz parolunu dəyiş
+document.querySelector("#saveOwnPassword")?.addEventListener("click", async () => {
+  const pw1 = document.querySelector("#ownNewPassword")?.value || "";
+  const pw2 = document.querySelector("#ownNewPassword2")?.value || "";
+  const status = document.querySelector("#ownPasswordStatus");
+  const setStatus = (color, msg) => { if (status) { status.style.color = color; status.textContent = msg; } };
+  const err = validateNewPasswordPair(pw1, pw2);
+  if (err) { setStatus("var(--danger)", err); return; }
+  setStatus("var(--muted)", "…");
+  try {
+    await supabaseUpdateOwnPassword(pw1);
+    setStatus("var(--teal)", text("passwordChanged"));
+    document.querySelector("#ownNewPassword").value = "";
+    document.querySelector("#ownNewPassword2").value = "";
+    setTimeout(() => setStatus("var(--muted)", ""), 3000);
+  } catch (e) {
+    setStatus("var(--danger)", e.message);
+  }
+});
+
+// Recovery email linkindən gələndə: məcburi "yeni parol" modalı
+function openRecoveryPasswordModal() {
+  const modal = document.querySelector("#recoveryPasswordModal");
+  if (!modal) return;
+  raiseModal(modal);
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+  setTimeout(() => document.querySelector("#recoveryNewPassword")?.focus(), 50);
+}
+document.querySelector("#saveRecoveryPassword")?.addEventListener("click", async () => {
+  const pw1 = document.querySelector("#recoveryNewPassword")?.value || "";
+  const pw2 = document.querySelector("#recoveryNewPassword2")?.value || "";
+  const status = document.querySelector("#recoveryPasswordStatus");
+  const setStatus = (color, msg) => { if (status) { status.style.color = color; status.textContent = msg; } };
+  const err = validateNewPasswordPair(pw1, pw2);
+  if (err) { setStatus("var(--danger)", err); return; }
+  setStatus("var(--muted)", "…");
+  try {
+    await supabaseUpdateOwnPassword(pw1);
+    const modal = document.querySelector("#recoveryPasswordModal");
+    if (modal) { modal.classList.remove("open"); modal.setAttribute("aria-hidden", "true"); }
+    if (typeof showToast === "function") showToast(text("passwordChanged"));
+    render();
+  } catch (e) {
+    setStatus("var(--danger)", e.message);
   }
 });
 
@@ -6930,6 +7146,11 @@ taskComposerModal.addEventListener("click", (event) => {
   if (event.target.dataset.taskModalClose) closeTaskComposer();
 });
 openAdminPanelButton.addEventListener("click", openAdminPanel);
+document.querySelector("#openPersonalSettings")?.addEventListener("click", openPersonalSettings);
+document.querySelector("#closePersonalSettings")?.addEventListener("click", closePersonalSettings);
+document.querySelector("#personalSettingsModal")?.addEventListener("click", (event) => {
+  if (event.target.dataset.personalSettingsClose) closePersonalSettings();
+});
 document.querySelector("#saveCompanyNameBtn")?.addEventListener("click", saveCompanyName);
 openPlatformAdminPanelButton?.addEventListener("click", openAdminPanel);
 closeAdminPanelButton.addEventListener("click", closeAdminPanel);

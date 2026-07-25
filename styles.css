@@ -130,15 +130,84 @@ body[data-background="canopy"] {
     var(--bg);
 }
 
-body.dark-mode[data-background="aurora"],
-body.dark-mode[data-background="mist"],
-body.dark-mode[data-background="canopy"] {
-  background-blend-mode: screen, normal, normal, normal;
+/* ── Dark mode fonları ───────────────────────────────────────────────────────
+   Light variantlar tünd/ağ tintlərlə qurulub → qaranlıq fonda görünmür ("çoxu
+   seçilmir"). Dark mode-da hər naxış ADDİTİV işıqlı tint alır: struktur xətlər
+   ağın çox aşağı alfası ilə, ambient fonlar isə öz çalarında amma parlaq. */
+body.dark-mode[data-background="grid"] {
+  background:
+    linear-gradient(rgba(148, 163, 184, 0.10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.10) 1px, transparent 1px),
+    var(--bg);
+  background-size: 28px 28px;
 }
 
-body.dark-mode[data-background="carbon"],
+body.dark-mode[data-background="focus"] {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(56, 130, 246, 0.28), transparent 30%),
+    radial-gradient(circle at 80% 10%, rgba(45, 212, 191, 0.22), transparent 26%),
+    var(--bg);
+}
+
+body.dark-mode[data-background="paper"] {
+  background:
+    linear-gradient(0deg, rgba(148, 163, 184, 0.09) 1px, transparent 1px),
+    var(--bg);
+  background-size: 100% 34px;
+}
+
+body.dark-mode[data-background="steel"] {
+  background:
+    linear-gradient(135deg, rgba(96, 125, 165, 0.24), transparent 38%),
+    linear-gradient(225deg, rgba(56, 130, 246, 0.20), transparent 34%),
+    var(--bg);
+}
+
+body.dark-mode[data-background="sunrise"] {
+  background:
+    linear-gradient(135deg, rgba(251, 146, 60, 0.26), transparent 36%),
+    linear-gradient(225deg, rgba(248, 113, 113, 0.18), transparent 32%),
+    var(--bg);
+}
+
+body.dark-mode[data-background="aurora"] {
+  background:
+    linear-gradient(125deg, rgba(45, 212, 191, 0.26), transparent 38%),
+    linear-gradient(245deg, rgba(34, 197, 94, 0.20), transparent 40%),
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(56, 189, 248, 0.14), transparent),
+    var(--bg);
+}
+
 body.dark-mode[data-background="circuit"] {
-  background-color: var(--bg);
+  background:
+    linear-gradient(rgba(96, 125, 246, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(52, 211, 153, 0.15) 1px, transparent 1px),
+    var(--bg);
+  background-size: 42px 42px, 42px 42px, auto;
+}
+
+body.dark-mode[data-background="mist"] {
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -5%, rgba(56, 189, 248, 0.16), transparent),
+    linear-gradient(120deg, rgba(14, 165, 233, 0.18), transparent 34%),
+    linear-gradient(260deg, rgba(45, 212, 191, 0.14), transparent 36%),
+    var(--bg);
+}
+
+body.dark-mode[data-background="carbon"] {
+  background:
+    linear-gradient(135deg, rgba(148, 163, 184, 0.07) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(148, 163, 184, 0.055) 25%, transparent 25%),
+    var(--bg);
+  background-size: 22px 22px;
+}
+
+body.dark-mode[data-background="canopy"] {
+  background:
+    linear-gradient(120deg, rgba(34, 197, 94, 0.24), transparent 36%),
+    linear-gradient(250deg, rgba(251, 191, 36, 0.16), transparent 38%),
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(74, 222, 128, 0.12), transparent),
+    var(--bg);
 }
 
 body[data-accent="blue"] {
@@ -339,6 +408,11 @@ body.logged-in.manager-role #openManagerPanel:hover {
   opacity: 0.88;
 }
 
+/* Şəxsi parametrlər düyməsi — HƏR rol üçün (yalnız logged-in). Hər istifadəçi
+   öz e-poçt/hesabat vaxtını buradan idarə edir. */
+#openPersonalSettings { display: none; }
+body.logged-in #openPersonalSettings { display: inline-flex; }
+
 /* Manager panel modal kicker rəngi */
 .manager-panel-modal .modal-head .kicker {
   color: #0f766e;
@@ -366,7 +440,11 @@ body.non-manager-role #openTaskComposer {
   display: none;
 }
 
+/* Viewer/sponsor = yalnız oxu: bütün task əməliyyat düymələri (redaktə, növbəti,
+   təsdiq, sil), komment forması və vaxt-qeyd forması gizli — yalnız "Bax" qalır. */
 body.readonly-role .task-actions .next-action,
+body.readonly-role .task-actions .edit-action,
+body.readonly-role .task-actions .danger-action,
 body.readonly-role .comment-form,
 body.readonly-role .time-entry-form {
   display: none;
@@ -3782,6 +3860,10 @@ textarea:focus {
 .workspace {
   display: grid;
   gap: 18px;
+  /* Grid elementi standart min-width:auto ilə məzmundan (məs. geniş Gantt/cədvəl)
+     kiçilə bilmir → səhifəni üfüqi daşdırır. min-width:0 daxili overflow-x:auto
+     konteynerlərin (gantt, cədvəl) düzgün sürüşməsinə imkan verir. */
+  min-width: 0;
 }
 
 .project-context-bar {
@@ -4351,6 +4433,7 @@ textarea:focus {
 
 .active-view {
   display: block;
+  min-width: 0;
 }
 
 .panel {
@@ -4786,14 +4869,16 @@ textarea:focus {
    task səhifə boyu uzanırdı, geniş ekranda sətir çox uzun olub oxunmurdu. */
 .task-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  /* min(100%, 420px): konteyner 420px-dən dar olanda (telefon) sütun 100%-ə enir,
+     420px sabit qalıb səhifəni daşdırmır. */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
   gap: 12px;
   align-items: start;
 }
 
 .project-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr));
   gap: 14px;
   align-items: start;
 }
@@ -6384,6 +6469,19 @@ button:disabled {
     flex-wrap: wrap;
   }
 
+  /* Bölmə başlığı (məs. Gantt) mobildə şaquli yığılır ki, sağdakı zoom
+     idarəçiləri (gantt-controls) səhifəni üfüqi daşdırmasın. */
+  .section-head {
+    grid-template-columns: 1fr;
+  }
+  .section-head > * {
+    min-width: 0;
+  }
+  .gantt-controls {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
   .summary {
     grid-template-columns: 1fr 1fr;
   }
@@ -6454,8 +6552,16 @@ body {
 
 .novo-sidebar {
   border: none;
-  background: linear-gradient(180deg, #0c2a26 0%, #114b41 55%, #0c2a26 100%);
-  box-shadow: 4px 0 32px rgba(6, 30, 26, 0.35);
+  /* Light mode: əvvəl tünd yaşıl gradient birbaşa ağ fona sərt keçirdi. İndi daha
+     yumşaq, dərin teal-yaşıl + sağ kənarda incə açılma (highlight) və yumşaq
+     neytral kölgə — ağ məzmunla keçid rahatdır (sərt sərhəd yoxdur). */
+  background:
+    linear-gradient(270deg, rgba(255, 255, 255, 0.06), transparent 14%),
+    linear-gradient(180deg, #12463d 0%, #0f3d35 52%, #10423a 100%);
+  /* Sərt sərhəd yox — sağ kənarda geniş yumşaq yaşıl işıqlanma: yaşıl ~40px
+     məzmuna doğru tədricən əriyir (перелив), birdən ağa çevrilmir. */
+  border-right: none;
+  box-shadow: 36px 0 48px -14px rgba(17, 78, 67, 0.40);
 }
 
 .brand-mark {
@@ -6525,6 +6631,46 @@ body {
   border-radius: 0 999px 999px 0;
   background: #2dd4bf;
 }
+
+/* ── Dark mode: sol panel (modern, tema-uyğun) ───────────────────────────────
+   Light-də sidebar yaşıl gradient-dir; dark mode-da o yaşıl qalıb qalan tünd
+   interfeyslə uyğunsuz görünürdü. İndi tünd slate/navy — vurğular (aktiv/hover/
+   ikon/göstərici) accent rənginə (var(--teal)) bağlıdır, ona görə istifadəçinin
+   seçdiyi "Əsas rəng" ilə birlikdə dəyişir. */
+body.dark-mode .novo-sidebar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 42%),
+    linear-gradient(180deg, #0e1626 0%, #101c30 55%, #0a111e 100%);
+  border-right: 1px solid rgba(148, 163, 184, 0.10);
+  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.48);
+}
+body.dark-mode .menu-icon {
+  background: rgba(148, 163, 184, 0.10);
+  color: #cbd5e1;
+}
+body.dark-mode .sidebar-menu .view-tab.active .menu-icon {
+  background: var(--teal);
+  color: #fff;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--teal) 45%, transparent);
+}
+body.dark-mode .novo-brand strong { color: #e8eef7; }
+body.dark-mode .novo-brand small,
+body.dark-mode .sidebar-section-label { color: #8593ab; }
+body.dark-mode .sidebar-menu .view-tab { color: #aab6c9; }
+body.dark-mode .sidebar-menu .view-tab:hover {
+  background: rgba(148, 163, 184, 0.10);
+  color: #eef3fa;
+}
+body.dark-mode .sidebar-menu .view-tab.active {
+  background: color-mix(in srgb, var(--teal) 24%, transparent);
+  color: #f2f6fc;
+  border-color: color-mix(in srgb, var(--teal) 36%, transparent);
+}
+body.dark-mode .sidebar-menu .view-tab.active::before {
+  background: var(--teal);
+}
+body.dark-mode .sidebar-footer,
+body.dark-mode .novo-sidebar .sidebar-footer { color: #8593ab; }
 
 .top-shell {
   position: sticky;
@@ -7334,6 +7480,80 @@ body[data-view="dashboard"] .summary {
   margin-bottom: 6px;
 }
 
+/* ── Tapşırıqların layihəyə görə qruplaşdırılması ──────────────────────────
+   Hər layihə öz rəng çaları (--proj-hue) ilə. Başlıq + kart sol zolağı + etiket
+   eyni rəngdə → hansı task hansı layihəyə aid, ilk baxışdan bilinir. */
+.task-group {
+  margin-bottom: 22px;
+}
+.task-group-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 14px;
+  margin-bottom: 12px;
+  border-radius: 11px;
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: hsl(var(--proj-hue) 42% 30%);
+  background: hsl(var(--proj-hue) 62% 96%);
+  border-left: 4px solid hsl(var(--proj-hue) 58% 46%);
+  position: sticky;
+  top: 6px;
+  z-index: 3;
+  backdrop-filter: blur(6px);
+}
+.task-group-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: hsl(var(--proj-hue) 60% 46%);
+  box-shadow: 0 0 0 3px hsl(var(--proj-hue) 60% 46% / 0.18);
+  flex: none;
+}
+.task-group-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-group-count {
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: hsl(var(--proj-hue) 42% 34%);
+  background: hsl(var(--proj-hue) 60% 90%);
+  border-radius: 999px;
+  padding: 1px 9px;
+  flex: none;
+}
+.task-group .task-card {
+  border-left: 3px solid hsl(var(--proj-hue) 55% 55%);
+}
+.task-group .task-project-tag {
+  color: hsl(var(--proj-hue) 45% 32%);
+  background: hsl(var(--proj-hue) 60% 95%);
+  border-color: hsl(var(--proj-hue) 45% 80%);
+}
+
+/* Dark mode: mətn açıq, fon tünd — kontrast qorunur */
+body.dark-mode .task-group-head {
+  color: hsl(var(--proj-hue) 70% 78%);
+  background: hsl(var(--proj-hue) 40% 16%);
+  border-left-color: hsl(var(--proj-hue) 60% 55%);
+}
+body.dark-mode .task-group-count {
+  color: hsl(var(--proj-hue) 70% 82%);
+  background: hsl(var(--proj-hue) 45% 24%);
+}
+body.dark-mode .task-group .task-card {
+  border-left-color: hsl(var(--proj-hue) 55% 50%);
+}
+body.dark-mode .task-group .task-project-tag {
+  color: hsl(var(--proj-hue) 70% 80%);
+  background: hsl(var(--proj-hue) 40% 20%);
+  border-color: hsl(var(--proj-hue) 45% 38%);
+}
+
 /* ── Workload items as buttons ───────────────────────────────────── */
 button.workload-item,
 button.compact-item {
@@ -7379,42 +7599,61 @@ button.compact-item.warning:hover {
     overflow: hidden;
   }
 
+  /* Bottom nav-da yalnız naviqasiya menyusu qalır — brend, etiketlər, komanda
+     yüklənməsi footer-i gizlənir (əks halda bar 141px hündür olub daşırdı). */
   .novo-brand,
   .sidebar-section-label,
   .sidebar-menu > span,
-  .sidebar-bottom {
-    display: none;
+  .sidebar-bottom,
+  .sidebar-footer {
+    display: none !important;
   }
 
+  /* 8 tab bir sıraya sığmır → üfüqi sürüşən bar. Aktiv tab avtomatik görünəcək. */
   .sidebar-menu {
     display: flex;
     flex-direction: row;
-    justify-content: space-around;
-    gap: 0;
-    padding: 4px 0;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 2px;
+    padding: 4px 2px;
   }
+  .sidebar-menu::-webkit-scrollbar { display: none; }
 
-  .view-tab {
-    flex: 1;
+  /* Selector base .sidebar-menu .view-tab (display:grid, tam en) ilə eyni
+     specificity — sonra gəldiyi üçün qalib gəlir. Hər tab ikon üstdə, kiçik
+     etiket altda, dar (~64px) → 8 tab üfüqi sürüşən barda yerləşir. */
+  .sidebar-menu .view-tab {
+    display: flex;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 62px;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 0.68rem;
-    min-height: 52px;
-    padding: 6px 2px 4px;
+    font-size: 0.62rem;
+    line-height: 1.1;
+    min-height: 50px;
+    padding: 6px 8px 4px;
     border-radius: 8px;
     gap: 3px;
+    white-space: nowrap;
+    text-align: center;
   }
 
   .menu-icon {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     width: auto;
     height: auto;
   }
 
   /* Push app shell above bottom nav */
   #appShell {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
   }
 
   /* Task cards — full width, larger tap targets */
@@ -8388,4 +8627,42 @@ body.dark-mode .new-user-card-title { color: #5eead4; }
   .login-hero-topbar, .hero-eyebrow, .login-hero-title, .login-hero-sub,
   .hero-cta-row, .login-feature-list li, .hero-ipma-block, .login-hero-stats,
   .hero-cta-primary, .hero-eyebrow-dot { animation: none; }
+}
+
+/* ── #6 Görünüşlər arası keçid (View Transitions API) ─────────────────────────
+   dashboard ↔ tasklar ↔ layihələr ↔ gantt ↔ komanda ↔ hesabat keçidində aktiv
+   görünüş yumşaq sürüşmə + fade ilə əvəz olunur. Yalnız .active-view adlandırılıb,
+   ona görə header/sidebar/nav sabit qalır. Fallback: startViewTransition olmayan
+   brauzerdə keçid sadəcə ani baş verir (JS-də yoxlanılır). */
+@media (prefers-reduced-motion: no-preference) {
+  .view.active-view {
+    view-transition-name: pm-active-view;
+  }
+}
+
+::view-transition-old(pm-active-view) {
+  animation: pm-view-out 200ms ease both;
+}
+::view-transition-new(pm-active-view) {
+  animation: pm-view-in 300ms cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+@keyframes pm-view-out {
+  to { opacity: 0; transform: translateY(-10px) scale(0.992); }
+}
+@keyframes pm-view-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.992); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Kök snapshot (header/sidebar) dəyişmədiyi üçün crossfade-i söndürürük —
+   yalnız məzmun animasiya olsun, fon sabit dursun. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view.active-view { view-transition-name: none; }
 }

@@ -42,6 +42,21 @@ function isRehberlik() {
   return currentUser?.role === "rehberlik";
 }
 
+// Viewer və sponsor: bütün şirkət task/layihələrini GÖRÜR (yalnız oxu) — amma
+// heç nə redaktə edə və komment yaza bilmir (Farid: "viewer və sponsor bütün
+// task və layihələri görür amma heç nə redaktə edib və komment yaza bilmir,
+// amma oxuya bilir"). Görünürlük admin/rəhbərlik səviyyəsindədir; idarəetmə və
+// komment gate-lərinə QƏSDƏN daxil edilmir (canManageTasks/canComment onları
+// onsuz da kənarda saxlayır).
+function isReadonlyObserver() {
+  return ["viewer", "sponsor"].includes(currentUser?.role);
+}
+
+// Bütün şirkəti oxuya bilən rollar: admin, rəhbərlik, viewer, sponsor.
+function canReadWholeCompany() {
+  return isAdmin() || isRehberlik() || isReadonlyObserver();
+}
+
 // ── Visibility / access control ──────────────────────────────────────────────
 // These reference resourceInCurrentScope / linkedResourcesForProject (hoisted
 // globals still in script.js) at call time — cross-file runtime calls are fine.
@@ -65,7 +80,7 @@ function canSeeProject(project) {
   if (!currentUser) return true;
   if (isSuperAdmin()) return false;
   if (projectCompanyId(project) !== currentCompanyId()) return false;
-  if (isAdmin() || isRehberlik()) return true;
+  if (canReadWholeCompany()) return true;
   return projectHasRoleAccess(project)
     || projectHasResourceAccess(project.name)
     || appState.tasks.some((task) => task.project === project.name && taskHasDirectAccess(task));
@@ -88,8 +103,8 @@ function canSeeTask(task) {
   if (isSuperAdmin()) return false;
   if (taskCompanyId(task) !== currentCompanyId()) return false;
   const project = appState.projects.find((item) => item.name === task.project);
-  if ((isAdmin() || isRehberlik()) && (!project || isSameCompany(project))) return true;
-  if (["manager", "sponsor"].includes(currentUser.role)) {
+  if (canReadWholeCompany() && (!project || isSameCompany(project))) return true;
+  if (currentUser.role === "manager") {
     return projectHasRoleAccess(project) || taskHasDirectAccess(task);
   }
   return taskHasDirectAccess(task);

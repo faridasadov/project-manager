@@ -269,7 +269,7 @@ function renderTaskInlineComments(task) {
   const more = comments.length > recent.length
     ? `<button class="inline-link" type="button" data-action="view" data-id="${task.id}">${comments.length} ${text("comments")}</button>`
     : "";
-  const formHtml = task.status === "Bitib" ? "" : `
+  const formHtml = (task.status === "Bitib" || !canComment(task)) ? "" : `
     <form class="comment-form task-inline-comment-form" data-task-id="${task.id}">
       <button class="comment-compose-trigger" type="button" data-action="expand-comment" aria-label="${text("commentPlaceholder")}">
         <span>💬</span> ${text("commentPlaceholder")}…
@@ -302,26 +302,36 @@ function renderTaskInlineComments(task) {
 
 // Task kartı əməliyyat düymələri. Deps: escapeHtml(dolayı), text, isTaskBlocked (dependencies.js),
 //   canApproveTask (permissions.js).
+// Task əməliyyat düymələri icazəyə görə ŞƏRTİ render olunur (Farid: adi user
+// taski redaktə/sil/ləğv edə bilməz; yalnız baxa və öz işini "tamamla sorğusu"
+// ilə irəli apara bilər). Əvvəl bütün düymələr hər kəsə görünürdü (handler-lər
+// inert idi, amma user "redaktə edə bilirəm" təəssüratı alırdı) — indi manager/
+// admin olmayan üçün Redaktə/Növbəti/Sil ÜMUMİYYƏTLƏ render olunmur.
 function renderTaskActions(task) {
-  let actions = "";
+  const manage = canManageTasks();
+  let actions = `<button class="action-button" type="button" data-action="view" data-id="${task.id}">Bax</button>`;
   if (task.status === "Bitib") {
-    actions = `
-        <button class="action-button" type="button" data-action="view" data-id="${task.id}">Bax</button>
+    if (manage) {
+      actions += `
         <button class="action-button next-action" type="button" data-action="reopen" data-id="${task.id}">${text("reopen")}</button>
-        <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
-      `;
+        <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>`;
+    }
   } else {
     const blocked = isTaskBlocked(task);
+    // Tamamla sorğusu / təsdiq: user öz işini irəli apara bilər (canContribute).
     const completionAction = task.completionRequestedAt
       ? `${canApproveTask(task) ? `<button class="action-button next-action" type="button" data-action="approve-done" data-id="${task.id}">${text("approveDone")}</button>` : `<span class="pending-label">${text("pendingDone")}</span>`}`
-      : `<button class="action-button next-action" type="button" data-action="request-done" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("doneRequest")}</button>`;
-    actions = `
-        <button class="action-button" type="button" data-action="view" data-id="${task.id}">Bax</button>
+      : `${canContribute() ? `<button class="action-button next-action" type="button" data-action="request-done" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("doneRequest")}</button>` : ""}`;
+    if (manage) {
+      actions += `
         <button class="action-button edit-action" type="button" data-action="edit" data-id="${task.id}">${text("edit")}</button>
-        <button class="action-button next-action" type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}</button>
-        ${completionAction}
-        <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>
-      `;
+        <button class="action-button next-action" type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}</button>`;
+    }
+    actions += completionAction;
+    if (manage) {
+      actions += `
+        <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>`;
+    }
   }
   return `<div class="task-actions">${actions}</div>`;
 }
@@ -344,7 +354,7 @@ function renderComments(task) {
     </div>
   `).join("") : `<div class="comment-empty">${text("noComments")}</div>`;
 
-  const formHtml = task.status === "Bitib" ? "" : `
+  const formHtml = (task.status === "Bitib" || !canComment(task)) ? "" : `
       <form class="comment-form" data-task-id="${task.id}">
         <textarea name="comment" rows="3" placeholder="${text("commentPlaceholder")}" required></textarea>
         <label class="file-picker">
@@ -433,16 +443,25 @@ function renderKanbanActions(task) {
   const icoNext = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
   const icoTrash = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
   const icoReopen = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>`;
-  const actions = task.status === "Bitib"
-    ? `
+  // İcazəyə görə şərti (renderTaskActions ilə eyni siyasət): manager/admin
+  // olmayan Redaktə/Növbəti/Sil görmür, yalnız "Tamamla sorğusu" (canContribute).
+  const manage = canManageTasks();
+  let actions = "";
+  if (task.status === "Bitib") {
+    if (manage) {
+      actions = `
         <button class="kb-btn kb-btn-ghost" type="button" data-action="reopen" data-id="${task.id}">${icoReopen}${text("reopen")}</button>
-        <button class="kb-btn kb-btn-danger" type="button" data-action="delete" data-id="${task.id}">${icoTrash}${text("delete")}</button>
-      `
-    : `
+        <button class="kb-btn kb-btn-danger" type="button" data-action="delete" data-id="${task.id}">${icoTrash}${text("delete")}</button>`;
+    }
+  } else if (manage) {
+    actions = `
         <button class="kb-btn kb-btn-ghost" type="button" data-action="edit" data-id="${task.id}">${icoEdit}${text("edit")}</button>
         <button class="kb-btn kb-btn-primary" type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}${icoNext}</button>
-        <button class="kb-btn kb-btn-danger" type="button" data-action="delete" data-id="${task.id}">${icoTrash}${text("delete")}</button>
-      `;
+        <button class="kb-btn kb-btn-danger" type="button" data-action="delete" data-id="${task.id}">${icoTrash}${text("delete")}</button>`;
+  } else if (!task.completionRequestedAt && canContribute()) {
+    actions = `
+        <button class="kb-btn kb-btn-primary" type="button" data-action="request-done" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("doneRequest")}</button>`;
+  }
   return `<div class="kanban-actions">${actions}</div>`;
 }
 

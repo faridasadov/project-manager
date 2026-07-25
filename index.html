@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20260723-perms">
+  <link rel="stylesheet" href="styles.css?v=20260725-mobile2">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#136f63">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -300,6 +300,9 @@
         <button id="notifyButton" class="header-btn icon-only notify-button" type="button" title="Bildirişlər" aria-label="Bildirişlər" data-i18n-aria="notify">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span id="notifyUnreadCount" class="notify-badge" hidden>0</span>
+        </button>
+        <button id="openPersonalSettings" type="button" class="header-btn icon-only" title="Parametrlər" aria-label="Parametrlər" data-i18n-aria="personalSettings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <button id="openManagerPanel" type="button" class="header-btn" title="Manager paneli">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
@@ -855,7 +858,7 @@
                 <p class="field-hint" style="margin:0 0 10px">Hər dəyişiklik serverdə avtomatik arxivlənir. Yaxın keçmiş sıx, uzaq keçmiş seyrək saxlanılır: son 1 saat — hamısı · son 24 saat — hər 30 dəq · 1–7 gün — hər 3 saat · 7–90 gün — gündə bir. Offline olduqda bu brauzerin lokal nüsxələri göstərilir.</p>
                 <div id="snapshotList" class="snapshot-list"><em style="color:var(--muted);font-size:.83rem">Snapshot yoxdur</em></div>
               </div>
-              <div class="settings-card">
+              <div class="settings-card" id="reportPrefsCard">
                 <h3 data-i18n="reportSettings">Bildiriş və Hesabatlar</h3>
                 <p class="field-hint" style="margin:0 0 10px" data-i18n="reportSettingsHint">Öz e-poçtunu və hesabat vaxtlarını təyin et. Hesabatlar yalnız sənə gəlir.</p>
                 <label>
@@ -898,7 +901,7 @@
                 <button id="saveReportPrefs" type="button" class="primary" style="margin-top:10px" data-i18n="saveReportPrefs">Yadda saxla</button>
                 <p id="reportPrefsStatus" class="settings-status"></p>
               </div>
-              <div class="settings-card">
+              <div class="settings-card" id="appearanceCard">
                 <h3 data-i18n="appearanceSettings">Görünüş</h3>
                 <div class="appearance-fields">
                   <label>
@@ -939,6 +942,20 @@
                     </select>
                   </label>
                 </div>
+              </div>
+              <div class="settings-card" id="passwordCard">
+                <h3 data-i18n="passwordSettings">Parol</h3>
+                <p class="field-hint" style="margin:0 0 10px" data-i18n="passwordSettingsHint">Öz parolunu dəyiş. Ən azı 6 simvol.</p>
+                <label>
+                  <span data-i18n="newPassword">Yeni parol</span>
+                  <input id="ownNewPassword" type="password" autocomplete="new-password" minlength="6" placeholder="••••••">
+                </label>
+                <label>
+                  <span data-i18n="confirmPassword">Yeni parol (təkrar)</span>
+                  <input id="ownNewPassword2" type="password" autocomplete="new-password" minlength="6" placeholder="••••••">
+                </label>
+                <button id="saveOwnPassword" type="button" class="primary" style="margin-top:10px" data-i18n="changePasswordBtn">Parolu dəyiş</button>
+                <p id="ownPasswordStatus" class="settings-status"></p>
               </div>
               <div class="settings-card admin-only">
                 <h3 data-i18n="workflowSettings">Workflow</h3>
@@ -1425,6 +1442,51 @@
       </div>
 
       <!-- ═══════════════════════ MANAGER PANELİ ═══════════════════════ -->
+      <!-- Parol bərpası: recovery email linkindən gələndə (type=recovery) burada
+           yeni parol təyin olunur (updateUser). Bağlana bilməz — parol qoyulmalıdır. -->
+      <div id="recoveryPasswordModal" class="modal-shell" aria-hidden="true">
+        <div class="modal-backdrop"></div>
+        <section class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="recoveryPasswordTitle" style="max-width:420px">
+          <div class="modal-head">
+            <div>
+              <p class="kicker" data-i18n="passwordReset">Parol bərpası</p>
+              <h2 id="recoveryPasswordTitle" data-i18n="setNewPassword">Yeni parol təyin et</h2>
+            </div>
+          </div>
+          <div class="admin-section-body" style="display:grid;gap:12px">
+            <p class="field-hint" data-i18n="setNewPasswordHint">Hesabınız üçün yeni parol daxil edin. Ən azı 6 simvol.</p>
+            <label>
+              <span data-i18n="newPassword">Yeni parol</span>
+              <input id="recoveryNewPassword" type="password" autocomplete="new-password" minlength="6" placeholder="••••••">
+            </label>
+            <label>
+              <span data-i18n="confirmPassword">Yeni parol (təkrar)</span>
+              <input id="recoveryNewPassword2" type="password" autocomplete="new-password" minlength="6" placeholder="••••••">
+            </label>
+            <button id="saveRecoveryPassword" type="button" class="primary" data-i18n="setNewPassword">Yeni parol təyin et</button>
+            <p id="recoveryPasswordStatus" class="settings-status"></p>
+          </div>
+        </section>
+      </div>
+
+      <!-- Şəxsi parametrlər: hər istifadəçi (user/manager/admin) öz e-poçt və
+           hesabat vaxtlarını buradan idarə edir. Report kartı admin Settings
+           blokundan bura KÖÇÜRÜLÜR (duplikat DOM/ID yaratmırıq) və bağlananda
+           geri qaytarılır — openManagerSection ilə eyni nümunə. -->
+      <div id="personalSettingsModal" class="modal-shell admin-section-shell" aria-hidden="true">
+        <div class="modal-backdrop" data-personal-settings-close="true"></div>
+        <section class="admin-modal admin-section-modal" role="dialog" aria-modal="true" aria-labelledby="personalSettingsTitle">
+          <div class="modal-head">
+            <div>
+              <p class="kicker" data-i18n="personalSettings">Parametrlər</p>
+              <h2 id="personalSettingsTitle" data-i18n="personalSettingsTitle">Şəxsi parametrlər</h2>
+            </div>
+            <button id="closePersonalSettings" class="icon-button" type="button" aria-label="Bağla" data-personal-settings-close="true">×</button>
+          </div>
+          <div id="personalSettingsBody" class="admin-section-body settings-grid"></div>
+        </section>
+      </div>
+
       <div id="managerPanelModal" class="modal-shell" aria-hidden="true">
         <div class="modal-backdrop" data-mgr-panel-close="true"></div>
         <section class="admin-modal manager-panel-modal" role="dialog" aria-modal="true" aria-labelledby="managerPanelTitle">
@@ -1941,33 +2003,33 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="supabase/supabase-config.js"></script>
-  <script src="modules/state.js?v=20260723-perms"></script>
-  <script src="modules/translations.js?v=20260723-perms"></script>
-  <script src="modules/ids.js?v=20260723-perms"></script>
-  <script src="modules/crypto.js?v=20260723-perms"></script>
-  <script src="modules/seed-data.js?v=20260723-perms"></script>
-  <script src="modules/utils.js?v=20260723-perms"></script>
-  <script src="modules/labels.js?v=20260723-perms"></script>
-  <script src="modules/format.js?v=20260723-perms"></script>
-  <script src="modules/normalize.js?v=20260723-perms"></script>
-  <script src="modules/storage.js?v=20260723-perms"></script>
-  <script src="modules/tenant.js?v=20260723-perms"></script>
-  <script src="modules/scope.js?v=20260723-perms"></script>
-  <script src="modules/dependencies.js?v=20260723-perms"></script>
-  <script src="modules/notifications.js?v=20260723-perms"></script>
-  <script src="modules/company.js?v=20260723-perms"></script>
-  <script src="modules/governance.js?v=20260723-perms"></script>
-  <script src="modules/permissions.js?v=20260723-perms"></script>
-  <script src="modules/project-crud.js?v=20260723-perms"></script>
-  <script src="modules/metrics.js?v=20260723-perms"></script>
-  <script src="modules/lookups.js?v=20260723-perms"></script>
-  <script src="modules/option-builders.js?v=20260723-perms"></script>
-  <script src="modules/render-markup.js?v=20260723-perms"></script>
-  <script src="modules/onboarding.js?v=20260723-perms"></script>
-  <script src="modules/project-chat.js?v=20260723-perms"></script>
-  <script src="modules/hero-signal-field.js?v=20260723-perms"></script>
-  <script src="modules/glide-reveal.js?v=20260723-perms"></script>
-  <script src="script.js?v=20260723-perms"></script>
+  <script src="modules/state.js?v=20260725-mobile2"></script>
+  <script src="modules/translations.js?v=20260725-mobile2"></script>
+  <script src="modules/ids.js?v=20260725-mobile2"></script>
+  <script src="modules/crypto.js?v=20260725-mobile2"></script>
+  <script src="modules/seed-data.js?v=20260725-mobile2"></script>
+  <script src="modules/utils.js?v=20260725-mobile2"></script>
+  <script src="modules/labels.js?v=20260725-mobile2"></script>
+  <script src="modules/format.js?v=20260725-mobile2"></script>
+  <script src="modules/normalize.js?v=20260725-mobile2"></script>
+  <script src="modules/storage.js?v=20260725-mobile2"></script>
+  <script src="modules/tenant.js?v=20260725-mobile2"></script>
+  <script src="modules/scope.js?v=20260725-mobile2"></script>
+  <script src="modules/dependencies.js?v=20260725-mobile2"></script>
+  <script src="modules/notifications.js?v=20260725-mobile2"></script>
+  <script src="modules/company.js?v=20260725-mobile2"></script>
+  <script src="modules/governance.js?v=20260725-mobile2"></script>
+  <script src="modules/permissions.js?v=20260725-mobile2"></script>
+  <script src="modules/project-crud.js?v=20260725-mobile2"></script>
+  <script src="modules/metrics.js?v=20260725-mobile2"></script>
+  <script src="modules/lookups.js?v=20260725-mobile2"></script>
+  <script src="modules/option-builders.js?v=20260725-mobile2"></script>
+  <script src="modules/render-markup.js?v=20260725-mobile2"></script>
+  <script src="modules/onboarding.js?v=20260725-mobile2"></script>
+  <script src="modules/project-chat.js?v=20260725-mobile2"></script>
+  <script src="modules/hero-signal-field.js?v=20260725-mobile2"></script>
+  <script src="modules/glide-reveal.js?v=20260725-mobile2"></script>
+  <script src="script.js?v=20260725-mobile2"></script>
   <!-- vanilla Motion (framer-motion sibling) — KPI count-up & spring mikro-interaksiyalar -->
   <script type="module">
     import { animate } from "./modules/vendor/motion.js?v=20260714-motion";

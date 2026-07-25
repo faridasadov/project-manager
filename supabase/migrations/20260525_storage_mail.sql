@@ -7,7 +7,21 @@ values (
   'project-attachments',
   false,
   10485760,
-  array['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'text/plain']
+  array[
+    'image/jpeg','image/png','image/webp','image/gif','image/bmp','image/tiff','image/heic','image/heif',
+    'application/pdf',
+    'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/rtf',
+    'application/vnd.oasis.opendocument.text','application/vnd.oasis.opendocument.spreadsheet','application/vnd.oasis.opendocument.presentation',
+    'text/plain','text/csv','text/markdown','text/tab-separated-values',
+    'application/zip','application/x-zip-compressed','application/x-rar-compressed','application/vnd.rar','application/x-7z-compressed','application/gzip','application/x-tar',
+    'message/rfc822','application/vnd.ms-outlook',
+    'application/json',
+    'audio/mpeg','audio/wav','audio/ogg','video/mp4','video/webm','video/quicktime',
+    'application/octet-stream'
+  ]
 )
 on conflict (id) do update
 set
