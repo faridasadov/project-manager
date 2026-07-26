@@ -8875,16 +8875,3 @@ body.dark-mode .novo-sidebar .sidebar-menu .view-tab.active .menu-icon{ color: o
   border-radius:999px; z-index:2;
   background: var(--teal, oklch(0.52 0.12 175));
 }
-
-/* ═══ Chrome/Windows GPU hardware-kursor buqu workaround (issue 40239916) ═══
-   Fixed sidebar kompozisiya qatı Chrome-un hardware kursor overlay-ini aralıq
-   görünməz/ağ edir (HW accel açıq olanda). Görünməz, çox kiçik, davamlı GPU
-   repaint kompozitoru "oyaq" saxlayır → kursor həmişə təzələnir. Nəzərə çarpmır
-   (1px, şəffaf, sub-piksel). */
-@keyframes pmCursorKeepAlive { 0%,100%{ transform: translate3d(0,0,0); } 50%{ transform: translate3d(0,0.02px,0); } }
-body.logged-in::after{
-  content:""; position:fixed; right:0; bottom:0; width:1px; height:1px;
-  pointer-events:none; z-index:0; opacity:0.01; background:transparent;
-  will-change: transform;
-  animation: pmCursorKeepAlive 1.5s linear infinite;
-}
