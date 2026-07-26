@@ -2943,16 +2943,20 @@ function closeTaskDetail() {
 
 function renderKanban() {
   const shown = visibleTasks();
-  kanban.innerHTML = statuses.map((status) => {
-    const columnTasks = shown.filter((task) => task.status === status);
-    const cards = columnTasks.map((task) => {
-      const blocked = isTaskBlocked(task);
-      return `
-      <article class="kanban-card kb-${statusClass(status)} ${blocked ? "blocked-task" : ""}">
+  // Birdən çox layihə görünürsə, hər status sütununda taskları layihəyə görə
+  // qruplaşdır ki, fərqli layihələrin taskları bir-birinə qarışmasın (list view
+  // ilə eyni məntiq — projectHue rəngi + layihə başlığı).
+  const multiProject = new Set(shown.map((task) => getProject(task) || "")).size > 1;
+
+  const cardMarkup = (task, status) => {
+    const blocked = isTaskBlocked(task);
+    const proj = getProject(task) || text("noProject");
+    return `
+      <article class="kanban-card kb-${statusClass(status)} ${blocked ? "blocked-task" : ""}" style="--proj-hue:${projectHue(proj)}">
         <strong>${escapeHtml(task.name)}</strong>
         <div class="task-meta">
           ${blocked ? `<span class="badge blocked">${text("blocked")}</span>` : ""}
-          <span>${escapeHtml(getProject(task))}</span>
+          <span>${escapeHtml(proj)}</span>
           <span>${shortDate(task.end)}</span>
           <span>${Number(task.progress) || 0}%</span>
         </div>
@@ -2960,7 +2964,38 @@ function renderKanban() {
         ${renderKanbanActions(task)}
       </article>
     `;
-    }).join("");
+  };
+
+  kanban.innerHTML = statuses.map((status) => {
+    const columnTasks = shown.filter((task) => task.status === status);
+
+    let cards;
+    if (multiProject && columnTasks.length) {
+      const ordered = [...columnTasks].sort((a, b) => {
+        const pa = getProject(a) || "", pb = getProject(b) || "";
+        if (pa !== pb) return pa.localeCompare(pb, "az");
+        return parseDate(a.start) - parseDate(b.start);
+      });
+      const groups = [];
+      let cur = null;
+      for (const task of ordered) {
+        const name = getProject(task) || text("noProject");
+        if (!cur || cur.name !== name) { cur = { name, tasks: [] }; groups.push(cur); }
+        cur.tasks.push(task);
+      }
+      cards = groups.map((g) => `
+        <div class="kb-proj-group" style="--proj-hue:${projectHue(g.name)}">
+          <div class="kb-proj-head">
+            <span class="kb-proj-dot"></span>
+            <span class="kb-proj-name">${escapeHtml(g.name)}</span>
+            <span class="kb-proj-count">${g.tasks.length}</span>
+          </div>
+          ${g.tasks.map((task) => cardMarkup(task, status)).join("")}
+        </div>
+      `).join("");
+    } else {
+      cards = columnTasks.map((task) => cardMarkup(task, status)).join("");
+    }
 
     return `
       <section class="kanban-column kb-col-${statusClass(status)}">

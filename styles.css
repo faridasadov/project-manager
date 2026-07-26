@@ -7565,6 +7565,58 @@ body.dark-mode .task-group .task-project-tag {
   border-color: hsl(var(--proj-hue) 45% 38%);
 }
 
+/* ── Kanban: status sütunları daxilində layihəyə görə qruplaşdırma ─────────
+   Çox layihə görünəndə hər sütunda tasklar layihə başlığı altında toplanır,
+   kartın sol zolağı layihə rəngindədir → sütunda qarışıq görünmür. */
+.kb-proj-group {
+  margin-bottom: 14px;
+}
+.kb-proj-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px;
+  margin-bottom: 8px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: hsl(var(--proj-hue) 42% 30%);
+  background: hsl(var(--proj-hue) 62% 96%);
+  border-left: 3px solid hsl(var(--proj-hue) 58% 46%);
+}
+.kb-proj-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: hsl(var(--proj-hue) 60% 46%);
+  box-shadow: 0 0 0 3px hsl(var(--proj-hue) 60% 46% / 0.18);
+  flex: none;
+}
+.kb-proj-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kb-proj-count {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: hsl(var(--proj-hue) 42% 34%);
+  background: hsl(var(--proj-hue) 60% 90%);
+  border-radius: 999px;
+  padding: 1px 8px;
+  flex: none;
+}
+body.dark-mode .kb-proj-head {
+  color: hsl(var(--proj-hue) 70% 78%);
+  background: hsl(var(--proj-hue) 40% 16%);
+  border-left-color: hsl(var(--proj-hue) 60% 55%);
+}
+body.dark-mode .kb-proj-count {
+  color: hsl(var(--proj-hue) 70% 82%);
+  background: hsl(var(--proj-hue) 45% 24%);
+}
+
 /* ── Workload items as buttons ───────────────────────────────────── */
 button.workload-item,
 button.compact-item {
