@@ -613,7 +613,7 @@ function mgrProjectListMarkup(myProjects) {
           <div class="resource-item">
             <span>
               <strong>${escapeHtml(p.name)}</strong>
-              ${escapeHtml(p.status || "")} · ${p.progress || 0}% · ${shortDate(p.start)} → ${shortDate(p.end)}
+              ${escapeHtml(p.status || "")} · ${projectCompletion(p)}% · ${shortDate(p.start)} → ${shortDate(p.end)}
             </span>
             <button type="button" data-mgr-open-project="${escapeHtml(p.name)}">Aç</button>
           </div>`).join("")
@@ -792,6 +792,27 @@ function permMatrixMarkup(displayRoles, roleColors, perms) {
   `;
 }
 
+// Layihə tamamlanma faizi — tasklara görə AVTOMATİK hesablanır (əvvəllər əl ilə
+// daxil edilən statik project.progress idi, ona görə heç tərpənmirdi). Məntiq:
+//   • status "Bitib" → 100%
+//   • task varsa → hər taskın öz progress-inin (0–100) ORTALAMASI; qismən bitmiş
+//     tasklar da hesaba düşür (task "Bitib"dirsə 100 sayılır)
+//   • heç task yoxdursa → əl ilə daxil edilmiş project.progress (fallback)
+// Deps: accessibleTasks (scope.js).
+function projectCompletion(project, projectTasks) {
+  if (project.status === "Bitib") return 100;
+  const tasks = projectTasks || accessibleTasks().filter((task) => task.project === project.name);
+  if (tasks.length) {
+    const sum = tasks.reduce((acc, task) => {
+      const p = Number(task.progress);
+      const val = Number.isFinite(p) ? p : (task.status === "Bitib" ? 100 : 0);
+      return acc + Math.max(0, Math.min(100, val));
+    }, 0);
+    return Math.round(sum / tasks.length);
+  }
+  return Math.min(100, Math.max(0, Number(project.progress) || 0));
+}
+
 // Layihələr görünüşü: bir layihə kartı (data-prep daxil). Deps: accessibleTasks,
 //   projectManagers, registerCounts (scope.js), nextGateForProject (script.js),
 //   renderProjectGovernance, escapeHtml, statusClass/statusLabel/priorityClass/
@@ -800,8 +821,7 @@ function projectCardMarkup(project) {
   const projectTasks = accessibleTasks().filter((task) => task.project === project.name);
   const done = projectTasks.filter((task) => task.status === "Bitib").length;
   const active = projectTasks.length - done;
-  const fallbackPercent = projectTasks.length ? Math.round((done / projectTasks.length) * 100) : 0;
-  const percent = Number.isFinite(Number(project.progress)) ? Number(project.progress) : fallbackPercent;
+  const percent = projectCompletion(project, projectTasks);
   const managerNames = projectManagers(project).map((user) => user.profile?.fullName || user.username);
   const counts = registerCounts(project.name);
   const nextGate = nextGateForProject(project);
@@ -897,7 +917,7 @@ function resourceProjectListMarkup(scopedProjects, scopedTasks) {
     const memberNames = (project.teamMemberIds || []).map(resourceLabel).filter(Boolean);
     return `
       <div class="resource-item">
-        <span><strong>${escapeHtml(project.name)}</strong>${text("customer")}: ${escapeHtml(customerLabel(project.customerId))} · ${taskCount} ${text("tasks")} · ${shortDate(project.start)} - ${shortDate(project.end)} · ${statusLabel(project.status)} · ${priorityLabel(project.priority)} · ${Number(project.progress) || 0}%</span>
+        <span><strong>${escapeHtml(project.name)}</strong>${text("customer")}: ${escapeHtml(customerLabel(project.customerId))} · ${taskCount} ${text("tasks")} · ${shortDate(project.start)} - ${shortDate(project.end)} · ${statusLabel(project.status)} · ${priorityLabel(project.priority)} · ${projectCompletion(project)}%</span>
         <div class="user-actions">
           <span class="manager-summary"><strong>${text("responsibleManagers")}</strong>${escapeHtml(managerNames.join(", ") || text("noManagersSelected"))}</span>
           <span class="manager-summary"><strong>${text("projectTeamMembers")}</strong>${escapeHtml(memberNames.join(", ") || text("empty"))}</span>
