@@ -6556,7 +6556,9 @@ body {
 .section-head {
   border-color: color-mix(in srgb, var(--line) 82%, white);
   box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(14px);
+  /* backdrop-filter silindi — kartlar onsuz da qeyri-şəffafdır; blur yalnız
+     Chromium-un hardware kursor buqunu (şəffaf/ağ kursor) və performans yükünü
+     yaradırdı, heç bir vizual fayda vermirdi. */
 }
 
 .novo-sidebar {
@@ -6685,9 +6687,7 @@ body.dark-mode .novo-sidebar .sidebar-footer { color: #8593ab; }
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(248, 249, 255, 0.88);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(249, 250, 253, 0.98);
   border-bottom: 1px solid rgba(19, 111, 99, 0.14);
 }
 
@@ -8226,7 +8226,7 @@ body {
 
 /* 2) Sticky başlıq — sabit açıq fon idi, qaranlıqda ağ üstündə ağ yazı. */
 body.dark-mode .top-shell {
-  background: rgba(13, 20, 32, 0.88);
+  background: rgba(20, 27, 40, 0.98);
   border-bottom-color: rgba(45, 212, 191, 0.16);
 }
 
