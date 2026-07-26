@@ -6266,6 +6266,20 @@ ganttControls?.addEventListener("click", (event) => {
 });
 
 dashboardPanels.forEach((panel) => {
+  // Sürüşdürmə yalnız başlıqdan (section-head) aktivləşir — belədə panel
+  // gövdəsində mətn seçilə bilir və "əl" kursoru yalnız başlıqda görünür.
+  panel.draggable = false;
+  const dragHandle = panel.querySelector(".section-head");
+  const enablePanelDrag = (event) => {
+    if (event.target.closest("button, a, input, select, textarea")) return;
+    panel.draggable = true;
+  };
+  const disablePanelDrag = () => { panel.draggable = false; };
+  dragHandle?.addEventListener("mousedown", enablePanelDrag);
+  dragHandle?.addEventListener("touchstart", enablePanelDrag, { passive: true });
+  panel.addEventListener("mouseup", disablePanelDrag);
+  panel.addEventListener("mouseleave", disablePanelDrag);
+
   panel.addEventListener("dragstart", (event) => {
     draggedDashboardPanel = panel.dataset.dashboardPanel;
     event.dataTransfer?.setData("text/plain", draggedDashboardPanel);
@@ -6274,6 +6288,7 @@ dashboardPanels.forEach((panel) => {
   panel.addEventListener("dragend", () => {
     draggedDashboardPanel = "";
     panel.classList.remove("dragging");
+    panel.draggable = false;
   });
   panel.addEventListener("dragover", (event) => {
     if (!draggedDashboardPanel || draggedDashboardPanel === panel.dataset.dashboardPanel) return;
@@ -7547,6 +7562,24 @@ themeToggle?.addEventListener("change", () => {
   saveAppSettings();
   applyAppSettings();
   if (themeModeInput) themeModeInput.value = appSettings.themeMode;
+});
+
+// ── Sol panel yığ/aç (collapse) — yalnız desktop, localStorage-da yadda qalır ──
+const sidebarCollapseKey = "pm-sidebar-collapsed";
+const sidebarCollapseBtn = document.querySelector("#sidebarCollapseBtn");
+function applySidebarCollapsed(collapsed) {
+  document.body.classList.toggle("sidebar-collapsed", collapsed);
+  if (sidebarCollapseBtn) {
+    sidebarCollapseBtn.setAttribute("aria-expanded", String(!collapsed));
+    sidebarCollapseBtn.setAttribute("aria-label", collapsed ? "Sol paneli aç" : "Sol paneli yığ");
+    sidebarCollapseBtn.title = collapsed ? "Sol paneli aç" : "Sol paneli yığ";
+  }
+}
+applySidebarCollapsed(localStorage.getItem(sidebarCollapseKey) === "1");
+sidebarCollapseBtn?.addEventListener("click", () => {
+  const collapsed = !document.body.classList.contains("sidebar-collapsed");
+  applySidebarCollapsed(collapsed);
+  try { localStorage.setItem(sidebarCollapseKey, collapsed ? "1" : "0"); } catch { /* kvota */ }
 });
 
 saveSettingsButton.addEventListener("click", () => {

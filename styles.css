@@ -4443,13 +4443,22 @@ textarea:focus {
 .dashboard-panel {
   min-height: 220px;
   transition: grid-column 160ms ease, min-height 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-  cursor: grab;
+  cursor: default;
 }
+
+/* sürüşdürmə yalnız başlıqdan (drag handle) — gövdədə mətn seçilə bilir, normal kursor */
+.dashboard-panel > .section-head {
+  cursor: grab;
+  user-select: none;
+}
+.dashboard-panel > .section-head :where(button, a, input, select) { cursor: pointer; }
 
 .dashboard-panel.dragging {
   opacity: 0.62;
   transform: scale(0.985);
+  cursor: grabbing;
 }
+.dashboard-panel.dragging > .section-head { cursor: grabbing; }
 
 .dashboard-panel.panel-wide {
   grid-column: span 2;
@@ -8673,13 +8682,13 @@ body.dark-mode .new-user-card-title { color: #5eead4; }
    Geri qaytarmaq üçün bu bloku silmək kifayətdir (backup: tag design-v1-vanilla-20260725).
    ═══════════════════════════════════════════════════════════════════════════ */
 :root{
-  --bg: oklch(0.99 0.005 150);
+  --bg: oklch(0.968 0.008 250);
   --ink: oklch(0.18 0.02 250);
   --muted: oklch(0.5 0.02 250);
   --panel: oklch(1 0 0);
-  --line: oklch(0.92 0.008 250);
+  --line: oklch(0.885 0.012 250);
   --field: oklch(0.965 0.008 250);
-  --soft: oklch(0.97 0.01 250);
+  --soft: oklch(0.955 0.012 250);
   --teal: oklch(0.52 0.12 175);   /* brend — canlı teal */
   --blue: oklch(0.6 0.15 240);
   --amber: oklch(0.72 0.15 75);
@@ -8708,6 +8717,11 @@ body.dark-mode{
 }
 .primary,button.primary,.proj-btn,.btn,.view-tab{ border-radius:11px !important; }
 .badge{ border-radius:999px !important; }
+/* panelleri fondan ayır — aydın sərhəd + yumşaq kölgə (light rejimdə qarışmasın) */
+body:not(.dark-mode) :is(.panel,.dashboard-panel,.card,.kpi,.stat-card,.resource-panel,.teams-card,.team-card,.project-card,.task-card,.platform-hero){
+  border:1px solid var(--line) !important;
+  box-shadow: var(--shadow-soft) !important;
+}
 /* LIGHT sidebar — Lovable görünüşü (açıq fon, tünd mətn, teal aktiv) */
 body:not(.dark-mode) .novo-sidebar{
   background: oklch(0.995 0.005 150) !important;
@@ -8724,6 +8738,9 @@ body:not(.dark-mode) .nav-indicator{ background: oklch(0.95 0.04 175) !important
 body:not(.dark-mode) .menu-icon{ background: oklch(0.96 0.008 250) !important; color: oklch(0.45 0.03 250) !important; }
 body:not(.dark-mode) .sidebar-menu .view-tab.active .menu-icon{ background: oklch(0.52 0.12 175) !important; color:#fff !important; box-shadow: 0 4px 14px oklch(0.52 0.12 175 / .35) !important; }
 body:not(.dark-mode) .sidebar-footer{ background: oklch(0.97 0.01 250) !important; border-color: oklch(0.92 0.008 250) !important; }
+/* footer mətni light rejimdə oxunaqlı — "Komanda yüklənməsi" + saat pill */
+body:not(.dark-mode) .novo-sidebar .sidebar-footer span{ color: oklch(0.45 0.04 250) !important; }
+body:not(.dark-mode) .novo-sidebar .sidebar-footer strong{ background: oklch(0.9 0.06 175) !important; color: oklch(0.34 0.11 175) !important; }
 /* DARK sidebar — dərin slate (tünd-yaşıl əvəzinə) */
 body.dark-mode .novo-sidebar{ background: oklch(0.185 0.015 250) !important; border-right: 1px solid oklch(1 0 0 / 6%) !important; }
 
@@ -8795,3 +8812,36 @@ body.dark-mode .cal-chip{ color:hsl(var(--proj-hue) 72% 80%); background:hsl(var
 /* "Layihə mühiti" (appKicker) sidebar-da açıq emerald idi → ağ fonda az kontrast.
    Tünd teal → oxunaqlı. */
 body:not(.dark-mode) .novo-brand small{ color: oklch(0.44 0.10 175) !important; letter-spacing:.04em; }
+
+/* ── Sol panel collapse (yığ/aç) — Lovable üslubu: çərçivəsiz incə şevron ── */
+.sidebar-collapse-btn{
+  position:absolute; top:20px; right:12px; z-index:6;
+  width:24px; height:24px; display:grid; place-items:center;
+  border:0; background:transparent; border-radius:7px;
+  color:var(--muted); cursor:pointer; opacity:.7; padding:0;
+  transition:opacity .15s ease, color .15s ease, transform .22s cubic-bezier(.22,1,.36,1), background .15s ease;
+}
+.sidebar-collapse-btn:hover{ opacity:1; color:var(--teal); background:color-mix(in srgb, var(--teal) 12%, transparent); }
+.sidebar-collapse-btn svg{ width:18px; height:18px; }
+@media (max-width:1040px){ .sidebar-collapse-btn{ display:none; } }
+
+@media (min-width:1041px){
+  .novo-sidebar{ transition:width .22s cubic-bezier(.22,1,.36,1), padding .22s cubic-bezier(.22,1,.36,1); }
+  .top-shell, .layout{ transition:margin-left .22s cubic-bezier(.22,1,.36,1); }
+
+  body.sidebar-collapsed .novo-sidebar{ width:76px; padding-left:10px; padding-right:10px; }
+  body.sidebar-collapsed .top-shell,
+  body.sidebar-collapsed .layout{ margin-left:100px !important; }
+
+  body.sidebar-collapsed .novo-brand{ grid-template-columns:1fr; justify-items:center; padding:44px 0 16px; }
+  body.sidebar-collapsed .novo-brand > div{ display:none; }
+  body.sidebar-collapsed .sidebar-section-label{ display:none; }
+  body.sidebar-collapsed .nav-indicator{ display:none !important; }
+  body.sidebar-collapsed .sidebar-menu{ gap:6px; }
+  body.sidebar-collapsed .sidebar-menu .view-tab{ grid-template-columns:1fr; justify-items:center; padding:0; }
+  body.sidebar-collapsed .sidebar-menu .view-tab > span:not(.menu-icon){ display:none; }
+  body.sidebar-collapsed .sidebar-footer{ flex-direction:column; gap:6px; padding:10px 6px; }
+  body.sidebar-collapsed .sidebar-footer span{ display:none; }
+
+  body.sidebar-collapsed .sidebar-collapse-btn{ right:auto; left:50%; transform:translateX(-50%) rotate(180deg); }
+}
