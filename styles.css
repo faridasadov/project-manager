@@ -1774,7 +1774,9 @@ button:hover {
   background: linear-gradient(180deg, #0c2a26 0%, #114b41 60%, #0c2a26 100%);
   color: #c2ede3;
   border-right: none;
-  box-shadow: 4px 0 32px rgba(6, 30, 26, 0.28);
+  /* Kölgə kiçildildi: böyük 32px blur fixed sidebar-ı ağır kompozisiya qatına
+     çevirib Chrome/Windows GPU kursor buqunu tətikləyirdi (HW accel açıq olanda). */
+  box-shadow: 1px 0 4px rgba(6, 30, 26, 0.10);
   overflow: hidden;
   white-space: nowrap;
   transition: none;
@@ -8872,4 +8874,17 @@ body.dark-mode .novo-sidebar .sidebar-menu .view-tab.active .menu-icon{ color: o
   content:""; position:absolute; left:0; top:6px; bottom:6px; width:4px;
   border-radius:999px; z-index:2;
   background: var(--teal, oklch(0.52 0.12 175));
+}
+
+/* ═══ Chrome/Windows GPU hardware-kursor buqu workaround (issue 40239916) ═══
+   Fixed sidebar kompozisiya qatı Chrome-un hardware kursor overlay-ini aralıq
+   görünməz/ağ edir (HW accel açıq olanda). Görünməz, çox kiçik, davamlı GPU
+   repaint kompozitoru "oyaq" saxlayır → kursor həmişə təzələnir. Nəzərə çarpmır
+   (1px, şəffaf, sub-piksel). */
+@keyframes pmCursorKeepAlive { 0%,100%{ transform: translate3d(0,0,0); } 50%{ transform: translate3d(0,0.02px,0); } }
+body.logged-in::after{
+  content:""; position:fixed; right:0; bottom:0; width:1px; height:1px;
+  pointer-events:none; z-index:0; opacity:0.01; background:transparent;
+  will-change: transform;
+  animation: pmCursorKeepAlive 1.5s linear infinite;
 }
