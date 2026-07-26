@@ -8845,3 +8845,31 @@ body:not(.dark-mode) .novo-brand small{ color: oklch(0.44 0.10 175) !important; 
 
   body.sidebar-collapsed .sidebar-collapse-btn{ right:auto; left:50%; transform:translateX(-50%) rotate(180deg); }
 }
+
+/* ═══ Sidebar menyu — Lovable app-shell.tsx-ə sadiq (src oxundu) ═══
+   Problem idi: footer "KOMANDA YÜKLƏNMƏSİ" nowrap mətni grid sütununu
+   genişləndirir → active pill sağ kənara dirənirdi. Həll: grid uşaqlarına
+   min-width:0 (sütun məzmun qutusuna sığır → simmetrik inset). */
+.novo-brand, .sidebar-menu, .sidebar-footer{ min-width:0; }
+.sidebar-footer{ white-space:normal; }
+.sidebar-menu .view-tab{ min-width:0; overflow:hidden; }
+.sidebar-menu .view-tab > span:last-child{ overflow:hidden; text-overflow:ellipsis; }
+/* Lovable: rounded-xl pill (radius-xl ≈ radius+4 = 0.9rem+4px) */
+.sidebar-menu .view-tab, .nav-indicator{ border-radius:16px !important; }
+/* Lovable-də ikonların arxa qutusu YOXDUR — sadə ikon (specificity light-restyle qaydasını üstələyir) */
+body:not(.dark-mode) .novo-sidebar .menu-icon,
+body:not(.dark-mode) .novo-sidebar .sidebar-menu .view-tab.active .menu-icon,
+body.dark-mode .novo-sidebar .menu-icon,
+body.dark-mode .novo-sidebar .sidebar-menu .view-tab.active .menu-icon{
+  background:transparent !important; box-shadow:none !important;
+}
+body:not(.dark-mode) .novo-sidebar .menu-icon{ color: oklch(0.45 0.03 250) !important; }
+body:not(.dark-mode) .novo-sidebar .sidebar-menu .view-tab.active .menu-icon{ color: oklch(0.32 0.09 175) !important; }
+body.dark-mode .novo-sidebar .menu-icon{ color: oklch(0.68 0.02 250) !important; }
+body.dark-mode .novo-sidebar .sidebar-menu .view-tab.active .menu-icon{ color: oklch(0.85 0.1 172) !important; }
+/* Lovable: active bənddə solda incə 4px primary zolaq (w-1 bg-primary, inset-y-1.5, rounded-full) */
+.sidebar-menu .view-tab.active::before{
+  content:""; position:absolute; left:0; top:6px; bottom:6px; width:4px;
+  border-radius:999px; z-index:2;
+  background: var(--teal, oklch(0.52 0.12 175));
+}
