@@ -153,6 +153,25 @@ function buildNameOf(users: StateUser[], teams: StateTeam[]): NameOf {
     return byUser.get(owner) || owner;
   };
 }
+// Layihə tamamlanma faizi — UI-dəki projectCompletion ilə eyni məntiq:
+// status "Bitib" → 100; əks halda layihənin task-larının progress ortalaması;
+// task yoxdursa manual project.progress sahəsi (köhnə davranış). task.project
+// layihənin id-nə VƏ YA adına istinad edə bilər.
+function projectPercent(p: StateProject, tasks: StateTask[]): number {
+  if (p.status === "Bitib") return 100;
+  const pt = tasks.filter((t) => t.project && (t.project === p.id || t.project === p.name));
+  if (pt.length) {
+    const sum = pt.reduce((acc, t) => {
+      const v = Number(t.progress);
+      const val = Number.isFinite(v) ? v : (t.status === "Bitib" ? 100 : 0);
+      return acc + Math.max(0, Math.min(100, val));
+    }, 0);
+    return Math.round(sum / pt.length);
+  }
+  const manual = Number((p as { progress?: number }).progress);
+  return Number.isFinite(manual) ? Math.min(100, Math.max(0, manual)) : 0;
+}
+
 function ownerTag(t: StateTask, nameOf: NameOf, L: Lang) {
   const n = nameOf(t.owner);
   if (!n) return "";
@@ -250,7 +269,7 @@ function portfolioLines(mine: StateTask[], myProjects: StateProject[], today: st
   }
   if (myProjects.length) {
     lines.push(""); lines.push(leadership ? L.companyProjects(myProjects.length) : L.myProjects(myProjects.length));
-    for (const p of myProjects.slice(0, 20)) lines.push(`  • ${p.name} [${p.status || "-"}, ${(p as { progress?: number }).progress ?? 0}%]`);
+    for (const p of myProjects.slice(0, 20)) lines.push(`  • ${p.name} [${p.status || "-"}, ${projectPercent(p, mine)}%]`);
   }
   return { lines, open };
 }
