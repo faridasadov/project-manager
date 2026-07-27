@@ -2235,22 +2235,36 @@ async function handleApi(request, response) {
         return true;
       }
       const existingUser = state?.users?.find((user) => user.username === ldapUser.username);
-      const user = existingUser || {
-        id: `ldap:${ldapUser.username}`,
-        username: ldapUser.username,
-        passwordHash: "",
-        role: ldapUser.role || "user",
-        managerId: "",
-        profile: {
-          fullName: ldapUser.fullName,
-          email: ldapUser.email,
-          fatherName: "",
-          position: "",
-          phone: "",
-          address: "",
-          company: ""
-        }
-      };
+      // Parol = LDAP parolu: hər uğurlu LDAP girişində lokal hash cari LDAP parolu
+      // ilə sinxronlaşır. LDAP-da parol dəyişsə, növbəti girişdə lokal da izləyir.
+      const ldapHash = hashPassword(cleanPassword);
+      const user = existingUser
+        // Mövcud istifadəçi: rolu OLDUĞU kimi saxla (admin təyin etmiş ola bilər),
+        // yalnız parolu cari LDAP parolu ilə sinxronla.
+        ? { ...existingUser, passwordHash: ldapHash, provider: "ldap" }
+        // Yeni LDAP istifadəçisi: avtomatik rol "user", parol = LDAP parolu.
+        : {
+            id: `ldap:${ldapUser.username}`,
+            username: ldapUser.username,
+            passwordHash: ldapHash,
+            role: "user",
+            managerId: "",
+            companyId: "company-default",
+            provider: "ldap",
+            profile: {
+              fullName: ldapUser.fullName,
+              email: ldapUser.email,
+              fatherName: "",
+              position: "",
+              phone: "",
+              address: "",
+              company: ""
+            }
+          };
+      // State-ə yaz (persist) — istifadəçi admin paneldə görünsün və parol sinxron qalsın.
+      const ldapIdx = state.users.findIndex((u) => u.username === ldapUser.username);
+      if (ldapIdx >= 0) state.users[ldapIdx] = user; else state.users.push(user);
+      await writeState({ ...state, savedBy: "system:ldap-provision" });
       clearRateLimit(clientIp);
       const { passwordHash: _h2, passwordChange: _pc2, ...safeUser } = user;
       await recordAuditLog(cleanUsername, "auth.login_success", "user", user.id, { role: user.role, provider: "ldap" });
