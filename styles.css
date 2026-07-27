@@ -8957,3 +8957,67 @@ body.dark-mode .novo-sidebar .sidebar-menu .view-tab.active .menu-icon{ color: o
 #adminModal .section-add-card {
   border-radius: 16px;
 }
+
+/* ══ LOVABLE ADMIN İNTERYER RESTYLE (2026-07-27) — cədvəl/forma üslubu ══════
+   Resurs bölmələri: yumşaq 1px kartlar, təmiz sətirlər, muted bölmə başlıqları,
+   fokus ring-li inputlar, ring-inset badge-lər. Vahid teal — svetofor yox. */
+
+/* Konteyner boşluqları */
+#adminModal .resource-body { gap: 12px; }
+
+/* Add-forma kartı: incə 1px, muted başlıq (uppercase teal şoux azaldıldı) */
+#adminModal .section-add-card { border-width: 1px; }
+#adminModal .section-add-title {
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+}
+
+/* Sətirlər — təmiz "cədvəl sətri" hissi (yumşaq fon, incə çərçivə) */
+#adminModal .resource-item {
+  border-width: 1px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--soft) 55%, var(--panel));
+}
+#adminModal .resource-item:hover {
+  border-color: color-mix(in srgb, var(--teal) 32%, var(--line));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--teal) 10%, transparent);
+}
+
+/* Settings & user kartları */
+#adminModal .settings-card { border-width: 1px; }
+#adminModal .settings-card h3 { font-size: 0.95rem; letter-spacing: -0.01em; }
+#adminModal .user-profile-card { border-width: 1px; border-radius: 14px; }
+
+/* Formalar — Lovable input: yumşaq radius + fokus ring (teal) */
+#adminModal input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+#adminModal select,
+#adminModal textarea {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  transition: border-color 140ms, box-shadow 140ms;
+}
+#adminModal input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+#adminModal select:focus,
+#adminModal textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--teal) 55%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 18%, transparent);
+}
+#adminModal label > span {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Badge / status pill / register tip — ring-inset (Lovable) */
+#adminModal .reg-type-badge,
+#adminModal .reg-status-chip,
+#adminModal .workflow-status-chip {
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 28%, transparent);
+}
+
+/* Bölmə başlıq (summary) — daha sakit tipografiya */
+#adminModal .resource-block > summary { letter-spacing: -0.01em; }
