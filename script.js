@@ -295,16 +295,8 @@ const testMailBodyInput = document.querySelector("#testMailBody");
 const telegramEnabledInput = document.querySelector("#telegramEnabled");
 const telegramBotTokenInput = document.querySelector("#telegramBotToken");
 const telegramChatIdInput = document.querySelector("#telegramChatId");
-const ldapEnabledInput = document.querySelector("#ldapEnabled");
-const ldapUrlInput = document.querySelector("#ldapUrl");
-const ldapBaseDnInput = document.querySelector("#ldapBaseDn");
-const ldapUserFilterInput = document.querySelector("#ldapUserFilter");
-const ldapBindDnInput = document.querySelector("#ldapBindDn");
-const ldapBindPasswordInput = document.querySelector("#ldapBindPassword");
-const ldapGroupRoleMapInput = document.querySelector("#ldapGroupRoleMap");
 const saveSettingsButton = document.querySelector("#saveSettings");
 const testMailButton = document.querySelector("#testMail");
-const testLdapButton = document.querySelector("#testLdap");
 const settingsStatus = document.querySelector("#settingsStatus");
 const refreshAuditLogsButton = document.querySelector("#refreshAuditLogs");
 const refreshMailHistoryButton = document.querySelector("#refreshMailHistory");
@@ -540,13 +532,6 @@ function syncSettingsForm() {
   if (telegramEnabledInput) telegramEnabledInput.checked = Boolean(appSettings.telegramEnabled);
   if (telegramBotTokenInput) telegramBotTokenInput.value = appSettings.telegramBotToken || "";
   if (telegramChatIdInput) telegramChatIdInput.value = appSettings.telegramChatId || "";
-  ldapEnabledInput.checked = Boolean(appSettings.ldapEnabled);
-  ldapUrlInput.value = appSettings.ldapUrl;
-  ldapBaseDnInput.value = appSettings.ldapBaseDn;
-  ldapUserFilterInput.value = appSettings.ldapUserFilter;
-  ldapBindDnInput.value = appSettings.ldapBindDn || "";
-  ldapBindPasswordInput.value = "";
-  ldapGroupRoleMapInput.value = appSettings.ldapGroupRoleMap || "";
   capacityHoursInput.value = Number(appSettings.capacityHours) || 40;
   syncReportPrefsForm();
 }
@@ -1289,13 +1274,6 @@ function defaultSettings() {
     dashboardPanelOrder: [],
     importColumnMap: {},
     backups: [],
-    ldapEnabled: false,
-    ldapUrl: "",
-    ldapBaseDn: "",
-    ldapUserFilter: "(uid={username})",
-    ldapBindDn: "",
-    ldapBindPassword: "",
-    ldapGroupRoleMap: "",
     companyRegistry: []
   };
 }
@@ -5352,13 +5330,6 @@ async function saveBackendSettings() {
         mailSubjectTemplate: appSettings.mailSubjectTemplate,
         mailBodyTemplate: appSettings.mailBodyTemplate,
         testMailBody: appSettings.testMailBody,
-        ldapEnabled: appSettings.ldapEnabled,
-        ldapUrl: appSettings.ldapUrl,
-        ldapBaseDn: appSettings.ldapBaseDn,
-        ldapUserFilter: appSettings.ldapUserFilter,
-        ldapBindDn: appSettings.ldapBindDn,
-        ldapBindPassword: appSettings.ldapBindPassword,
-        ldapGroupRoleMap: appSettings.ldapGroupRoleMap,
         workflowStatuses: appSettings.workflowStatuses,
         capacityHours: appSettings.capacityHours
       })
@@ -5387,13 +5358,6 @@ async function syncBackendSettings() {
       defaultLanguage: serverSettings.defaultLanguage || appSettings.defaultLanguage || "az",
       defaultTheme: serverSettings.defaultTheme || appSettings.defaultTheme || "light",
       maintenanceMode: Boolean(serverSettings.maintenanceMode),
-      ldapEnabled: Boolean(serverSettings.ldapEnabled),
-      ldapUrl: serverSettings.ldapUrl || "",
-      ldapBaseDn: serverSettings.ldapBaseDn || "",
-      ldapUserFilter: serverSettings.ldapUserFilter || "(uid={username})",
-      ldapBindDn: serverSettings.ldapBindDn || "",
-      ldapBindPassword: "",
-      ldapGroupRoleMap: serverSettings.ldapGroupRoleMap || "",
       companyRegistry: Array.isArray(serverSettings.companyRegistry) ? serverSettings.companyRegistry : [],
       workflowStatuses: normalizeWorkflowStatuses(serverSettings.workflowStatuses || appSettings.workflowStatuses),
       capacityHours: Number(serverSettings.capacityHours) || appSettings.capacityHours || 40
@@ -5898,17 +5862,6 @@ async function sendOnlineTestMail() {
     body: JSON.stringify(payload)
   });
   if (!response.ok) throw new Error("Mail test failed");
-  return response.json();
-}
-
-async function sendBackendTestLdap() {
-  if (!canUseBackend()) return { skipped: true };
-  const response = await fetch(backendUrl("/api/ldap/test"), {
-    method: "POST",
-    headers: authHeaders({ "content-type": "application/json" }),
-    body: JSON.stringify({})
-  });
-  if (!response.ok) throw new Error("LDAP test failed");
   return response.json();
 }
 
@@ -7616,13 +7569,6 @@ saveSettingsButton.addEventListener("click", () => {
     telegramEnabled: canManageMailSettings() ? telegramEnabledInput?.checked ?? appSettings.telegramEnabled : appSettings.telegramEnabled,
     telegramBotToken: canManageMailSettings() ? telegramBotTokenInput?.value.trim() || appSettings.telegramBotToken : appSettings.telegramBotToken,
     telegramChatId: canManageMailSettings() ? telegramChatIdInput?.value.trim() || appSettings.telegramChatId : appSettings.telegramChatId,
-    ldapEnabled: canManagePlatformSettings() ? ldapEnabledInput.checked : appSettings.ldapEnabled,
-    ldapUrl: canManagePlatformSettings() ? ldapUrlInput.value.trim() : appSettings.ldapUrl,
-    ldapBaseDn: canManagePlatformSettings() ? ldapBaseDnInput.value.trim() : appSettings.ldapBaseDn,
-    ldapUserFilter: canManagePlatformSettings() ? ldapUserFilterInput.value.trim() || "(uid={username})" : appSettings.ldapUserFilter,
-    ldapBindDn: canManagePlatformSettings() ? ldapBindDnInput.value.trim() : appSettings.ldapBindDn,
-    ldapBindPassword: canManagePlatformSettings() ? ldapBindPasswordInput.value : appSettings.ldapBindPassword,
-    ldapGroupRoleMap: canManagePlatformSettings() ? ldapGroupRoleMapInput.value.trim() : appSettings.ldapGroupRoleMap,
     capacityHours: canManagePlatformSettings() ? Number(capacityHoursInput.value) || 40 : appSettings.capacityHours,
     workflowStatuses: normalizeWorkflowStatuses(appSettings.workflowStatuses)
   };
@@ -7671,17 +7617,6 @@ document.querySelector("#testTelegram")?.addEventListener("click", async () => {
     settingsStatus.textContent = r.ok ? "✅ Telegram test göndərildi" : `❌ Telegram xəta: ${r.status}`;
   } catch (e) {
     settingsStatus.textContent = `❌ ${e.message}`;
-  }
-});
-
-testLdapButton.addEventListener("click", async () => {
-  if (!canManagePlatformSettings()) return;
-  settingsStatus.textContent = "";
-  try {
-    const result = await sendBackendTestLdap();
-    settingsStatus.textContent = result.ok ? text("ldapTestOk") : text("ldapTestFailed");
-  } catch {
-    settingsStatus.textContent = text("ldapTestFailed");
   }
 });
 

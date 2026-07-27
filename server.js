@@ -5,7 +5,6 @@ import { stat, mkdir, writeFile } from "fs/promises";
 import { createReadStream } from "fs";
 import { dirname, extname, normalize, resolve, join } from "path";
 import { fileURLToPath } from "url";
-import ldap from "ldapjs";
 import mysql from "mysql2/promise";
 import nodemailer from "nodemailer";
 import PDFDocument from "pdfkit";
@@ -890,13 +889,6 @@ function defaultSettings() {
     mailSubjectTemplate: "Project Manager deadline alerts",
     mailBodyTemplate: "{{alerts}}",
     testMailBody: "Project Manager mail ayarlari test edildi.",
-    ldapEnabled: false,
-    ldapUrl: "",
-    ldapBaseDn: "",
-    ldapUserFilter: "(uid={username})",
-    ldapBindDn: "",
-    ldapBindPassword: "",
-    ldapGroupRoleMap: "",
     workflowStatuses: ["Plan", "Davam edir", "Bitib"],
     capacityHours: 40,
     companyRegistry: [],
@@ -918,14 +910,6 @@ function publicSettings(settings, options = {}) {
     mailSubjectTemplate: merged.mailSubjectTemplate || "Project Manager deadline alerts",
     mailBodyTemplate: merged.mailBodyTemplate || "{{alerts}}",
     testMailBody: merged.testMailBody || "Project Manager mail ayarlari test edildi.",
-    ldapEnabled: Boolean(merged.ldapEnabled),
-    ldapUrl: merged.ldapUrl || "",
-    ldapBaseDn: merged.ldapBaseDn || "",
-    ldapUserFilter: merged.ldapUserFilter || "(uid={username})",
-    ldapBindDn: merged.ldapBindDn || "",
-    ldapBindPassword: options.includeSecrets ? merged.ldapBindPassword || "" : "",
-    ldapBindPasswordSet: Boolean(merged.ldapBindPassword || process.env.LDAP_BIND_PASSWORD),
-    ldapGroupRoleMap: merged.ldapGroupRoleMap || "",
     capacityHours: Number(merged.capacityHours) || 40,
     companyRegistry: Array.isArray(merged.companyRegistry) ? merged.companyRegistry : [],
     companyMailSettings: options.includeSecrets ? merged.companyMailSettings || {} : {},
@@ -945,7 +929,6 @@ async function writeSettings(settings) {
   const current = await readSettings();
   const nextSettings = {
     ...publicSettings({ ...current, ...settings }, { includeSecrets: true }),
-    ldapBindPassword: settings.ldapBindPassword ? settings.ldapBindPassword : current.ldapBindPassword || "",
     companyMailSettings: settings.companyMailSettings || current.companyMailSettings || {}
   };
   await pool.execute(
@@ -955,101 +938,6 @@ async function writeSettings(settings) {
     [JSON.stringify(nextSettings)]
   );
   return nextSettings;
-}
-
-function parseRoleMap(value) {
-  try {
-    const parsed = JSON.parse(value || "{}");
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function roleFromLdapGroups(entry, settings) {
-  const memberOf = Array.isArray(entry.memberOf) ? entry.memberOf : [entry.memberOf].filter(Boolean);
-  const map = parseRoleMap(settings.ldapGroupRoleMap || process.env.LDAP_GROUP_ROLE_MAP || "");
-  for (const [groupNeedle, role] of Object.entries(map)) {
-    if (memberOf.some((group) => String(group).toLowerCase().includes(groupNeedle.toLowerCase()))) {
-      return ["super_admin", "admin", "manager", "user"].includes(role) ? role : "user";
-    }
-  }
-  return "user";
-}
-
-function ldapSearch(client, baseDn, filter) {
-  return new Promise((resolveSearch, rejectSearch) => {
-    const entries = [];
-    client.search(baseDn, { scope: "sub", filter, sizeLimit: 2 }, (error, result) => {
-      if (error) {
-        rejectSearch(error);
-        return;
-      }
-      result.on("searchEntry", (entry) => entries.push(entry.object));
-      result.on("error", rejectSearch);
-      result.on("end", () => resolveSearch(entries));
-    });
-  });
-}
-
-function ldapBind(client, dn, password) {
-  return new Promise((resolveBind, rejectBind) => {
-    client.bind(dn, password, (error) => {
-      if (error) rejectBind(error);
-      else resolveBind();
-    });
-  });
-}
-
-async function authenticateLdap(username, password, settings) {
-  if (!settings.ldapEnabled || !settings.ldapUrl || !settings.ldapBaseDn || !password) return null;
-  const client = ldap.createClient({
-    url: settings.ldapUrl,
-    timeout: 5000,
-    connectTimeout: 5000
-  });
-  try {
-    const bindDn = settings.ldapBindDn || process.env.LDAP_BIND_DN || "";
-    const bindPassword = settings.ldapBindPassword || process.env.LDAP_BIND_PASSWORD || "";
-    if (bindDn && bindPassword) await ldapBind(client, bindDn, bindPassword);
-    const escapedUsername = username
-      .split("\\").join("\\5c")
-      .split("*").join("\\2a")
-      .split("(").join("\\28")
-      .split(")").join("\\29");
-    const filter = (settings.ldapUserFilter || "(uid={username})").split("{username}").join(escapedUsername);
-    const entries = await ldapSearch(client, settings.ldapBaseDn, filter);
-    if (!entries.length || !entries[0].dn) return null;
-    await ldapBind(client, entries[0].dn, password);
-    return {
-      username,
-      fullName: entries[0].cn || entries[0].displayName || username,
-      email: entries[0].mail || "",
-      role: roleFromLdapGroups(entries[0], settings)
-    };
-  } finally {
-    client.unbind();
-  }
-}
-
-async function testLdapSettings(settings) {
-  if (!settings.ldapEnabled || !settings.ldapUrl || !settings.ldapBaseDn) {
-    return { ok: false, skipped: true, reason: "LDAP disabled or incomplete settings" };
-  }
-  const client = ldap.createClient({
-    url: settings.ldapUrl,
-    timeout: 5000,
-    connectTimeout: 5000
-  });
-  try {
-    const bindDn = settings.ldapBindDn || process.env.LDAP_BIND_DN || "";
-    const bindPassword = settings.ldapBindPassword || process.env.LDAP_BIND_PASSWORD || "";
-    if (bindDn && bindPassword) await ldapBind(client, bindDn, bindPassword);
-    const entries = await ldapSearch(client, settings.ldapBaseDn, "(objectClass=*)");
-    return { ok: true, entries: entries.length };
-  } finally {
-    client.unbind();
-  }
 }
 
 function postJson(urlString, payload) {
@@ -2227,54 +2115,10 @@ async function handleApi(request, response) {
         sendJson(response, 200, { ok: true, token: tokenForUser(localUser), user: safeLocalUser });
         return true;
       }
-      const settings = await readSettings();
-      const ldapUser = await authenticateLdap(cleanUsername, cleanPassword, settings);
-      if (!ldapUser) {
-        await recordAuditLog(cleanUsername || "anonymous", "auth.login_failed", "user", cleanUsername || "-", {});
-        sendJson(response, 401, { ok: false, error: "Invalid credentials" });
-        return true;
-      }
-      const existingUser = state?.users?.find((user) => user.username === ldapUser.username);
-      // Parol = LDAP parolu: hər uğurlu LDAP girişində lokal hash cari LDAP parolu
-      // ilə sinxronlaşır. LDAP-da parol dəyişsə, növbəti girişdə lokal da izləyir.
-      const ldapHash = hashPassword(cleanPassword);
-      const user = existingUser
-        // Mövcud istifadəçi: rolu OLDUĞU kimi saxla (admin təyin etmiş ola bilər),
-        // yalnız parolu cari LDAP parolu ilə sinxronla.
-        ? { ...existingUser, passwordHash: ldapHash, provider: "ldap" }
-        // Yeni LDAP istifadəçisi: avtomatik rol "user", parol = LDAP parolu.
-        : {
-            id: `ldap:${ldapUser.username}`,
-            username: ldapUser.username,
-            passwordHash: ldapHash,
-            role: "user",
-            managerId: "",
-            companyId: "company-default",
-            provider: "ldap",
-            profile: {
-              fullName: ldapUser.fullName,
-              email: ldapUser.email,
-              fatherName: "",
-              position: "",
-              phone: "",
-              address: "",
-              company: ""
-            }
-          };
-      // State-ə yaz (persist) — istifadəçi admin paneldə görünsün və parol sinxron qalsın.
-      const ldapIdx = state.users.findIndex((u) => u.username === ldapUser.username);
-      if (ldapIdx >= 0) state.users[ldapIdx] = user; else state.users.push(user);
-      await writeState({ ...state, savedBy: "system:ldap-provision" });
-      clearRateLimit(clientIp);
-      const { passwordHash: _h2, passwordChange: _pc2, ...safeUser } = user;
-      await recordAuditLog(cleanUsername, "auth.login_success", "user", user.id, { role: user.role, provider: "ldap" });
-      sendJson(response, 200, {
-        ok: true,
-        token: tokenForUser(user),
-        user: safeUser
-      });
+      await recordAuditLog(cleanUsername || "anonymous", "auth.login_failed", "user", cleanUsername || "-", {});
+      sendJson(response, 401, { ok: false, error: "Invalid credentials" });
     } catch {
-      sendJson(response, 401, { ok: false, error: "LDAP login failed" });
+      sendJson(response, 401, { ok: false, error: "Login failed" });
     }
     return true;
   }
@@ -2527,27 +2371,6 @@ async function handleApi(request, response) {
       sendJson(response, 200, result);
     } catch {
       sendJson(response, 500, { error: "Could not send test email" });
-    }
-    return true;
-  }
-
-  if (pathname === "/api/ldap/test" && request.method === "POST") {
-    if (!requireAuth(request, response, ["super_admin"])) return true;
-    try {
-      const settings = await readSettings();
-      const result = await testLdapSettings(settings);
-      await pool.execute(
-        "INSERT INTO notifications (type, recipient, subject, body, status, payload_json) VALUES ('ldap_test', ?, 'LDAP test', ?, ?, ?)",
-        [
-          settings.ldapUrl || "",
-          result.ok ? "LDAP settings test succeeded." : result.reason || "LDAP settings test failed.",
-          result.ok ? "ok" : "failed",
-          JSON.stringify(result)
-        ]
-      );
-      sendJson(response, result.ok ? 200 : 400, result);
-    } catch (error) {
-      sendJson(response, 500, { ok: false, error: "Could not test LDAP" });
     }
     return true;
   }

@@ -99,9 +99,9 @@ const ids = [
   "registerProject", "registerType", "registerTitle", "registerOwner", "registerStatus", "registerImpact", "registerDueDate", "registerMitigation", "addRegisterItem", "registerList", "registerCount",
   "projectCount", "customerName", "customerContact", "customerEmail", "addCustomer", "customerList", "customerCount", "managedFileInput", "managedFileStatus", "addManagedFiles", "managedFileList", "fileCount",
   "themeMode", "backgroundStyle", "accentColor", "workflowStatusName", "addWorkflowStatus", "workflowStatusList",
-  "emailEnabled", "emailRecipients", "emailProvider", "mailSubjectTemplate", "mailBodyTemplate", "testMailBody", "ldapEnabled", "ldapUrl",
+  "emailEnabled", "emailRecipients", "emailProvider", "mailSubjectTemplate", "mailBodyTemplate", "testMailBody",
   "refreshAuditLogs", "refreshMailHistory", "auditLogList", "mailHistoryList",
-  "capacityHours", "ldapBaseDn", "ldapUserFilter", "ldapBindDn", "ldapBindPassword", "ldapGroupRoleMap", "saveSettings", "testMail", "testLdap", "settingsStatus",
+  "capacityHours", "saveSettings", "testMail", "settingsStatus",
   "newUserFullName", "newUserPosition", "newUserEmail", "newUserAddress"
   , "loginScreen", "authPanel", "showLoginTab", "showRegisterTab", "loginForm", "loginUsername", "loginPassword", "loginError",
   "registerForm", "registerCompany", "registerSubdomain", "registerFullName", "registerUsername", "registerEmail", "registerPassword", "registerError",

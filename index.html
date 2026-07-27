@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20260727-wsmail">
+  <link rel="stylesheet" href="styles.css?v=20260727-noldap">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#136f63">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -780,7 +780,7 @@
           <section class="panel-launch-grid" aria-label="Admin bölmələri">
             <button type="button" data-admin-open-section="settings" data-card-color="slate">
               <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></i><strong data-i18n="settings">Settings</strong>
-              <span>Şirkət · Mail · LDAP</span>
+              <span>Şirkət · Mail · Telegram</span>
             </button>
             <button type="button" data-admin-open-section="activity" class="admin-only" data-card-color="amber">
               <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></i><strong data-i18n="adminActivity">Admin aktivliyi</strong>
@@ -927,38 +927,6 @@
                 </label>
                 <small class="field-hint" data-i18n="telegramHint">BotFather-dən token alın, bota /start göndərin, chat ID-ni @userinfobot ilə öyrənin.</small>
                 <button id="testTelegram" type="button" data-i18n="testTelegram">Telegram test et</button>
-              </div>
-              <div class="settings-card admin-only">
-                <h3 data-i18n="ldapSettings">LDAP</h3>
-                <label class="toggle-row">
-                  <input id="ldapEnabled" type="checkbox">
-                  <span data-i18n="ldapEnabled">LDAP aktivdir</span>
-                </label>
-                <label>
-                  <span data-i18n="ldapUrl">LDAP URL</span>
-                  <input id="ldapUrl" type="text" placeholder="ldaps://ldap.example.com:636">
-                </label>
-                <label>
-                  <span data-i18n="ldapBaseDn">Base DN</span>
-                  <input id="ldapBaseDn" type="text" placeholder="dc=example,dc=com">
-                </label>
-                <label>
-                  <span data-i18n="ldapUserFilter">User filter</span>
-                  <input id="ldapUserFilter" type="text" placeholder="(uid={username})">
-                </label>
-                <label>
-                  <span data-i18n="ldapBindDn">Bind DN</span>
-                  <input id="ldapBindDn" type="text" placeholder="cn=reader,dc=example,dc=com">
-                </label>
-                <label>
-                  <span data-i18n="ldapBindPassword">Bind şifrəsi</span>
-                  <input id="ldapBindPassword" type="password" placeholder="Yeni şifrə yazılmasa dəyişmir">
-                </label>
-                <label>
-                  <span data-i18n="ldapGroupRoleMap">Group-role mapping</span>
-                  <textarea id="ldapGroupRoleMap" rows="3" placeholder='{"CN=Project Admins":"admin","CN=Project Managers":"manager"}'></textarea>
-                </label>
-                <button id="testLdap" type="button" data-i18n="testLdap">LDAP test et</button>
               </div>
               <div class="settings-actions">
                 <button id="saveSettings" class="primary" type="button" data-i18n="saveSettings">Settings saxla</button>
@@ -2007,33 +1975,33 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="supabase/supabase-config.js"></script>
-  <script src="modules/state.js?v=20260727-wsmail"></script>
-  <script src="modules/translations.js?v=20260727-wsmail"></script>
-  <script src="modules/ids.js?v=20260727-wsmail"></script>
-  <script src="modules/crypto.js?v=20260727-wsmail"></script>
-  <script src="modules/seed-data.js?v=20260727-wsmail"></script>
-  <script src="modules/utils.js?v=20260727-wsmail"></script>
-  <script src="modules/labels.js?v=20260727-wsmail"></script>
-  <script src="modules/format.js?v=20260727-wsmail"></script>
-  <script src="modules/normalize.js?v=20260727-wsmail"></script>
-  <script src="modules/storage.js?v=20260727-wsmail"></script>
-  <script src="modules/tenant.js?v=20260727-wsmail"></script>
-  <script src="modules/scope.js?v=20260727-wsmail"></script>
-  <script src="modules/dependencies.js?v=20260727-wsmail"></script>
-  <script src="modules/notifications.js?v=20260727-wsmail"></script>
-  <script src="modules/company.js?v=20260727-wsmail"></script>
-  <script src="modules/governance.js?v=20260727-wsmail"></script>
-  <script src="modules/permissions.js?v=20260727-wsmail"></script>
-  <script src="modules/project-crud.js?v=20260727-wsmail"></script>
-  <script src="modules/metrics.js?v=20260727-wsmail"></script>
-  <script src="modules/lookups.js?v=20260727-wsmail"></script>
-  <script src="modules/option-builders.js?v=20260727-wsmail"></script>
-  <script src="modules/render-markup.js?v=20260727-wsmail"></script>
-  <script src="modules/onboarding.js?v=20260727-wsmail"></script>
-  <script src="modules/project-chat.js?v=20260727-wsmail"></script>
-  <script src="modules/hero-signal-field.js?v=20260727-wsmail"></script>
-  <script src="modules/glide-reveal.js?v=20260727-wsmail"></script>
-  <script src="script.js?v=20260727-wsmail"></script>
+  <script src="modules/state.js?v=20260727-noldap"></script>
+  <script src="modules/translations.js?v=20260727-noldap"></script>
+  <script src="modules/ids.js?v=20260727-noldap"></script>
+  <script src="modules/crypto.js?v=20260727-noldap"></script>
+  <script src="modules/seed-data.js?v=20260727-noldap"></script>
+  <script src="modules/utils.js?v=20260727-noldap"></script>
+  <script src="modules/labels.js?v=20260727-noldap"></script>
+  <script src="modules/format.js?v=20260727-noldap"></script>
+  <script src="modules/normalize.js?v=20260727-noldap"></script>
+  <script src="modules/storage.js?v=20260727-noldap"></script>
+  <script src="modules/tenant.js?v=20260727-noldap"></script>
+  <script src="modules/scope.js?v=20260727-noldap"></script>
+  <script src="modules/dependencies.js?v=20260727-noldap"></script>
+  <script src="modules/notifications.js?v=20260727-noldap"></script>
+  <script src="modules/company.js?v=20260727-noldap"></script>
+  <script src="modules/governance.js?v=20260727-noldap"></script>
+  <script src="modules/permissions.js?v=20260727-noldap"></script>
+  <script src="modules/project-crud.js?v=20260727-noldap"></script>
+  <script src="modules/metrics.js?v=20260727-noldap"></script>
+  <script src="modules/lookups.js?v=20260727-noldap"></script>
+  <script src="modules/option-builders.js?v=20260727-noldap"></script>
+  <script src="modules/render-markup.js?v=20260727-noldap"></script>
+  <script src="modules/onboarding.js?v=20260727-noldap"></script>
+  <script src="modules/project-chat.js?v=20260727-noldap"></script>
+  <script src="modules/hero-signal-field.js?v=20260727-noldap"></script>
+  <script src="modules/glide-reveal.js?v=20260727-noldap"></script>
+  <script src="script.js?v=20260727-noldap"></script>
   <!-- vanilla Motion (framer-motion sibling) — KPI count-up & spring mikro-interaksiyalar -->
   <script type="module">
     import { animate } from "./modules/vendor/motion.js?v=20260714-motion";
