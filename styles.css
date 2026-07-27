@@ -8927,3 +8927,33 @@ body.dark-mode .novo-sidebar .sidebar-menu .view-tab.active .menu-icon{ color: o
   border-radius:999px; z-index:2;
   background: var(--teal, oklch(0.52 0.12 175));
 }
+
+/* ══ LOVABLE ADMIN RESTYLE (2026-07-27) — svetofor YOX, vahid teal accent ═══
+   Admin panel plitələri Lovable "Layihə Vizual" kart üslubuna uyğunlaşdırıldı:
+   ring-inset ikon kvadratı, sadə muted alt-yazı, yumşaq yuvarlaq kart. Rəng
+   VAHİD brend teal-i izləyir — rəngbərəng svetofor effekti YOXDUR (Farid). */
+.panel-launch-grid button {
+  border-radius: 18px;
+  border-width: 1px;
+}
+/* Rəngli üst zolağı sil — Lovable-də yoxdur, ikon kvadratı vizual lövbərdir */
+.panel-launch-grid button::before { display: none; }
+/* İkon kvadratı: ring-inset (Lovable), teal tint */
+.panel-launch-grid button i {
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--teal) 24%, transparent);
+}
+/* Alt-yazı: rəngli pill → sadə muted mətn (Lovable üslubu) */
+.panel-launch-grid button span {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.73rem;
+}
+/* Yumşaq layihə detal kartları da Lovable rounded-2xl estetikasına yaxınlaşsın */
+#adminModal .settings-card,
+#adminModal .section-add-card {
+  border-radius: 16px;
+}
