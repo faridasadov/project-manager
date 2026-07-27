@@ -726,6 +726,7 @@ function sendChangeAlert(recipients, subject, body) {
   if (!list.length) return;
   callSupabaseFunction(supabaseConfig().mailFunction, {
     type: "change-alert",
+    workspaceId: supabaseWorkspaceId || "",
     recipients: list.join(","),
     subject,
     text: body

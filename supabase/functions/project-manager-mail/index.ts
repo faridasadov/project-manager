@@ -2,13 +2,18 @@ import nodemailer from "npm:nodemailer@6.9.16";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 type MailPayload = {
-  type?: string;               // "digests" | "change-alert" | "cron" | "test"
+  type?: string;               // "digests" | "change-alert" | "deadline-alerts" | "cron" | "test"
+  workspaceId?: string;        // direct-send: bu workspace-in öz SMTP-si üçün açar
+  companyId?: string;
   recipients?: string;
   subject?: string;
   text?: string;
   template?: string;
   alerts?: Array<{ label?: string; taskName?: string; project?: string; end?: string }>;
 };
+
+// Workspace-in app_settings.settings_json içindəki mail konfiqi (yalnız SMTP lazımdır).
+type WsSettings = { emailProvider?: string; [k: string]: unknown };
 
 type StateUser = {
   id?: string;
@@ -78,6 +83,30 @@ function makeTransport() {
 
 function recipientsOf(value = "") {
   return value.split(/[;,]/).map((s) => s.trim()).filter(Boolean);
+}
+
+// ── Per-workspace SMTP seçimi ─────────────────────────────────────────────
+// Workspace-in öz SMTP serveri (emailProvider) varsa mail ONUN üzərindən gedir,
+// platform SMTP-si həmin workspace üçün deaktiv olur. Yoxdursa platform default.
+// provider formatı: smtps://user:pass@host:port — nodemailer birbaşa URL qəbul edir.
+function transportFor(provider?: string) {
+  const p = (provider || "").trim();
+  if (p && /^smtps?:\/\//i.test(p)) {
+    try {
+      return { transporter: nodemailer.createTransport(p), from: fromFromProvider(p), custom: true };
+    } catch { /* keçərsiz URL — platform default-a düş */ }
+  }
+  return { transporter: makeTransport(), from: smtpConfig().from, custom: false };
+}
+// Öz serveri işlədiləndə "from" — SMTP login email-dirsə ondan (server çox vaxt
+// öz login ünvanını "from" kimi tələb edir), yoxsa platform "from"-a qayıt.
+function fromFromProvider(provider: string): string {
+  try {
+    const u = new URL(provider);
+    const user = decodeURIComponent(u.username || "");
+    if (user.includes("@")) return `Project Manager <${user}>`;
+  } catch { /* ignore */ }
+  return smtpConfig().from;
 }
 
 function renderTemplate(payload: MailPayload) {
@@ -302,28 +331,58 @@ function eveningDigest(user: StateUser, mine: StateTask[], myProjects: StateProj
   return { subject: L.eveningSubject(today), text: lines.join("\n"), empty: open.length === 0 && myProjects.length === 0 && completedToday.length === 0 };
 }
 
-// ── Read all workspaces' app_state via service role ───────────────────────
-async function loadStates(): Promise<AppState[]> {
+// ── Read all workspaces' app_state + app_settings (SMTP) via service role ──
+type Workspace = { workspaceId: string; state: AppState; emailProvider: string };
+function sbEnv() {
   const url = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE") || "";
+  return { url, key, headers: { apikey: key, authorization: `Bearer ${key}` } };
+}
+async function loadWorkspaces(): Promise<Workspace[]> {
+  const { url, key, headers } = sbEnv();
   if (!url || !key) return [];
-  const res = await fetch(`${url}/rest/v1/app_state?select=state_json`, {
-    headers: { apikey: key, authorization: `Bearer ${key}` }
-  });
-  if (!res.ok) return [];
-  const rows = await res.json() as Array<{ state_json: AppState }>;
-  return rows.map((r) => r.state_json).filter(Boolean);
+  const [stateRes, settingsRes] = await Promise.all([
+    fetch(`${url}/rest/v1/app_state?select=workspace_id,state_json`, { headers }),
+    fetch(`${url}/rest/v1/app_settings?select=workspace_id,settings_json`, { headers })
+  ]);
+  if (!stateRes.ok) return [];
+  const stateRows = await stateRes.json() as Array<{ workspace_id: string; state_json: AppState }>;
+  const settingsRows = settingsRes.ok
+    ? await settingsRes.json() as Array<{ workspace_id: string; settings_json: WsSettings }>
+    : [];
+  const providerByWs = new Map<string, string>();
+  for (const r of settingsRows) {
+    const prov = (r.settings_json?.emailProvider || "").trim();
+    if (prov) providerByWs.set(r.workspace_id, prov);
+  }
+  return stateRows
+    .filter((r) => r.state_json)
+    .map((r) => ({ workspaceId: r.workspace_id, state: r.state_json, emailProvider: providerByWs.get(r.workspace_id) || "" }));
+}
+
+// Direct-send üçün tək workspace-in SMTP provider-i (payload.workspaceId ilə).
+async function loadWorkspaceProvider(workspaceId: string): Promise<string> {
+  const { url, key, headers } = sbEnv();
+  if (!url || !key || !workspaceId) return "";
+  const res = await fetch(
+    `${url}/rest/v1/app_settings?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=settings_json&limit=1`,
+    { headers }
+  );
+  if (!res.ok) return "";
+  const rows = await res.json() as Array<{ settings_json: WsSettings }>;
+  return (rows[0]?.settings_json?.emailProvider || "").trim();
 }
 
 // ── Digest run (called by hourly cron) ────────────────────────────────────
 async function runDigests() {
-  const states = await loadStates();
-  const transporter = makeTransport();
+  const workspaces = await loadWorkspaces();
   const sent: Array<{ email: string; kind: string }> = [];
   const errors: Array<{ email: string; error: string }> = [];
-  const from = smtpConfig().from;
 
-  for (const state of states) {
+  for (const ws of workspaces) {
+    const state = ws.state;
+    // Bu workspace-in öz SMTP-si varsa onun üzərindən, yoxsa platform default.
+    const { transporter, from } = transportFor(ws.emailProvider);
     const users = state.users || [];
     const tasks = state.tasks || [];
     const projects = state.projects || [];
@@ -388,15 +447,10 @@ Deno.serve(async (req) => {
     return Response.json({ error: "Method not allowed" }, { status: 405, headers: corsHeaders });
   }
 
-  const c = smtpConfig();
-  if (!c.user || !c.pass) {
-    return Response.json({ skipped: true, reason: "SMTP_USER or SMTP_PASS is not configured" }, { headers: corsHeaders });
-  }
-
   let payload: MailPayload = {};
   try { payload = await req.json() as MailPayload; } catch { /* empty body ok for digests */ }
 
-  // Scheduled digest run (hourly cron)
+  // Scheduled digest run (hourly cron) — hər workspace öz SMTP-si ilə (transportFor).
   if (payload.type === "digests") {
     try {
       const result = await runDigests();
@@ -406,19 +460,26 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Direct send: change-alert (client), cron (legacy), test
+  // Direct send: change-alert (client), deadline-alerts, cron (legacy), test
   const to = recipientsOf(payload.recipients || "");
   if (!to.length) {
     return Response.json({ skipped: true, reason: "No recipients configured" }, { headers: corsHeaders });
   }
+  // Bu workspace-in öz SMTP serveri varsa mail ONUN üzərindən; yoxsa platform default.
+  const provider = payload.workspaceId ? await loadWorkspaceProvider(payload.workspaceId) : "";
+  const { transporter, from, custom } = transportFor(provider);
+  const platform = smtpConfig();
+  if (!custom && (!platform.user || !platform.pass)) {
+    return Response.json({ skipped: true, reason: "SMTP is not configured" }, { headers: corsHeaders });
+  }
   try {
-    const info = await makeTransport().sendMail({
-      from: c.from,
+    const info = await transporter.sendMail({
+      from,
       to: to.join(", "),
       subject: payload.subject || "Project Manager",
       text: renderTemplate(payload)
     });
-    return Response.json({ ok: true, provider: "smtp", messageId: info.messageId, recipients: to }, { headers: corsHeaders });
+    return Response.json({ ok: true, provider: custom ? "workspace-smtp" : "platform-smtp", messageId: info.messageId, recipients: to }, { headers: corsHeaders });
   } catch (err) {
     return Response.json({ error: String((err as Error)?.message || err) || "SMTP send failed" }, { status: 502, headers: corsHeaders });
   }
