@@ -1636,27 +1636,14 @@ function closeManagerPanel() {
 }
 
 // ─── Şəxsi Parametrlər (hər rol üçün) ────────────────────────────────────────
-// Report/bildiriş VƏ görünüş (tema/fon/rəng) kartları admin Settings blokundan
-// bura köçürülür və bağlananda geri qaytarılır. Beləcə user/manager/admin —
-// hamısı öz report vaxtını VƏ temasını təyin edə bilir, DOM/ID tək nüsxə qalır
-// (duplikat forma buq mənbəyidir). Kartlar array-lə idarə olunur.
-const PERSONAL_SETTINGS_CARDS = ["reportPrefsCard", "appearanceCard", "passwordCard"];
-let personalSettingsPlaceholders = [];
+// Report/bildiriş, görünüş (tema/fon/rəng) VƏ parol kartları birbaşa
+// #personalSettingsBody içində yaşayır (admin Settings blokunda təkrar YOXDUR).
+// Beləcə user/manager/admin — hamısı öz report vaxtını, temasını və parolunu
+// header dişli çarxından təyin edir, admin panel yalnız iş sahəsi ayarları üçündür.
 function openPersonalSettings() {
   if (!currentUser) return;
   const modal = document.querySelector("#personalSettingsModal");
-  const body = document.querySelector("#personalSettingsBody");
-  if (!modal || !body) return;
-  PERSONAL_SETTINGS_CARDS.forEach((id) => {
-    const card = document.getElementById(id);
-    if (!card) return;
-    if (!personalSettingsPlaceholders.some((p) => p.id === id)) {
-      const ph = document.createComment("personal-settings:" + id);
-      card.before(ph);
-      personalSettingsPlaceholders.push({ id, ph });
-    }
-    body.appendChild(card);
-  });
+  if (!modal) return;
   syncReportPrefsForm();
   // Görünüş selektlərini cari appSettings-dən sinxronla (admin sahələrinə toxunmadan).
   if (themeModeInput) themeModeInput.value = appSettings.themeMode;
@@ -1669,11 +1656,6 @@ function openPersonalSettings() {
 }
 function closePersonalSettings() {
   const modal = document.querySelector("#personalSettingsModal");
-  personalSettingsPlaceholders.forEach(({ ph, id }) => {
-    const card = document.getElementById(id);
-    if (card && ph.parentNode) ph.replaceWith(card);
-  });
-  personalSettingsPlaceholders = [];
   if (modal) {
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20260726-kanbangroup">
+  <link rel="stylesheet" href="styles.css?v=20260727-settingsdedup">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#136f63">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -780,7 +780,7 @@
           <section class="panel-launch-grid" aria-label="Admin bölmələri">
             <button type="button" data-admin-open-section="settings" data-card-color="slate">
               <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></i><strong data-i18n="settings">Settings</strong>
-              <span>Görünüş · Dil</span>
+              <span>Şirkət · Mail · LDAP</span>
             </button>
             <button type="button" data-admin-open-section="activity" class="admin-only" data-card-color="amber">
               <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></i><strong data-i18n="adminActivity">Admin aktivliyi</strong>
@@ -860,105 +860,6 @@
                 <h3>Snapshotlar</h3>
                 <p class="field-hint" style="margin:0 0 10px">Hər dəyişiklik serverdə avtomatik arxivlənir. Yaxın keçmiş sıx, uzaq keçmiş seyrək saxlanılır: son 1 saat — hamısı · son 24 saat — hər 30 dəq · 1–7 gün — hər 3 saat · 7–90 gün — gündə bir. Offline olduqda bu brauzerin lokal nüsxələri göstərilir.</p>
                 <div id="snapshotList" class="snapshot-list"><em style="color:var(--muted);font-size:.83rem">Snapshot yoxdur</em></div>
-              </div>
-              <div class="settings-card" id="reportPrefsCard">
-                <h3 data-i18n="reportSettings">Bildiriş və Hesabatlar</h3>
-                <p class="field-hint" style="margin:0 0 10px" data-i18n="reportSettingsHint">Öz e-poçtunu və hesabat vaxtlarını təyin et. Hesabatlar yalnız sənə gəlir.</p>
-                <label>
-                  <span data-i18n="reportEmail">E-poçt (hesabat üçün)</span>
-                  <input id="reportEmail" type="email" placeholder="ad@example.com" autocomplete="email">
-                </label>
-                <label>
-                  <span data-i18n="reportLanguage">Hesabat dili</span>
-                  <select id="reportLanguage">
-                    <option value="az">Azərbaycan</option>
-                    <option value="ru">Русский</option>
-                    <option value="en">English</option>
-                  </select>
-                </label>
-                <label class="report-toggle">
-                  <input id="reportMorningEnabled" type="checkbox">
-                  <span data-i18n="reportMorning">🌅 Səhər hesabatı</span>
-                </label>
-                <label>
-                  <span data-i18n="reportMorningTime">Səhər saatı</span>
-                  <select id="reportMorningHour"></select>
-                </label>
-                <label class="report-toggle">
-                  <input id="reportEveningEnabled" type="checkbox">
-                  <span data-i18n="reportEvening">🌙 Gün sonu hesabatı</span>
-                </label>
-                <label>
-                  <span data-i18n="reportEveningTime">Axşam saatı</span>
-                  <select id="reportEveningHour"></select>
-                </label>
-                <label class="report-toggle">
-                  <input id="reportDeadlineEnabled" type="checkbox">
-                  <span data-i18n="reportDeadline">⏰ Deadline xəbərdarlıqları</span>
-                </label>
-                <label class="report-toggle">
-                  <input id="reportChangeEnabled" type="checkbox">
-                  <span data-i18n="reportChange">🔔 Anlıq dəyişiklik bildirişləri</span>
-                </label>
-                <p id="reportMandatoryHint" class="settings-status" hidden data-i18n="reportMandatoryHint">Rəhbərlik rolu üçün gündəlik hesabat məcburidir — söndürmək olmaz. Yalnız saatı dəyişə bilərsiniz.</p>
-                <button id="saveReportPrefs" type="button" class="primary" style="margin-top:10px" data-i18n="saveReportPrefs">Yadda saxla</button>
-                <p id="reportPrefsStatus" class="settings-status"></p>
-              </div>
-              <div class="settings-card" id="appearanceCard">
-                <h3 data-i18n="appearanceSettings">Görünüş</h3>
-                <div class="appearance-fields">
-                  <label>
-                    <span data-i18n="themeMode">Görünüş modu</span>
-                    <select id="themeMode">
-                      <option value="light" data-i18n="lightMode">Light</option>
-                      <option value="dark" data-i18n="darkMode">Dark</option>
-                      <option value="system" data-i18n="systemMode">System</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span data-i18n="backgroundStyle">Fon</span>
-                    <select id="backgroundStyle">
-                      <option value="calm" data-i18n="backgroundCalm">Sakit</option>
-                      <option value="grid" data-i18n="backgroundGrid">Grid</option>
-                      <option value="plain" data-i18n="backgroundPlain">Sadə</option>
-                      <option value="focus" data-i18n="backgroundFocus">Focus</option>
-                      <option value="paper" data-i18n="backgroundPaper">Kağız</option>
-                      <option value="steel" data-i18n="backgroundSteel">Steel</option>
-                      <option value="sunrise" data-i18n="backgroundSunrise">Sunrise</option>
-                      <option value="aurora" data-i18n="backgroundAurora">Aurora</option>
-                      <option value="circuit" data-i18n="backgroundCircuit">Circuit</option>
-                      <option value="mist" data-i18n="backgroundMist">Mist</option>
-                      <option value="carbon" data-i18n="backgroundCarbon">Carbon</option>
-                      <option value="canopy" data-i18n="backgroundCanopy">Canopy</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span data-i18n="accentColor">Əsas rəng</span>
-                    <select id="accentColor">
-                      <option value="teal" data-i18n="accentTeal">Teal</option>
-                      <option value="blue" data-i18n="accentBlue">Blue</option>
-                      <option value="green" data-i18n="accentGreen">Green</option>
-                      <option value="amber" data-i18n="accentAmber">Amber</option>
-                      <option value="red" data-i18n="accentRed">Red</option>
-                      <option value="violet" data-i18n="accentViolet">Violet</option>
-                      <option value="slate" data-i18n="accentSlate">Slate</option>
-                    </select>
-                  </label>
-                </div>
-              </div>
-              <div class="settings-card" id="passwordCard">
-                <h3 data-i18n="passwordSettings">Parol</h3>
-                <p class="field-hint" style="margin:0 0 10px" data-i18n="passwordSettingsHint">Öz parolunu dəyiş. Ən azı 6 simvol.</p>
-                <label>
-                  <span data-i18n="newPassword">Yeni parol</span>
-                  <input id="ownNewPassword" type="password" autocomplete="new-password" minlength="6" placeholder="••••••">
-                </label>
-                <label>
-                  <span data-i18n="confirmPassword">Yeni parol (təkrar)</span>
-                  <input id="ownNewPassword2" type="password" autocomplete="new-password" minlength="6" placeholder="••••••">
-                </label>
-                <button id="saveOwnPassword" type="button" class="primary" style="margin-top:10px" data-i18n="changePasswordBtn">Parolu dəyiş</button>
-                <p id="ownPasswordStatus" class="settings-status"></p>
               </div>
               <div class="settings-card admin-only">
                 <h3 data-i18n="workflowSettings">Workflow</h3>
@@ -1486,7 +1387,107 @@
             </div>
             <button id="closePersonalSettings" class="icon-button" type="button" aria-label="Bağla" data-personal-settings-close="true">×</button>
           </div>
-          <div id="personalSettingsBody" class="admin-section-body settings-grid"></div>
+          <div id="personalSettingsBody" class="admin-section-body settings-grid">
+              <div class="settings-card" id="reportPrefsCard">
+                <h3 data-i18n="reportSettings">Bildiriş və Hesabatlar</h3>
+                <p class="field-hint" style="margin:0 0 10px" data-i18n="reportSettingsHint">Öz e-poçtunu və hesabat vaxtlarını təyin et. Hesabatlar yalnız sənə gəlir.</p>
+                <label>
+                  <span data-i18n="reportEmail">E-poçt (hesabat üçün)</span>
+                  <input id="reportEmail" type="email" placeholder="ad@example.com" autocomplete="email">
+                </label>
+                <label>
+                  <span data-i18n="reportLanguage">Hesabat dili</span>
+                  <select id="reportLanguage">
+                    <option value="az">Azərbaycan</option>
+                    <option value="ru">Русский</option>
+                    <option value="en">English</option>
+                  </select>
+                </label>
+                <label class="report-toggle">
+                  <input id="reportMorningEnabled" type="checkbox">
+                  <span data-i18n="reportMorning">🌅 Səhər hesabatı</span>
+                </label>
+                <label>
+                  <span data-i18n="reportMorningTime">Səhər saatı</span>
+                  <select id="reportMorningHour"></select>
+                </label>
+                <label class="report-toggle">
+                  <input id="reportEveningEnabled" type="checkbox">
+                  <span data-i18n="reportEvening">🌙 Gün sonu hesabatı</span>
+                </label>
+                <label>
+                  <span data-i18n="reportEveningTime">Axşam saatı</span>
+                  <select id="reportEveningHour"></select>
+                </label>
+                <label class="report-toggle">
+                  <input id="reportDeadlineEnabled" type="checkbox">
+                  <span data-i18n="reportDeadline">⏰ Deadline xəbərdarlıqları</span>
+                </label>
+                <label class="report-toggle">
+                  <input id="reportChangeEnabled" type="checkbox">
+                  <span data-i18n="reportChange">🔔 Anlıq dəyişiklik bildirişləri</span>
+                </label>
+                <p id="reportMandatoryHint" class="settings-status" hidden data-i18n="reportMandatoryHint">Rəhbərlik rolu üçün gündəlik hesabat məcburidir — söndürmək olmaz. Yalnız saatı dəyişə bilərsiniz.</p>
+                <button id="saveReportPrefs" type="button" class="primary" style="margin-top:10px" data-i18n="saveReportPrefs">Yadda saxla</button>
+                <p id="reportPrefsStatus" class="settings-status"></p>
+              </div>
+              <div class="settings-card" id="appearanceCard">
+                <h3 data-i18n="appearanceSettings">Görünüş</h3>
+                <div class="appearance-fields">
+                  <label>
+                    <span data-i18n="themeMode">Görünüş modu</span>
+                    <select id="themeMode">
+                      <option value="light" data-i18n="lightMode">Light</option>
+                      <option value="dark" data-i18n="darkMode">Dark</option>
+                      <option value="system" data-i18n="systemMode">System</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span data-i18n="backgroundStyle">Fon</span>
+                    <select id="backgroundStyle">
+                      <option value="calm" data-i18n="backgroundCalm">Sakit</option>
+                      <option value="grid" data-i18n="backgroundGrid">Grid</option>
+                      <option value="plain" data-i18n="backgroundPlain">Sadə</option>
+                      <option value="focus" data-i18n="backgroundFocus">Focus</option>
+                      <option value="paper" data-i18n="backgroundPaper">Kağız</option>
+                      <option value="steel" data-i18n="backgroundSteel">Steel</option>
+                      <option value="sunrise" data-i18n="backgroundSunrise">Sunrise</option>
+                      <option value="aurora" data-i18n="backgroundAurora">Aurora</option>
+                      <option value="circuit" data-i18n="backgroundCircuit">Circuit</option>
+                      <option value="mist" data-i18n="backgroundMist">Mist</option>
+                      <option value="carbon" data-i18n="backgroundCarbon">Carbon</option>
+                      <option value="canopy" data-i18n="backgroundCanopy">Canopy</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span data-i18n="accentColor">Əsas rəng</span>
+                    <select id="accentColor">
+                      <option value="teal" data-i18n="accentTeal">Teal</option>
+                      <option value="blue" data-i18n="accentBlue">Blue</option>
+                      <option value="green" data-i18n="accentGreen">Green</option>
+                      <option value="amber" data-i18n="accentAmber">Amber</option>
+                      <option value="red" data-i18n="accentRed">Red</option>
+                      <option value="violet" data-i18n="accentViolet">Violet</option>
+                      <option value="slate" data-i18n="accentSlate">Slate</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div class="settings-card" id="passwordCard">
+                <h3 data-i18n="passwordSettings">Parol</h3>
+                <p class="field-hint" style="margin:0 0 10px" data-i18n="passwordSettingsHint">Öz parolunu dəyiş. Ən azı 6 simvol.</p>
+                <label>
+                  <span data-i18n="newPassword">Yeni parol</span>
+                  <input id="ownNewPassword" type="password" autocomplete="new-password" minlength="6" placeholder="••••••">
+                </label>
+                <label>
+                  <span data-i18n="confirmPassword">Yeni parol (təkrar)</span>
+                  <input id="ownNewPassword2" type="password" autocomplete="new-password" minlength="6" placeholder="••••••">
+                </label>
+                <button id="saveOwnPassword" type="button" class="primary" style="margin-top:10px" data-i18n="changePasswordBtn">Parolu dəyiş</button>
+                <p id="ownPasswordStatus" class="settings-status"></p>
+              </div>
+          </div>
         </section>
       </div>
 
@@ -2006,33 +2007,33 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="supabase/supabase-config.js"></script>
-  <script src="modules/state.js?v=20260726-kanbangroup"></script>
-  <script src="modules/translations.js?v=20260726-kanbangroup"></script>
-  <script src="modules/ids.js?v=20260726-kanbangroup"></script>
-  <script src="modules/crypto.js?v=20260726-kanbangroup"></script>
-  <script src="modules/seed-data.js?v=20260726-kanbangroup"></script>
-  <script src="modules/utils.js?v=20260726-kanbangroup"></script>
-  <script src="modules/labels.js?v=20260726-kanbangroup"></script>
-  <script src="modules/format.js?v=20260726-kanbangroup"></script>
-  <script src="modules/normalize.js?v=20260726-kanbangroup"></script>
-  <script src="modules/storage.js?v=20260726-kanbangroup"></script>
-  <script src="modules/tenant.js?v=20260726-kanbangroup"></script>
-  <script src="modules/scope.js?v=20260726-kanbangroup"></script>
-  <script src="modules/dependencies.js?v=20260726-kanbangroup"></script>
-  <script src="modules/notifications.js?v=20260726-kanbangroup"></script>
-  <script src="modules/company.js?v=20260726-kanbangroup"></script>
-  <script src="modules/governance.js?v=20260726-kanbangroup"></script>
-  <script src="modules/permissions.js?v=20260726-kanbangroup"></script>
-  <script src="modules/project-crud.js?v=20260726-kanbangroup"></script>
-  <script src="modules/metrics.js?v=20260726-kanbangroup"></script>
-  <script src="modules/lookups.js?v=20260726-kanbangroup"></script>
-  <script src="modules/option-builders.js?v=20260726-kanbangroup"></script>
-  <script src="modules/render-markup.js?v=20260726-kanbangroup"></script>
-  <script src="modules/onboarding.js?v=20260726-kanbangroup"></script>
-  <script src="modules/project-chat.js?v=20260726-kanbangroup"></script>
-  <script src="modules/hero-signal-field.js?v=20260726-kanbangroup"></script>
-  <script src="modules/glide-reveal.js?v=20260726-kanbangroup"></script>
-  <script src="script.js?v=20260726-kanbangroup"></script>
+  <script src="modules/state.js?v=20260727-settingsdedup"></script>
+  <script src="modules/translations.js?v=20260727-settingsdedup"></script>
+  <script src="modules/ids.js?v=20260727-settingsdedup"></script>
+  <script src="modules/crypto.js?v=20260727-settingsdedup"></script>
+  <script src="modules/seed-data.js?v=20260727-settingsdedup"></script>
+  <script src="modules/utils.js?v=20260727-settingsdedup"></script>
+  <script src="modules/labels.js?v=20260727-settingsdedup"></script>
+  <script src="modules/format.js?v=20260727-settingsdedup"></script>
+  <script src="modules/normalize.js?v=20260727-settingsdedup"></script>
+  <script src="modules/storage.js?v=20260727-settingsdedup"></script>
+  <script src="modules/tenant.js?v=20260727-settingsdedup"></script>
+  <script src="modules/scope.js?v=20260727-settingsdedup"></script>
+  <script src="modules/dependencies.js?v=20260727-settingsdedup"></script>
+  <script src="modules/notifications.js?v=20260727-settingsdedup"></script>
+  <script src="modules/company.js?v=20260727-settingsdedup"></script>
+  <script src="modules/governance.js?v=20260727-settingsdedup"></script>
+  <script src="modules/permissions.js?v=20260727-settingsdedup"></script>
+  <script src="modules/project-crud.js?v=20260727-settingsdedup"></script>
+  <script src="modules/metrics.js?v=20260727-settingsdedup"></script>
+  <script src="modules/lookups.js?v=20260727-settingsdedup"></script>
+  <script src="modules/option-builders.js?v=20260727-settingsdedup"></script>
+  <script src="modules/render-markup.js?v=20260727-settingsdedup"></script>
+  <script src="modules/onboarding.js?v=20260727-settingsdedup"></script>
+  <script src="modules/project-chat.js?v=20260727-settingsdedup"></script>
+  <script src="modules/hero-signal-field.js?v=20260727-settingsdedup"></script>
+  <script src="modules/glide-reveal.js?v=20260727-settingsdedup"></script>
+  <script src="script.js?v=20260727-settingsdedup"></script>
   <!-- vanilla Motion (framer-motion sibling) — KPI count-up & spring mikro-interaksiyalar -->
   <script type="module">
     import { animate } from "./modules/vendor/motion.js?v=20260714-motion";
