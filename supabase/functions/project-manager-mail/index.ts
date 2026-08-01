@@ -228,7 +228,8 @@ const L10N = {
     completedToday: (n: number) => `✅ Bu gün tamamlanan: ${n}`,
     dueTodayOpen: (n: number) => `📌 Bu gün deadline olan (açıq): ${n}`,
     remaining: (n: number) => `Sabaha qalan açıq tapşırıq: ${n}`,
-    teamWord: "komanda"
+    teamWord: "komanda",
+    status: { "Plan": "Plan", "Davam edir": "Davam edir", "Bitib": "Bitib" } as Record<string, string>
   },
   ru: {
     greeting: (name: string) => `Здравствуйте, ${name}!`,
@@ -247,7 +248,8 @@ const L10N = {
     completedToday: (n: number) => `✅ Выполнено сегодня: ${n}`,
     dueTodayOpen: (n: number) => `📌 Дедлайн сегодня (открытые): ${n}`,
     remaining: (n: number) => `Открытых задач на завтра: ${n}`,
-    teamWord: "команда"
+    teamWord: "команда",
+    status: { "Plan": "План", "Davam edir": "В работе", "Bitib": "Завершено" } as Record<string, string>
   },
   en: {
     greeting: (name: string) => `Hello, ${name}!`,
@@ -266,9 +268,16 @@ const L10N = {
     completedToday: (n: number) => `✅ Completed today: ${n}`,
     dueTodayOpen: (n: number) => `📌 Due today (open): ${n}`,
     remaining: (n: number) => `Open tasks remaining: ${n}`,
-    teamWord: "team"
+    teamWord: "team",
+    status: { "Plan": "Planned", "Davam edir": "In progress", "Bitib": "Completed" } as Record<string, string>
   }
 };
+// Status kanonik AZ-dır ("Plan"/"Davam edir"/"Bitib"). Hesabat dilinə çevir;
+// workspace-in xüsusi (custom) statusu tərcümədə yoxdursa xam qalır.
+function localizeStatus(raw: string | undefined, L: Lang): string {
+  if (!raw) return "-";
+  return L.status[raw] || raw;
+}
 function langOf(prefs?: ReportPrefs): Lang {
   const l = prefs?.language;
   return (l === "ru" || l === "en") ? L10N[l] : L10N.az;
@@ -289,7 +298,7 @@ function portfolioLines(mine: StateTask[], myProjects: StateProject[], today: st
   for (const t of open.slice(0, 30)) {
     const d = daysUntil(t.end, today);
     const tail = d === null ? "" : d < 0 ? L.overdueBy(Math.abs(d)) : d === 0 ? L.dueTodayTail : L.daysLeft(d);
-    lines.push(`  • ${t.name}${ownerTag(t, nameOf, L)} [${t.status || "-"}, ${t.progress ?? 0}%]${tail}`);
+    lines.push(`  • ${t.name}${ownerTag(t, nameOf, L)} [${localizeStatus(t.status, L)}, ${t.progress ?? 0}%]${tail}`);
   }
   if (overdue.length) { lines.push(""); lines.push(L.overdue(overdue.length)); }
   if (dueSoon.length) {
@@ -298,7 +307,7 @@ function portfolioLines(mine: StateTask[], myProjects: StateProject[], today: st
   }
   if (myProjects.length) {
     lines.push(""); lines.push(leadership ? L.companyProjects(myProjects.length) : L.myProjects(myProjects.length));
-    for (const p of myProjects.slice(0, 20)) lines.push(`  • ${p.name} [${p.status || "-"}, ${projectPercent(p, mine)}%]`);
+    for (const p of myProjects.slice(0, 20)) lines.push(`  • ${p.name} [${localizeStatus(p.status, L)}, ${projectPercent(p, mine)}%]`);
   }
   return { lines, open };
 }
@@ -358,6 +367,27 @@ async function loadWorkspaces(): Promise<Workspace[]> {
   return stateRows
     .filter((r) => r.state_json)
     .map((r) => ({ workspaceId: r.workspace_id, state: r.state_json, emailProvider: providerByWs.get(r.workspace_id) || "" }));
+}
+
+// Göndərilən digest-i notifications cədvəlinə də yaz (tarixçə üçün — əvvəllər
+// yalnız console.log idi). Uğursuzluq mail axınını pozmamalıdır.
+async function insertNotification(workspaceId: string, type: string, recipient: string, subject: string, body: string) {
+  const { url, key, headers } = sbEnv();
+  if (!url || !key || !workspaceId) return;
+  try {
+    await fetch(`${url}/rest/v1/notifications`, {
+      method: "POST",
+      headers: { ...headers, "content-type": "application/json", prefer: "return=minimal" },
+      body: JSON.stringify({
+        workspace_id: workspaceId,
+        type,
+        recipient,
+        subject,
+        body: (body || "").slice(0, 2000),
+        status: "sent",
+      }),
+    });
+  } catch { /* bildiriş yazısı uğursuz olsa mail axını davam etsin */ }
 }
 
 // Direct-send üçün tək workspace-in SMTP provider-i (payload.workspaceId ilə).
@@ -427,6 +457,7 @@ async function runDigests() {
         try {
           await transporter.sendMail({ from, to: email, subject: job.subject, text: job.text });
           sent.push({ email, kind: job.kind });
+          await insertNotification(ws.workspaceId, `digest-${job.kind}`, email, job.subject, job.text);
         } catch (err) {
           errors.push({ email, error: String((err as Error)?.message || err) });
         }

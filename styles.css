@@ -450,6 +450,149 @@ body.readonly-role .time-entry-form {
   display: none;
 }
 
+/* ── "Yalnız oxu" (write-locked): online tenant-da datanı yalnız admin yaza bilir.
+   Qeyri-admin üçün bütün data-redaktə düymələri gizlənir — server onsuz da yazmır,
+   bu isə "yadda saxladım sandım, itdi" çaşqınlığının qarşısını alır. Şəxsi parol
+   (#saveOwnPassword — GoTrue, blobdan asılı deyil) toxunulmur. */
+body.write-locked .admin-only,
+body.write-locked .manager-only,
+body.write-locked .task-actions .edit-action,
+body.write-locked .task-actions .danger-action,
+body.write-locked .task-actions .next-action,
+body.write-locked .comment-form,
+body.write-locked .time-entry-form,
+body.write-locked .project-create-inline,
+body.write-locked #focusNewProject,
+body.write-locked #openTaskComposer,
+body.write-locked #contextAddTask,
+body.write-locked #addCustomer,
+body.write-locked #addManagedFiles,
+body.write-locked #addProjectLink,
+body.write-locked #addProjectTeamMembers,
+body.write-locked #addRegisterItem,
+body.write-locked #addWorkflowStatus,
+body.write-locked #addTeam,
+body.write-locked #addUser,
+body.write-locked #mgrAddRegister,
+body.write-locked #mgrAddTeam,
+body.write-locked #teamsAddTeam,
+body.write-locked #teamsAddUser,
+body.write-locked #saveProjectManagers,
+body.write-locked #saveImportMapping {
+  display: none !important;
+}
+
+/* Təsdiqlənməmiş workspace banneri (#42) — default gizli, yalnız pending halda görünür */
+.workspace-pending-banner {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto 12px;
+  max-width: 1180px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: #fff4d6;
+  color: #6b4e00;
+  border: 1px solid #f0c651;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.workspace-pending-banner .wpb-icon { font-size: 18px; flex: none; }
+.workspace-pending-banner strong { font-weight: 700; }
+body.workspace-pending .workspace-pending-banner { display: flex; }
+body.dark-mode .workspace-pending-banner {
+  background: #3a2f10;
+  color: #ffe6a3;
+  border-color: #6b5410;
+}
+
+/* Offline indikatoru (#14) */
+.offline-indicator {
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1200;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #3a2f10;
+  color: #ffe6a3;
+  border: 1px solid #6b5410;
+  font-size: 13px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+body.is-offline .offline-indicator { display: block; }
+
+/* Audit-log filtri (#11) */
+.audit-filter-input {
+  width: 100%;
+  margin: 6px 0 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line, #d6e0f0);
+  background: var(--bg, #f8f9ff);
+  color: inherit;
+  font-size: 13px;
+}
+.audit-filter-input:focus {
+  outline: none;
+  border-color: var(--accent, #0f766e);
+}
+
+/* Checklist (#6) */
+/* Checklist (#6) — dizayn sistemi tokenləri (əvvəl yanlış --bg/--accent idi) */
+.checklist-list { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--ink);
+  transition: background 140ms ease;
+}
+.checklist-item:hover { background: var(--soft); }
+.checklist-item.done span { text-decoration: line-through; opacity: 0.55; }
+.checklist-item input[type="checkbox"] { flex: none; width: 16px; height: 16px; min-width: 16px; accent-color: var(--teal); }
+.checklist-item span { flex: 1; }
+.checklist-del {
+  flex: none;
+  min-height: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.checklist-del:hover:not(:disabled) { color: var(--red, #dc2626); box-shadow: none; transform: none; }
+.checklist-add-form { display: flex; gap: 6px; margin-top: 8px; }
+.checklist-add-form input { flex: 1; padding: 8px 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--soft); color: var(--ink); }
+.checklist-add-form input:focus-visible { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 22%, transparent); }
+.checklist-add-form button { padding: 0 16px; border-radius: 8px; border: 1px solid var(--teal); background: var(--teal); color: #fff; cursor: pointer; font-weight: 600; }
+.checklist-add-form button:hover:not(:disabled) { background: color-mix(in srgb, var(--teal) 86%, #000); border-color: color-mix(in srgb, var(--teal) 86%, #000); }
+
+/* Watchers (#8) — dizayn sistemi tokenləri */
+.watcher-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.watcher-chip {
+  padding: 3px 11px; border-radius: 999px;
+  background: color-mix(in srgb, var(--teal) 8%, var(--soft));
+  border: 1px solid color-mix(in srgb, var(--teal) 18%, var(--line));
+  color: var(--ink); font-size: 0.75rem; font-weight: 600;
+}
+.watch-toggle {
+  margin-left: 8px; padding: 5px 12px; min-height: 0;
+  border-radius: 8px; border: 1px solid var(--teal);
+  background: transparent; color: var(--teal);
+  cursor: pointer; font-size: 0.78rem; font-weight: 600;
+}
+.watch-toggle:hover:not(:disabled) { background: color-mix(in srgb, var(--teal) 10%, transparent); }
+.watch-toggle.watching { background: var(--teal); color: #fff; }
+.watch-toggle:hover { border-color: var(--accent, #0f766e); }
+
 body.manager-role .admin-only {
   display: none;
 }
@@ -1995,6 +2138,134 @@ button:hover {
   font-weight: 700;
 }
 
+/* ── Sol-aşağı istifadəçi kartı (əvvəlki "Komanda yüklənməsi" footer-ini əvəz
+   edir; yüklənmə datası Dashboard panelində qalır) ── */
+.sidebar-user-card {
+  justify-content: flex-start;
+  gap: 10px;
+  text-transform: none;
+}
+.sidebar-user-avatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #17a08c 0%, #0f6f63 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 12px rgba(15, 111, 99, 0.28);
+}
+.novo-sidebar .sidebar-user-card .sidebar-user-avatar { color: #ffffff; }
+.sidebar-user-meta {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  text-align: left;
+}
+/* Ad — pill DEYİL (footer strong pill qaydasını üstələyir) */
+.novo-sidebar .sidebar-user-card .sidebar-user-meta strong,
+body:not(.dark-mode) .novo-sidebar .sidebar-user-card .sidebar-user-meta strong {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidebar-user-card .sidebar-user-role {
+  font-size: 0.66rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* İstifadəçinin öz tapşırıq statistikası (kiçik çiplər) */
+.sidebar-user-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin-top: 5px;
+}
+.sidebar-user-stats .su-stat {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--muted);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--teal) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--teal) 16%, transparent);
+  white-space: nowrap;
+}
+.sidebar-user-stats .su-stat strong { color: var(--ink); font-weight: 800; }
+.sidebar-user-stats .su-active strong { color: var(--amber, #d97706); }
+.sidebar-user-stats .su-done strong { color: var(--green, #16a34a); }
+.novo-sidebar .sidebar-user-stats .su-stat { color: #a9b7cc; }
+.novo-sidebar .sidebar-user-stats .su-stat strong { color: #fff; }
+
+/* ── İcra faizi modalı (dizayn sistemi: admin/task-composer paneli ilə eyni:
+   radius 22px, gradient səth, teal kölgə, modalEnter animasiya) ── */
+.progress-shell { align-items: center; justify-content: center; }
+.progress-panel {
+  position: relative;
+  z-index: 5;
+  width: min(380px, 92vw);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(15, 118, 110, 0.10), transparent 34%),
+    linear-gradient(225deg, rgba(37, 99, 235, 0.08), transparent 30%),
+    var(--panel);
+  box-shadow: 0 40px 100px rgba(10, 14, 28, 0.28), 0 0 0 1px rgba(0,0,0,0.06);
+  transform: translateY(14px) scale(0.982);
+  transition: transform 180ms ease;
+}
+.modal-shell.open .progress-panel { transform: translateY(0) scale(1); animation: modalEnter 180ms ease-out; }
+.progress-body { padding: 20px 22px 22px; display: grid; gap: 16px; }
+.progress-task-name {
+  margin: 0; text-align: center;
+  font-weight: 700; color: var(--ink); font-size: 0.98rem;
+}
+.progress-ring-wrap {
+  position: relative;
+  justify-self: center;
+  width: 128px; height: 128px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: conic-gradient(var(--teal) var(--progress-pct, 10%), color-mix(in srgb, var(--teal) 14%, transparent) 0);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--teal) 20%, transparent);
+  transition: background 160ms ease;
+}
+.progress-ring-wrap::before {
+  content: ""; position: absolute; inset: 13px; border-radius: 50%;
+  background: var(--panel);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+}
+.progress-ring-value { position: relative; font-size: 1.7rem; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
+#progressRange { width: 100%; accent-color: var(--teal); cursor: pointer; }
+.progress-value-row { display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; color: var(--muted); }
+.progress-value-row input {
+  width: 84px; text-align: center; padding: 9px 8px; min-height: 42px;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--soft); color: var(--ink);
+  font-weight: 800; font-size: 1.05rem;
+}
+.progress-value-row input:focus-visible { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 24%, transparent); }
+.progress-pct-sign { font-size: 1.05rem; }
+.progress-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+.progress-actions .progress-btn { min-height: 40px; padding: 0 20px; font-size: 0.9rem; }
+
 
 .top-shell {
   margin: 0 28px 0 284px;
@@ -2684,56 +2955,122 @@ button.small {
   box-shadow: -24px 0 60px rgba(15, 23, 42, 0.22);
 }
 
-.notification-shell {
-  place-items: stretch end;
-  padding: 0;
+.modal-shell.notification-shell {
+  place-items: start end;
+  padding: 68px 18px 18px;
   z-index: 10030;
+}
+.notification-shell .modal-backdrop {
+  background: transparent;
 }
 
 .notification-panel {
   position: relative;
   z-index: 2;
-  width: min(520px, 100%);
-  height: 100vh;
+  width: min(380px, 92vw);
+  height: auto;
+  max-height: min(70vh, calc(100vh - 96px));
   overflow: auto;
   display: grid;
   grid-template-rows: auto 1fr;
   background: var(--panel);
-  border-left: 1px solid var(--line);
-  box-shadow: -24px 0 70px rgba(15, 23, 42, 0.2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.22);
+  animation: modalEnter 0.16s ease;
 }
 
 .notification-list {
   display: grid;
   align-content: start;
-  gap: 10px;
-  padding: 16px;
+  gap: 8px;
+  padding: 12px;
 }
 
 .notification-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  justify-content: flex-end;
-}
-
-.notification-item {
-  display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  border: 1px solid color-mix(in srgb, var(--teal) 22%, var(--line));
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--panel) 88%, var(--teal) 6%);
-  padding: 12px;
 }
+.notification-actions .ntf-summary { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.notification-actions .ntf-action-btns { display: flex; gap: 6px; }
+.notification-actions .ntf-enable { min-width: 38px; padding: 0 10px; }
 
-.notification-item.read {
-  opacity: 0.72;
+/* Bildiriş elementi — Lovable notification-drawer dizaynı: sol teal zolaq
+   (oxunmamış), tip-rəngli ikon tile, tip pill, oxunmuş sönük. */
+.notification-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px 13px 12px 15px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  overflow: hidden;
+  transition: transform 140ms ease, box-shadow 140ms ease;
 }
+.notification-item:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(15, 23, 42, 0.08); }
+.notification-item:not(.read) {
+  background: color-mix(in srgb, var(--teal) 4%, var(--panel));
+  border-color: color-mix(in srgb, var(--teal) 20%, var(--line));
+}
+.notification-item:not(.read)::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 11px; bottom: 11px;
+  width: 3px; border-radius: 0 2px 2px 0;
+  background: var(--teal);
+}
+.notification-item.read { background: color-mix(in srgb, var(--soft) 45%, var(--panel)); opacity: 0.72; }
 
-.notification-item span {
-  display: grid;
-  gap: 3px;
+.notification-item .ntf-icon {
+  flex: none;
+  width: 32px; height: 32px;
+  margin-top: 1px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--teal) 12%, transparent);
+  color: var(--teal);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--teal) 22%, transparent);
+}
+.notification-item .ntf-icon svg { width: 16px; height: 16px; }
+.notification-item .ntf-body { display: grid; gap: 5px; min-width: 0; flex: 1; }
+.notification-item .ntf-body > strong {
+  font-size: 0.85rem; font-weight: 700; color: var(--ink); line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.notification-item.read .ntf-body > strong { font-weight: 600; color: var(--muted); }
+.notification-item .ntf-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.notification-item .ntf-tag {
+  font-size: 0.62rem; font-weight: 600;
+  padding: 2px 8px; border-radius: 999px;
+  background: color-mix(in srgb, var(--teal) 10%, transparent);
+  color: var(--teal);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--teal) 20%, transparent);
+}
+.notification-item .ntf-meta time { font-size: 0.68rem; color: var(--muted); }
+
+/* Tip-spesifik semantik rənglər (ikon + pill) */
+.notification-item.ntf-mention .ntf-icon,
+.notification-item.ntf-mention .ntf-tag {
+  background: color-mix(in srgb, var(--amber) 15%, transparent);
+  color: var(--amber);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--amber) 26%, transparent);
+}
+.notification-item.ntf-deadline .ntf-icon,
+.notification-item.ntf-deadline .ntf-tag {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--red) 22%, transparent);
+}
+.notification-item.ntf-activity .ntf-icon,
+.notification-item.ntf-activity .ntf-tag {
+  background: rgba(37, 99, 235, 0.10);
+  color: #2563eb;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22);
 }
 
 .task-detail-body {
@@ -2748,15 +3085,59 @@ button.small {
   gap: 10px;
 }
 
-.task-detail-grid span,
+/* Meta xanaları (Lovable: rounded-xl border bg-background/60, uppercase etiket) */
+.task-detail-grid span {
+  display: grid;
+  gap: 3px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 92%, var(--soft));
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.task-detail-grid span strong {
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+/* Bölmə kartları (Lovable: rounded-2xl border bg-card p-4 surface-elevated) */
 .task-detail-section {
   display: grid;
-  gap: 5px;
-  padding: 12px;
+  gap: 10px;
+  padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--panel) 88%, var(--soft));
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
 }
+.task-detail-section > h3,
+.task-detail-section .comments > h4 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+/* teal aksent zolağı (Lovable-dəki teal bölmə ikonunun vanilla qarşılığı) */
+.task-detail-section > h3::before,
+.task-detail-section .comments > h4::before {
+  content: "";
+  flex: none;
+  width: 3px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--teal);
+}
+.task-detail-section > h3 small { color: var(--muted); font-weight: 600; }
+.task-detail-section > h3 .watch-toggle { margin-left: auto; }
 
 .composer-head {
   display: flex;
@@ -8766,7 +9147,7 @@ body.dark-mode{
   --red: oklch(0.62 0.22 27);
 }
 /* rounder cards + soft shadows */
-.panel,.dashboard-panel,.task-card,.project-card,.kpi,.stat-card,.platform-hero,.card,.resource-panel,.teams-card,.team-card{
+.panel,.dashboard-panel,.task-card,.project-card,.kpi,.stat-card,.platform-hero,.card,.resource-panel,.teams-card,.team-card,.kanban-column,.top-shell{
   border-radius:16px !important;
 }
 .primary,button.primary,.proj-btn,.btn,.view-tab{ border-radius:11px !important; }
@@ -8794,7 +9175,9 @@ body:not(.dark-mode) .sidebar-menu .view-tab.active .menu-icon{ background: oklc
 body:not(.dark-mode) .sidebar-footer{ background: oklch(0.97 0.01 250) !important; border-color: oklch(0.92 0.008 250) !important; }
 /* footer mətni light rejimdə oxunaqlı — "Komanda yüklənməsi" + saat pill */
 body:not(.dark-mode) .novo-sidebar .sidebar-footer span{ color: oklch(0.45 0.04 250) !important; }
-body:not(.dark-mode) .novo-sidebar .sidebar-footer strong{ background: oklch(0.9 0.06 175) !important; color: oklch(0.34 0.11 175) !important; }
+body:not(.dark-mode) .novo-sidebar .sidebar-footer:not(.sidebar-user-card) strong{ background: oklch(0.9 0.06 175) !important; color: oklch(0.34 0.11 175) !important; }
+/* İstifadəçi kartında ad pill DEYİL — sadə mətn (yaşıl fon kənara daşmasın) */
+body:not(.dark-mode) .novo-sidebar .sidebar-user-card .sidebar-user-meta strong{ background: transparent !important; color: var(--ink) !important; padding: 0 !important; border-radius: 0 !important; }
 /* DARK sidebar — dərin slate (tünd-yaşıl əvəzinə) */
 body.dark-mode .novo-sidebar{ background: oklch(0.185 0.015 250) !important; border-right: 1px solid oklch(1 0 0 / 6%) !important; }
 
@@ -8896,6 +9279,10 @@ body:not(.dark-mode) .novo-brand small{ color: oklch(0.44 0.10 175) !important; 
   body.sidebar-collapsed .sidebar-menu .view-tab > span:not(.menu-icon){ display:none; }
   body.sidebar-collapsed .sidebar-footer{ flex-direction:column; gap:6px; padding:10px 6px; }
   body.sidebar-collapsed .sidebar-footer span{ display:none; }
+  /* Kollaps: yalnız avatar qalsın, ad/rol gizlənsin */
+  body.sidebar-collapsed .sidebar-user-card{ justify-content:center; }
+  body.sidebar-collapsed .sidebar-user-card .sidebar-user-avatar{ display:inline-grid; }
+  body.sidebar-collapsed .sidebar-user-card .sidebar-user-meta{ display:none; }
 
   body.sidebar-collapsed .sidebar-collapse-btn{ right:auto; left:50%; transform:translateX(-50%) rotate(180deg); }
 }

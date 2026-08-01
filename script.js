@@ -268,6 +268,16 @@ const backupList = document.querySelector("#backupList");
 const backupCount = document.querySelector("#backupCount");
 const backupSummary = document.querySelector("#backupSummary");
 const currentUserBadge = document.querySelector("#currentUserBadge");
+const sidebarUserAvatar = document.querySelector("#sidebarUserAvatar");
+const sidebarUserName = document.querySelector("#sidebarUserName");
+const sidebarUserRole = document.querySelector("#sidebarUserRole");
+const sidebarUserStats = document.querySelector("#sidebarUserStats");
+const progressModal = document.querySelector("#progressModal");
+const progressRange = document.querySelector("#progressRange");
+const progressNumber = document.querySelector("#progressNumber");
+const progressTaskName = document.querySelector("#progressTaskName");
+const progressRingValue = document.querySelector("#progressRingValue");
+const progressConfirm = document.querySelector("#progressConfirm");
 const newUsernameInput = document.querySelector("#newUsername");
 const newUserPasswordInput = document.querySelector("#newUserPassword");
 const newUserRoleInput = document.querySelector("#newUserRole");
@@ -1968,7 +1978,46 @@ function syncAuthView() {
   document.body.classList.toggle("sponsor-role", currentUser?.role === "sponsor");
   document.body.classList.toggle("readonly-role", ["viewer", "sponsor"].includes(currentUser?.role));
   document.body.classList.toggle("non-manager-role", Boolean(currentUser) && !canManageTasks());
+  // QƏRAR (Farid): online tenant-da datanı YALNIZ admin yaza bilir (RLS ilə eyni).
+  // Qeyri-admin üçün bütün redaktə düymələrini gizlədib "yalnız oxu" rejimi qururuq
+  // ki, dəyişiklik edib "yadda saxlandı" sanıb sonra itirməsin (server yazmır).
+  document.body.classList.toggle(
+    "write-locked",
+    Boolean(currentUser) && !isAdmin() && !isSuperAdmin() && Boolean(supabaseWorkspaceId)
+  );
+  // İş sahəsi hələ təsdiqlənməyibsə (approval_status !== "active") yazılar səssizcə
+  // dayanır — istifadəçi səbəbini bilməlidir. Banner yalnız real bloklama halında.
+  document.body.classList.toggle(
+    "workspace-pending",
+    Boolean(currentUser) && !isSuperAdmin() && Boolean(supabaseWorkspaceId) && !workspaceApproved
+  );
   currentUserBadge.textContent = currentUser ? `${currentUser.username} (${roleLabel(currentUser.role)})` : "";
+  // Sol-aşağı istifadəçi kartı (əvvəlki "Komanda yüklənməsi / 40h" footer-i əvəz
+  // edir; yüklənmə datası Dashboard panelində qalır). Ad + rol + baş hərf avatarı
+  // + istifadəçinin öz tapşırıq statistikası (həvalə olunan / davam edir / bitib).
+  if (sidebarUserName && sidebarUserRole && sidebarUserAvatar) {
+    const displayName = currentUser ? (currentUser.profile?.fullName || currentUser.fullName || currentUser.username || "") : "";
+    sidebarUserName.textContent = displayName || "—";
+    sidebarUserRole.textContent = currentUser ? roleLabel(currentUser.role) : "";
+    sidebarUserAvatar.textContent = displayName ? displayName.trim().charAt(0).toUpperCase() : "—";
+    if (sidebarUserStats) {
+      if (currentUser && !isSuperAdmin()) {
+        const uid = currentUser.id;
+        const mine = (appState.tasks || []).filter((t) =>
+          taskCompanyId(t) === currentCompanyId() &&
+          (resourceIncludesUser(t.owner, uid) || resourceIncludesUser(t.projectResource, uid))
+        );
+        const active = mine.filter((t) => t.status === "Davam edir").length;
+        const done = mine.filter((t) => t.status === "Bitib").length;
+        sidebarUserStats.innerHTML = `
+          <span class="su-stat" title="Mənə həvalə olunan tapşırıqlar"><strong>${mine.length}</strong> tapşırıq</span>
+          <span class="su-stat su-active" title="Davam edir"><strong>${active}</strong> davam</span>
+          <span class="su-stat su-done" title="Bitib"><strong>${done}</strong> bitib</span>`;
+      } else {
+        sidebarUserStats.innerHTML = "";
+      }
+    }
+  }
 }
 
 // ── Filtr sayğacları (faceted counts) ────────────────────────────────────────
@@ -2591,8 +2640,15 @@ function renderNextActions() {
 function renderActivityLists() {
   if (auditLogList) {
     const visibleLocalAudit = localAuditLogs.filter((item) => isAdmin() || !item.companyId || item.companyId === currentCompanyId());
-    const combinedAudit = [...visibleLocalAudit, ...auditLogs].slice(0, 80);
-    auditLogList.innerHTML = auditLogMarkup(combinedAudit);
+    let combined = [...visibleLocalAudit, ...auditLogs];
+    const q = (document.querySelector("#auditFilter")?.value || "").trim().toLowerCase();
+    if (q) {
+      combined = combined.filter((item) =>
+        [item.action, item.actor, item.entity_type, item.entity_id, item.detail]
+          .some((v) => String(v || "").toLowerCase().includes(q))
+      );
+    }
+    auditLogList.innerHTML = auditLogMarkup(combined.slice(0, 80));
   }
   if (mailHistoryList) {
     mailHistoryList.innerHTML = mailHistoryMarkup(mailHistory);
@@ -2884,13 +2940,15 @@ function openTaskDetail(id) {
       <span><strong>Status</strong>${escapeHtml(statusLabel(task.status))}</span>
       <span><strong>Tarix</strong>${shortDate(task.start)} - ${shortDate(task.end)}</span>
       <span><strong>Plan/Fakt saat</strong>${plannedHoursForTask(task)} / ${actualHoursForTask(task)}</span>
-      <span><strong>Progress</strong>${Number(task.progress) || 0}%</span>
+      <span><strong>İrəliləyiş</strong>${Number(task.progress) || 0}%</span>
     </div>
     ${renderTaskRelations(task)}
     ${task.acceptanceCriteria ? `<div class="task-detail-section"><h3>${text("acceptanceCriteria")}</h3><p>${escapeHtml(task.acceptanceCriteria)}</p></div>` : ""}
     ${task.notes ? `<div class="task-detail-section"><h3>Qeyd</h3><p>${escapeHtml(task.notes)}</p></div>` : ""}
-    <div class="task-detail-section"><h3>Comments</h3>${renderComments(task)}</div>
-    <div class="task-detail-section"><h3>Time log</h3>${renderTimeEntries(task)}</div>
+    ${renderWatchers(task)}
+    ${renderChecklist(task)}
+    <div class="task-detail-section">${renderComments(task)}</div>
+    <div class="task-detail-section"><h3>Vaxt jurnalı</h3>${renderTimeEntries(task)}</div>
   `;
   raiseModal(taskDetailModal);
   taskDetailModal.classList.add("open");
@@ -2901,6 +2959,207 @@ function closeTaskDetail() {
   taskDetailModal?.classList.remove("open");
   taskDetailModal?.setAttribute("aria-hidden", "true");
 }
+
+// ── İcra faizi modalı ("İrəli" → Davam edir) ─────────────────────────────────
+// "İrəli" düyməsi taskı Plan → Davam edir keçirəndə (və ya artıq Davam edir
+// statusunda yenidən basılanda) bu modal açılır və admin/manager icra faizini
+// təyin edir. Yalnız canManageTasks() (admin+manager) çağıra bilər.
+let progressTargetId = "";
+let progressAdvanceFromPlan = false;
+
+function syncProgressUI(value) {
+  const v = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+  if (progressRange) progressRange.value = String(v);
+  if (progressNumber) progressNumber.value = String(v);
+  if (progressRingValue) progressRingValue.textContent = `${v}%`;
+  if (progressModal) progressModal.style.setProperty("--progress-pct", `${v}%`);
+}
+
+function openProgressModal(task, advanceFromPlan) {
+  if (!task || !progressModal) return;
+  progressTargetId = task.id;
+  progressAdvanceFromPlan = Boolean(advanceFromPlan);
+  if (progressTaskName) progressTaskName.textContent = task.name || "";
+  // Plandan gələndə minimum 10% təklif et; əks halda mövcud faizi göstər.
+  const start = advanceFromPlan ? Math.max(Number(task.progress) || 0, 10) : (Number(task.progress) || 0);
+  syncProgressUI(start);
+  raiseModal(progressModal);
+  progressModal.classList.add("open");
+  progressModal.setAttribute("aria-hidden", "false");
+  progressNumber?.focus();
+}
+
+function closeProgressModal() {
+  progressTargetId = "";
+  progressModal?.classList.remove("open");
+  progressModal?.setAttribute("aria-hidden", "true");
+}
+
+function confirmProgressModal() {
+  const task = appState.tasks.find((item) => item.id === progressTargetId);
+  if (!task) { closeProgressModal(); return; }
+  if (!canManageTasks()) { closeProgressModal(); return; }
+  const value = Math.max(0, Math.min(100, Math.round(Number(progressNumber?.value) || 0)));
+  const wasStatus = task.status;
+  if (progressAdvanceFromPlan) {
+    task.status = "Davam edir";
+    task.startedAt = task.startedAt || new Date().toISOString();
+  }
+  task.progress = value;
+  recordAudit("progress", "task", task.id, `${statusLabel(task.status)} — ${value}%`);
+  const verb = progressAdvanceFromPlan && wasStatus !== "Davam edir"
+    ? `"${task.name}" tapşırığını "Davam edir" statusuna keçirdi (${value}%)`
+    : `"${task.name}" tapşırığının icra faizini ${value}% etdi`;
+  notifyManagers(`${currentUser?.username || "Kimsə"} ${verb}`, { taskId: task.id });
+  notifyWatchers(task, `${currentUser?.username || "Kimsə"} ${verb}`);
+  saveTasks();
+  closeProgressModal();
+  render();
+}
+
+// #7 Təkrarlanan tapşırıq: tamamlananda növbəti nüsxəni yarat (tarixləri sürüşdür).
+function spawnRecurringTask(task) {
+  if (!task || !["weekly", "monthly"].includes(task.recurrence)) return;
+  const shift = (iso) => {
+    if (!iso) return iso;
+    const d = new Date(String(iso).slice(0, 10) + "T00:00:00");
+    if (isNaN(d)) return iso;
+    if (task.recurrence === "weekly") d.setDate(d.getDate() + 7);
+    else d.setMonth(d.getMonth() + 1);
+    return isoDate(d);
+  };
+  const next = normalizeTask({
+    ...task,
+    id: createId(),
+    status: "Plan",
+    progress: 0,
+    start: shift(task.start),
+    end: shift(task.end),
+    startedAt: "", completedAt: "", completedBy: "", approvedAt: "", approvedBy: "",
+    completionRequestedAt: "", completionRequestedBy: "",
+    comments: [], timeEntries: [], actualHours: 0, dateChangeRequests: [], reminderSent: false,
+    checklist: (Array.isArray(task.checklist) ? task.checklist : []).map((c) => ({ id: createId(), text: c.text, done: false }))
+  });
+  appState.tasks.push(next);
+  addNotification(`Təkrarlanan tapşırıq yeniləndi: "${next.name}" (${shortDate(next.start)})`, "");
+}
+
+// #10 Fərdi xatırlatma — vaxtı çatan tapşırıqlar üçün bildiriş (klient-tərəf,
+// yalnız tətbiq açıq olanda; server-tərəf email xatırlatması gələcək iş).
+const firedReminders = new Set();
+function checkTaskReminders() {
+  if (!currentUser) return;
+  const now = Date.now();
+  let changed = false;
+  (appState.tasks || []).forEach((task) => {
+    if (!task.reminderAt || task.reminderSent || task.status === "Bitib") return;
+    if (firedReminders.has(task.id)) return;
+    if (new Date(task.reminderAt).getTime() > now) return;
+    addNotification(`⏰ Xatırlatma: "${task.name}"`, "", { type: "reminder", taskId: task.id });
+    firedReminders.add(task.id);
+    task.reminderSent = true;
+    changed = true;
+  });
+  if (changed) { saveTasks(); scheduleSupabaseSave?.(); }
+}
+setInterval(checkTaskReminders, 60000);
+
+// #6 Checklist (subtask) — task detal içində. Tamamlanma nisbəti başlıqda göstərilir.
+function renderChecklist(task) {
+  const items = Array.isArray(task.checklist) ? task.checklist : [];
+  const done = items.filter((c) => c.done).length;
+  const canEdit = canManageTasks();
+  const rows = items.map((c) => `
+    <label class="checklist-item ${c.done ? "done" : ""}">
+      <input type="checkbox" data-checklist-toggle="${c.id}" ${c.done ? "checked" : ""} ${canEdit ? "" : "disabled"}>
+      <span>${escapeHtml(c.text)}</span>
+      ${canEdit ? `<button type="button" class="checklist-del" data-checklist-del="${c.id}" aria-label="Sil">×</button>` : ""}
+    </label>`).join("");
+  return `
+    <div class="task-detail-section checklist-section" data-checklist-task="${task.id}">
+      <h3>Yoxlama siyahısı ${items.length ? `<small>(${done}/${items.length})</small>` : ""}</h3>
+      <div class="checklist-list">${rows || `<div class="empty">Addım yoxdur</div>`}</div>
+      ${canEdit ? `
+      <form class="checklist-add-form" data-checklist-add="${task.id}">
+        <input type="text" name="text" placeholder="Yeni addım…" autocomplete="off" required>
+        <button type="submit">Əlavə et</button>
+      </form>` : ""}
+    </div>`;
+}
+
+// #8 Watchers — task detalında izləyicilər + cari istifadəçi üçün İzlə/İzləmə.
+function renderWatchers(task) {
+  const watchers = Array.isArray(task.watchers) ? task.watchers : [];
+  const nameFor = (uid) => {
+    const u = (appState.users || []).find((x) => x.id === uid);
+    return u ? (u.profile?.fullName || u.username) : uid;
+  };
+  const chips = watchers.map((uid) => `<span class="watcher-chip">${escapeHtml(nameFor(uid))}</span>`).join("");
+  const meWatching = currentUser && watchers.includes(currentUser.id);
+  const toggleBtn = currentUser
+    ? `<button type="button" class="watch-toggle ${meWatching ? "watching" : ""}" data-watch-toggle="${task.id}">${meWatching ? "🔕 İzləmə" : "🔔 İzlə"}</button>`
+    : "";
+  return `
+    <div class="task-detail-section watchers-section" data-watchers-task="${task.id}">
+      <h3>İzləyicilər ${watchers.length ? `<small>(${watchers.length})</small>` : ""} ${toggleBtn}</h3>
+      <div class="watcher-chips">${chips || `<span class="muted">İzləyici yoxdur</span>`}</div>
+    </div>`;
+}
+
+taskDetailBody?.addEventListener("click", (event) => {
+  const btn = event.target.closest("[data-watch-toggle]");
+  if (!btn || !currentUser) return;
+  const task = appState.tasks.find((t) => t.id === btn.dataset.watchToggle);
+  if (!task) return;
+  task.watchers = Array.isArray(task.watchers) ? task.watchers : [];
+  if (task.watchers.includes(currentUser.id)) {
+    task.watchers = task.watchers.filter((id) => id !== currentUser.id);
+  } else {
+    task.watchers.push(currentUser.id);
+  }
+  saveTasks();
+  scheduleSupabaseSave?.();
+  openTaskDetail(task.id);
+});
+
+// Checklist qarşılıqlı əməliyyatları (toggle / sil / əlavə) — detal modalında.
+taskDetailBody?.addEventListener("click", (event) => {
+  const toggle = event.target.closest("[data-checklist-toggle]");
+  const del = event.target.closest("[data-checklist-del]");
+  if (!toggle && !del) return;
+  if (!canManageTasks()) return;
+  const taskId = event.target.closest("[data-checklist-task]")?.dataset.checklistTask;
+  const task = appState.tasks.find((t) => t.id === taskId);
+  if (!task) return;
+  task.checklist = Array.isArray(task.checklist) ? task.checklist : [];
+  if (toggle) {
+    const item = task.checklist.find((c) => c.id === toggle.dataset.checklistToggle);
+    if (item) item.done = toggle.checked;
+  } else if (del) {
+    task.checklist = task.checklist.filter((c) => c.id !== del.dataset.checklistDel);
+  }
+  saveTasks();
+  scheduleSupabaseSave?.();
+  openTaskDetail(taskId);
+  render();
+});
+
+taskDetailBody?.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-checklist-add]");
+  if (!form) return;
+  event.preventDefault();
+  if (!canManageTasks()) return;
+  const taskId = form.dataset.checklistAdd;
+  const task = appState.tasks.find((t) => t.id === taskId);
+  const value = form.elements.text.value.trim();
+  if (!task || !value) return;
+  task.checklist = Array.isArray(task.checklist) ? task.checklist : [];
+  task.checklist.push({ id: createId(), text: value, done: false });
+  saveTasks();
+  scheduleSupabaseSave?.();
+  openTaskDetail(taskId);
+  render();
+});
 
 function renderKanban() {
   const shown = visibleTasks();
@@ -3963,6 +4222,17 @@ function handleTaskAction(action, id) {
 
   if (action === "next") {
     if (!canManageTasks()) return;
+    // İrəli: Plan → Davam edir (faiz modalı açılır). Artıq "Davam edir"-dirsə,
+    // faizi yeniləmək üçün yenə modal açılır. Yalnız admin/manager.
+    if (task.status === "Plan") {
+      if (!canStartTask(task)) { alert(dependencyBlockedMessage(task)); return; }
+      openProgressModal(task, true);
+      return;
+    }
+    if (task.status === "Davam edir") {
+      openProgressModal(task, false);
+      return;
+    }
     if (!moveForward(task)) return;
     saveTasks();
     render();
@@ -3999,6 +4269,8 @@ function handleTaskAction(action, id) {
     task.completionRequestedAt = now;
     task.completionRequestedBy = currentUser.username;
     task.progress = Math.max(Number(task.progress) || 0, 95);
+    // İstifadəçi tamamlanma sorğusu göndərdi → admin/managerə xəbərdarlıq.
+    notifyManagers(`${currentUser.username} "${task.name}" tapşırığını tamamlamaq üçün sorğu göndərdi`, { taskId: task.id });
     saveTasks();
     render();
   }
@@ -4016,12 +4288,14 @@ function handleTaskAction(action, id) {
     task.completedBy = task.completionRequestedBy || currentUser.username;
     task.approvedAt = now;
     task.approvedBy = currentUser.username;
+    notifyWatchers(task, `"${task.name}" tapşırığı tamamlandı`);
+    spawnRecurringTask(task); // #7 təkrarlanan tapşırıqsa növbəti nüsxə yaranır
     saveTasks();
     render();
   }
 
   if (action === "delete") {
-    if (!canManageTasks()) return;
+    if (!isAdmin()) return; // task silmə yalnız admin (manager/user əl çatan deyil)
     appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "task", data: { ...task }, deletedAt: new Date().toISOString() });
     appState.tasks = appState.tasks.filter((item) => item.id !== task.id);
     saveTrash();
@@ -4062,7 +4336,9 @@ function editTask(id, options = {}) {
   { const ac = document.querySelector("#taskAcceptance"); if (ac) ac.value = task.acceptanceCriteria || ""; }
   parentTaskInput.value = task.parentTaskId || "";
   taskDependenciesInput.innerHTML = taskOptionItems(task.dependencyIds || [], task.id);
-  if (taskExtraDetails && (task.parentTaskId || (task.dependencyIds || []).length || task.projectResource || task.acceptanceCriteria)) {
+  { const rc = document.querySelector("#taskRecurrence"); if (rc) rc.value = task.recurrence || ""; }
+  { const rm = document.querySelector("#taskReminder"); if (rm) rm.value = task.reminderAt ? new Date(task.reminderAt).toISOString().slice(0, 16) : ""; }
+  if (taskExtraDetails && (task.parentTaskId || (task.dependencyIds || []).length || task.projectResource || task.acceptanceCriteria || task.recurrence || task.reminderAt)) {
     taskExtraDetails.open = true;
   }
   formTitle.textContent = readonly ? task.name : text("editTask");
@@ -4614,6 +4890,18 @@ async function supabaseRegisterWorkspace({ companyName, subdomain, username, pas
 }
 
 async function supabaseLoadWorkspaceState(workspaceId) {
+  // #13-A TENANT AÇARINI SERVERDƏN TƏZƏLƏ: uzun-açıq/köhnə sessiya köhnə companyId
+  // saxlaya bilər (server company_key dəyişibsə). Bu, boş-blob data itkisinin kök
+  // səbəbidir — yazıdan ƏVVƏL serverin açarı ilə uyğunlaşdırırıq ki, scope filtri
+  // real datanı süzüb atmasın. Uğursuz olsa köhnə davranış qalır (təhlükəsiz fallback).
+  try {
+    const wsRows = await supabaseRequest(`/rest/v1/workspaces?id=eq.${encodeURIComponent(workspaceId)}&select=company_key&limit=1`);
+    const serverKey = Array.isArray(wsRows) ? wsRows[0]?.company_key : "";
+    if (serverKey && currentUser && currentUser.companyId !== serverKey) {
+      console.warn(`[tenant] companyId serverlə uyğunlaşdırıldı: ${currentUser.companyId} → ${serverKey}`);
+      currentUser.companyId = serverKey;
+    }
+  } catch (err) { /* açar təzələnməsi uğursuz olsa mövcud davranış qalır */ }
   const rows = await supabaseRequest(`/rest/v1/app_state?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=state_json,state_version&limit=1`);
   const row = Array.isArray(rows) ? rows[0] : null;
   const state = row?.state_json || null;
@@ -5102,14 +5390,17 @@ function supabaseGoogleAuth() {
 }
 
 // Yazma icazəsi — RLS şərtinin klient güzgüsü:
-//   pm_same_workspace AND pm_is_active_member() AND pm_workspace_approved()
-// Əvvəl burada (və RLS-də) admin tələb olunurdu: manager/user task yaradırdı,
-// ekranda görürdü, amma yazı 403 alıb SƏSSİZCƏ itirdi. İndi iş sahəsinin
-// aktiv üzvü yaza bilir; köhnə vəziyyətin əzilməsinin qarşısını
-// state_version optimistik kilidi alır.
+//   pm_same_workspace AND pm_is_admin() AND pm_workspace_approved()
+// QƏRAR (Farid): iş sahəsinin datasına YALNIZ admin yaza bilər. RLS də
+// (app_state/app_settings üçün) yalnız admin-ə icazə verir. Əvvəl klient hər
+// aktiv üzvə yazmağa icazə verirdi, RLS isə 0 sətir qaytarırdı → manager/user
+// "başqa sessiyada dəyişdirilib" yanıltıcı dialoqu alır, dəyişikliyi səssizcə
+// itirirdi. İndi klient RLS ilə üst-üstə düşür: qeyri-admin ümumiyyətlə yazmağa
+// cəhd etmir (yalnız oxuyur).
 function canWriteWorkspaceData() {
   if (!supabaseSession?.access_token || !supabaseWorkspaceId) return false;
   if (isSuperAdmin()) return false;               // super-admin tenant datası yazmır
+  if (!isAdmin()) return false;                   // yalnız admin yazır (RLS ilə eyni)
   if (!workspaceMemberActive) return false;       // profiles.status === "active"
   if (!workspaceApproved) return false;
   return true;
@@ -5117,10 +5408,37 @@ function canWriteWorkspaceData() {
 
 function scheduleSupabaseSave() {
   if (!canWriteWorkspaceData()) return;
+  // #14 Oflayn isə serverə cəhd etmə (səssiz xəta əvəzinə növbəyə yaz) — dəyişiklik
+  // lokalda (localStorage) qalır, onlayn olanda flush edilir.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    pendingOfflineWrite = true;
+    return;
+  }
   clearTimeout(supabaseSaveTimer);
   supabaseSaveTimer = setTimeout(() => {
     supabaseSaveState().catch((error) => console.warn("Supabase save failed", error));
   }, 500);
+}
+
+// #14 Offline yazı növbəsi. Oflayn edilən dəyişikliklər lokalda saxlanır; onlayn
+// olanda flush edilir. Optimistik kilid + boş-payload klapanı artıq data itkisindən
+// qoruyur, ona görə reconnect-də təhlükəsiz flush edirik (serveri yenidən yükləmirik
+// — yükləsək oflayn dəyişikliklər əzilərdi).
+let pendingOfflineWrite = false;
+window.addEventListener("offline", () => document.body.classList.add("is-offline"));
+window.addEventListener("online", async () => {
+  document.body.classList.remove("is-offline");
+  if (!pendingOfflineWrite || !canWriteWorkspaceData()) return;
+  pendingOfflineWrite = false;
+  try {
+    await flushSupabaseSave();
+  } catch (err) {
+    console.warn("Offline flush uğursuz — növbədə qalır", err);
+    pendingOfflineWrite = true;
+  }
+});
+if (typeof navigator !== "undefined" && navigator.onLine === false) {
+  document.body.classList.add("is-offline");
 }
 
 async function flushSupabaseSave() {
@@ -5970,10 +6288,26 @@ async function enableNotifications() {
 }
 
 function openNotificationPanel() {
-  renderNotificationCenter();
+  renderNotificationCenter(); // əvvəlcə oxunmamış vurğulu görünüş
   raiseModal(notificationModal);
   notificationModal?.classList.add("open");
   notificationModal?.setAttribute("aria-hidden", "false");
+  markVisibleNotificationsRead(); // baxışdan sonra oxunmuşa keç (badge sıfırlanır)
+}
+
+// Cari istifadəçinin görə bildiyi bütün bildirişləri oxunmuş kimi işarələ.
+function markVisibleNotificationsRead() {
+  const companyId = currentCompanyId();
+  let changed = false;
+  notifications.forEach((item) => {
+    const sameCompany = !item.companyId || item.companyId === companyId;
+    const sameTarget = !item.targetUserId || item.targetUserId === currentUser?.id;
+    if (sameCompany && sameTarget && !item.read) {
+      item.read = true;
+      changed = true;
+    }
+  });
+  if (changed) saveNotifications(); // badge yenilənir + Supabase sync
 }
 
 function closeNotificationPanel() {
@@ -6011,7 +6345,20 @@ form.addEventListener("submit", async (event) => {
     dependencyIds: [...taskDependenciesInput.selectedOptions].map((option) => option.value).filter((id) => id !== taskId.value),
     timeEntries: existingTask?.timeEntries || [],
     comments: existingTask?.comments || [],
-    attachments: existingTask?.attachments || []
+    attachments: existingTask?.attachments || [],
+    checklist: existingTask?.checklist || [],      // #6 redaktədə itməsin
+    watchers: existingTask?.watchers || [],        // #8 redaktədə itməsin
+    recurrence: document.querySelector("#taskRecurrence")?.value || "",  // #7
+    reminderAt: (() => {                            // #10
+      const raw = document.querySelector("#taskReminder")?.value;
+      return raw ? new Date(raw).toISOString() : "";
+    })(),
+    reminderSent: (() => {
+      const raw = document.querySelector("#taskReminder")?.value;
+      const newAt = raw ? new Date(raw).toISOString() : "";
+      // Xatırlatma vaxtı dəyişibsə yenidən göndərilə bilsin
+      return existingTask && existingTask.reminderAt === newAt ? Boolean(existingTask.reminderSent) : false;
+    })()
   };
   if (!projectExists(task.project)) return;
   if (dependencyCreatesCycle(task.id, task.dependencyIds)) {
@@ -6043,6 +6390,20 @@ form.addEventListener("submit", async (event) => {
     await flushSupabaseSave().catch((error) => console.warn("Supabase save failed", error));
   }
   if (existingIndex >= 0) notifyTaskChange(existingTask, task);
+  // Yeni təyinat → istifadəçiyə bildiriş (admin/manager taskı ona həvalə edəndə).
+  const prevOwner = existingIndex >= 0 ? (existingTask?.owner || "") : "";
+  if (task.owner && task.owner !== prevOwner) {
+    notifyAssignment(
+      usersInResource(task.owner),
+      `${currentUser?.username || "İdarəçi"} sizə "${task.name}" tapşırığını həvalə etdi`,
+      { taskId: task.id }
+    );
+  }
+  // İdarəçi task yaradanda/dəyişəndə digər idarəçilərə də xəbərdarlıq.
+  notifyManagers(
+    `${currentUser?.username || "Kimsə"} "${task.name}" tapşırığını ${existingIndex >= 0 ? "redaktə etdi" : "yaratdı"}`,
+    { taskId: task.id }
+  );
   resetForm();
   closeTaskComposer();
   render();
@@ -6078,6 +6439,10 @@ async function submitTaskComment(event) {
     attachments,
     createdAt: new Date().toISOString()
   });
+  const mentioned = notifyMentions(value, task);
+  notifyWatchers(task, `${currentUser.username} "${task.name}" tapşırığına şərh yazdı`, mentioned);
+  // İstifadəçi komment yazanda admin və managerlərə xəbərdarlıq (öz istisna).
+  notifyManagers(`${currentUser.username} "${task.name}" tapşırığına şərh yazdı`, { taskId: task.id });
   input.value = "";
   if (attachmentInput) attachmentInput.value = "";
   saveTasks();
@@ -6709,8 +7074,10 @@ document.querySelector("#teamsGrid")?.addEventListener("click", (event) => {
     if (!isAdmin()) return;
     const team = appState.teams.find((t) => t.id === delBtn.dataset.teamDelete);
     if (!team || !confirm(`"${team.name}" komandası silinsin?`)) return;
+    appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "team", data: { ...team }, deletedAt: new Date().toISOString() });
     appState.teams = appState.teams.filter((t) => t.id !== team.id);
     saveResources();
+    saveTrash();
     recordAudit("team.deleted", "team", team.id, team.name);
     renderTeamsView();
   }
@@ -6731,6 +7098,7 @@ document.querySelector("#teamsAddUser")?.addEventListener("click", () => openAdm
 refreshAuditLogsButton?.addEventListener("click", fetchAuditLogs);
 refreshAuditLogsButton?.addEventListener("click", fetchAuditLogs);
 refreshMailHistoryButton?.addEventListener("click", fetchMailHistory);
+document.querySelector("#auditFilter")?.addEventListener("input", renderActivityLists);
 refreshPlatformCompaniesButton?.addEventListener("click", () => {
   if (canUseSupabase() && isSuperAdmin()) {
     _platformCompaniesLoaded = false;
@@ -7212,6 +7580,16 @@ notificationModal?.addEventListener("click", (event) => {
     enableNotifications();
   }
 });
+// İcra faizi modalı — slayder/rəqəm sinxronu, təsdiq, bağlama, Escape.
+progressRange?.addEventListener("input", () => syncProgressUI(progressRange.value));
+progressNumber?.addEventListener("input", () => syncProgressUI(progressNumber.value));
+progressConfirm?.addEventListener("click", confirmProgressModal);
+progressModal?.addEventListener("click", (event) => {
+  if (event.target.closest("[data-progress-close]")) closeProgressModal();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && progressModal?.classList.contains("open")) closeProgressModal();
+});
 openTaskComposerButton.addEventListener("click", () => {
   const selectedProject = projectFilter.value === "Hamısı" ? "" : projectFilter.value;
   openTaskComposerForProject(selectedProject);
@@ -7299,8 +7677,11 @@ managerPanelModal?.addEventListener("click", (event) => {
   const teamDeleteBtn = event.target.closest("[data-mgr-team-delete]");
   if (teamDeleteBtn) {
     const id = teamDeleteBtn.dataset.mgrTeamDelete;
+    const team = appState.teams.find((t) => t.id === id);
+    if (team) appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "team", data: { ...team }, deletedAt: new Date().toISOString() });
     appState.teams = appState.teams.filter((t) => t.id !== id);
     saveResources();
+    saveTrash();
     renderManagerPanel();
     render();
     return;
@@ -7325,6 +7706,7 @@ managerPanelModal?.addEventListener("click", (event) => {
     if (item) {
       if (item.type === "task") appState.tasks.push(item.data);
       else if (item.type === "projectRecord") appState.projectLinks.push(item.data);
+      else if (item.type === "team") { if (!appState.teams.some((t) => t.id === item.data.id)) appState.teams.push(item.data); }
       else appState.projects.push(item.data);
       appState.trash = appState.trash.filter((t) => t.id !== id);
       saveResources();
@@ -7394,7 +7776,14 @@ saveProjectManagersButton.addEventListener("click", () => {
   const project = appState.projects.find((item) => item.id === activeManagerProjectId);
   // Telebe-Hotel: admin + manager (moderator) layihəyə menecer təyin edə bilər
   if (!project || !canManageProjects()) return;
+  const beforeManagers = new Set(project.managerIds || []);
   project.managerIds = managerPickerIds();
+  const addedManagers = project.managerIds.filter((id) => !beforeManagers.has(id));
+  notifyAssignment(
+    addedManagers.map((id) => String(id).replace(/^user:/, "")),
+    `${currentUser?.username || "İdarəçi"} sizi "${project.name}" layihəsinə menecer təyin etdi`,
+    { projectId: project.id }
+  );
   saveResources();
   closeManagerAssign();
   render();
@@ -8492,6 +8881,16 @@ projectForm.addEventListener("submit", (event) => {
     : updateProject(activeProjectEditId, payload);
   if (!project) return;
   if (beforeSnapshot) notifyProjectChange(beforeSnapshot, project);
+  // Layihəyə yeni əlavə olunan üzvlərə bildiriş (admin/manager əlavə edəndə).
+  const prevMembers = new Set(beforeSnapshot ? beforeSnapshot.teamMemberIds : []);
+  const addedUserIds = (project.teamMemberIds || [])
+    .filter((id) => !prevMembers.has(id))
+    .flatMap((id) => usersInResource(id));
+  notifyAssignment(
+    addedUserIds,
+    `${currentUser?.username || "İdarəçi"} sizi "${project.name}" layihəsinə əlavə etdi`,
+    { projectId: project.id }
+  );
   const selectedTemplate = isNew ? projectTemplateInput?.value || "" : "";
   closeProjectComposer();
   if (selectedTemplate && canUseBackend() && authToken) {
@@ -8941,6 +9340,8 @@ registerList.addEventListener("input", (event) => {
     }
 
     if (action === "delete-team") {
+      const team = appState.teams.find((item) => item.id === id);
+      if (team) appState.trash.push({ id: createId(), companyId: currentCompanyId(), type: "team", data: { ...team }, deletedAt: new Date().toISOString() });
       appState.teams = appState.teams.filter((team) => team.id !== id);
       appState.tasks = appState.tasks.map((task) => task.owner === resourceValue("team", id) ? { ...task, owner: "" } : task);
       appState.projectLinks = appState.projectLinks.filter((link) => link.resource !== resourceValue("team", id));
@@ -8989,6 +9390,10 @@ trashList.addEventListener("click", (event) => {
     }
     if (item.type === "projectRecord" && !appState.projects.some((project) => project.id === item.data.id)) {
       appState.projects.push(normalizeProject(item.data));
+      saveResources();
+    }
+    if (item.type === "team" && !appState.teams.some((team) => team.id === item.data.id)) {
+      appState.teams.push(item.data);
       saveResources();
     }
   }

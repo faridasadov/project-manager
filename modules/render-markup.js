@@ -121,22 +121,57 @@ function mailHistoryMarkup(mailHistory) {
 }
 
 // Bildiriş mərkəzi. Deps: escapeHtml, text, formatDateTime.
+// Bildiriş tipini Azərbaycanca etiketə çevir (UI-də "activity" kimi görünməsin).
+function notificationTypeLabel(type) {
+  const map = {
+    activity: "Fəaliyyət",
+    assignment: "Təyinat",
+    mention: "Qeyd",
+    watch: "İzləmə",
+    deadline: "Son tarix",
+    digest: "Hesabat"
+  };
+  return map[type] || type || "";
+}
+
+// Bildiriş tipinə görə kiçik ikon (Lovable notification-drawer dizaynı).
+function notificationIcon(type) {
+  const svg = {
+    assignment: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>',
+    activity: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+    mention: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg>',
+    watch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+    deadline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+  };
+  return svg[type] || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+}
+
 function notificationCenterMarkup(rows) {
-  return rows.length ? `
+  if (!rows.length) return `<div class="empty">${text("empty")}</div>`;
+  const unread = rows.filter((r) => !r.read).length;
+  return `
     <div class="notification-actions">
-      <button type="button" data-notification-action="mark-read">${text("markAllRead")}</button>
-      <button type="button" data-notification-action="enable">${text("enableBrowserNotifications")}</button>
+      <span class="ntf-summary">${unread ? `${unread} oxunmamış bildiriş` : "Hamısı oxunub"}</span>
+      <span class="ntf-action-btns">
+        <button type="button" data-notification-action="mark-read" ${unread ? "" : "disabled"}>${text("markAllRead")}</button>
+        <button type="button" data-notification-action="enable" class="ntf-enable" title="${text("enableBrowserNotifications")}" aria-label="${text("enableBrowserNotifications")}">🔔</button>
+      </span>
     </div>
-    ${rows.map((item) => `
-      <div class="notification-item ${item.read ? "read" : ""}">
-        <span>
+    ${rows.map((item) => {
+      const t = item.type || "";
+      return `
+      <div class="notification-item ntf-${escapeHtml(t)} ${item.read ? "read" : ""}">
+        <span class="ntf-icon">${notificationIcon(t)}</span>
+        <span class="ntf-body">
           <strong>${escapeHtml(item.message || item.subject || "-")}</strong>
-          <small>${escapeHtml([item.type, item.status].filter(Boolean).join(" · "))}</small>
+          <span class="ntf-meta">
+            <span class="ntf-tag">${escapeHtml(notificationTypeLabel(t))}</span>
+            <time>${escapeHtml(formatDateTime(item.createdAt || item.created_at) || "-")}</time>
+          </span>
         </span>
-        <small>${escapeHtml(formatDateTime(item.createdAt || item.created_at) || "-")}</small>
-      </div>
-    `).join("")}
-  ` : `<div class="empty">${text("empty")}</div>`;
+      </div>`;
+    }).join("")}
+  `;
 }
 
 // Arxivlənmiş layihələr. Deps: escapeHtml, text, statusClass, statusLabel, shortDate.
@@ -309,11 +344,17 @@ function renderTaskInlineComments(task) {
 // admin olmayan üçün Redaktə/Növbəti/Sil ÜMUMİYYƏTLƏ render olunmur.
 function renderTaskActions(task) {
   const manage = canManageTasks();
+  // Silmə YALNIZ admin (Farid: adi user/manager task-da "Sil" düyməsini görməsin
+  // və əl çatan olmasın; handler-də də isAdmin gate-i var).
+  const canDelete = isAdmin();
   let actions = `<button class="action-button" type="button" data-action="view" data-id="${task.id}">Bax</button>`;
   if (task.status === "Bitib") {
     if (manage) {
       actions += `
-        <button class="action-button next-action" type="button" data-action="reopen" data-id="${task.id}">${text("reopen")}</button>
+        <button class="action-button next-action" type="button" data-action="reopen" data-id="${task.id}">${text("reopen")}</button>`;
+    }
+    if (canDelete) {
+      actions += `
         <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>`;
     }
   } else {
@@ -328,7 +369,7 @@ function renderTaskActions(task) {
         <button class="action-button next-action" type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}</button>`;
     }
     actions += completionAction;
-    if (manage) {
+    if (canDelete) {
       actions += `
         <button class="action-button danger-action" type="button" data-action="delete" data-id="${task.id}">${text("delete")}</button>`;
     }
@@ -446,18 +487,22 @@ function renderKanbanActions(task) {
   // İcazəyə görə şərti (renderTaskActions ilə eyni siyasət): manager/admin
   // olmayan Redaktə/Növbəti/Sil görmür, yalnız "Tamamla sorğusu" (canContribute).
   const manage = canManageTasks();
+  const canDelete = isAdmin(); // silmə yalnız admin (bax renderTaskActions)
+  const trashBtn = canDelete
+    ? `<button class="kb-btn kb-btn-danger" type="button" data-action="delete" data-id="${task.id}">${icoTrash}${text("delete")}</button>`
+    : "";
   let actions = "";
   if (task.status === "Bitib") {
     if (manage) {
       actions = `
-        <button class="kb-btn kb-btn-ghost" type="button" data-action="reopen" data-id="${task.id}">${icoReopen}${text("reopen")}</button>
-        <button class="kb-btn kb-btn-danger" type="button" data-action="delete" data-id="${task.id}">${icoTrash}${text("delete")}</button>`;
+        <button class="kb-btn kb-btn-ghost" type="button" data-action="reopen" data-id="${task.id}">${icoReopen}${text("reopen")}</button>`;
     }
+    actions += trashBtn;
   } else if (manage) {
     actions = `
         <button class="kb-btn kb-btn-ghost" type="button" data-action="edit" data-id="${task.id}">${icoEdit}${text("edit")}</button>
-        <button class="kb-btn kb-btn-primary" type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}${icoNext}</button>
-        <button class="kb-btn kb-btn-danger" type="button" data-action="delete" data-id="${task.id}">${icoTrash}${text("delete")}</button>`;
+        <button class="kb-btn kb-btn-primary" type="button" data-action="next" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("next")}${icoNext}</button>`;
+    actions += trashBtn;
   } else if (!task.completionRequestedAt && canContribute()) {
     actions = `
         <button class="kb-btn kb-btn-primary" type="button" data-action="request-done" data-id="${task.id}" ${blocked ? "disabled" : ""}>${text("doneRequest")}</button>`;
@@ -702,9 +747,10 @@ function mgrTrashListMarkup(myTrash) {
   return myTrash.length
     ? myTrash.map((t) => {
         const title = t.type === "task" ? t.data.name : (t.data.project || t.data.name);
+        const typeLabel = t.type === "task" ? " — tapşırıq" : t.type === "team" ? " — komanda" : " — layihə";
         return `
             <div class="resource-item">
-              <span><strong>${escapeHtml(title)}</strong>${t.type === "task" ? " — tapşırıq" : " — layihə"}</span>
+              <span><strong>${escapeHtml(title)}</strong>${typeLabel}</span>
               <div class="mini-actions">
                 <button type="button" data-mgr-trash-restore="${t.id}">${text("restore")}</button>
                 <button type="button" data-mgr-trash-delete="${t.id}" class="danger">${text("deleteForever")}</button>
@@ -1081,6 +1127,7 @@ function resourceTrashListMarkup(scopedTrash) {
     const title = item.type === "task" ? item.data.name : (item.data.project || item.data.name);
     const subtitle = item.type === "task"
       ? text("deletedTask")
+      : item.type === "team" ? " — komanda"
       : item.type === "projectRecord" ? text("deletedProject") : `${text("deletedProject")} - ${resourceLabel(item.data.resource)}`;
     return `
       <div class="resource-item">

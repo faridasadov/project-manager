@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20260727-admininterior">
+  <link rel="stylesheet" href="styles.css?v=20260801l-admininterior">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#136f63">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -222,10 +222,6 @@
           <input id="registerCompany" type="text" autocomplete="organization" required>
         </label>
         <label>
-          <span>Subdomain</span>
-          <input id="registerSubdomain" type="text" autocomplete="off" placeholder="klinika">
-        </label>
-        <label>
           <span>Admin adı</span>
           <input id="registerFullName" type="text" autocomplete="name" required>
         </label>
@@ -277,9 +273,13 @@
         <button class="view-tab" data-view="teams" type="button"><span class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 15.2c2.2.3 3.9 1.8 4.5 4.3"/></svg></span><span data-i18n="teams">Komandalar</span></button>
         <button class="view-tab" data-view="reports" type="button"><span class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="20" x2="5" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="15"/><line x1="3" y1="20" x2="21" y2="20"/></svg></span><span data-i18n="reports">Hesabat</span></button>
       </nav>
-      <div class="sidebar-footer">
-        <span data-i18n="teamCapacity">Komanda yüklənməsi</span>
-        <strong id="sidebarCapacityLabel">40h</strong>
+      <div class="sidebar-footer sidebar-user-card" id="sidebarUserCard">
+        <span class="sidebar-user-avatar" id="sidebarUserAvatar" aria-hidden="true">—</span>
+        <div class="sidebar-user-meta">
+          <strong id="sidebarUserName">—</strong>
+          <span class="sidebar-user-role" id="sidebarUserRole"></span>
+          <div class="sidebar-user-stats" id="sidebarUserStats"></div>
+        </div>
       </div>
     </aside>
     <header class="top-shell">
@@ -362,6 +362,11 @@
       </div>
     </section>
 
+    <div id="offlineIndicator" class="offline-indicator" role="status">📴 Oflayn — dəyişikliklər lokalda saxlanır, bağlantı qayıdanda göndəriləcək</div>
+    <div id="workspacePendingBanner" class="workspace-pending-banner" role="status">
+      <span class="wpb-icon" aria-hidden="true">⏳</span>
+      <span class="wpb-text">İş sahəniz hələ <strong>təsdiq gözləyir</strong>. Təsdiqlənənə qədər dəyişiklikləriniz serverdə saxlanmır — yalnız oxuya bilərsiniz. Təsdiqdən sonra bu xəbərdarlıq itəcək.</span>
+    </div>
     <main class="layout">
       <div id="taskComposerModal" class="modal-shell task-composer-shell" aria-hidden="true">
         <div class="modal-backdrop" data-task-modal-close="true"></div>
@@ -487,6 +492,22 @@
                 <label>
                   <span data-i18n="taskDependencies">Asılı tasklar</span>
                   <select id="taskDependencies" multiple size="3"></select>
+                </label>
+              </div>
+              <div class="form-grid">
+                <label>
+                  <span>🔁 Təkrarlanma</span>
+                  <select id="taskRecurrence">
+                    <option value="">Təkrarlanmır</option>
+                    <option value="weekly">Həftəlik</option>
+                    <option value="monthly">Aylıq</option>
+                  </select>
+                  <small class="field-hint">Tapşırıq tamamlananda növbəti nüsxə avtomat yaranır</small>
+                </label>
+                <label>
+                  <span>⏰ Xatırlatma</span>
+                  <input id="taskReminder" type="datetime-local">
+                  <small class="field-hint">Bu vaxt çatanda sizə bildiriş göndərilir</small>
                 </label>
               </div>
             </div>
@@ -732,12 +753,40 @@
         <aside class="task-detail-panel" role="dialog" aria-modal="true" aria-labelledby="taskDetailTitle">
           <div class="modal-head">
             <div>
-              <p class="kicker">Task detail</p>
+              <p class="kicker">Task detalı</p>
               <h2 id="taskDetailTitle">Task</h2>
             </div>
             <button id="closeTaskDetail" class="icon-button" type="button" aria-label="Bağla">×</button>
           </div>
           <div id="taskDetailBody" class="task-detail-body"></div>
+        </aside>
+      </div>
+
+      <div id="progressModal" class="modal-shell progress-shell" aria-hidden="true">
+        <div class="modal-backdrop" data-progress-close="true"></div>
+        <aside class="progress-panel" role="dialog" aria-modal="true" aria-labelledby="progressTitle">
+          <div class="modal-head">
+            <div>
+              <p class="kicker">Status · Davam edir</p>
+              <h2 id="progressTitle">İcra faizini təyin et</h2>
+            </div>
+            <button id="closeProgressModal" class="icon-button" type="button" aria-label="Bağla" data-progress-close="true">×</button>
+          </div>
+          <div class="progress-body">
+            <p class="progress-task-name" id="progressTaskName"></p>
+            <div class="progress-ring-wrap">
+              <span class="progress-ring-value" id="progressRingValue">10%</span>
+            </div>
+            <input id="progressRange" type="range" min="0" max="100" step="5" value="10" aria-label="İcra faizi">
+            <div class="progress-value-row">
+              <input id="progressNumber" type="number" min="0" max="100" step="1" value="10" aria-label="Faiz rəqəmi">
+              <span class="progress-pct-sign">%</span>
+            </div>
+            <div class="progress-actions">
+              <button id="progressCancel" type="button" class="kb-btn kb-btn-ghost progress-btn" data-progress-close="true">Ləğv</button>
+              <button id="progressConfirm" type="button" class="kb-btn kb-btn-primary progress-btn">Təsdiq et</button>
+            </div>
+          </div>
         </aside>
       </div>
 
@@ -996,6 +1045,7 @@
               <div class="activity-grid">
                 <div>
                   <h3 data-i18n="auditLogs">Audit logs</h3>
+                  <input id="auditFilter" type="search" class="audit-filter-input" placeholder="Filtr: əməl, istifadəçi, obyekt…" autocomplete="off">
                   <div id="auditLogList" class="resource-list activity-list"></div>
                 </div>
                 <div>
@@ -1975,36 +2025,36 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="supabase/supabase-config.js"></script>
-  <script src="modules/state.js?v=20260727-admininterior"></script>
-  <script src="modules/translations.js?v=20260727-admininterior"></script>
-  <script src="modules/ids.js?v=20260727-admininterior"></script>
-  <script src="modules/crypto.js?v=20260727-admininterior"></script>
-  <script src="modules/seed-data.js?v=20260727-admininterior"></script>
-  <script src="modules/utils.js?v=20260727-admininterior"></script>
-  <script src="modules/labels.js?v=20260727-admininterior"></script>
-  <script src="modules/format.js?v=20260727-admininterior"></script>
-  <script src="modules/normalize.js?v=20260727-admininterior"></script>
-  <script src="modules/storage.js?v=20260727-admininterior"></script>
-  <script src="modules/tenant.js?v=20260727-admininterior"></script>
-  <script src="modules/scope.js?v=20260727-admininterior"></script>
-  <script src="modules/dependencies.js?v=20260727-admininterior"></script>
-  <script src="modules/notifications.js?v=20260727-admininterior"></script>
-  <script src="modules/company.js?v=20260727-admininterior"></script>
-  <script src="modules/governance.js?v=20260727-admininterior"></script>
-  <script src="modules/permissions.js?v=20260727-admininterior"></script>
-  <script src="modules/project-crud.js?v=20260727-admininterior"></script>
-  <script src="modules/metrics.js?v=20260727-admininterior"></script>
-  <script src="modules/lookups.js?v=20260727-admininterior"></script>
-  <script src="modules/option-builders.js?v=20260727-admininterior"></script>
-  <script src="modules/render-markup.js?v=20260727-admininterior"></script>
-  <script src="modules/onboarding.js?v=20260727-admininterior"></script>
-  <script src="modules/project-chat.js?v=20260727-admininterior"></script>
-  <script src="modules/hero-signal-field.js?v=20260727-admininterior"></script>
-  <script src="modules/glide-reveal.js?v=20260727-admininterior"></script>
-  <script src="script.js?v=20260727-admininterior"></script>
+  <script src="modules/state.js?v=20260801l-admininterior"></script>
+  <script src="modules/translations.js?v=20260801l-admininterior"></script>
+  <script src="modules/ids.js?v=20260801l-admininterior"></script>
+  <script src="modules/crypto.js?v=20260801l-admininterior"></script>
+  <script src="modules/seed-data.js?v=20260801l-admininterior"></script>
+  <script src="modules/utils.js?v=20260801l-admininterior"></script>
+  <script src="modules/labels.js?v=20260801l-admininterior"></script>
+  <script src="modules/format.js?v=20260801l-admininterior"></script>
+  <script src="modules/normalize.js?v=20260801l-admininterior"></script>
+  <script src="modules/storage.js?v=20260801l-admininterior"></script>
+  <script src="modules/tenant.js?v=20260801l-admininterior"></script>
+  <script src="modules/scope.js?v=20260801l-admininterior"></script>
+  <script src="modules/dependencies.js?v=20260801l-admininterior"></script>
+  <script src="modules/notifications.js?v=20260801l-admininterior"></script>
+  <script src="modules/company.js?v=20260801l-admininterior"></script>
+  <script src="modules/governance.js?v=20260801l-admininterior"></script>
+  <script src="modules/permissions.js?v=20260801l-admininterior"></script>
+  <script src="modules/project-crud.js?v=20260801l-admininterior"></script>
+  <script src="modules/metrics.js?v=20260801l-admininterior"></script>
+  <script src="modules/lookups.js?v=20260801l-admininterior"></script>
+  <script src="modules/option-builders.js?v=20260801l-admininterior"></script>
+  <script src="modules/render-markup.js?v=20260801l-admininterior"></script>
+  <script src="modules/onboarding.js?v=20260801l-admininterior"></script>
+  <script src="modules/project-chat.js?v=20260801l-admininterior"></script>
+  <script src="modules/hero-signal-field.js?v=20260801l-admininterior"></script>
+  <script src="modules/glide-reveal.js?v=20260801l-admininterior"></script>
+  <script src="script.js?v=20260801l-admininterior"></script>
   <!-- vanilla Motion (framer-motion sibling) — KPI count-up & spring mikro-interaksiyalar -->
   <script type="module">
-    import { animate } from "./modules/vendor/motion.js?v=20260714-motion";
+    import { animate } from "./modules/vendor/motion.js?v=20260801l-motion";
     window.motionAnimate = animate;
   </script>
 </body>

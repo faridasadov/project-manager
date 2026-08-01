@@ -77,6 +77,11 @@ function normalizeTask(task) {
     attachments: [],
     parentTaskId: "",
     dependencyIds: [],
+    checklist: [],          // #6 subtask/checklist: [{id, text, done}]
+    watchers: [],           // #8 izləyici userId-ləri
+    reminderAt: "",         // #10 fərdi xatırlatma (ISO datetime)
+    reminderSent: false,    // #10 təkrar göndərməmək üçün
+    recurrence: "",         // #7 "", "weekly", "monthly"
     plannedHours: 0,
     actualHours: 0,
     timeEntries: [],
@@ -95,7 +100,14 @@ function normalizeTask(task) {
     comments: Array.isArray(task.comments) ? task.comments.map(normalizeComment) : [],
     timeEntries: Array.isArray(task.timeEntries) ? task.timeEntries.map(normalizeTimeEntry).filter(Boolean) : [],
     dateChangeRequests: Array.isArray(task.dateChangeRequests) ? task.dateChangeRequests : [],
-    dependencyIds: Array.isArray(task.dependencyIds) ? task.dependencyIds : []
+    dependencyIds: Array.isArray(task.dependencyIds) ? task.dependencyIds : [],
+    checklist: Array.isArray(task.checklist)
+      ? task.checklist.map((c) => ({ id: c?.id || createId(), text: String(c?.text || ""), done: Boolean(c?.done) })).filter((c) => c.text)
+      : [],
+    watchers: Array.isArray(task.watchers) ? [...new Set(task.watchers.filter(Boolean))] : [],
+    reminderAt: task.reminderAt || "",
+    reminderSent: Boolean(task.reminderSent),
+    recurrence: ["weekly", "monthly"].includes(task.recurrence) ? task.recurrence : ""
   };
 }
 
