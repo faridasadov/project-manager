@@ -379,19 +379,30 @@ function renderTaskActions(task) {
 
 // Task detal: tam şərh siyahısı + form. Deps: escapeHtml, text, formatDateTime,
 //   renderCommentDeleteButton, renderCommentAttachments.
+// Komment avatarı üçün 1-2 hərfli initial (ad boşdursa "?"). Vahid teal avatar —
+// rəngbərəng "svetofor" yox (istifadəçi tərcihi).
+function commentInitials(name) {
+  const parts = String(name || "?").trim().split(/\s+/).filter(Boolean);
+  const chars = parts.length >= 2 ? parts[0][0] + parts[1][0] : (parts[0] || "?").slice(0, 2);
+  return escapeHtml(chars.toUpperCase());
+}
+
 function renderComments(task) {
   const comments = task.comments || [];
   const items = comments.length ? comments.map((comment) => `
     <div class="comment-item">
-      <div class="comment-head">
-        <strong>${escapeHtml(comment.author)}</strong>
-        <span class="comment-tools">
-          <time datetime="${escapeHtml(comment.createdAt || "")}">${escapeHtml(formatDateTime(comment.createdAt))}</time>
-          ${renderCommentDeleteButton(task, comment)}
-        </span>
+      <span class="comment-avatar" aria-hidden="true">${commentInitials(comment.author)}</span>
+      <div class="comment-main">
+        <div class="comment-head">
+          <strong>${escapeHtml(comment.author)}</strong>
+          <span class="comment-tools">
+            <time datetime="${escapeHtml(comment.createdAt || "")}">${escapeHtml(formatDateTime(comment.createdAt))}</time>
+            ${renderCommentDeleteButton(task, comment)}
+          </span>
+        </div>
+        <span>${escapeHtml(comment.text)}</span>
+        ${renderCommentAttachments(comment)}
       </div>
-      <span>${escapeHtml(comment.text)}</span>
-      ${renderCommentAttachments(comment)}
     </div>
   `).join("") : `<div class="comment-empty">${text("noComments")}</div>`;
 
