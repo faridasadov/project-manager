@@ -6111,11 +6111,40 @@ function importProjectFile(filename, body) {
   return importTabularProject(body);
 }
 
+// Artıq riskli olmayan (deadline uzadılıb və ya status "Bitib") taskların köhnə
+// deadline bildirişlərini bell panelindən təmizləyir. riskyTasks() canlı task.end-dən
+// hesablandığı üçün deadline dəyişən kimi köhnə bildiriş yoxa çıxır.
+// In-place splice — notifications qlobalını reassign etmirik (modul qaydası).
+function purgeStaleDeadlineNotifications() {
+  const riskyIds = new Set(riskyTasks().map(({ task }) => task.id));
+  let changed = false;
+  for (let i = notifications.length - 1; i >= 0; i--) {
+    const n = notifications[i];
+    if (n.type === "deadline" && (!n.taskId || !riskyIds.has(n.taskId))) {
+      notifications.splice(i, 1);
+      changed = true;
+    }
+  }
+  if (changed) saveNotifications();
+}
+
 function sendDeadlineNotifications() {
+  purgeStaleDeadlineNotifications(); // əvvəlcə köhnəlmişləri sil
   const alerts = riskyTasks();
   if (!alerts.length) return;
   alerts.slice(0, 5).forEach(({ task, alert }) => {
-    addNotification(`${alert.label}: ${task.name}`, "", { type: "deadline", taskId: task.id, status: alert.type });
+    // Dedup: bu task üçün deadline bildirişi varsa, TƏKRAR yaratma — mövcudu yenilə
+    // (label/status dəyişə bilər, oxunmamış kimi yenidən qabart).
+    const existing = notifications.find((n) => n.type === "deadline" && n.taskId === task.id);
+    if (existing) {
+      existing.message = `${alert.label}: ${task.name}`;
+      existing.status = alert.type;
+      existing.read = false;
+      existing.createdAt = new Date().toISOString();
+      saveNotifications();
+    } else {
+      addNotification(`${alert.label}: ${task.name}`, "", { type: "deadline", taskId: task.id, status: alert.type });
+    }
   });
   if ("Notification" in window && Notification.permission === "granted") {
     alerts.slice(0, 3).forEach(({ task, alert }) => {
@@ -6406,6 +6435,7 @@ form.addEventListener("submit", async (event) => {
   );
   resetForm();
   closeTaskComposer();
+  purgeStaleDeadlineNotifications(); // deadline uzadılıbsa köhnə bildiriş dərhal getsin
   render();
 });
 
@@ -9820,12 +9850,31 @@ function injectExportButtons() {
 // #9 — Service Worker registration
 // ════════════════════════════════════════════════════════════════════
 if ("serviceWorker" in navigator) {
-  // Qeyd: controllerchange-də AVTOMATİK reload ETMİRİK — o, yeni SW aktivləşəndə
-  // gözlənilməz səhifə yüklənməsinə (login/welcome 1s flash) səbəb olurdu.
-  // Network-first HTML strategiyası onsuz da hər normal yükləmədə təzə versiyanı
-  // gətirir, ona görə əlavə reload lazım deyil.
+  // ── Yeni versiya avtomatik keçidi ──────────────────────────────────
+  // Problem: köhnə SW keşi olan cihaz (məs. iş kompüteri) yeni deploy-u
+  // görmür — SW arxa planda yenilənir, amma səhifə köhnə asset-lərlə qalır.
+  // Həll: yeni SW idarəni ələ alanda (controllerchange) bir dəfə reload edirik.
+  //
+  // Login/welcome flash-ı önləmək üçün İKİ qoruma var:
+  //  1) hadController=false → bu SƏHİFƏNİN İLK SW quraşdırılmasıdır (clients.claim),
+  //     yeni deploy deyil → reload ETMİRİK (flash olmasın).
+  //  2) refreshing bayrağı → cüt reload / loop olmasın.
+  const hadController = !!navigator.serviceWorker.controller;
+  let _swRefreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (_swRefreshing || !hadController) return;
+    _swRefreshing = true;
+    location.reload();
+  });
+
   navigator.serviceWorker.register("./sw.js", { scope: "./" })
-    .then((r) => { console.log("SW registered:", r.scope); r.update?.(); })
+    .then((r) => {
+      console.log("SW registered:", r.scope);
+      r.update?.();
+      // Uzun-açıq tab-lar (məs. günlərlə açıq iş kompüteri) da yenilənsin:
+      // hər saat serverdən yeni SW yoxla → varsa yuxarıdakı axın reload edir.
+      setInterval(() => r.update?.(), 60 * 60 * 1000);
+    })
     .catch(e => console.warn("SW registration failed:", e));
 }
 
