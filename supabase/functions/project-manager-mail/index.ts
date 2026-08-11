@@ -39,6 +39,7 @@ type StateTask = {
   id?: string; name?: string; owner?: string; end?: string; start?: string;
   status?: string; progress?: number; project?: string; completedAt?: string;
   priority?: string;
+  comments?: Array<{ author?: string; text?: string; createdAt?: string }>;
 };
 
 type StateProject = {
@@ -142,6 +143,19 @@ function isOpen(task: StateTask): boolean {
 }
 function fmtDate(s?: string) { return s ? s.slice(0, 10) : "-"; }
 
+// Task-ın ən son kommentini qaytarır (mətn boşdursa null). Çoxsətirli komment
+// tək sətrə yığılır, uzunsa qısaldılır ki gündəlik mail dağınıq olmasın.
+function latestComment(t: StateTask): { author: string; text: string } | null {
+  const list = Array.isArray(t.comments) ? t.comments : [];
+  if (!list.length) return null;
+  const c = list.reduce((a, b) =>
+    new Date(b.createdAt || 0).getTime() >= new Date(a.createdAt || 0).getTime() ? b : a);
+  const text = String(c.text || "").replace(/\s+/g, " ").trim();
+  if (!text) return null;
+  const clipped = text.length > 160 ? text.slice(0, 157) + "…" : text;
+  return { author: String(c.author || "").trim(), text: clipped };
+}
+
 // User-dependent scope: projects the user manages / is a member of,
 // plus every task belonging to those projects. task.project may reference the
 // project id OR its name; task.owner is a free-text resource label (not a user).
@@ -221,6 +235,7 @@ const L10N = {
     upcoming: "⏰ Yaxın deadline-lar:",
     companyProjects: (n: number) => `📁 Şirkət layihələri: ${n}`,
     myProjects: (n: number) => `📁 Aid olduğun layihələr: ${n}`,
+    lastCommentLabel: "💬 Son komment",
     signature: "— Project Manager",
     morningSubject: (d: string) => `🌅 Səhər hesabatı — ${d}`,
     eveningSubject: (d: string) => `🌙 Gün sonu hesabatı — ${d}`,
@@ -241,6 +256,7 @@ const L10N = {
     upcoming: "⏰ Ближайшие дедлайны:",
     companyProjects: (n: number) => `📁 Проекты компании: ${n}`,
     myProjects: (n: number) => `📁 Ваши проекты: ${n}`,
+    lastCommentLabel: "💬 Последний комментарий",
     signature: "— Project Manager",
     morningSubject: (d: string) => `🌅 Утренний отчёт — ${d}`,
     eveningSubject: (d: string) => `🌙 Отчёт за день — ${d}`,
@@ -261,6 +277,7 @@ const L10N = {
     upcoming: "⏰ Upcoming deadlines:",
     companyProjects: (n: number) => `📁 Company projects: ${n}`,
     myProjects: (n: number) => `📁 Your projects: ${n}`,
+    lastCommentLabel: "💬 Latest comment",
     signature: "— Project Manager",
     morningSubject: (d: string) => `🌅 Morning report — ${d}`,
     eveningSubject: (d: string) => `🌙 End-of-day report — ${d}`,
@@ -299,6 +316,9 @@ function portfolioLines(mine: StateTask[], myProjects: StateProject[], today: st
     const d = daysUntil(t.end, today);
     const tail = d === null ? "" : d < 0 ? L.overdueBy(Math.abs(d)) : d === 0 ? L.dueTodayTail : L.daysLeft(d);
     lines.push(`  • ${t.name}${ownerTag(t, nameOf, L)} [${localizeStatus(t.status, L)}, ${t.progress ?? 0}%]${tail}`);
+    // Son komment — varsa göstər, yoxdusa kommentsiz keç (Farid tələbi).
+    const lc = latestComment(t);
+    if (lc) lines.push(`      ${L.lastCommentLabel}: ${lc.author ? lc.author + " — " : ""}${lc.text}`);
   }
   if (overdue.length) { lines.push(""); lines.push(L.overdue(overdue.length)); }
   if (dueSoon.length) {
