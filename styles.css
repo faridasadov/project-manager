@@ -2504,7 +2504,7 @@ h2 {
   z-index: 50 !important;
   width: min(760px, 100%);
   max-height: calc(100vh - 48px);
-  margin: 24px 0;
+  margin: auto;
   padding: 0;
   overflow: auto;
   background: var(--panel);
@@ -7388,6 +7388,12 @@ textarea:focus {
 .modal-shell.task-composer-shell {
   z-index: 10000;
   background: rgba(8, 13, 22, 0.52);
+  /* Full HD/böyük ekranda modal grid-place-items:center üzündən həm yuxarı,
+     həm aşağı bərabər daşıb yuxarı hissəsi kəsilirdi ("yarısı yuxarı/aşağı").
+     Flex + child margin:auto: sığanda mərkəz, sığmayanda yuxarıya yapışıb
+     daxildən scroll — istənilən rezolusiyada simmetrik. */
+  display: flex;
+  overflow-y: auto;
 }
 
 .modal-shell.task-composer-shell .modal-backdrop {
@@ -7970,6 +7976,29 @@ body.dark-mode .task-group .task-project-tag {
   color: hsl(var(--proj-hue) 70% 80%);
   background: hsl(var(--proj-hue) 40% 20%);
   border-color: hsl(var(--proj-hue) 45% 38%);
+}
+
+/* ── Task siyahısı düzülüşü (Full HD xaos düzəlişi) ────────────────────────
+   Problem: .task-list özü 3-sütunlu 420px grid idi. Çox layihə olanda içinə
+   .task-group bölmələri düşür → bölmələr o grid-in xanalarına oturub müxtəlif
+   hündürlüklə pilləli "masonry" xaosu yaradırdı (yarısı yuxarı/aşağı).
+   Həll: qruplu rejimdə task-list tək sütun; kartlar HƏR QRUPUN İÇİNDƏ grid.
+   Nəticə istənilən rezolusiyada simmetrik. */
+.task-list:has(.task-group) {
+  grid-template-columns: 1fr;
+}
+.task-group-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 12px;
+  align-items: start;
+}
+/* Banner / sayğac / "daha çox" / boş — həmişə tam en (sütuna sıxışmasın) */
+.task-list > .owner-filter-banner,
+.task-list > .task-list-count,
+.task-list > .load-more-btn,
+.task-list > .empty {
+  grid-column: 1 / -1;
 }
 
 /* ── Kanban: status sütunları daxilində layihəyə görə qruplaşdırma ─────────
