@@ -3082,7 +3082,7 @@ button.small {
 .task-detail-panel {
   position: relative;
   z-index: 2;
-  width: min(560px, 100%);
+  width: min(880px, 100%);
   height: 100vh;
   overflow: auto;
   background: var(--panel);
@@ -3212,6 +3212,24 @@ button.small {
   display: grid;
   gap: 14px;
   padding: 18px;
+}
+
+/* Task detalı 2-sütunlu düzülüş — uzun tək sütun scroll-un qarşısını alır.
+   Üstdə meta + stepper tam en, altda 2 sütun (geniş ekranda). */
+.tdx {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.tdx-col {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-width: 0;
+}
+@media (min-width: 760px) {
+  .tdx { grid-template-columns: 1.2fr 0.9fr; }
 }
 
 .task-detail-grid {

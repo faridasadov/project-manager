@@ -2933,6 +2933,7 @@ function openTaskDetail(id) {
   if (!task || !taskDetailModal) return;
   const project = appState.projects.find((item) => item.name === task.project);
   taskDetailTitle.textContent = task.name;
+  const relations = renderTaskRelations(task);
   taskDetailBody.innerHTML = `
     <div class="task-detail-grid">
       <span><strong>Layihə</strong>${escapeHtml(task.project || "-")}</span>
@@ -2942,14 +2943,20 @@ function openTaskDetail(id) {
       <span><strong>Plan/Fakt saat</strong>${plannedHoursForTask(task)} / ${actualHoursForTask(task)}</span>
       <span><strong>İrəliləyiş</strong>${Number(task.progress) || 0}%</span>
     </div>
-    ${renderTaskRelations(task)}
     <div class="task-detail-section">${renderTaskStageStepper(task)}</div>
-    ${task.acceptanceCriteria ? `<div class="task-detail-section"><h3>${text("acceptanceCriteria")}</h3><p>${escapeHtml(task.acceptanceCriteria)}</p></div>` : ""}
-    ${task.notes ? `<div class="task-detail-section"><h3>Qeyd</h3><p>${escapeHtml(task.notes)}</p></div>` : ""}
-    ${renderWatchers(task)}
-    ${renderChecklist(task)}
-    <div class="task-detail-section">${renderComments(task)}</div>
-    <div class="task-detail-section"><h3>Vaxt jurnalı</h3>${renderTimeEntries(task)}</div>
+    <div class="tdx">
+      <div class="tdx-col">
+        ${task.acceptanceCriteria ? `<div class="task-detail-section"><h3>${text("acceptanceCriteria")}</h3><p>${escapeHtml(task.acceptanceCriteria)}</p></div>` : ""}
+        ${task.notes ? `<div class="task-detail-section"><h3>Qeyd</h3><p>${escapeHtml(task.notes)}</p></div>` : ""}
+        <div class="task-detail-section">${renderComments(task)}</div>
+      </div>
+      <div class="tdx-col">
+        ${relations ? `<div class="task-detail-section">${relations}</div>` : ""}
+        ${renderWatchers(task)}
+        ${renderChecklist(task)}
+        <div class="task-detail-section"><h3>Vaxt jurnalı</h3>${renderTimeEntries(task)}</div>
+      </div>
+    </div>
   `;
   raiseModal(taskDetailModal);
   taskDetailModal.classList.add("open");
