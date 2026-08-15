@@ -864,6 +864,7 @@ function projectCardMarkup(project) {
               <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
               <span class="badge ${priorityClass(project.priority)}">${priorityLabel(project.priority)}</span>
               <span class="lifecycle-tag lifecycle-${lifecycle.toLowerCase()}">${escapeHtml(lifecycleLabel(lifecycle))}</span>
+              <span class="stage-chip" title="${text("stageProcessTitle")}">${(PROJECT_STAGES.indexOf(project.stage || "order") + 1) || 1}/${PROJECT_STAGES.length} · ${escapeHtml(stageLabel(project.stage || "order"))}</span>
             </div>
           </div>
           <div class="project-card-pct">
