@@ -47,3 +47,17 @@ function lifecycleLabel(stage) {
 function gateLabel(gate) {
   return LIFECYCLE_LABEL_KEYS[gate] ? text(LIFECYCLE_LABEL_KEYS[gate]) : (gate || "");
 }
+
+// Biznes iş axını mərhələsi adları (order→reporting). IPMA lifecycle-dan ayrı.
+const STAGE_LABEL_KEYS = {
+  order: "stageOrder",
+  evaluation: "stageEvaluation",
+  approval: "stageApproval",
+  procurement: "stageProcurement",
+  execution: "stageExecution",
+  delivery: "stageDelivery",
+  reporting: "stageReporting"
+};
+function stageLabel(stage) {
+  return STAGE_LABEL_KEYS[stage] ? text(STAGE_LABEL_KEYS[stage]) : (stage || text("stageOrder"));
+}

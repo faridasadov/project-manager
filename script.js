@@ -3667,9 +3667,89 @@ function renderProjectDetailBar() {
       ${field(text("tasks"), `${tasks.length} · ${active} / ${done} ✓`)}
       ${audit ? field(text("ipmaScore"), `${audit.score}% · ${audit.approvedGates.length}/4 ${text("gatesWord")}`) : ""}
     </div>
+    ${renderProjectStageStepper(project)}
   `;
   bar.hidden = false;
 }
+
+// Mərhələni yalnız admin VƏ YA bu layihənin meneceri dəyişə bilər (Farid qaydası).
+function canChangeProjectStage(project) {
+  if (isAdmin()) return true;
+  return currentUser?.role === "manager" && (project?.managerIds || []).includes(currentUser?.id);
+}
+
+// Layihə biznes mərhələ stepper-i (Lovable dizaynından köçürülüb; teal tokenlər).
+// 7 addım: order→…→reporting. Tamamlanan ✓, cari işıqlı, gələcək solğun. İcra
+// faizi ayrıca qalır. Geri/İrəli yalnız icazəlilərə (canChangeProjectStage).
+function renderProjectStageStepper(project) {
+  const idx = Math.max(0, PROJECT_STAGES.indexOf(project.stage || "order"));
+  const canEdit = canChangeProjectStage(project);
+  const steps = PROJECT_STAGES.map((key, i) => {
+    const cls = i < idx ? "done" : i === idx ? "active" : "todo";
+    return `<li class="psx-step ${cls}">
+      <span class="psx-node">${i < idx ? "✓" : i + 1}</span>
+      <span class="psx-label">${escapeHtml(stageLabel(key))}</span>
+    </li>`;
+  }).join("");
+  const controls = canEdit ? `
+    <div class="psx-controls">
+      <button type="button" class="psx-btn" data-stage-action="back" data-id="${escapeHtml(project.id)}" ${idx === 0 ? "disabled" : ""}>← ${text("stageBack")}</button>
+      <button type="button" class="psx-btn psx-btn-primary" data-stage-action="next" data-id="${escapeHtml(project.id)}" ${idx === PROJECT_STAGES.length - 1 ? "disabled" : ""}>${text("stageForward")} →</button>
+    </div>` : "";
+  const history = (project.stageHistory || []).slice().reverse().slice(0, 8).map((h) => `
+    <li class="psx-hist-item">
+      <span class="psx-hist-num">${(PROJECT_STAGES.indexOf(h.stage) + 1) || "•"}</span>
+      <div class="psx-hist-main">
+        <div class="psx-hist-head"><strong>${escapeHtml(stageLabel(h.stage))}</strong> <span>· ${escapeHtml(shortDate(h.at) || "")}</span></div>
+        <div class="psx-hist-sub">${escapeHtml(h.by || "")}${h.note ? " — " + escapeHtml(h.note) : ""}</div>
+      </div>
+    </li>`).join("");
+  return `
+    <div class="psx">
+      <div class="psx-top">
+        <span class="psx-title">${text("stageProcessTitle")}</span>
+        <span class="psx-count">${idx + 1}/${PROJECT_STAGES.length}</span>
+      </div>
+      <ol class="psx-track">${steps}</ol>
+      <div class="psx-foot">
+        <span class="psx-current">${text("stageCurrent")}: <strong>${escapeHtml(stageLabel(PROJECT_STAGES[idx]))}</strong></span>
+        ${controls}
+      </div>
+      ${history ? `<div class="psx-hist"><div class="psx-hist-title">${text("stageHistoryTitle")}</div><ul class="psx-hist-list">${history}</ul></div>` : ""}
+    </div>`;
+}
+
+// Mərhələ dəyişimi: bir addım irəli/geri (atlamaq olmaz), icazə + qeyd + audit.
+function changeProjectStage(projectId, dir) {
+  const project = appState.projects.find((p) => p.id === projectId);
+  if (!project) return;
+  if (!canChangeProjectStage(project)) { showToast(text("stageNoPermission")); return; }
+  const idx = Math.max(0, PROJECT_STAGES.indexOf(project.stage || "order"));
+  const next = dir === "next" ? idx + 1 : idx - 1;
+  if (next < 0 || next >= PROJECT_STAGES.length) return;
+  const note = window.prompt(text("stageNotePrompt"), "");
+  if (note === null) return; // istifadəçi ləğv etdi
+  project.stage = PROJECT_STAGES[next];
+  project.stageHistory = Array.isArray(project.stageHistory) ? project.stageHistory : [];
+  project.stageHistory.push({
+    stage: project.stage,
+    at: new Date().toISOString(),
+    by: currentUser?.profile?.fullName || currentUser?.username || "system",
+    note: String(note || "").trim()
+  });
+  saveResources();
+  if (typeof flushSupabaseSave === "function") flushSupabaseSave();
+  recordAudit("project.stage", "project", project.id, `${stageLabel(project.stage)}${note ? " — " + note : ""}`);
+  showToast(`${text("stageChanged")}: ${stageLabel(project.stage)}`);
+  renderProjectDetailBar();
+}
+
+// Stepper Geri/İrəli düymələri — delegasiya (bar innerHTML dəyişsə də sağ qalır).
+document.getElementById("projectDetailBar")?.addEventListener("click", (event) => {
+  const btn = event.target.closest("[data-stage-action]");
+  if (!btn) return;
+  changeProjectStage(btn.dataset.id, btn.dataset.stageAction);
+});
 
 function renderViews() {
   views.forEach((view) => view.classList.toggle("active-view", view.id === `${currentView}View`));

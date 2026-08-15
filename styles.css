@@ -326,6 +326,126 @@ html.auth-restoring #platformConsole { display: none !important; }
 .pdb-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 .pdb-value { font-size: 0.9rem; font-weight: 600; color: var(--ink); }
 
+/* ── Layihə mərhələ stepper-i (Lovable dizaynı → teal tokenlər) ──────────── */
+.psx {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.psx-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.psx-title { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: var(--ink); }
+.psx-title::before { content: "⑃"; color: var(--teal); font-weight: 900; }
+.psx-count { font-size: 0.78rem; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.psx-track {
+  list-style: none;
+  margin: 0;
+  padding: 14px;
+  display: flex;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--teal) 4%, var(--soft));
+  overflow-x: auto;
+}
+.psx-step {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+/* birləşdirici xətt (addımlar arası) */
+.psx-step::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  left: -50%;
+  width: 100%;
+  height: 2px;
+  background: var(--line);
+  z-index: 0;
+}
+.psx-step:first-child::before { display: none; }
+.psx-step.done::before, .psx-step.active::before { background: color-mix(in srgb, var(--teal) 50%, transparent); }
+.psx-node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  transition: all 0.25s ease;
+}
+.psx-step.done .psx-node { border-color: var(--teal); background: var(--teal); color: #fff; }
+.psx-step.active .psx-node {
+  border-color: var(--teal);
+  background: var(--panel);
+  color: var(--teal);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--teal) 16%, transparent), var(--shadow-soft);
+}
+.psx-label { font-size: 0.74rem; line-height: 1.2; color: var(--muted); max-width: 100%; overflow-wrap: anywhere; }
+.psx-step.active .psx-label { color: var(--ink); font-weight: 700; }
+.psx-step.done .psx-label { color: color-mix(in srgb, var(--ink) 80%, transparent); }
+
+.psx-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+.psx-current { font-size: 0.82rem; color: var(--muted); }
+.psx-current strong { color: var(--ink); }
+.psx-controls { display: flex; gap: 8px; }
+.psx-btn {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.psx-btn:hover:not(:disabled) { border-color: color-mix(in srgb, var(--teal) 40%, var(--line)); }
+.psx-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.psx-btn-primary { border-color: var(--teal); background: var(--teal); color: #fff; box-shadow: var(--shadow-soft); }
+.psx-btn-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--teal) 88%, #000); }
+
+.psx-hist { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.psx-hist-title { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.psx-hist-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.psx-hist-item { display: flex; gap: 10px; align-items: flex-start; }
+.psx-hist-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--teal) 12%, transparent);
+  color: var(--teal);
+  font-size: 0.72rem;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--teal) 25%, transparent);
+}
+.psx-hist-main { min-width: 0; flex: 1; }
+.psx-hist-head { font-size: 0.85rem; }
+.psx-hist-head span { color: var(--muted); font-size: 0.78rem; }
+.psx-hist-sub { font-size: 0.78rem; color: var(--muted); overflow-wrap: anywhere; }
+
+@media (max-width: 640px) {
+  .psx-track { flex-direction: column; }
+  .psx-step { flex-direction: row; justify-content: flex-start; text-align: left; min-width: 0; }
+  .psx-step::before { display: none; }
+}
+
 body.logged-out #appShell {
   display: none;
 }
@@ -5906,28 +6026,31 @@ textarea:focus {
   padding: 2px 8px;
 }
 
-/* Kartda son komment preview-u — TƏK sətir (kart uzanmasın). Tam axın detalda. */
+/* Kartda son komment preview-u — TƏK sətir (kart uzanmasın). Tam axın detalda.
+   Lovable dizaynı: sabit hündürlük, teal 5% fon + teal/15 border, +N pill. */
 .task-card-comment-preview {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   width: 100%;
+  height: 36px;
   margin: 6px 0 0 0;
-  padding: 6px 9px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--teal) 15%, var(--line));
+  border-radius: 10px;
   background: color-mix(in srgb, var(--teal) 5%, var(--soft));
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--muted);
   text-align: left;
   cursor: pointer;
   overflow: hidden;
 }
 .task-card-comment-preview:hover {
-  border-color: color-mix(in srgb, var(--teal) 40%, var(--line));
+  border-color: color-mix(in srgb, var(--teal) 35%, var(--line));
+  background: color-mix(in srgb, var(--teal) 10%, var(--soft));
 }
-.task-card-comment-preview .tccp-icon { flex: none; }
+.task-card-comment-preview .tccp-icon { flex: none; color: var(--teal); }
 .task-card-comment-preview .tccp-author {
   flex: none;
   font-weight: 700;
@@ -5942,8 +6065,13 @@ textarea:focus {
 }
 .task-card-comment-preview .tccp-more {
   flex: none;
-  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 0.68rem;
+  font-weight: 800;
   color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--teal) 22%, transparent);
 }
 
 .task-meta {

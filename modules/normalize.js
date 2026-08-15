@@ -7,6 +7,10 @@
 
 /* eslint-disable no-unused-vars */
 
+// Layihə biznes iş axını mərhələləri (sıra ilə). IPMA lifecycle-dan AYRIDIR.
+// Etiketlər i18n-dədir (stageLabel). Global const — digər modullar da oxuyur.
+const PROJECT_STAGES = ["order", "evaluation", "approval", "procurement", "execution", "delivery", "reporting"];
+
 function normalizeUser(user) {
   if (user.id === "user-admin" && user.username === "admin") {
     user = {
@@ -142,6 +146,10 @@ function normalizeProject(project) {
     teamMemberIds: [],
     companyId: "company-default",
     lifecycle: "Initiation",
+    // Biznes iş axını mərhələsi (IPMA lifecycle-dan AYRI): order→…→reporting.
+    // stageHistory: hər dəyişiklik {stage, at, by, note}. Köhnə layihələr → order.
+    stage: "order",
+    stageHistory: [],
     description: "",
     budget: 0,
     charter: {
@@ -185,6 +193,8 @@ function normalizeProject(project) {
       ...(project.charter || {})
     },
     teamMemberIds,
+    stage: PROJECT_STAGES.includes(project.stage) ? project.stage : "order",
+    stageHistory: Array.isArray(project.stageHistory) ? project.stageHistory : [],
     progress: project.status === "Bitib" ? 100 : progress
   };
 }
