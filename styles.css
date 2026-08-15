@@ -3074,8 +3074,8 @@ button.small {
 }
 
 .task-detail-shell {
-  place-items: stretch end;
-  padding: 0;
+  place-items: center end;
+  padding: 16px;
   z-index: 10020;
 }
 
@@ -3083,11 +3083,13 @@ button.small {
   position: relative;
   z-index: 2;
   width: min(880px, 100%);
-  height: 100vh;
+  height: auto;
+  max-height: calc(100vh - 32px);
   overflow: auto;
   background: var(--panel);
-  border-left: 1px solid var(--line);
-  box-shadow: -24px 0 60px rgba(15, 23, 42, 0.22);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: -24px 0 70px rgba(15, 23, 42, 0.26);
 }
 
 .modal-shell.notification-shell {
@@ -3242,9 +3244,9 @@ button.small {
 .task-detail-grid span {
   display: grid;
   gap: 3px;
-  padding: 11px 13px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  border-radius: 14px;
   background: color-mix(in srgb, var(--panel) 92%, var(--soft));
   font-size: 0.88rem;
   font-weight: 600;
@@ -3262,11 +3264,11 @@ button.small {
 .task-detail-section {
   display: grid;
   gap: 10px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  border-radius: 18px;
   background: var(--panel);
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
 }
 .task-detail-section > h3,
 .task-detail-section .comments > h4 {
