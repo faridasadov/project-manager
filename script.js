@@ -2943,6 +2943,7 @@ function openTaskDetail(id) {
       <span><strong>İrəliləyiş</strong>${Number(task.progress) || 0}%</span>
     </div>
     ${renderTaskRelations(task)}
+    <div class="task-detail-section">${renderTaskStageStepper(task)}</div>
     ${task.acceptanceCriteria ? `<div class="task-detail-section"><h3>${text("acceptanceCriteria")}</h3><p>${escapeHtml(task.acceptanceCriteria)}</p></div>` : ""}
     ${task.notes ? `<div class="task-detail-section"><h3>Qeyd</h3><p>${escapeHtml(task.notes)}</p></div>` : ""}
     ${renderWatchers(task)}
@@ -3667,23 +3668,24 @@ function renderProjectDetailBar() {
       ${field(text("tasks"), `${tasks.length} · ${active} / ${done} ✓`)}
       ${audit ? field(text("ipmaScore"), `${audit.score}% · ${audit.approvedGates.length}/4 ${text("gatesWord")}`) : ""}
     </div>
-    ${renderProjectStageStepper(project)}
   `;
   bar.hidden = false;
 }
 
-// Mərhələni yalnız admin VƏ YA bu layihənin meneceri dəyişə bilər (Farid qaydası).
-function canChangeProjectStage(project) {
+// Mərhələni yalnız admin VƏ YA taskın layihəsinin meneceri dəyişə bilər (Farid qaydası).
+function canChangeTaskStage(task) {
   if (isAdmin()) return true;
-  return currentUser?.role === "manager" && (project?.managerIds || []).includes(currentUser?.id);
+  if (currentUser?.role !== "manager") return false;
+  const project = appState.projects.find((p) => p.name === task?.project);
+  return !!project && (project.managerIds || []).includes(currentUser?.id);
 }
 
-// Layihə biznes mərhələ stepper-i (Lovable dizaynından köçürülüb; teal tokenlər).
-// 7 addım: order→…→reporting. Tamamlanan ✓, cari işıqlı, gələcək solğun. İcra
-// faizi ayrıca qalır. Geri/İrəli yalnız icazəlilərə (canChangeProjectStage).
-function renderProjectStageStepper(project) {
-  const idx = Math.max(0, PROJECT_STAGES.indexOf(project.stage || "order"));
-  const canEdit = canChangeProjectStage(project);
+// Task biznes mərhələ stepper-i (Lovable dizaynından köçürülüb; teal tokenlər).
+// 7 addım: order→…→reporting. Tamamlanan ✓, cari işıqlı, gələcək solğun.
+// Geri/İrəli yalnız icazəlilərə (canChangeTaskStage). Detal görünüşündə.
+function renderTaskStageStepper(task) {
+  const idx = Math.max(0, PROJECT_STAGES.indexOf(task.stage || "order"));
+  const canEdit = canChangeTaskStage(task);
   const steps = PROJECT_STAGES.map((key, i) => {
     const cls = i < idx ? "done" : i === idx ? "active" : "todo";
     return `<li class="psx-step ${cls}">
@@ -3693,10 +3695,10 @@ function renderProjectStageStepper(project) {
   }).join("");
   const controls = canEdit ? `
     <div class="psx-controls">
-      <button type="button" class="psx-btn" data-stage-action="back" data-id="${escapeHtml(project.id)}" ${idx === 0 ? "disabled" : ""}>← ${text("stageBack")}</button>
-      <button type="button" class="psx-btn psx-btn-primary" data-stage-action="next" data-id="${escapeHtml(project.id)}" ${idx === PROJECT_STAGES.length - 1 ? "disabled" : ""}>${text("stageForward")} →</button>
+      <button type="button" class="psx-btn" data-stage-action="back" data-id="${escapeHtml(task.id)}" ${idx === 0 ? "disabled" : ""}>← ${text("stageBack")}</button>
+      <button type="button" class="psx-btn psx-btn-primary" data-stage-action="next" data-id="${escapeHtml(task.id)}" ${idx === PROJECT_STAGES.length - 1 ? "disabled" : ""}>${text("stageForward")} →</button>
     </div>` : "";
-  const history = (project.stageHistory || []).slice().reverse().slice(0, 8).map((h) => `
+  const history = (task.stageHistory || []).slice().reverse().slice(0, 8).map((h) => `
     <li class="psx-hist-item">
       <span class="psx-hist-num">${(PROJECT_STAGES.indexOf(h.stage) + 1) || "•"}</span>
       <div class="psx-hist-main">
@@ -3720,35 +3722,36 @@ function renderProjectStageStepper(project) {
 }
 
 // Mərhələ dəyişimi: bir addım irəli/geri (atlamaq olmaz), icazə + qeyd + audit.
-function changeProjectStage(projectId, dir) {
-  const project = appState.projects.find((p) => p.id === projectId);
-  if (!project) return;
-  if (!canChangeProjectStage(project)) { showToast(text("stageNoPermission")); return; }
-  const idx = Math.max(0, PROJECT_STAGES.indexOf(project.stage || "order"));
+function changeTaskStage(taskId, dir) {
+  const task = appState.tasks.find((t) => t.id === taskId);
+  if (!task) return;
+  if (!canChangeTaskStage(task)) { showToast(text("stageNoPermission")); return; }
+  const idx = Math.max(0, PROJECT_STAGES.indexOf(task.stage || "order"));
   const next = dir === "next" ? idx + 1 : idx - 1;
   if (next < 0 || next >= PROJECT_STAGES.length) return;
   const note = window.prompt(text("stageNotePrompt"), "");
   if (note === null) return; // istifadəçi ləğv etdi
-  project.stage = PROJECT_STAGES[next];
-  project.stageHistory = Array.isArray(project.stageHistory) ? project.stageHistory : [];
-  project.stageHistory.push({
-    stage: project.stage,
+  task.stage = PROJECT_STAGES[next];
+  task.stageHistory = Array.isArray(task.stageHistory) ? task.stageHistory : [];
+  task.stageHistory.push({
+    stage: task.stage,
     at: new Date().toISOString(),
     by: currentUser?.profile?.fullName || currentUser?.username || "system",
     note: String(note || "").trim()
   });
-  saveResources();
-  if (typeof flushSupabaseSave === "function") flushSupabaseSave();
-  recordAudit("project.stage", "project", project.id, `${stageLabel(project.stage)}${note ? " — " + note : ""}`);
-  showToast(`${text("stageChanged")}: ${stageLabel(project.stage)}`);
-  renderProjectDetailBar();
+  saveTasks();
+  if (typeof scheduleSupabaseSave === "function") scheduleSupabaseSave();
+  recordAudit("task.stage", "task", task.id, `${stageLabel(task.stage)}${note ? " — " + note : ""}`);
+  showToast(`${text("stageChanged")}: ${stageLabel(task.stage)}`);
+  openTaskDetail(task.id);
+  render();
 }
 
-// Stepper Geri/İrəli düymələri — delegasiya (bar innerHTML dəyişsə də sağ qalır).
-document.getElementById("projectDetailBar")?.addEventListener("click", (event) => {
+// Stepper Geri/İrəli düymələri — task detal görünüşündə (delegasiya).
+taskDetailBody?.addEventListener("click", (event) => {
   const btn = event.target.closest("[data-stage-action]");
   if (!btn) return;
-  changeProjectStage(btn.dataset.id, btn.dataset.stageAction);
+  changeTaskStage(btn.dataset.id, btn.dataset.stageAction);
 });
 
 function renderViews() {

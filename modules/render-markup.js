@@ -864,7 +864,6 @@ function projectCardMarkup(project) {
               <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
               <span class="badge ${priorityClass(project.priority)}">${priorityLabel(project.priority)}</span>
               <span class="lifecycle-tag lifecycle-${lifecycle.toLowerCase()}">${escapeHtml(lifecycleLabel(lifecycle))}</span>
-              <span class="stage-chip" title="${text("stageProcessTitle")}">${(PROJECT_STAGES.indexOf(project.stage || "order") + 1) || 1}/${PROJECT_STAGES.length} · ${escapeHtml(stageLabel(project.stage || "order"))}</span>
             </div>
           </div>
           <div class="project-card-pct">
@@ -918,6 +917,7 @@ function taskCardMarkup(task) {
       <div class="task-meta">
         <span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span>
         <span class="badge ${priorityClass(task.priority)}">${priorityLabel(task.priority)}</span>
+        <span class="stage-chip" title="${text("stageProcessTitle")}">${(PROJECT_STAGES.indexOf(task.stage || "order") + 1) || 1}/${PROJECT_STAGES.length} · ${escapeHtml(stageLabel(task.stage || "order"))}</span>
         ${blocked ? `<span class="badge blocked">${text("blocked")}</span>` : ""}
         <span>📅 ${shortDate(task.start)} – ${shortDate(task.end)}</span>
         <span>${escapeHtml(resourceLabel(task.owner))}</span>

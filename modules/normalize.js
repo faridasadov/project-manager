@@ -111,7 +111,10 @@ function normalizeTask(task) {
     watchers: Array.isArray(task.watchers) ? [...new Set(task.watchers.filter(Boolean))] : [],
     reminderAt: task.reminderAt || "",
     reminderSent: Boolean(task.reminderSent),
-    recurrence: ["weekly", "monthly"].includes(task.recurrence) ? task.recurrence : ""
+    recurrence: ["weekly", "monthly"].includes(task.recurrence) ? task.recurrence : "",
+    // Biznes iş axını mərhələsi (order→…→reporting). stageHistory: {stage,at,by,note}.
+    stage: PROJECT_STAGES.includes(task.stage) ? task.stage : "order",
+    stageHistory: Array.isArray(task.stageHistory) ? task.stageHistory : []
   };
 }
 
@@ -146,10 +149,6 @@ function normalizeProject(project) {
     teamMemberIds: [],
     companyId: "company-default",
     lifecycle: "Initiation",
-    // Biznes iş axını mərhələsi (IPMA lifecycle-dan AYRI): order→…→reporting.
-    // stageHistory: hər dəyişiklik {stage, at, by, note}. Köhnə layihələr → order.
-    stage: "order",
-    stageHistory: [],
     description: "",
     budget: 0,
     charter: {
@@ -193,8 +192,6 @@ function normalizeProject(project) {
       ...(project.charter || {})
     },
     teamMemberIds,
-    stage: PROJECT_STAGES.includes(project.stage) ? project.stage : "order",
-    stageHistory: Array.isArray(project.stageHistory) ? project.stageHistory : [],
     progress: project.status === "Bitib" ? 100 : progress
   };
 }
