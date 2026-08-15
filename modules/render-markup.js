@@ -285,53 +285,24 @@ function renderCommentDeleteButton(task, comment) {
 
 // Task kartında inline şərhlər (son 2). Deps: escapeHtml, text, formatDateTime,
 //   renderCommentDeleteButton, renderCommentAttachments.
-function renderTaskInlineComments(task) {
+// Task siyahısı kartında komment PREVIEW-u — tək sətir (kart komment artdıqca
+// uzanmasın deyə). Əvvəl son 2 komment + inline forma açılırdı → kart hündürləşib
+// siyahı dağınıq olurdu. İndi yalnız SON komment bir sətirdə (author + qısaldılmış
+// mətn), klikləyəndə task detalını açır. Tam komment axını + yazma forması detal
+// modalındadır (renderComments). Komment yoxdursa heç nə (💬 N çipi onsuz da var).
+function renderTaskCardComments(task) {
   const comments = task.comments || [];
-  const recent = comments.slice(-2);
-  const items = recent.length ? recent.map((comment) => `
-    <div class="comment-item task-inline-comment">
-      <div class="comment-head">
-        <strong>${escapeHtml(comment.author)}</strong>
-        <span class="comment-tools">
-          <time datetime="${escapeHtml(comment.createdAt || "")}">${escapeHtml(formatDateTime(comment.createdAt))}</time>
-          ${renderCommentDeleteButton(task, comment)}
-        </span>
-      </div>
-      <span>${escapeHtml(comment.text)}</span>
-      ${renderCommentAttachments(comment)}
-    </div>
-  `).join("") : "";
-  const more = comments.length > recent.length
-    ? `<button class="inline-link" type="button" data-action="view" data-id="${task.id}">${comments.length} ${text("comments")}</button>`
-    : "";
-  const formHtml = (task.status === "Bitib" || !canComment(task)) ? "" : `
-    <form class="comment-form task-inline-comment-form" data-task-id="${task.id}">
-      <button class="comment-compose-trigger" type="button" data-action="expand-comment" aria-label="${text("commentPlaceholder")}">
-        <span>💬</span> ${text("commentPlaceholder")}…
-      </button>
-      <div class="comment-body">
-        <textarea name="comment" rows="2" placeholder="${text("commentPlaceholder")}" required></textarea>
-        <div class="inline-comment-actions">
-          <button class="comment-send-btn" type="submit">${text("addComment")}</button>
-          <button class="comment-cancel-btn" type="button" data-action="collapse-comment">${text("cancel")}</button>
-          <label class="comment-attach-btn" title="${text("attachments")}">
-            📎
-            <input class="comment-attachment-input" name="attachments" type="file" multiple aria-label="${text("attachments")}">
-          </label>
-          <small class="file-picker-status"></small>
-        </div>
-      </div>
-    </form>
-  `;
+  if (!comments.length) return "";
+  const last = comments[comments.length - 1];
+  const body = String(last.text || "").replace(/\s+/g, " ").trim();
+  if (!body) return "";
   return `
-    <div class="comments task-inline-comments">
-      <div class="task-inline-comments-head">
-        <h4>${text("comments")}</h4>
-        ${more}
-      </div>
-      ${items}
-      ${formHtml}
-    </div>
+    <button class="task-card-comment-preview" type="button" data-action="view" data-id="${escapeHtml(task.id)}" title="${text("comments")}">
+      <span class="tccp-icon" aria-hidden="true">💬</span>
+      ${last.author ? `<span class="tccp-author">${escapeHtml(last.author)}:</span>` : ""}
+      <span class="tccp-text">${escapeHtml(body)}</span>
+      ${comments.length > 1 ? `<span class="tccp-more">+${comments.length - 1}</span>` : ""}
+    </button>
   `;
 }
 
@@ -924,7 +895,7 @@ function projectCardMarkup(project) {
 //   getProject/resourceLabel (lookups.js), escapeHtml, statusClass/priorityClass (utils.js),
 //   statusLabel/priorityLabel (labels.js), shortDate (format.js),
 //   plannedHoursForTask/actualHoursForTask (metrics.js), renderTaskRelations/
-//   renderTaskInlineComments/renderTaskActions, selectedTaskIds (script.js global Set), text.
+//   renderTaskCardComments/renderTaskActions, selectedTaskIds (script.js global Set), text.
 function taskCardMarkup(task) {
   const blocked = isTaskBlocked(task);
   const commentCount = (task.comments || []).length;
@@ -955,7 +926,7 @@ function taskCardMarkup(task) {
       ${renderTaskRelations(task)}
       ${task.notes ? `<p class="task-notes-preview">${escapeHtml(task.notes)}</p>` : ""}
       <div class="progress-mini"><span style="width:${Number(task.progress) || 0}%"></span></div>
-      ${renderTaskInlineComments(task)}
+      ${renderTaskCardComments(task)}
       ${renderTaskActions(task)}
     </article>
   `;

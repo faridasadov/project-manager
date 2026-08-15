@@ -5906,6 +5906,46 @@ textarea:focus {
   padding: 2px 8px;
 }
 
+/* Kartda son komment preview-u — TƏK sətir (kart uzanmasın). Tam axın detalda. */
+.task-card-comment-preview {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  margin: 6px 0 0 0;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--teal) 5%, var(--soft));
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+.task-card-comment-preview:hover {
+  border-color: color-mix(in srgb, var(--teal) 40%, var(--line));
+}
+.task-card-comment-preview .tccp-icon { flex: none; }
+.task-card-comment-preview .tccp-author {
+  flex: none;
+  font-weight: 700;
+  color: var(--ink);
+}
+.task-card-comment-preview .tccp-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.task-card-comment-preview .tccp-more {
+  flex: none;
+  font-weight: 700;
+  color: var(--teal);
+}
+
 .task-meta {
   display: flex;
   gap: 8px;

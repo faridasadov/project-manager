@@ -2918,7 +2918,7 @@ function deleteTaskComment(taskId, commentId) {
   return true;
 }
 
-// renderTaskInlineComments → modules/render-markup.js
+// renderTaskCardComments → modules/render-markup.js
 
 // renderTaskRelations → modules/render-markup.js
 
